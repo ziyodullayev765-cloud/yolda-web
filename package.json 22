@@ -1,0 +1,8 @@
+{
+  "name": "yolda-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "YO'LDA — freight marketplace site + Telegram order routing",
+  "engines": { "node": ">=20" }
+}
