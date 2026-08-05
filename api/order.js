@@ -11,6 +11,8 @@
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Group id is not a secret, so it ships with the code as a fallback.
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '-1003778958582';
+// Must match the Client ID configured in Google Cloud Console / api/config.js.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 
 const PRICE_PER_KM = Number(process.env.PRICE_PER_KM || 2500);
 const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
@@ -125,10 +127,31 @@ const buildMessage = (order) => {
     `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(taxminiy\\)`,
     '',
     `👤 ${escapeMd(order.name)}`,
+    order.googleEmail ? `✅ Google: ${escapeMd(order.googleEmail)}` : null,
     order.note ? `📝 ${escapeMd(order.note)}` : null,
     '',
     '_Raqam buyurtmani qabul qilgandan keyin ko\u2018rinadi\\._',
   ].filter(Boolean).join('\n');
+};
+
+/**
+ * Verifies the Google ID token the browser got from "Sign in with Google".
+ * Re-checking it here (not trusting the client) is what actually stops a
+ * spoofed order — the client-side sign-in alone proves nothing on its own.
+ * Uses Google's tokeninfo endpoint so no extra dependency is needed.
+ */
+const verifyGoogleEmail = async (idToken) => {
+  if (!idToken) return null;
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!res.ok) return null;
+    const payload = await res.json();
+    if (GOOGLE_CLIENT_ID && payload.aud !== GOOGLE_CLIENT_ID) return null;
+    if (payload.email_verified !== 'true' && payload.email_verified !== true) return null;
+    return payload.email || null;
+  } catch {
+    return null;
+  }
 };
 
 const telegram = async (method, payload) => {
@@ -151,6 +174,12 @@ export default async function handler(req, res) {
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+
+  const googleEmail = await verifyGoogleEmail(body.googleIdToken);
+  if (!googleEmail) {
+    return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  }
+
   const { errors, value } = validate(body);
   if (errors.length) {
     return res.status(400).json({ error: errors[0], errors });
@@ -162,7 +191,7 @@ export default async function handler(req, res) {
 
   const { distanceKm, amount } = quote(value);
   const code = generateCode();
-  const order = { ...value, code, distanceKm, amount };
+  const order = { ...value, code, distanceKm, amount, googleEmail };
 
   try {
     await telegram('sendMessage', {
