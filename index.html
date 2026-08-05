@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --paper:#F9FAFB;
@@ -806,6 +807,7 @@
       <p class="section-sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
     </div>
 
+    <div id="googleGate" style="margin:0 0 16px;"></div>
     <div id="content" aria-live="polite"></div>
 
     <div class="card driver-invite">
@@ -894,6 +896,32 @@
   };
 
   /* ============================================================
+     Google Sign-In — required before an order can be submitted.
+     The ID token is verified again server-side in /api/order.
+     ============================================================ */
+  var googleIdToken = null;
+
+  function onGoogleSignIn(response){
+    googleIdToken = response.credential;
+    try{
+      var payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+      if(!state.name) state.name = payload.name || "";
+      var gate = document.getElementById("googleGate");
+      if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(payload.email)+' orqali kirdingiz</span>';
+    }catch(e){}
+    render();
+  }
+
+  function initGoogleSignIn(){
+    fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
+      if(!cfg.googleClientId || !window.google || !google.accounts) return;
+      google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn });
+      var gate = document.getElementById("googleGate");
+      if(gate) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
+    }).catch(function(){});
+  }
+
+  /* ============================================================
      Helpers
      ============================================================ */
   function distanceBetween(a, b){
@@ -970,7 +998,7 @@
     var cargo = cargoById(state.cargo);
     var price = calcPrice(distance, state.weight, cargo.mult);
     var sameCity = state.from === state.to;
-    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone);
+    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken;
 
     return '<div class="card">'
       + '<h3 class="card-title">'+icon("iconClipboard")+' Yuk ma\'lumotlari</h3>'
@@ -1018,7 +1046,8 @@
       + '<div class="price-line"><span class="k">Taxminiy narx</span><span class="v">'+formatNum(price)+' so\'m</span></div>'
 
       + (sameCity ? '<p class="note">Qayerdan va qayerga turli shaharlarni tanlang.</p>' : '')
-      + (!sameCity && !ready ? '<p class="note">Yuborish uchun ism va telefon raqamini to\'ldiring.</p>' : '')
+      + (!sameCity && !ready && !googleIdToken ? '<p class="note">Yuborish uchun avval yuqorida Google orqali kiring.</p>' : '')
+      + (!sameCity && !ready && googleIdToken ? '<p class="note">Yuborish uchun ism va telefon raqamini to\'ldiring.</p>' : '')
 
       + '<button class="btn" id="btnSend"'+(ready && !state.submitting ? '' : ' disabled')+'>'
       +   (state.submitting ? 'Yuborilmoqda…' : 'Haydovchilarga yuborish ' + icon("iconArrowRight"))
@@ -1049,7 +1078,7 @@
       var btn = document.getElementById("btnSend");
       if(!btn) return;
       var ready = state.from !== state.to && state.weight > 0
-        && state.name.trim().length >= 2 && isValidPhone(state.phone);
+        && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken;
       btn.disabled = !ready || state.submitting;
     };
 
@@ -1091,6 +1120,7 @@
 
   async function submitOrder(){
     if(state.submitting) return;
+    if(!googleIdToken){ toast("Avval Google orqali kiring", "Yuqoridagi tugma orqali hisobingizga kiring.", "info"); return; }
     state.submitting = true;
     render();
 
@@ -1105,7 +1135,8 @@
           cargoType: state.cargo,
           name: state.name.trim(),
           phone: normalisePhone(state.phone),
-          note: state.note.trim()
+          note: state.note.trim(),
+          googleIdToken: googleIdToken
         })
       });
 
@@ -1172,6 +1203,7 @@
   render();
   renderLiveWidget();
   setInterval(renderLiveWidget, 3400);
+  initGoogleSignIn();
 
   /* ============================================================
      Scroll: nav state, progress bar, background parallax
