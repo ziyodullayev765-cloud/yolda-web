@@ -1,1403 +1,239 @@
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YO'LDA — Yuk tashish bozori</title>
-<meta name="description" content="Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi O'zbekiston yuk tashish bozori. Narxni hisoblang, buyurtma joylashtiring.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<style>
-  :root{
-    --paper:#F9FAFB;
-    --paper-dark:#EEF2F7;
-    --card:#FFFFFF;
-    --ink:#0F172A;
-    --ink-soft:#475569;
-    --muted:#94A3B8;
-    --route:#1D4ED8;
-    --route-dark:#1E40AF;
-    --stamp:#06B6D4;
-    --stamp-dark:#0891B2;
-    --accepted:#22C55E;
-    --border:#E2E8F0;
-
-    /* spacing scale (8pt grid) */
-    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
-    --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:128px;
-
-    /* radii */
-    --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:24px; --r-pill:999px;
-
-    /* elevation — layered, low-opacity, Apple/Linear style */
-    --sh-1:0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06);
-    --sh-2:0 2px 4px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.06);
-    --sh-3:0 4px 8px rgba(15,23,42,0.04), 0 12px 28px rgba(15,23,42,0.09);
-    --sh-4:0 8px 16px rgba(15,23,42,0.05), 0 24px 48px rgba(15,23,42,0.12);
-    --sh-brand:0 10px 24px rgba(29,78,216,0.24);
-
-    /* glass */
-    --glass:rgba(255,255,255,0.72);
-    --glass-brd:rgba(255,255,255,0.6);
-
-    --ease:cubic-bezier(0.16,1,0.3,1);
-  }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:
-      radial-gradient(var(--border) 1px, transparent 1px) 0 0/26px 26px,
-      repeating-linear-gradient(135deg, rgba(15,23,42,0.035) 0px, rgba(15,23,42,0.035) 1.5px, transparent 1.5px, transparent 30px),
-      var(--paper);
-    color:var(--ink);
-    font-family:'Inter',sans-serif;
-    font-feature-settings:'cv02','cv03','cv04','ss01';
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-    line-height:1.6;
-    min-height:100vh;
-  }
-  a{color:inherit;}
-
-  /* accessibility: consistent, visible focus */
-  :focus{outline:none;}
-  :focus-visible{
-    outline:3px solid rgba(29,78,216,0.55);
-    outline-offset:3px;border-radius:6px;
-  }
-  .skip-link{
-    position:absolute;left:var(--s4);top:-100px;z-index:200;
-    background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-sm);
-    font-size:14px;font-weight:600;text-decoration:none;
-    transition:top 0.2s var(--ease);
-  }
-  .skip-link:focus{top:var(--s4);}
-  .sr-only{
-    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
-  }
-
-  .ic-svg{
-    width:1em;height:1em;display:inline-block;vertical-align:-0.15em;flex-shrink:0;
-    fill:none;stroke:currentColor;stroke-width:1.8;
-    stroke-linecap:round;stroke-linejoin:round;
-  }
-  .reveal{
-    opacity:0;transform:translateY(26px) scale(0.985);filter:blur(6px);
-    transition:opacity 0.9s var(--ease), transform 0.9s var(--ease), filter 0.9s var(--ease);
-    will-change:opacity, transform, filter;
-  }
-  .reveal.in{opacity:1;transform:none;filter:blur(0);}
-  .steps .step:nth-child(1){transition-delay:0s;}
-  .steps .step:nth-child(2){transition-delay:0.12s;}
-  .steps .step:nth-child(3){transition-delay:0.24s;}
-  .features .feature:nth-child(1){transition-delay:0s;}
-  .features .feature:nth-child(2){transition-delay:0.08s;}
-  .features .feature:nth-child(3){transition-delay:0.16s;}
-  .features .feature:nth-child(4){transition-delay:0.24s;}
-  .stats-bar .stat-cell:nth-child(1){transition-delay:0s;}
-  .stats-bar .stat-cell:nth-child(2){transition-delay:0.09s;}
-  .stats-bar .stat-cell:nth-child(3){transition-delay:0.18s;}
-  .stats-bar .stat-cell:nth-child(4){transition-delay:0.27s;}
-
-  /* Hero pieces animate in sequence on load rather than on scroll. */
-  .hero-seq{
-    opacity:0;transform:translateY(22px);filter:blur(8px);
-    animation:heroIn 1s var(--ease) forwards;
-  }
-  .hero-seq:nth-child(2){animation-delay:0.05s;}
-  .hero-seq:nth-child(3){animation-delay:0.15s;}
-  .hero-seq:nth-child(4){animation-delay:0.25s;}
-  .hero-seq:nth-child(5){animation-delay:0.35s;}
-  .hero-seq:nth-child(6){animation-delay:0.45s;}
-  .hero-seq:nth-child(7){animation-delay:0.58s;}
-  @keyframes heroIn{to{opacity:1;transform:none;filter:blur(0);}}
-
-  /* The wordmark's gradient drifts slowly — noticeable only if you look. */
-  .brand{background-size:200% 100%;animation:brandShift 9s ease-in-out infinite alternate;}
-  @keyframes brandShift{to{background-position:100% 0;}}
-
-  .bg-truck{transition:transform 0.1s linear;}
-
-  @media (prefers-reduced-motion: reduce){
-    *,*::before,*::after{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
-    html{scroll-behavior:auto;}
-    .reveal{opacity:1;transform:none;filter:none;}
-    .hero-seq{opacity:1;transform:none;filter:none;animation:none;}
-  }
-
-  /* ---------- NAV ---------- */
-  .nav{
-    position:sticky;top:0;z-index:50;
-    display:flex;align-items:center;justify-content:space-between;
-    gap:var(--s4);
-    padding:var(--s3) var(--s5);
-    background:var(--glass);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);
-    backdrop-filter:saturate(180%) blur(20px);
-    border-bottom:1px solid rgba(226,232,240,0.8);
-    transition:box-shadow 0.3s var(--ease), padding 0.3s var(--ease), background 0.3s var(--ease);
-  }
-  .nav.scrolled{
-    box-shadow:var(--sh-2);
-    padding-top:var(--s2);padding-bottom:var(--s2);
-    background:rgba(255,255,255,0.82);
-  }
-  .nav-logo{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;
-    letter-spacing:-0.01em;display:flex;align-items:center;gap:var(--s2);
-  }
-  .nav-logo .mark{width:30px;height:30px;flex-shrink:0;}
-  .nav-logo .word{
-    background:linear-gradient(90deg, var(--route), var(--stamp));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  .nav-logo .dot{color:var(--stamp);}
-  .nav-links{display:flex;gap:var(--s1);list-style:none;margin:0;padding:0;}
-  .nav-links a{
-    display:block;font-size:13.5px;font-weight:500;text-decoration:none;color:var(--ink-soft);
-    letter-spacing:0;padding:8px 12px;border-radius:var(--r-sm);
-    transition:color 0.2s var(--ease), background 0.2s var(--ease);
-  }
-  .nav-links a:hover{color:var(--route);background:rgba(29,78,216,0.07);}
-  .nav-cta{
-    font-family:'Inter',sans-serif;font-size:13.5px;letter-spacing:0;
-    font-weight:600;text-decoration:none;white-space:nowrap;
-    background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-pill);
-    box-shadow:var(--sh-1);
-    transition:transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s var(--ease);
-  }
-  .nav-cta:hover{background:var(--route);transform:translateY(-2px);box-shadow:var(--sh-brand);}
-  .nav-cta:active{transform:translateY(0);}
-  @media(max-width:760px){
-    .nav{padding:var(--s3) var(--s4);}
-    .nav-links{display:none;}
-  }
-
-  /* ---------- HERO ---------- */
-  .hero-wrap{max-width:1000px;margin:0 auto;padding:var(--s9) var(--s5) var(--s6);text-align:center;}
-  .eyebrow{
-    font-family:'Inter',sans-serif;
-    font-size:12.5px;letter-spacing:0.08em;color:var(--route-dark);
-    font-weight:600;display:inline-flex;align-items:center;gap:var(--s2);
-    border:1px solid rgba(29,78,216,0.22);
-    background:rgba(29,78,216,0.06);
-    border-radius:var(--r-pill);padding:7px 16px;margin-bottom:var(--s5);
-    text-transform:uppercase;
-  }
-  .brand{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:clamp(52px,10vw,96px);line-height:0.92;margin:0 0 var(--s4);
-    letter-spacing:-0.035em;text-transform:uppercase;font-weight:700;
-    background:linear-gradient(100deg, var(--route) 10%, var(--stamp) 90%);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    display:inline-block;
-  }
-  .tagline{
-    margin:0 auto var(--s6);color:var(--ink-soft);
-    font-size:clamp(16px,2.2vw,19px);max-width:54ch;line-height:1.65;
-    letter-spacing:-0.005em;
-  }
-  .hero-ctas{display:flex;gap:var(--s3);justify-content:center;flex-wrap:wrap;margin-bottom:var(--s7);}
-  .btn-primary,.btn-secondary{
-    font-family:'Inter',sans-serif;font-size:15px;letter-spacing:0;
-    font-weight:600;text-decoration:none;
-    padding:15px 30px;border-radius:var(--r-pill);display:inline-flex;
-    align-items:center;justify-content:center;gap:var(--s2);
-    position:relative;overflow:hidden;
-    transition:transform 0.28s var(--ease), box-shadow 0.28s var(--ease), background 0.28s var(--ease);
-  }
-  .btn-primary{
-    background:linear-gradient(135deg, var(--route), var(--route-dark));
-    color:#fff;box-shadow:var(--sh-brand);
-  }
-  /* shine sweep */
-  .btn-primary::after{
-    content:"";position:absolute;inset:0;
-    background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.32) 50%, transparent 70%);
-    transform:translateX(-120%);transition:transform 0.7s var(--ease);
-  }
-  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(29,78,216,0.34);}
-  .btn-primary:hover::after{transform:translateX(120%);}
-  .btn-primary:active{transform:translateY(-1px);}
-  .btn-secondary{
-    background:var(--glass);color:var(--ink);border:1px solid var(--border);
-    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-    box-shadow:var(--sh-1);
-  }
-  .btn-secondary:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:var(--route);color:var(--route-dark);}
-  .btn-secondary:active{transform:translateY(-1px);}
-
-  .hero-widget{
-    max-width:440px;margin:0 auto;text-align:left;
-    background:var(--glass);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);
-    backdrop-filter:saturate(180%) blur(20px);
-    border:1px solid var(--glass-brd);
-    border-radius:var(--r-lg);
-    padding:var(--s4) var(--s5);
-    box-shadow:var(--sh-3);
-    transition:transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
-  }
-  .hero-widget:hover{transform:translateY(-4px);box-shadow:var(--sh-4);}
-  .hero-widget-head{
-    display:flex;align-items:center;gap:var(--s2);
-    font-size:11px;letter-spacing:0.12em;font-weight:600;
-    text-transform:uppercase;color:var(--muted);margin-bottom:var(--s3);
-  }
-  .dot-live{
-    width:8px;height:8px;border-radius:50%;background:var(--stamp);display:inline-block;
-    animation:livePulse 1.7s infinite;
-  }
-  @keyframes livePulse{
-    0%{box-shadow:0 0 0 0 rgba(6,182,212,0.45);}
-    70%{box-shadow:0 0 0 8px rgba(6,182,212,0);}
-    100%{box-shadow:0 0 0 0 rgba(6,182,212,0);}
-  }
-  .hero-widget-body{transition:opacity 0.35s var(--ease);min-height:50px;}
-  .hero-widget-route{
-    display:flex;align-items:center;gap:var(--s2);
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;
-    letter-spacing:-0.02em;color:var(--ink);margin-bottom:var(--s1);
-  }
-  .hero-widget-route .arrow{color:var(--route);font-weight:400;}
-  .hero-widget-meta{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);font-size:13px;color:var(--ink-soft);}
-  .hero-widget-price{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;
-    letter-spacing:-0.02em;color:var(--route-dark);white-space:nowrap;
-  }
-
-  /* ---------- STATS ---------- */
-  .stats-bar{
-    max-width:1000px;margin:0 auto;padding:var(--s2) var(--s5) 0;
-    display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3);
-  }
-  .stat-cell{
-    padding:var(--s5) var(--s3);text-align:center;
-    background:var(--glass);
-    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-    border:1px solid var(--glass-brd);border-radius:var(--r-md);
-    box-shadow:var(--sh-1);
-    transition:transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
-  }
-  .stat-cell:hover{transform:translateY(-4px);box-shadow:var(--sh-3);border-color:rgba(29,78,216,0.3);}
-  .stat-cell .v{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(24px,4vw,32px);
-    letter-spacing:-0.03em;line-height:1.1;
-    background:linear-gradient(120deg, var(--route), var(--stamp));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  .stat-cell .k{font-size:12px;color:var(--muted);letter-spacing:0.02em;margin-top:var(--s1);font-weight:500;}
-  @media(max-width:640px){
-    .stats-bar{grid-template-columns:repeat(2,1fr);gap:var(--s2);padding-left:var(--s4);padding-right:var(--s4);}
-    .stat-cell{padding:var(--s4) var(--s2);}
-  }
-
-  /* ---------- SECTION SHELL ---------- */
-  .section{max-width:1000px;margin:0 auto;padding:var(--s9) var(--s5);}
-  .section-head{text-align:center;margin-bottom:var(--s7);}
-  .section-eyebrow{
-    font-family:'Inter',sans-serif;font-size:12.5px;letter-spacing:0.1em;
-    color:var(--route);font-weight:600;text-transform:uppercase;
-  }
-  .hero-logo{width:72px;height:72px;display:block;margin:0 auto var(--s5);filter:drop-shadow(0 8px 20px rgba(29,78,216,0.28));}
-  .accent{color:var(--stamp);}
-  .accent.alt{color:var(--route);}
-  .section-title{
-    font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,5.5vw,46px);
-    text-transform:uppercase;letter-spacing:-0.03em;line-height:1.1;
-    margin:var(--s3) 0 var(--s3);font-weight:700;
-  }
-  .section-sub{color:var(--ink-soft);font-size:clamp(15px,2vw,17px);max-width:58ch;margin:0 auto;line-height:1.65;}
-
-  /* ---------- HOW IT WORKS ---------- */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s5);}
-  .step{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
-    padding:var(--s6) var(--s5);position:relative;overflow:hidden;
-    box-shadow:var(--sh-1);
-    transition:transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
-  }
-  /* gradient hairline that lights up on hover */
-  .step::before{
-    content:"";position:absolute;top:0;left:0;right:0;height:3px;
-    background:linear-gradient(90deg, var(--route), var(--stamp));
-    transform:scaleX(0);transform-origin:left;
-    transition:transform 0.45s var(--ease);
-  }
-  .step:hover::before{transform:scaleX(1);}
-  .step:hover{transform:translateY(-8px);box-shadow:var(--sh-4);border-color:rgba(29,78,216,0.28);}
-  .step .num{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
-    color:#fff;background:linear-gradient(135deg, var(--route), var(--route-dark));
-    border-radius:var(--r-pill);box-shadow:var(--sh-brand);
-    width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-    margin-bottom:var(--s4);
-  }
-  .step h3{font-family:'Space Grotesk',sans-serif;font-size:19px;letter-spacing:-0.02em;margin:0 0 var(--s2);line-height:1.3;}
-  .step p{font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;}
-  @media(max-width:820px){ .steps{grid-template-columns:1fr;gap:var(--s4);} }
-
-  /* ---------- FEATURES ---------- */
-  .features{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4);}
-  .feature{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
-    padding:var(--s5);display:flex;gap:var(--s4);align-items:flex-start;
-    box-shadow:var(--sh-1);
-    transition:transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
-  }
-  .feature:hover{transform:translateY(-6px);box-shadow:var(--sh-4);border-color:rgba(29,78,216,0.28);}
-  .feature .ic{
-    font-size:22px;flex-shrink:0;color:var(--route);line-height:1;
-    width:46px;height:46px;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(135deg, rgba(29,78,216,0.1), rgba(6,182,212,0.1));
-    border-radius:var(--r-sm);
-    transition:transform 0.35s var(--ease);
-  }
-  .feature:hover .ic{transform:scale(1.08) rotate(-4deg);}
-  .feature h3{font-family:'Space Grotesk',sans-serif;font-size:17px;letter-spacing:-0.02em;margin:0 0 var(--s2);line-height:1.3;}
-  .feature p{font-size:14px;color:var(--ink-soft);margin:0;line-height:1.65;}
-  @media(max-width:640px){ .features{grid-template-columns:1fr;} }
-
-  /* ---------- APP SECTION ---------- */
-  #ilova{
-    background:
-      radial-gradient(circle at 50% 0%, rgba(29,78,216,0.05), transparent 55%),
-      var(--paper-dark);
-    border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  }
-  .app-shell{max-width:660px;margin:0 auto;padding:var(--s9) var(--s5) var(--s9);}
-
-  .tabs{
-    display:flex;gap:var(--s1);margin:var(--s5) 0 var(--s5);
-    background:rgba(255,255,255,0.7);
-    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-    border:1px solid var(--glass-brd);border-radius:var(--r-md);
-    padding:var(--s1);box-shadow:var(--sh-1);
-  }
-  .tab{
-    flex:1;font-family:'Inter',sans-serif;font-size:14.5px;letter-spacing:0;
-    font-weight:600;min-height:48px;
-    display:flex;align-items:center;justify-content:center;gap:var(--s2);
-    padding:12px 10px;border:none;border-radius:var(--r-sm);
-    background:transparent;color:var(--ink-soft);cursor:pointer;
-    transition:background 0.25s var(--ease), color 0.25s var(--ease), box-shadow 0.25s var(--ease);
-  }
-  .tab.active{
-    background:linear-gradient(135deg, var(--route), var(--route-dark));
-    color:#fff;box-shadow:var(--sh-brand);
-  }
-  .tab:not(.active):hover{background:rgba(29,78,216,0.08);color:var(--route-dark);}
-
-  .card{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
-    padding:var(--s5);margin-bottom:var(--s4);box-shadow:var(--sh-2);
-    transition:transform 0.32s var(--ease), box-shadow 0.32s var(--ease), border-color 0.32s var(--ease);
-  }
-  .card:hover{
-    transform:translateY(-4px);
-    box-shadow:var(--sh-4);
-    border-color:rgba(29,78,216,0.28);
-  }
-  .card-title{
-    font-family:'Space Grotesk',sans-serif;font-size:18px;letter-spacing:-0.02em;
-    color:var(--ink);margin:0 0 var(--s5);display:flex;align-items:center;gap:var(--s2);
-  }
-  .card-title .ic-svg{color:var(--route);}
-  .field{margin-bottom:var(--s4);}
-  .field label{
-    display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
-    margin-bottom:var(--s2);letter-spacing:0.02em;
-  }
-  select,input[type=number],input[type=text]{
-    width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--border);
-    border-radius:var(--r-sm);background:#fff;color:var(--ink);
-    font-family:'Inter',sans-serif;font-size:15px;
-    box-shadow:var(--sh-1);
-    transition:border-color 0.22s var(--ease), box-shadow 0.22s var(--ease);
-  }
-  select:hover,input[type=number]:hover,input[type=text]:hover{border-color:rgba(29,78,216,0.45);}
-  select:focus,input:focus{border-color:var(--route);box-shadow:0 0 0 4px rgba(29,78,216,0.14);}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
-
-  .cargo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);}
-  .cargo-opt{
-    border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--s3);cursor:pointer;
-    background:#fff;text-align:left;min-height:76px;
-    box-shadow:var(--sh-1);
-    transition:transform 0.24s var(--ease), box-shadow 0.24s var(--ease), border-color 0.24s var(--ease), background 0.24s var(--ease);
-  }
-  .cargo-opt:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(29,78,216,0.45);}
-  .cargo-opt.sel{
-    border-color:var(--route);
-    background:linear-gradient(135deg, rgba(29,78,216,0.08), rgba(6,182,212,0.08));
-    box-shadow:0 0 0 3px rgba(29,78,216,0.16), var(--sh-2);
-  }
-  .cargo-opt .ic{font-size:20px;color:var(--route);line-height:1;display:block;}
-  .cargo-opt .lbl{display:block;font-size:13px;font-weight:600;margin-top:var(--s2);color:var(--ink);line-height:1.3;}
-  .cargo-opt .mult{display:block;font-size:11.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;}
-
-  .tear{
-    height:1px;margin:var(--s5) calc(var(--s5) * -1);
-    background:linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent);
-    border:none;
-  }
-
-  .stub-route{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3);}
-  .stub-city{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:var(--ink);letter-spacing:-0.02em;}
-  .stub-mid{color:var(--route);font-size:13px;display:flex;align-items:center;gap:var(--s1);white-space:nowrap;}
-  .stub-stats{display:flex;gap:var(--s5);margin-bottom:var(--s4);flex-wrap:wrap;align-items:center;}
-  .stat{font-family:'Inter',sans-serif;}
-  .stat .v{font-size:15px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:var(--s1);}
-  .stat .k{font-size:11.5px;color:var(--muted);letter-spacing:0.03em;margin-top:2px;}
-  .price-line{
-    display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);
-    padding-top:var(--s3);border-top:1px solid var(--border);
-  }
-  .price-line .k{font-size:13px;letter-spacing:0.02em;color:var(--ink-soft);font-weight:500;}
-  .price-line .v{
-    font-family:'Space Grotesk',sans-serif;font-size:clamp(26px,5vw,32px);font-weight:700;
-    letter-spacing:-0.03em;line-height:1.1;
-    background:linear-gradient(95deg, var(--route), var(--stamp));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-
-  .btn{
-    width:100%;min-height:52px;padding:15px;border:none;border-radius:var(--r-pill);
-    font-family:'Inter',sans-serif;font-size:15px;letter-spacing:0;
-    font-weight:600;cursor:pointer;
-    display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
-    background:linear-gradient(135deg, var(--route), var(--route-dark));
-    color:#fff;margin-top:var(--s3);
-    position:relative;overflow:hidden;
-    box-shadow:var(--sh-brand);
-    transition:transform 0.26s var(--ease), box-shadow 0.26s var(--ease), background 0.26s var(--ease);
-  }
-  .btn::after{
-    content:"";position:absolute;inset:0;
-    background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
-    transform:translateX(-120%);transition:transform 0.7s var(--ease);
-  }
-  .btn:hover{transform:translateY(-3px);box-shadow:0 16px 32px rgba(29,78,216,0.32);}
-  .btn:hover::after{transform:translateX(120%);}
-  .btn:active{transform:translateY(-1px);}
-  .btn:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;transform:none;}
-  .btn:disabled:hover{transform:none;box-shadow:none;}
-  .btn.ghost{
-    background:#fff;color:var(--route-dark);border:1px solid var(--border);
-    box-shadow:var(--sh-1);
-  }
-  .btn.ghost:hover{background:rgba(29,78,216,0.05);border-color:var(--route);transform:translateY(-3px);box-shadow:var(--sh-3);}
-  .btn.small{width:auto;min-height:40px;padding:9px 18px;font-size:13px;margin-top:0;}
-
-  .stamp-badge{
-    display:inline-flex;align-items:center;gap:var(--s1);
-    font-family:'Inter',sans-serif;font-weight:600;font-size:12px;
-    letter-spacing:0.02em;
-    border:1px solid rgba(34,197,94,0.35);color:#15803D;
-    background:rgba(34,197,94,0.1);
-    border-radius:var(--r-pill);padding:6px 12px;
-  }
-  .cargo-badge{
-    font-size:12px;background:var(--paper-dark);color:var(--ink-soft);
-    padding:5px 11px;border-radius:var(--r-pill);
-    display:inline-flex;align-items:center;gap:var(--s1);
-  }
-  .order-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);margin-bottom:var(--s3);}
-  .order-code{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);letter-spacing:0.02em;}
-  .order-time{font-size:11.5px;color:var(--muted);}
-
-  /* ---------- EMPTY STATE ---------- */
-  .empty{
-    text-align:center;padding:var(--s8) var(--s5);color:var(--ink-soft);
-    background:var(--card);border:1px dashed var(--border);border-radius:var(--r-lg);
-  }
-  .empty .big{
-    font-size:30px;margin:0 auto var(--s4);color:var(--route);line-height:1;
-    width:72px;height:72px;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(135deg, rgba(29,78,216,0.1), rgba(6,182,212,0.1));
-    border-radius:var(--r-pill);
-  }
-  .empty h4{font-family:'Space Grotesk',sans-serif;font-size:18px;letter-spacing:-0.02em;color:var(--ink);margin:0 0 var(--s2);}
-  .empty p{margin:0 auto;font-size:14.5px;line-height:1.65;max-width:38ch;}
-  .empty .btn{max-width:260px;margin:var(--s5) auto 0;}
-
-  .success-banner{
-    background:linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06));
-    border:1px solid rgba(34,197,94,0.3);border-radius:var(--r-lg);
-    padding:var(--s5);margin-bottom:var(--s4);text-align:center;
-    box-shadow:var(--sh-2);
-    animation:bannerIn 0.5s var(--ease);
-  }
-  @keyframes bannerIn{from{opacity:0;transform:translateY(-10px) scale(0.98);}to{opacity:1;transform:none;}}
-  .success-banner .stamp-badge{margin-bottom:var(--s2);}
-  .success-banner .code{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-soft);}
-  .note{font-size:12.5px;color:var(--muted);margin-top:var(--s2);line-height:1.6;}
-  .section-label{
-    font-family:'Space Grotesk',sans-serif;font-size:14px;
-    letter-spacing:-0.01em;color:var(--ink);margin:var(--s6) var(--s1) var(--s4);
-    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
-  }
-  .section-label span:last-child{
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--route);
-    background:rgba(29,78,216,0.09);padding:3px 10px;border-radius:var(--r-pill);
-  }
-
-  /* ---------- SKELETON LOADERS ---------- */
-  .skeleton{
-    background:linear-gradient(90deg, var(--paper-dark) 25%, #F8FAFC 37%, var(--paper-dark) 63%);
-    background-size:400% 100%;
-    animation:shimmer 1.4s ease-in-out infinite;
-    border-radius:6px;
-  }
-  @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
-  .sk-line{height:12px;margin-bottom:var(--s2);}
-  .sk-card{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
-    padding:var(--s5);margin-bottom:var(--s4);box-shadow:var(--sh-1);
-  }
-  .sk-row{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);margin-bottom:var(--s4);}
-
-  /* ---------- TOASTS ---------- */
-  #toastHost{
-    position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
-    z-index:1000;display:flex;flex-direction:column;gap:var(--s2);
-    width:min(420px, calc(100vw - 32px));pointer-events:none;
-  }
-  .toast{
-    display:flex;align-items:flex-start;gap:var(--s3);
-    background:rgba(15,23,42,0.94);
-    -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
-    color:#fff;border-radius:var(--r-md);padding:14px 18px;
-    box-shadow:var(--sh-4);font-size:14px;line-height:1.5;
-    pointer-events:auto;
-    animation:toastIn 0.4s var(--ease);
-  }
-  .toast.out{animation:toastOut 0.3s var(--ease) forwards;}
-  .toast .ic-svg{margin-top:2px;font-size:18px;}
-  .toast.success .ic-svg{color:#4ADE80;}
-  .toast.info .ic-svg{color:#38BDF8;}
-  .toast strong{display:block;font-weight:600;margin-bottom:2px;}
-  .toast small{color:rgba(255,255,255,0.72);font-size:12.5px;}
-  @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(0.96);}to{opacity:1;transform:none;}}
-  @keyframes toastOut{to{opacity:0;transform:translateY(12px) scale(0.97);}}
-
-  /* ---------- FOOTER ---------- */
-  .foot{max-width:1000px;margin:0 auto;padding:var(--s8) var(--s5) var(--s7);}
-  .foot-top{
-    display:grid;grid-template-columns:1.4fr 1fr;gap:var(--s7);
-    padding-bottom:var(--s6);margin-bottom:var(--s5);
-    border-bottom:1px solid var(--border);
-  }
-  .foot-brand{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;
-    letter-spacing:-0.02em;display:flex;align-items:center;gap:var(--s2);
-  }
-  .foot-brand .mark{width:28px;height:28px;flex-shrink:0;}
-  .foot-brand span{color:var(--stamp);}
-  .foot-note{font-size:14px;color:var(--ink-soft);max-width:42ch;margin-top:var(--s3);line-height:1.65;}
-  .foot-cols{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s5);}
-  .foot-col h4{
-    font-size:12.5px;letter-spacing:0.06em;text-transform:uppercase;
-    color:var(--muted);margin:0 0 var(--s3);font-weight:600;
-  }
-  .foot-col a,.foot-col span{
-    display:block;font-size:14px;text-decoration:none;color:var(--ink-soft);
-    margin-bottom:var(--s3);
-    transition:color 0.2s var(--ease), transform 0.2s var(--ease);
-  }
-  .foot-col a:hover{color:var(--route);transform:translateX(3px);}
-  .foot-bottom{
-    display:flex;justify-content:space-between;align-items:center;gap:var(--s4);
-    flex-wrap:wrap;
-    font-size:13px;color:var(--muted);line-height:1.6;
-  }
-  @media(max-width:720px){
-    .foot-top{grid-template-columns:1fr;gap:var(--s6);}
-    .foot-bottom{justify-content:center;text-align:center;}
-  }
-
-  @media(max-width:640px){
-    .hero-wrap{padding:var(--s7) var(--s4) var(--s5);}
-    .section{padding:var(--s8) var(--s4);}
-    .app-shell{padding:var(--s8) var(--s4);}
-    .foot{padding:var(--s7) var(--s4) var(--s6);}
-    .card{padding:var(--s4);}
-    .tear{margin-left:calc(var(--s4) * -1);margin-right:calc(var(--s4) * -1);}
-    .hero-ctas{flex-direction:column;align-items:stretch;}
-    .btn-primary,.btn-secondary{width:100%;}
-    .stub-stats{gap:var(--s4);}
-  }
-  @media(max-width:380px){
-    .row2{grid-template-columns:1fr;}
-    .cargo-grid{grid-template-columns:1fr;}
-  }
-
-  /* ---------- BACKGROUND TRUCK ART ---------- */
-  .hero-wrap,.section,#ilova,.foot{position:relative;overflow:hidden;}
-  .bg-truck{position:absolute;z-index:0;color:var(--ink);opacity:0.05;pointer-events:none;}
-  .bg-truck--hero{width:380px;top:-36px;right:-70px;transform:rotate(-6deg);}
-  .bg-truck--steps{width:300px;bottom:-46px;left:-56px;transform:scaleX(-1) rotate(3deg);}
-  .bg-truck--features{width:320px;top:-24px;right:-76px;transform:rotate(-4deg);}
-  .bg-truck--app{width:460px;bottom:-60px;left:50%;transform:translateX(-50%);opacity:0.045;}
-  .bg-truck--foot{width:220px;bottom:-26px;right:-34px;transform:scaleX(-1);}
-  @media(max-width:600px){
-    .bg-truck--hero{width:240px;} .bg-truck--steps{width:200px;} .bg-truck--features{width:210px;} .bg-truck--app{width:300px;}
-  }
-
-  /* ---------- CURSOR TIRE TRACKS (canvas) ---------- */
-  #tireCanvas{
-    position:fixed;inset:0;width:100%;height:100%;
-    pointer-events:none;z-index:999;
-  }
-
-  /* ---------- SCROLL PROGRESS ---------- */
-  #scrollProgress{
-    position:fixed;top:0;left:0;height:2px;width:100%;
-    transform:scaleX(0);transform-origin:0 50%;
-    background:linear-gradient(90deg, var(--route), var(--stamp));
-    z-index:60;will-change:transform;
-  }
-</style>
-</head>
-<body>
-
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="truckIcon" viewBox="0 0 240 110">
-    <rect x="0" y="18" width="196" height="4" fill="currentColor"/>
-    <rect x="0" y="18" width="130" height="56" rx="6" fill="currentColor"/>
-    <path d="M130 74 V34 H160 L196 62 V74 Z" fill="currentColor"/>
-    <rect x="140" y="40" width="28" height="20" rx="3" fill="var(--paper)"/>
-    <circle cx="40" cy="86" r="16" fill="currentColor"/>
-    <circle cx="40" cy="86" r="6" fill="var(--paper)"/>
-    <circle cx="100" cy="86" r="16" fill="currentColor"/>
-    <circle cx="100" cy="86" r="6" fill="var(--paper)"/>
-    <circle cx="176" cy="86" r="16" fill="currentColor"/>
-    <circle cx="176" cy="86" r="6" fill="var(--paper)"/>
-  </symbol>
-  <symbol id="logoMark" viewBox="0 0 100 100">
-    <circle cx="50" cy="50" r="47" fill="#0F172A"/>
-    <path d="M50 18 L50 50 M50 50 L28 82 M50 50 L72 82" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" fill="none"/>
-    <circle cx="50" cy="50" r="47" fill="none" stroke="#1D4ED8" stroke-width="4"/>
-  </symbol>
-
-  <g id="icon-defs" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <symbol id="iconBox" viewBox="0 0 24 24"><path d="M12 3 20 7.5V16.5L12 21 4 16.5V7.5Z"/><path d="M12 12V21M12 12 20 7.5M12 12 4 7.5"/></symbol>
-    <symbol id="iconTruck" viewBox="0 0 24 24"><rect x="1.5" y="8" width="12" height="8"/><path d="M13.5 11H17.5L21 14.5V16H13.5Z"/><circle cx="6" cy="18.2" r="1.6"/><circle cx="16.5" cy="18.2" r="1.6"/></symbol>
-    <symbol id="iconSnow" viewBox="0 0 24 24"><path d="M12 3V21M4.8 7.5 19.2 16.5M4.8 16.5 19.2 7.5"/></symbol>
-    <symbol id="iconGem" viewBox="0 0 24 24"><path d="M6 3H18L22 9 12 21 2 9Z"/><path d="M2 9H22"/></symbol>
-    <symbol id="iconWeight" viewBox="0 0 24 24"><path d="M4 9V15M20 9V15M7 7V17M17 7V17M9 12H15"/></symbol>
-    <symbol id="iconBolt" viewBox="0 0 24 24"><path d="M13 2 4 14H10L9 22 20 10H14Z"/></symbol>
-    <symbol id="iconMap" viewBox="0 0 24 24"><path d="M9 4 3 6V20L9 18 15 20 21 18V4L15 6 9 4Z"/><path d="M9 4V18M15 6V20"/></symbol>
-    <symbol id="iconReceipt" viewBox="0 0 24 24"><path d="M6 2H18V22L16 20.5 14 22 12 20.5 10 22 8 20.5 6 22Z"/><path d="M8.5 7H15.5M8.5 11H15.5M8.5 15H13"/></symbol>
-    <symbol id="iconFree" viewBox="0 0 24 24"><circle cx="7" cy="7" r="2.4"/><circle cx="17" cy="17" r="2.4"/><path d="M18 6 6 18"/></symbol>
-    <symbol id="iconInboxEmpty" viewBox="0 0 24 24"><path d="M3 12H8L10 15H14L16 12H21"/><path d="M5 12 3.5 5H20.5L19 12"/><path d="M3 12V18A1 1 0 0 0 4 19H20A1 1 0 0 0 21 18V12"/></symbol>
-    <symbol id="iconRoute" viewBox="0 0 24 24"><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><path d="M7 12H17" stroke-dasharray="3 3.4"/></symbol>
-    <symbol id="iconAlert" viewBox="0 0 24 24"><path d="M12 2 22 20H2Z"/><path d="M12 9V14M12 17.3H12.01"/></symbol>
-    <symbol id="iconRefresh" viewBox="0 0 24 24"><path d="M4 12A8 8 0 0 1 18 6.3"/><path d="M20 12A8 8 0 0 1 6 17.7"/><path d="M18 3.5V7H14.5M6 20.5V17H9.5"/></symbol>
-    <symbol id="iconClipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 11H15M9 15H15"/></symbol>
-    <symbol id="iconCheck" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.4 10.9 15.2 16 9.6"/></symbol>
-    <symbol id="iconInfo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11V16.4M12 7.8H12.01"/></symbol>
-    <symbol id="iconArrowRight" viewBox="0 0 24 24"><path d="M4 12H20M14 6 20 12 14 18"/></symbol>
-  </g>
-</svg>
-
-<a class="skip-link" href="#ilova">Asosiy qismga o'tish</a>
-<div id="toastHost" role="status" aria-live="polite" aria-atomic="false"></div>
-
-<div id="scrollProgress" aria-hidden="true"></div>
-<canvas id="tireCanvas" aria-hidden="true"></canvas>
-
-<nav class="nav" aria-label="Asosiy navigatsiya">
-  <a class="nav-logo" href="#" aria-label="YO'LDA — bosh sahifa" style="text-decoration:none;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg><span class="word">YO'LDA</span><span class="dot" aria-hidden="true">.</span></a>
-  <ul class="nav-links">
-    <li><a href="#qanday">Qanday ishlaydi</a></li>
-    <li><a href="#nega">Afzalliklar</a></li>
-    <li><a href="#ilova">Ilova</a></li>
-  </ul>
-  <a class="nav-cta" href="#ilova">Boshlash</a>
-</nav>
-
-<header class="hero-wrap">
-  <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> Yuk bozori · O'zbekiston</p>
-  <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
-  <h1 class="brand hero-seq">YO'LDA</h1>
-  <p class="tagline hero-seq">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Narxni bir zumda hisoblang, buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
-  <div class="hero-ctas hero-seq">
-    <a class="btn-primary" href="#ilova">Yukni hisoblash <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
-    <a class="btn-secondary" href="#qanday">Qanday ishlaydi</a>
-  </div>
-  <div class="hero-widget hero-seq" id="liveWidget">
-    <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> Jonli faoliyat</p>
-    <div class="hero-widget-body" id="liveWidgetBody"></div>
-  </div>
-</header>
-
-<div class="stats-bar">
-  <div class="stat-cell reveal"><div class="v" data-count="8">8</div><div class="k">Shahar</div></div>
-  <div class="stat-cell reveal"><div class="v">24/7</div><div class="k">Ish vaqti</div></div>
-  <div class="stat-cell reveal"><div class="v" data-count="2500">2 500</div><div class="k">So'm / km dan</div></div>
-  <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k">Ro'yxatdan o'tish narxi</div></div>
-</div>
-
-<section class="section" id="qanday">
-  <svg class="bg-truck bg-truck--steps" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <div class="section-head reveal">
-    <div class="section-eyebrow">Jarayon</div>
-    <h2 class="section-title">Qanday <span class="accent">ishlaydi</span></h2>
-    <p class="section-sub">Uch bosqichda yukni yo'lga chiqaring — yoki bo'sh yo'nalishingizga mos yuk toping.</p>
-  </div>
-  <div class="steps">
-    <div class="step reveal">
-      <div class="num">1</div>
-      <h3>Yo'nalishni tanlang</h3>
-      <p>Qayerdan va qayerga ekanini, yuk og'irligi va turini kiriting — narx shu zahoti hisoblanadi.</p>
-    </div>
-    <div class="step reveal">
-      <div class="num">2</div>
-      <h3>Bozorga joylang</h3>
-      <p>Buyurtma umumiy taxtaga chiqadi va barcha haydovchilarga darhol ko'rinadi.</p>
-    </div>
-    <div class="step reveal">
-      <div class="num">3</div>
-      <h3>Haydovchi qabul qiladi</h3>
-      <p>Yo'lidagi haydovchi buyurtmani oladi, siz esa yukingiz kim tomonidan olinganini bilasiz.</p>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="nega">
-  <svg class="bg-truck bg-truck--features" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <div class="section-head reveal">
-    <div class="section-eyebrow">Afzalliklar</div>
-    <h2 class="section-title">Nega <span class="accent alt">YO'LDA</span></h2>
-    <p class="section-sub">Oddiy, ochiq va tezkor — na yashirin komissiya, na uzoq kutish.</p>
-  </div>
-  <div class="features">
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconBolt"/></svg></span>
-      <div><h3>Tezkor narx hisob-kitobi</h3><p>Masofa va og'irlikka qarab narx bir zumda chiqadi — qo'ng'iroq qilib so'rashning hojati yo'q.</p></div>
-    </div>
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconMap"/></svg></span>
-      <div><h3>Ochiq bozor</h3><p>Har bir buyurtma barcha haydovchilarga bir vaqtda ko'rinadi — birinchi kelgan oladi.</p></div>
-    </div>
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconReceipt"/></svg></span>
-      <div><h3>Aniq waybill raqami</h3><p>Har bir buyurtma o'z raqami bilan kuzatiladi — chalkashlik yo'q.</p></div>
-    </div>
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconFree"/></svg></span>
-      <div><h3>Bepul foydalanish</h3><p>Ro'yxatdan o'tish va e'lon joylashtirish uchun hech qanday to'lov talab qilinmaydi.</p></div>
-    </div>
-  </div>
-</section>
-
-
-<section id="ilova">
-  <svg class="bg-truck bg-truck--app" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <div class="app-shell">
-    <div class="section-head reveal" style="margin-bottom:var(--s5);">
-      <div class="section-eyebrow">Buyurtma</div>
-      <h2 class="section-title">Hisoblang va <span class="accent">yuboring</span></h2>
-      <p class="section-sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
-    </div>
-
-    <div id="googleGate" style="margin:0 0 16px;"></div>
-    <div id="content" aria-live="polite"></div>
-
-    <div class="card driver-invite">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> Haydovchimisiz?</h3>
-      <p style="font-size:14.5px;color:var(--ink-soft);margin:0 0 var(--s4);line-height:1.65;">
-        Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.
-      </p>
-      <a class="btn ghost" id="driverGroupLink" href="#" target="_blank" rel="noopener">
-        Guruhga qo'shilish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg>
-      </a>
-    </div>
-
-    <p class="note" style="text-align:center;margin-top:var(--s4);"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Narx masofa va og'irlik bo'yicha taxminiy hisoblanadi. Yakuniy narxni haydovchi bilan kelishasiz.</p>
-  </div>
-</section>
-
-<footer class="foot">
-  <svg class="bg-truck bg-truck--foot" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <div class="foot-top">
-    <div>
-      <div class="foot-brand"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg>YO'LDA<span aria-hidden="true">.</span></div>
-      <p class="foot-note">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi O'zbekiston yuk tashish bozori. Narx hisob-kitobi bepul, e'lon joylashtirish komissiyasiz.</p>
-    </div>
-    <div class="foot-cols">
-      <div class="foot-col">
-        <h4>Sahifa</h4>
-        <a href="#qanday">Qanday ishlaydi</a>
-        <a href="#nega">Afzalliklar</a>
-        <a href="#ilova">Ilova</a>
-      </div>
-      <div class="foot-col">
-        <h4>Yo'nalishlar</h4>
-        <span>Toshkent — Samarqand</span>
-        <span>Buxoro — Nukus</span>
-        <span>Andijon — Namangan</span>
-      </div>
-    </div>
-  </div>
-  <div class="foot-bottom">
-    <span>© 2026 YO'LDA</span>
-    <span>Demo loyiha — real to'lov yoki yuridik xizmat emas.</span>
-  </div>
-</footer>
-
-<script>
-(function(){
-  "use strict";
-
-  /* ============================================================
-     Config
-     ============================================================ */
-  // Serverless endpoint that forwards the order to Telegram.
-  var API_ORDER = "/api/order";
-  // Public invite link to the drivers' group. Replace with your own.
-  var DRIVER_GROUP_URL = "https://t.me/yoldaku";
-
-  var CITIES = ["Toshkent","Samarqand","Buxoro","Andijon","Namangan","Nukus","Qarshi","Urganch"];
-
-  var DIST = {
-    "Andijon|Buxoro":700, "Andijon|Namangan":90, "Andijon|Nukus":1450, "Andijon|Qarshi":750,
-    "Andijon|Samarqand":480, "Andijon|Toshkent":320, "Andijon|Urganch":1300,
-    "Buxoro|Namangan":650, "Buxoro|Nukus":550, "Buxoro|Qarshi":280, "Buxoro|Samarqand":270,
-    "Buxoro|Toshkent":450, "Buxoro|Urganch":450,
-    "Namangan|Nukus":1400, "Namangan|Qarshi":700, "Namangan|Samarqand":440, "Namangan|Toshkent":280,
-    "Namangan|Urganch":1250,
-    "Nukus|Qarshi":700, "Nukus|Samarqand":950, "Nukus|Toshkent":1200, "Nukus|Urganch":180,
-    "Qarshi|Samarqand":220, "Qarshi|Toshkent":520, "Qarshi|Urganch":750,
-    "Samarqand|Toshkent":300, "Samarqand|Urganch":800,
-    "Toshkent|Urganch":1050
-  };
-
-  var CARGO = [
-    {id:"GENERAL",    label:"Umumiy yuk",         icon:"iconBox",    mult:1.0},
-    {id:"PERISHABLE", label:"Tez buziluvchi",     icon:"iconSnow",   mult:1.3},
-    {id:"FRAGILE",    label:"Qimmatbaho / mo'rt", icon:"iconGem",    mult:1.5},
-    {id:"HEAVY",      label:"Og'ir texnika",      icon:"iconWeight", mult:1.4}
-  ];
-
-  // Preview only — the server recomputes the price before publishing.
-  var BASE_PER_KM = 2500, BASE_PER_KG = 300, MIN_PRICE = 150000;
-
-  var state = {
-    from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL",
-    name: "", phone: "", note: "",
-    submitting: false, sent: null
-  };
-
-  /* ============================================================
-     Google Sign-In — required before an order can be submitted.
-     The ID token is verified again server-side in /api/order.
-     ============================================================ */
-  var googleIdToken = null;
-
-  function onGoogleSignIn(response){
-    googleIdToken = response.credential;
-    try{
-      var payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
-      if(!state.name) state.name = payload.name || "";
-      var gate = document.getElementById("googleGate");
-      if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(payload.email)+' orqali kirdingiz</span>';
-    }catch(e){}
-    render();
-  }
-
-  function initGoogleSignIn(){
-    fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
-      if(!cfg.googleClientId || !window.google || !google.accounts) return;
-      google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn });
-      var gate = document.getElementById("googleGate");
-      if(gate) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
-    }).catch(function(){});
-  }
-
-  /* ============================================================
-     Helpers
-     ============================================================ */
-  function distanceBetween(a, b){
-    if(a === b) return 0;
-    return DIST[[a,b].sort().join("|")] || 400;
-  }
-  function calcPrice(distance, weight, mult){
-    var rounded = Math.round(((distance * BASE_PER_KM + weight * BASE_PER_KG) * mult) / 1000) * 1000;
-    return Math.max(MIN_PRICE, rounded);
-  }
-  function formatNum(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
-  function icon(id){ return '<svg class="ic-svg" aria-hidden="true"><use href="#'+id+'"></use></svg>'; }
-  function cargoById(id){
-    for(var i=0;i<CARGO.length;i++){ if(CARGO[i].id===id) return CARGO[i]; }
-    return CARGO[0];
-  }
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, function(m){
-      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
-    });
-  }
-  /** Accepts 901234567 / 998901234567 / +998 90 123 45 67 → +998901234567 */
-  function normalisePhone(v){
-    var d = String(v).replace(/\D/g, "");
-    if(d.length === 9) return "+998" + d;
-    if(d.length === 12 && d.indexOf("998") === 0) return "+" + d;
-    return d ? "+" + d : "";
-  }
-  function isValidPhone(v){ return /^\+998\d{9}$/.test(normalisePhone(v)); }
-
-  /* ============================================================
-     Toasts
-     ============================================================ */
-  var toastHost = document.getElementById("toastHost");
-  function toast(title, detail, kind){
-    if(!toastHost) return;
-    var el = document.createElement("div");
-    el.className = "toast " + (kind || "info");
-    el.innerHTML = icon(kind === "success" ? "iconCheck" : "iconInfo")
-      + '<div><strong>'+escapeHtml(title)+'</strong>'
-      + (detail ? '<small>'+escapeHtml(detail)+'</small>' : '') + '</div>';
-    toastHost.appendChild(el);
-    setTimeout(function(){
-      el.classList.add("out");
-      setTimeout(function(){ el.remove(); }, 320);
-    }, 4000);
-    while(toastHost.children.length > 3){ toastHost.removeChild(toastHost.firstChild); }
-  }
-
-  /* ============================================================
-     Order form
-     ============================================================ */
-  function cityOptions(selected){
-    return CITIES.map(function(c){
-      return '<option value="'+c+'"'+(c===selected?' selected':'')+'>'+c+'</option>';
-    }).join("");
-  }
-
-  function successView(){
-    var s = state.sent;
-    return '<div class="success-banner">'
-      + '<span class="stamp-badge">'+icon("iconCheck")+' Yuborildi</span>'
-      + '<p style="margin:8px 0 4px;font-family:\'Space Grotesk\',sans-serif;font-size:19px;letter-spacing:-0.02em;">Buyurtmangiz haydovchilarga yuborildi</p>'
-      + '<div class="code">№ '+escapeHtml(s.code)+' · '+escapeHtml(s.from)+' → '+escapeHtml(s.to)+'</div>'
-      + '<p style="font-size:14px;color:var(--ink-soft);margin:12px 0 0;line-height:1.6;">'
-      +   'Haydovchi qabul qilgach, <strong>'+escapeHtml(s.phone)+'</strong> raqamiga qo\'ng\'iroq qiladi.'
-      + '</p>'
-      + '<button class="btn ghost" id="btnNew" style="max-width:280px;margin:20px auto 0;">Yana buyurtma berish</button>'
-      + '</div>';
-  }
-
-  function formView(){
-    var distance = distanceBetween(state.from, state.to);
-    var cargo = cargoById(state.cargo);
-    var price = calcPrice(distance, state.weight, cargo.mult);
-    var sameCity = state.from === state.to;
-    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken;
-
-    return '<div class="card">'
-      + '<h3 class="card-title">'+icon("iconClipboard")+' Yuk ma\'lumotlari</h3>'
-      + '<div class="row2">'
-      +   '<div class="field"><label for="fFrom">Qayerdan</label><select id="fFrom">'+cityOptions(state.from)+'</select></div>'
-      +   '<div class="field"><label for="fTo">Qayerga</label><select id="fTo">'+cityOptions(state.to)+'</select></div>'
-      + '</div>'
-      + '<div class="field"><label for="fWeight">Yuk og\'irligi (kg)</label>'
-      +   '<input type="number" id="fWeight" min="1" max="50000" inputmode="numeric" value="'+state.weight+'"></div>'
-      + '<div class="field">'
-      +   '<span style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Yuk turi</span>'
-      +   '<div class="cargo-grid" role="group" aria-label="Yuk turi">'
-      +   CARGO.map(function(c){
-            return '<button type="button" class="cargo-opt'+(c.id===state.cargo?' sel':'')+'" data-cargo="'+c.id+'" aria-pressed="'+(c.id===state.cargo)+'">'
-              + '<span class="ic">'+icon(c.icon)+'</span><span class="lbl">'+c.label+'</span>'
-              + '<span class="mult">×'+c.mult.toFixed(1)+'</span></button>';
-          }).join("")
-      +   '</div>'
-      + '</div>'
-
-      + '<div class="tear"></div>'
-
-      + '<h3 class="card-title" style="margin-top:0;">'+icon("iconInfo")+' Aloqa</h3>'
-      + '<div class="row2">'
-      +   '<div class="field"><label for="fName">Ismingiz</label>'
-      +     '<input type="text" id="fName" placeholder="Masalan: Dilshod" value="'+escapeHtml(state.name)+'"></div>'
-      +   '<div class="field"><label for="fPhone">Telefon</label>'
-      +     '<input type="tel" id="fPhone" placeholder="90 123 45 67" inputmode="tel" value="'+escapeHtml(state.phone)+'"></div>'
-      + '</div>'
-      + '<div class="field"><label for="fNote">Izoh (ixtiyoriy)</label>'
-      +   '<input type="text" id="fNote" maxlength="300" placeholder="Masalan: ertaga ertalab olib ketilsin" value="'+escapeHtml(state.note)+'"></div>'
-
-      + '<div class="tear"></div>'
-
-      + '<div class="stub-route">'
-      +   '<span class="stub-city">'+state.from+'</span>'
-      +   '<span class="stub-mid">'+icon("iconRoute")+' '+(sameCity?'—':formatNum(distance)+' km')+'</span>'
-      +   '<span class="stub-city">'+state.to+'</span>'
-      + '</div>'
-      + '<div class="stub-stats">'
-      +   '<div class="stat"><div class="v">'+formatNum(distance)+' km</div><div class="k">Masofa</div></div>'
-      +   '<div class="stat"><div class="v">'+formatNum(state.weight)+' kg</div><div class="k">Og\'irlik</div></div>'
-      +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+cargo.label+'</div><div class="k">Yuk turi</div></div>'
-      + '</div>'
-      + '<div class="price-line"><span class="k">Taxminiy narx</span><span class="v">'+formatNum(price)+' so\'m</span></div>'
-
-      + (sameCity ? '<p class="note">Qayerdan va qayerga turli shaharlarni tanlang.</p>' : '')
-      + (!sameCity && !ready && !googleIdToken ? '<p class="note">Yuborish uchun avval yuqorida Google orqali kiring.</p>' : '')
-      + (!sameCity && !ready && googleIdToken ? '<p class="note">Yuborish uchun ism va telefon raqamini to\'ldiring.</p>' : '')
-
-      + '<button class="btn" id="btnSend"'+(ready && !state.submitting ? '' : ' disabled')+'>'
-      +   (state.submitting ? 'Yuborilmoqda…' : 'Haydovchilarga yuborish ' + icon("iconArrowRight"))
-      + '</button>'
-      + '</div>';
-  }
-
-  function render(){
-    var host = document.getElementById("content");
-    if(!host) return;
-    host.innerHTML = state.sent ? successView() : formView();
-    state.sent ? bindSuccess() : bindForm();
-  }
-
-  function bindSuccess(){
-    var btn = document.getElementById("btnNew");
-    if(btn) btn.addEventListener("click", function(){
-      state.sent = null;
-      render();
-      document.getElementById("ilova").scrollIntoView({behavior:"smooth", block:"start"});
-    });
-  }
-
-  function bindForm(){
-    // Re-rendering on every keystroke would steal focus, so text inputs only
-    // update state; the button's disabled flag is refreshed separately.
-    var refreshButton = function(){
-      var btn = document.getElementById("btnSend");
-      if(!btn) return;
-      var ready = state.from !== state.to && state.weight > 0
-        && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken;
-      btn.disabled = !ready || state.submitting;
-    };
-
-    document.getElementById("fFrom").addEventListener("change", function(e){
-      state.from = e.target.value; render();
-    });
-    document.getElementById("fTo").addEventListener("change", function(e){
-      state.to = e.target.value; render();
-    });
-    document.getElementById("fWeight").addEventListener("input", function(e){
-      state.weight = Math.max(0, parseInt(e.target.value || "0", 10));
-      var d = distanceBetween(state.from, state.to);
-      var p = calcPrice(d, state.weight, cargoById(state.cargo).mult);
-      var el = document.querySelector(".price-line .v");
-      if(el) el.textContent = formatNum(p) + " so'm";
-      var w = document.querySelectorAll(".stub-stats .stat .v")[1];
-      if(w) w.textContent = formatNum(state.weight) + " kg";
-      refreshButton();
-    });
-
-    document.querySelectorAll(".cargo-opt").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        state.cargo = btn.getAttribute("data-cargo"); render();
-      });
-    });
-
-    document.getElementById("fName").addEventListener("input", function(e){
-      state.name = e.target.value; refreshButton();
-    });
-    document.getElementById("fPhone").addEventListener("input", function(e){
-      state.phone = e.target.value; refreshButton();
-    });
-    document.getElementById("fNote").addEventListener("input", function(e){
-      state.note = e.target.value;
-    });
-
-    document.getElementById("btnSend").addEventListener("click", submitOrder);
-  }
-
-  async function submitOrder(){
-    if(state.submitting) return;
-    if(!googleIdToken){ toast("Avval Google orqali kiring", "Yuqoridagi tugma orqali hisobingizga kiring.", "info"); return; }
-    state.submitting = true;
-    render();
-
-    try{
-      var res = await fetch(API_ORDER, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          fromCity: state.from,
-          toCity: state.to,
-          weightKg: state.weight,
-          cargoType: state.cargo,
-          name: state.name.trim(),
-          phone: normalisePhone(state.phone),
-          note: state.note.trim(),
-          googleIdToken: googleIdToken
-        })
-      });
-
-      var json = await res.json().catch(function(){ return {}; });
-
-      if(!res.ok){
-        throw new Error(json.error || "Yuborib bo'lmadi");
-      }
-
-      state.sent = {
-        code: json.code,
-        from: state.from,
-        to: state.to,
-        phone: normalisePhone(state.phone)
-      };
-      toast("Buyurtma yuborildi", "№ " + json.code + " — haydovchilar ko'rmoqda", "success");
-      state.name = ""; state.phone = ""; state.note = "";
-    }catch(err){
-      toast("Yuborilmadi", err.message || "Internetni tekshirib qayta urinib ko'ring.", "info");
-    }finally{
-      state.submitting = false;
-      render();
+/**
+ * POST /api/order
+ *
+ * Receives an order from the website, recomputes the price server-side, and
+ * posts it to the drivers' Telegram group with an "accept" button.
+ *
+ * The bot token never reaches the browser — that is the whole reason this
+ * function exists rather than the page calling Telegram directly.
+ */
+
+import { kvPush } from '../lib/kv.js';
+
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// Group id is not a secret, so it ships with the code as a fallback.
+const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '-1003778958582';
+// Must match the Client ID configured in Google Cloud Console / api/config.js.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+
+const PRICE_PER_KM = Number(process.env.PRICE_PER_KM || 2500);
+const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
+const PRICE_MINIMUM = Number(process.env.PRICE_MINIMUM || 150000);
+
+const CITIES = [
+  'Toshkent', 'Samarqand', 'Buxoro', 'Andijon',
+  'Namangan', 'Nukus', 'Qarshi', 'Urganch',
+];
+
+const DISTANCE = {
+  'Andijon|Buxoro': 700, 'Andijon|Namangan': 90, 'Andijon|Nukus': 1450, 'Andijon|Qarshi': 750,
+  'Andijon|Samarqand': 480, 'Andijon|Toshkent': 320, 'Andijon|Urganch': 1300,
+  'Buxoro|Namangan': 650, 'Buxoro|Nukus': 550, 'Buxoro|Qarshi': 280, 'Buxoro|Samarqand': 270,
+  'Buxoro|Toshkent': 450, 'Buxoro|Urganch': 450,
+  'Namangan|Nukus': 1400, 'Namangan|Qarshi': 700, 'Namangan|Samarqand': 440,
+  'Namangan|Toshkent': 280, 'Namangan|Urganch': 1250,
+  'Nukus|Qarshi': 700, 'Nukus|Samarqand': 950, 'Nukus|Toshkent': 1200, 'Nukus|Urganch': 180,
+  'Qarshi|Samarqand': 220, 'Qarshi|Toshkent': 520, 'Qarshi|Urganch': 750,
+  'Samarqand|Toshkent': 300, 'Samarqand|Urganch': 800,
+  'Toshkent|Urganch': 1050,
+};
+
+const CARGO = {
+  GENERAL: { label: 'Umumiy yuk', emoji: '📦', mult: 1.0 },
+  PERISHABLE: { label: 'Tez buziluvchi', emoji: '🧊', mult: 1.3 },
+  FRAGILE: { label: 'Qimmatbaho / mo\u2018rt', emoji: '💎', mult: 1.5 },
+  HEAVY: { label: 'Og\u2018ir texnika', emoji: '🏗', mult: 1.4 },
+};
+
+const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+const generateCode = () => {
+  let out = '';
+  for (let i = 0; i < 5; i += 1) {
+    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return `YL-${out}`;
+};
+
+const formatNum = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+/** Telegram MarkdownV2 requires escaping a long list of characters. */
+const escapeMd = (s) => String(s).replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, (m) => `\\${m}`);
+
+const normalisePhone = (v) => {
+  const d = String(v).replace(/\D/g, '');
+  if (d.length === 9) return `+998${d}`;
+  if (d.length === 12 && d.startsWith('998')) return `+${d}`;
+  return '';
+};
+
+/**
+ * Crude in-memory throttle. Serverless instances are ephemeral, so this only
+ * blunts a burst from one warm instance — put a real WAF rule in front for
+ * anything serious.
+ */
+const recent = new Map();
+const isThrottled = (key) => {
+  const now = Date.now();
+  for (const [k, t] of recent) if (now - t > 60_000) recent.delete(k);
+  if (recent.has(key)) return true;
+  recent.set(key, now);
+  return false;
+};
+
+const validate = (body) => {
+  const errors = [];
+
+  const fromCity = String(body.fromCity || '');
+  const toCity = String(body.toCity || '');
+  if (!CITIES.includes(fromCity)) errors.push('Noto\u2018g\u2018ri shahar (qayerdan)');
+  if (!CITIES.includes(toCity)) errors.push('Noto\u2018g\u2018ri shahar (qayerga)');
+  if (fromCity && fromCity === toCity) errors.push('Shaharlar bir xil bo\u2018lmasin');
+
+  const weightKg = Number(body.weightKg);
+  if (!Number.isInteger(weightKg) || weightKg < 1 || weightKg > 50_000) {
+    errors.push('Og\u2018irlik 1 dan 50000 kg gacha bo\u2018lsin');
+  }
+
+  const cargoType = String(body.cargoType || 'GENERAL');
+  if (!CARGO[cargoType]) errors.push('Noto\u2018g\u2018ri yuk turi');
+
+  const name = String(body.name || '').trim().slice(0, 80);
+  if (name.length < 2) errors.push('Ismni kiriting');
+
+  const phone = normalisePhone(body.phone);
+  if (!phone) errors.push('Telefon raqam noto\u2018g\u2018ri');
+
+  const note = String(body.note || '').trim().slice(0, 300);
+
+  // Optional: the cargo owner can propose their own price instead of the
+  // auto-calculated one. Empty/absent means "use the calculated price".
+  let proposedAmount = null;
+  if (body.proposedAmount !== undefined && body.proposedAmount !== null && body.proposedAmount !== '') {
+    proposedAmount = Number(body.proposedAmount);
+    if (!Number.isInteger(proposedAmount) || proposedAmount < 10_000 || proposedAmount > 100_000_000) {
+      errors.push('Taklif qilingan narx noto‘g‘ri');
+      proposedAmount = null;
     }
   }
 
-  /* ============================================================
-     Hero live widget
-     ============================================================ */
-  var LIVE_SAMPLES = [
-    {from:"Toshkent", to:"Samarqand", weight:320,  cargo:"GENERAL"},
-    {from:"Buxoro",   to:"Nukus",     weight:800,  cargo:"PERISHABLE"},
-    {from:"Andijon",  to:"Namangan",  weight:150,  cargo:"FRAGILE"},
-    {from:"Qarshi",   to:"Urganch",   weight:1200, cargo:"HEAVY"},
-    {from:"Samarqand",to:"Toshkent",  weight:500,  cargo:"GENERAL"},
-    {from:"Toshkent", to:"Qarshi",    weight:650,  cargo:"PERISHABLE"}
-  ];
-  var liveIdx = 0;
-  function renderLiveWidget(){
-    var body = document.getElementById("liveWidgetBody");
-    if(!body) return;
-    var s = LIVE_SAMPLES[liveIdx % LIVE_SAMPLES.length];
-    var dist = distanceBetween(s.from, s.to);
-    var cargo = cargoById(s.cargo);
-    var price = calcPrice(dist, s.weight, cargo.mult);
-    body.style.opacity = 0;
-    setTimeout(function(){
-      body.innerHTML = '<div class="hero-widget-route"><span>'+s.from+'</span>'
-        + '<span class="arrow">→</span><span>'+s.to+'</span></div>'
-        + '<div class="hero-widget-meta"><span>'+icon(cargo.icon)+' '+formatNum(s.weight)+' kg · '
-        + formatNum(dist)+' km</span><span class="hero-widget-price">'+formatNum(price)+' so\'m</span></div>';
-      body.style.opacity = 1;
-    }, 300);
-    liveIdx++;
+  return { errors, value: { fromCity, toCity, weightKg, cargoType, name, phone, note, proposedAmount } };
+};
+
+const quote = ({ fromCity, toCity, weightKg, cargoType }) => {
+  const distanceKm = DISTANCE[[fromCity, toCity].sort().join('|')] ?? 400;
+  const mult = CARGO[cargoType].mult;
+  const rounded = Math.round(((distanceKm * PRICE_PER_KM + weightKg * PRICE_PER_KG) * mult) / 1000) * 1000;
+  return { distanceKm, amount: Math.max(PRICE_MINIMUM, rounded) };
+};
+
+const buildMessage = (order) => {
+  const cargo = CARGO[order.cargoType];
+  return [
+    `🚚 *YANGI YUK* \\| \`${escapeMd(order.code)}\``,
+    '',
+    `📍 *${escapeMd(order.fromCity)}* → *${escapeMd(order.toCity)}*`,
+    `📏 ${escapeMd(formatNum(order.distanceKm))} km`,
+    `⚖️ ${escapeMd(formatNum(order.weightKg))} kg`,
+    `${cargo.emoji} ${escapeMd(cargo.label)}`,
+    '',
+    order.isProposed
+      ? `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(yuk beruvchi taklifi, hisoblangan: ${escapeMd(formatNum(order.estimatedAmount))} so\u2018m\\)`
+      : `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(taxminiy\\)`,
+    '',
+    `👤 ${escapeMd(order.name)}`,
+    order.googleEmail ? `✅ Google: ${escapeMd(order.googleEmail)}` : null,
+    order.note ? `📝 ${escapeMd(order.note)}` : null,
+    '',
+    '_Raqam buyurtmani qabul qilgandan keyin ko\u2018rinadi\\._',
+  ].filter(Boolean).join('\n');
+};
+
+/**
+ * Verifies the Google ID token the browser got from "Sign in with Google".
+ * Re-checking it here (not trusting the client) is what actually stops a
+ * spoofed order — the client-side sign-in alone proves nothing on its own.
+ * Uses Google's tokeninfo endpoint so no extra dependency is needed.
+ */
+const verifyGoogleEmail = async (idToken) => {
+  if (!idToken) return null;
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!res.ok) return null;
+    const payload = await res.json();
+    if (GOOGLE_CLIENT_ID && payload.aud !== GOOGLE_CLIENT_ID) return null;
+    if (payload.email_verified !== 'true' && payload.email_verified !== true) return null;
+    return payload.email || null;
+  } catch {
+    return null;
   }
+};
 
-  /* ============================================================
-     Page chrome
-     ============================================================ */
-  var groupLink = document.getElementById("driverGroupLink");
-  if(groupLink) groupLink.href = DRIVER_GROUP_URL;
-
-  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  render();
-  renderLiveWidget();
-  setInterval(renderLiveWidget, 3400);
-  initGoogleSignIn();
-
-  /* ============================================================
-     Scroll: nav state, progress bar, background parallax
-     All reads/writes are batched into one rAF frame to avoid layout thrash.
-     ============================================================ */
-  var nav = document.querySelector(".nav");
-  var progress = document.getElementById("scrollProgress");
-  var trucks = Array.prototype.slice.call(document.querySelectorAll(".bg-truck"));
-  var truckBase = trucks.map(function(el){
-    return getComputedStyle(el).transform === "none" ? "" : getComputedStyle(el).transform;
+const telegram = async (method, payload) => {
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
-  var scrollTicking = false;
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.description || 'Telegram API error');
+  return json.result;
+};
 
-  function onScrollFrame(){
-    var y = window.scrollY;
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-
-    nav.classList.toggle("scrolled", y > 12);
-
-    if(progress){
-      progress.style.transform = "scaleX(" + (max > 0 ? Math.min(1, y / max) : 0) + ")";
-    }
-
-    // Background trucks drift slower than the page — depth without distraction.
-    if(!reduceMotion){
-      trucks.forEach(function(el, i){
-        var rect = el.getBoundingClientRect();
-        if(rect.bottom < -200 || rect.top > window.innerHeight + 200) return;
-        var offset = (rect.top + rect.height / 2 - window.innerHeight / 2) * -0.06;
-        el.style.transform = truckBase[i] + " translateY(" + offset.toFixed(1) + "px)";
-      });
-    }
-    scrollTicking = false;
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  if (!BOT_TOKEN || !GROUP_ID) {
+    return res.status(500).json({ error: 'Server sozlanmagan' });
   }
 
-  window.addEventListener("scroll", function(){
-    if(scrollTicking) return;
-    scrollTicking = true;
-    requestAnimationFrame(onScrollFrame);
-  }, {passive:true});
-  onScrollFrame();
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
-  /* ============================================================
-     Reveal on scroll + number count-up
-     ============================================================ */
-  function countUp(el){
-    var target = parseInt(el.getAttribute("data-count"), 10);
-    if(!Number.isFinite(target) || target === 0 || reduceMotion) return;
-    var duration = 1100, start = performance.now();
-    // easeOutExpo — fast start, long settle. Reads as "snapping into place".
-    var ease = function(t){ return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); };
-    (function tick(now){
-      var t = Math.min(1, (now - start) / duration);
-      el.textContent = formatNum(Math.round(target * ease(t)));
-      if(t < 1) requestAnimationFrame(tick);
-    })(start);
+  const googleEmail = await verifyGoogleEmail(body.googleIdToken);
+  if (!googleEmail) {
+    return res.status(401).json({ error: 'Avval Google orqali kiring' });
   }
 
-  var revealEls = document.querySelectorAll(".reveal");
-  if("IntersectionObserver" in window){
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if(!e.isIntersecting) return;
-        e.target.classList.add("in");
-        var num = e.target.querySelector("[data-count]");
-        if(num) setTimeout(function(){ countUp(num); }, 220);
-        io.unobserve(e.target);
-      });
-    }, {threshold:0.15, rootMargin:"0px 0px -8% 0px"});
-    revealEls.forEach(function(el){ io.observe(el); });
-  } else {
-    revealEls.forEach(function(el){ el.classList.add("in"); });
+  const { errors, value } = validate(body);
+  if (errors.length) {
+    return res.status(400).json({ error: errors[0], errors });
   }
 
-  /* ============================================================
-     Cursor tire tracks — canvas
-     ------------------------------------------------------------
-     Two parallel treads are laid down perpendicular to the direction of
-     travel, sampled at a fixed spacing along the path so fast movement
-     leaves a continuous track rather than scattered stamps. Each stamp
-     fades on its own clock, so the trail dissolves from the tail forward.
-     ============================================================ */
-  var canvas = document.getElementById("tireCanvas");
-  var finePointer = window.matchMedia("(pointer:fine)").matches;
-
-  if(canvas && finePointer && !reduceMotion){
-    var ctx = canvas.getContext("2d");
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var marks = [];
-    var MAX_MARKS = 220;
-    var SPACING = 7;        // px between stamps along the path
-    var TREAD_GAP = 7;      // px between the two treads
-    var LIFETIME = 1500;    // ms until a stamp is gone
-    var last = null;
-    var running = false;
-
-    function resize(){
-      canvas.width = Math.floor(window.innerWidth * dpr);
-      canvas.height = Math.floor(window.innerHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    /** One tread stamp: a short bar with a chevron cut, rotated to travel. */
-    function drawStamp(m, alpha){
-      var w = 13, h = 4.6;
-      ctx.save();
-      ctx.translate(m.x, m.y);
-      ctx.rotate(m.angle);
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "rgba(15,23,42," + (0.30 * m.pressure).toFixed(3) + ")";
-
-      for(var side = -1; side <= 1; side += 2){
-        var oy = side * TREAD_GAP / 2;
-        // tread block
-        ctx.beginPath();
-        if(ctx.roundRect){
-          ctx.roundRect(-w / 2, oy - h / 2, w, h, 1.6);
-        } else {
-          ctx.rect(-w / 2, oy - h / 2, w, h);
-        }
-        ctx.fill();
-        // chevron notch, so the tread reads as a tyre and not a dash
-        ctx.globalAlpha = alpha * 0.55;
-        ctx.beginPath();
-        ctx.moveTo(-w / 2 + 3, oy - h / 2);
-        ctx.lineTo(-w / 2 + 6, oy);
-        ctx.lineTo(-w / 2 + 3, oy + h / 2);
-        ctx.closePath();
-        ctx.fillStyle = "rgba(249,250,251,0.85)";
-        ctx.fill();
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = "rgba(15,23,42," + (0.30 * m.pressure).toFixed(3) + ")";
-      }
-      ctx.restore();
-    }
-
-    function frame(){
-      var now = performance.now();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      var alive = 0;
-      for(var i = 0; i < marks.length; i++){
-        var m = marks[i];
-        var age = (now - m.born) / LIFETIME;
-        if(age >= 1) continue;
-        marks[alive++] = m;
-        // easeInQuad fade: holds its colour, then disappears quickly
-        drawStamp(m, (1 - age * age) * 0.9);
-      }
-      marks.length = alive;
-
-      if(alive > 0){
-        requestAnimationFrame(frame);
-      } else {
-        running = false;
-      }
-    }
-
-    function emit(x, y, angle, pressure){
-      marks.push({x:x, y:y, angle:angle, pressure:pressure, born:performance.now()});
-      if(marks.length > MAX_MARKS) marks.splice(0, marks.length - MAX_MARKS);
-      if(!running){ running = true; requestAnimationFrame(frame); }
-    }
-
-    document.addEventListener("mousemove", function(e){
-      var x = e.clientX, y = e.clientY;
-      if(!last){ last = {x:x, y:y, t:performance.now()}; return; }
-
-      var dx = x - last.x, dy = y - last.y;
-      var dist = Math.hypot(dx, dy);
-      if(dist < SPACING) return;
-
-      var angle = Math.atan2(dy, dx);
-      var dt = Math.max(1, performance.now() - last.t);
-      // Faster movement presses lighter — the track thins out at speed.
-      var speed = dist / dt;
-      var pressure = Math.max(0.35, Math.min(1, 1.15 - speed * 0.28));
-
-      // Walk the segment and stamp at even intervals so there are no gaps.
-      var steps = Math.min(Math.floor(dist / SPACING), 12);
-      for(var s = 1; s <= steps; s++){
-        var t = s / steps;
-        emit(last.x + dx * t, last.y + dy * t, angle, pressure);
-      }
-
-      last = {x:x, y:y, t:performance.now()};
-    }, {passive:true});
-
-    // Leaving the window ends the track cleanly instead of freezing it.
-    document.addEventListener("mouseleave", function(){ last = null; });
+  if (isThrottled(value.phone)) {
+    return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko\u2018ring' });
   }
-})();
-</script>
-</body>
-</html>
+
+  const { distanceKm, amount: estimatedAmount } = quote(value);
+  const code = generateCode();
+  const isProposed = value.proposedAmount != null;
+  const amount = isProposed ? value.proposedAmount : estimatedAmount;
+  const order = { ...value, code, distanceKm, amount, estimatedAmount, isProposed, googleEmail };
+
+  try {
+    await telegram('sendMessage', {
+      chat_id: GROUP_ID,
+      text: buildMessage(order),
+      parse_mode: 'MarkdownV2',
+      reply_markup: {
+        inline_keyboard: [[
+          {
+            text: '✅ Men olaman',
+            // The phone rides in callback_data so the bot can reveal it to
+            // whoever taps first — no database required.
+            callback_data: `take:${code}:${value.phone}`,
+          },
+        ]],
+      },
+    });
+
+    // Logged for the admin panel. Best-effort — the order already went to
+    // Telegram either way, so a logging hiccup never blocks the customer.
+    kvPush('orders', JSON.stringify({ ...order, createdAt: Date.now() })).catch(() => {});
+
+    return res.status(200).json({ ok: true, code, amount, distanceKm });
+  } catch (err) {
+    console.error('Telegram send failed:', err.message);
+    return res.status(502).json({ error: 'Hozircha yuborib bo\u2018lmadi, birozdan keyin urinib ko\u2018ring' });
+  }
+}
