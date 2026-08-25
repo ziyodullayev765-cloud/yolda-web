@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>YO'LDA — Admin</title>
+<style>
+  :root{ --ink:#0F172A; --ink-soft:#475569; --route:#1D4ED8; --border:#E2E8F0; --paper:#F9FAFB; --card:#FFFFFF; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 20px;}
+  h1{font-size:22px;margin:0 0 20px;letter-spacing:-0.01em;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;}
+  .login-card{max-width:340px;}
+  input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:12px;}
+  input:focus{outline:none;border-color:var(--route);}
+  button{padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:#fff;font-weight:600;cursor:pointer;font-size:15px;width:100%;}
+  button:hover{opacity:0.92;}
+  button:disabled{opacity:0.5;cursor:not-allowed;}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th{color:var(--ink-soft);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;}
+  .err{color:#DC2626;font-size:13.5px;margin-top:4px;min-height:18px;}
+  .muted{color:var(--ink-soft);font-size:13.5px;margin:0 0 12px;}
+  .table-scroll{overflow-x:auto;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>YO'LDA — Admin panel</h1>
+
+  <div class="card login-card" id="loginBox">
+    <input type="password" id="pw" placeholder="Parol" autocomplete="current-password">
+    <button id="loginBtn">Kirish</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+
+  <div class="card" id="ordersBox" style="display:none;">
+    <p class="muted" id="count"></p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Vaqt</th><th>Kod</th><th>Yo'nalish</th><th>Og'irlik</th><th>Narx</th><th>Ism</th><th>Telefon</th><th>Google</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
+    });
+  }
+
+  var loginBox = document.getElementById("loginBox");
+  var ordersBox = document.getElementById("ordersBox");
+  var loginErr = document.getElementById("loginErr");
+  var loginBtn = document.getElementById("loginBtn");
+  var pwInput = document.getElementById("pw");
+
+  function showOrders(orders){
+    loginBox.style.display = "none";
+    ordersBox.style.display = "block";
+    document.getElementById("count").textContent = orders.length + " ta buyurtma (oxirgi 200 tasi, eng yangisi tepada)";
+    var rows = orders.map(function(o){
+      var d = o.createdAt ? new Date(o.createdAt) : null;
+      return "<tr>"
+        + "<td>" + (d ? esc(d.toLocaleString("uz-UZ")) : "") + "</td>"
+        + "<td>" + esc(o.code) + "</td>"
+        + "<td>" + esc(o.fromCity) + " → " + esc(o.toCity) + "</td>"
+        + "<td>" + fmt(o.weightKg || 0) + " kg</td>"
+        + "<td>" + fmt(o.amount || 0) + " so'm</td>"
+        + "<td>" + esc(o.name) + "</td>"
+        + "<td>" + esc(o.phone) + "</td>"
+        + "<td>" + esc(o.googleEmail) + "</td>"
+        + "</tr>";
+    }).join("");
+    document.getElementById("rows").innerHTML = rows || "<tr><td colspan=\"8\" class=\"muted\">Hali buyurtma yo'q</td></tr>";
+  }
+
+  function loadOrders(){
+    fetch("/api/admin-orders").then(function(r){
+      if(!r.ok) throw new Error("unauth");
+      return r.json();
+    }).then(function(data){
+      showOrders(data.orders || []);
+    }).catch(function(){
+      // Not logged in yet (or session expired) — leave the login form showing.
+    });
+  }
+
+  function doLogin(){
+    var pw = pwInput.value;
+    if(!pw) return;
+    loginErr.textContent = "";
+    loginBtn.disabled = true;
+    fetch("/api/admin-login", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({password: pw})
+    }).then(function(r){
+      return r.json().then(function(j){
+        if(!r.ok) throw new Error(j.error || "Xato");
+        return j;
+      });
+    }).then(function(){
+      loadOrders();
+    }).catch(function(e){
+      loginErr.textContent = e.message;
+    }).finally(function(){
+      loginBtn.disabled = false;
+    });
+  }
+
+  loginBtn.addEventListener("click", doLogin);
+  pwInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter") doLogin();
+  });
+
+  // If a valid session cookie is already there, skip straight to the table.
+  loadOrders();
+})();
+</script>
+</body>
+</html>
