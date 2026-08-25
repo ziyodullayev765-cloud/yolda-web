@@ -8,6 +8,8 @@
  * function exists rather than the page calling Telegram directly.
  */
 
+import { kvPush } from '../lib/kv.js';
+
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Group id is not a secret, so it ships with the code as a fallback.
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '-1003778958582';
@@ -209,6 +211,10 @@ export default async function handler(req, res) {
         ]],
       },
     });
+
+    // Logged for the admin panel. Best-effort — the order already went to
+    // Telegram either way, so a logging hiccup never blocks the customer.
+    kvPush('orders', JSON.stringify({ ...order, createdAt: Date.now() })).catch(() => {});
 
     return res.status(200).json({ ok: true, code, amount, distanceKm });
   } catch (err) {
