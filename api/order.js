@@ -106,7 +106,18 @@ const validate = (body) => {
 
   const note = String(body.note || '').trim().slice(0, 300);
 
-  return { errors, value: { fromCity, toCity, weightKg, cargoType, name, phone, note } };
+  // Optional: the cargo owner can propose their own price instead of the
+  // auto-calculated one. Empty/absent means "use the calculated price".
+  let proposedAmount = null;
+  if (body.proposedAmount !== undefined && body.proposedAmount !== null && body.proposedAmount !== '') {
+    proposedAmount = Number(body.proposedAmount);
+    if (!Number.isInteger(proposedAmount) || proposedAmount < 10_000 || proposedAmount > 100_000_000) {
+      errors.push('Taklif qilingan narx noto‘g‘ri');
+      proposedAmount = null;
+    }
+  }
+
+  return { errors, value: { fromCity, toCity, weightKg, cargoType, name, phone, note, proposedAmount } };
 };
 
 const quote = ({ fromCity, toCity, weightKg, cargoType }) => {
@@ -126,7 +137,9 @@ const buildMessage = (order) => {
     `⚖️ ${escapeMd(formatNum(order.weightKg))} kg`,
     `${cargo.emoji} ${escapeMd(cargo.label)}`,
     '',
-    `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(taxminiy\\)`,
+    order.isProposed
+      ? `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(yuk beruvchi taklifi, hisoblangan: ${escapeMd(formatNum(order.estimatedAmount))} so\u2018m\\)`
+      : `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(taxminiy\\)`,
     '',
     `👤 ${escapeMd(order.name)}`,
     order.googleEmail ? `✅ Google: ${escapeMd(order.googleEmail)}` : null,
@@ -191,9 +204,11 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko\u2018ring' });
   }
 
-  const { distanceKm, amount } = quote(value);
+  const { distanceKm, amount: estimatedAmount } = quote(value);
   const code = generateCode();
-  const order = { ...value, code, distanceKm, amount, googleEmail };
+  const isProposed = value.proposedAmount != null;
+  const amount = isProposed ? value.proposedAmount : estimatedAmount;
+  const order = { ...value, code, distanceKm, amount, estimatedAmount, isProposed, googleEmail };
 
   try {
     await telegram('sendMessage', {
