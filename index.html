@@ -751,6 +751,10 @@
       <a class="btn-primary" href="#" data-tab-link="order">Yuk berish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
       <a class="btn-secondary" href="#" data-tab-link="perks">Afzalliklar</a>
     </div>
+    <div class="hero-seq" style="display:flex;flex-direction:column;align-items:center;gap:var(--s2);margin-bottom:var(--s6);">
+      <div id="googleGateHome"></div>
+      <span style="font-size:12px;color:var(--muted);">Google bilan kirish</span>
+    </div>
     <div class="hero-widget hero-seq" id="liveWidget">
       <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> Jonli faoliyat</p>
       <div class="hero-widget-body" id="liveWidgetBody"></div>
@@ -930,8 +934,11 @@
     try{
       var payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
       if(!state.name) state.name = payload.name || "";
+      var badge = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(payload.email)+' orqali kirdingiz</span>';
       var gate = document.getElementById("googleGate");
-      if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(payload.email)+' orqali kirdingiz</span>';
+      if(gate) gate.innerHTML = badge;
+      var gateHome = document.getElementById("googleGateHome");
+      if(gateHome) gateHome.innerHTML = badge;
     }catch(e){}
     render();
   }
@@ -969,6 +976,11 @@
       google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn });
       var gate = document.getElementById("googleGate");
       if(gate) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
+
+      // Round, icon-only version on the home screen — same sign-in, just a
+      // compact circular button instead of the full pill.
+      var gateHome = document.getElementById("googleGateHome");
+      if(gateHome) google.accounts.id.renderButton(gateHome, { theme:"filled_blue", size:"large", shape:"circle", type:"icon" });
 
       // Belt and braces: if the button never actually renders (some in-app
       // browsers we didn't think to name above), show the hint anyway.
