@@ -6,54 +6,124 @@
 <meta name="robots" content="noindex, nofollow">
 <title>YO'LDA — Admin</title>
 <style>
-  :root{ --ink:#0F172A; --ink-soft:#475569; --route:#1D4ED8; --border:#E2E8F0; --paper:#F9FAFB; --card:#FFFFFF; }
+  :root{ --ink:#0F172A; --ink-soft:#475569; --route:#1D4ED8; --route-dark:#1E40AF; --border:#E2E8F0; --paper:#F9FAFB; --card:#FFFFFF; --sidebar:#0F172A; }
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
-  .wrap{max-width:1000px;margin:0 auto;padding:40px 20px;}
-  h1{font-size:22px;margin:0 0 20px;letter-spacing:-0.01em;}
+
+  /* ---------- Login ---------- */
+  .login-wrap{max-width:340px;margin:80px auto;padding:0 20px;}
+  .login-wrap h1{font-size:20px;margin:0 0 20px;letter-spacing:-0.01em;}
+
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;}
-  .login-card{max-width:340px;}
   input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:12px;}
   input:focus{outline:none;border-color:var(--route);}
   button{padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:#fff;font-weight:600;cursor:pointer;font-size:15px;width:100%;}
   button:hover{opacity:0.92;}
   button:disabled{opacity:0.5;cursor:not-allowed;}
-  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;}
-  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
-  th{color:var(--ink-soft);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;}
   .err{color:#DC2626;font-size:13.5px;margin-top:4px;min-height:18px;}
-  .muted{color:var(--ink-soft);font-size:13.5px;margin:0 0 12px;}
-  .table-scroll{overflow-x:auto;}
+  .muted{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px;}
+
+  /* ---------- Admin shell: sidebar + content, full desktop layout ---------- */
+  .admin-shell{display:flex;min-height:100vh;}
+  .admin-sidebar{
+    width:240px;flex-shrink:0;background:var(--sidebar);color:#fff;
+    padding:24px 16px;display:flex;flex-direction:column;gap:24px;
+    position:sticky;top:0;height:100vh;
+  }
+  .admin-brand{font-size:17px;font-weight:700;letter-spacing:-0.01em;padding:0 8px;}
+  .admin-brand span{color:#38BDF8;}
+  .admin-nav{display:flex;flex-direction:column;gap:4px;}
+  .admin-nav-item{
+    display:flex;align-items:center;gap:10px;
+    width:100%;text-align:left;background:none;border:none;
+    color:rgba(255,255,255,0.7);padding:11px 12px;border-radius:8px;
+    font-size:14.5px;font-weight:500;cursor:pointer;
+  }
+  .admin-nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .admin-nav-item.active{background:var(--route);color:#fff;}
+  .admin-logout{margin-top:auto;}
+  .admin-logout button{background:rgba(255,255,255,0.08);}
+  .admin-logout button:hover{background:rgba(255,255,255,0.14);}
+
+  .admin-main{flex:1;padding:36px 40px;max-width:1400px;}
+  .admin-panel h1{font-size:22px;margin:0 0 4px;letter-spacing:-0.01em;}
+
+  .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  th{color:var(--ink-soft);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;background:var(--paper);}
+
+  @media(max-width:860px){
+    .admin-shell{flex-direction:column;}
+    .admin-sidebar{width:100%;height:auto;position:relative;flex-direction:row;align-items:center;padding:14px 16px;}
+    .admin-nav{flex-direction:row;}
+    .admin-logout{margin-top:0;margin-left:auto;width:auto;}
+    .admin-logout button{width:auto;padding:9px 14px;}
+    .admin-main{padding:20px;}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>YO'LDA — Admin panel</h1>
 
-  <div class="card login-card" id="loginBox">
+<div class="login-wrap" id="loginBox">
+  <h1>YO'LDA — Admin panel</h1>
+  <div class="card">
     <input type="password" id="pw" placeholder="Parol" autocomplete="current-password">
     <button id="loginBtn">Kirish</button>
     <div class="err" id="loginErr"></div>
   </div>
+</div>
 
-  <div class="card" id="ordersBox" style="display:none;">
-    <p class="muted" id="count"></p>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Vaqt</th><th>Kod</th><th>Yo'nalish</th><th>Og'irlik</th><th>Narx</th><th>Ism</th><th>Telefon</th><th>Google</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-  </div>
+<div class="admin-shell" id="adminShell" style="display:none;">
+  <aside class="admin-sidebar">
+    <div class="admin-brand">YO'LDA <span>Admin</span></div>
+    <nav class="admin-nav">
+      <button type="button" class="admin-nav-item active" data-panel="orders">📦 Buyurtmalar</button>
+      <button type="button" class="admin-nav-item" data-panel="users">👥 Foydalanuvchilar</button>
+    </nav>
+    <div class="admin-logout"><button type="button" id="logoutBtn">Chiqish</button></div>
+  </aside>
+
+  <main class="admin-main">
+    <section class="admin-panel" id="panel-orders">
+      <h1>Buyurtmalar</h1>
+      <p class="muted" id="ordersCount"></p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Vaqt</th><th>Kod</th><th>Yo'nalish</th><th>Og'irlik</th><th>Yuk turi</th><th>Narx</th>
+              <th>Ism</th><th>Telefon</th><th>Google</th><th>Izoh</th>
+            </tr>
+          </thead>
+          <tbody id="ordersRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-panel" id="panel-users" hidden>
+      <h1>Foydalanuvchilar</h1>
+      <p class="muted" id="usersCount"></p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Bio</th>
+            </tr>
+          </thead>
+          <tbody id="usersRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script>
 (function(){
   "use strict";
+
+  var ROLE_LABELS = { DRIVER: "Haydovchi", OWNER: "Yuk beruvchi", BOTH: "Ikkalasi ham" };
 
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
   function esc(s){
@@ -63,15 +133,32 @@
   }
 
   var loginBox = document.getElementById("loginBox");
-  var ordersBox = document.getElementById("ordersBox");
+  var adminShell = document.getElementById("adminShell");
   var loginErr = document.getElementById("loginErr");
   var loginBtn = document.getElementById("loginBtn");
   var pwInput = document.getElementById("pw");
 
+  /* ---------- Panels ---------- */
+  var PANELS = ["orders", "users"];
+  function switchPanel(name){
+    if(PANELS.indexOf(name) === -1) return;
+    PANELS.forEach(function(p){
+      var el = document.getElementById("panel-" + p);
+      if(el) el.hidden = (p !== name);
+    });
+    document.querySelectorAll(".admin-nav-item").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-panel") === name);
+    });
+    if(name === "orders") loadOrders();
+    if(name === "users") loadUsers();
+  }
+  document.querySelectorAll(".admin-nav-item").forEach(function(b){
+    b.addEventListener("click", function(){ switchPanel(b.getAttribute("data-panel")); });
+  });
+
+  /* ---------- Orders ---------- */
   function showOrders(orders){
-    loginBox.style.display = "none";
-    ordersBox.style.display = "block";
-    document.getElementById("count").textContent = orders.length + " ta buyurtma (oxirgi 200 tasi, eng yangisi tepada)";
+    document.getElementById("ordersCount").textContent = orders.length + " ta buyurtma (oxirgi 200 tasi, eng yangisi tepada)";
     var rows = orders.map(function(o){
       var d = o.createdAt ? new Date(o.createdAt) : null;
       return "<tr>"
@@ -79,13 +166,15 @@
         + "<td>" + esc(o.code) + "</td>"
         + "<td>" + esc(o.fromCity) + " → " + esc(o.toCity) + "</td>"
         + "<td>" + fmt(o.weightKg || 0) + " kg</td>"
+        + "<td>" + esc(o.cargoType === "OTHER" && o.customCargoLabel ? o.customCargoLabel : o.cargoType) + "</td>"
         + "<td>" + fmt(o.amount || 0) + " so'm</td>"
         + "<td>" + esc(o.name) + "</td>"
         + "<td>" + esc(o.phone) + "</td>"
         + "<td>" + esc(o.googleEmail) + "</td>"
+        + "<td>" + esc(o.note) + "</td>"
         + "</tr>";
     }).join("");
-    document.getElementById("rows").innerHTML = rows || "<tr><td colspan=\"8\" class=\"muted\">Hali buyurtma yo'q</td></tr>";
+    document.getElementById("ordersRows").innerHTML = rows || "<tr><td colspan=\"10\" class=\"muted\">Hali buyurtma yo'q</td></tr>";
   }
 
   function loadOrders(){
@@ -93,10 +182,40 @@
       if(!r.ok) throw new Error("unauth");
       return r.json();
     }).then(function(data){
+      showAdmin();
       showOrders(data.orders || []);
-    }).catch(function(){
-      // Not logged in yet (or session expired) — leave the login form showing.
-    });
+    }).catch(function(){});
+  }
+
+  /* ---------- Users ---------- */
+  function showUsers(users){
+    document.getElementById("usersCount").textContent = users.length + " ta foydalanuvchi ro'yxatdan o'tgan";
+    var rows = users.map(function(u){
+      return "<tr>"
+        + "<td>" + (u.username ? "@" + esc(u.username) : "") + "</td>"
+        + "<td>" + esc(u.email) + "</td>"
+        + "<td>" + esc(ROLE_LABELS[u.role] || "") + "</td>"
+        + "<td>" + esc(u.city) + "</td>"
+        + "<td>" + esc(u.phone) + "</td>"
+        + "<td>" + esc(u.bio) + "</td>"
+        + "</tr>";
+    }).join("");
+    document.getElementById("usersRows").innerHTML = rows || "<tr><td colspan=\"6\" class=\"muted\">Hali foydalanuvchi yo'q</td></tr>";
+  }
+
+  function loadUsers(){
+    fetch("/api/admin-users").then(function(r){
+      if(!r.ok) throw new Error("unauth");
+      return r.json();
+    }).then(function(data){
+      showUsers(data.users || []);
+    }).catch(function(){});
+  }
+
+  /* ---------- Login / logout ---------- */
+  function showAdmin(){
+    loginBox.style.display = "none";
+    adminShell.style.display = "flex";
   }
 
   function doLogin(){
@@ -127,7 +246,14 @@
     if(e.key === "Enter") doLogin();
   });
 
-  // If a valid session cookie is already there, skip straight to the table.
+  document.getElementById("logoutBtn").addEventListener("click", function(){
+    document.cookie = "admin_session=; Max-Age=0; Path=/";
+    adminShell.style.display = "none";
+    loginBox.style.display = "block";
+    pwInput.value = "";
+  });
+
+  // If a valid session cookie is already there, skip straight to the panel.
   loadOrders();
 })();
 </script>
