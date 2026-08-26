@@ -907,11 +907,13 @@
      The ID token is verified again server-side in /api/order.
      ============================================================ */
   var googleIdToken = null;
+  var googleProfile = null;
 
   function onGoogleSignIn(response){
     googleIdToken = response.credential;
     try{
       var payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+      googleProfile = payload;
       if(!state.name) state.name = payload.name || "";
 
       var gate = document.getElementById("googleGate");
@@ -983,9 +985,18 @@
   }
 
   /* ============================================================
-     Profile — set once signed in with Google. The username is unique
-     across all accounts, enforced server-side in /api/profile.
+     Profile — set once signed in with Google. Username is unique across
+     all accounts (enforced server-side in /api/profile); the other fields
+     are just this account's own info.
      ============================================================ */
+  var PROFILE_FIELDS = ["username", "role", "city", "bio", "phone"];
+  var ROLE_LABELS = { DRIVER: "Haydovchiman", OWNER: "Yuk beruvchiman", BOTH: "Ikkalasi ham" };
+
+  function profileCompletion(p){
+    var filled = PROFILE_FIELDS.filter(function(f){ return p[f] && String(p[f]).trim(); }).length;
+    return Math.round((filled / PROFILE_FIELDS.length) * 100);
+  }
+
   function renderProfile(){
     var card = document.getElementById("profileCard");
     if(!card) return;
@@ -1003,24 +1014,76 @@
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ googleIdToken: googleIdToken })
     }).then(function(r){ return r.json(); }).then(function(data){
-      card.innerHTML =
-        '<div class="field"><label for="fUsername">Username</label>'
-        + '<input type="text" id="fUsername" maxlength="20" placeholder="masalan: dilshod_driver" value="'+escapeHtml(data.username || "")+'"></div>'
-        + '<p class="note" id="profileNote">3-20 belgi, faqat lotin harflari, raqam va pastki chiziq (_). Har bir username faqat bitta odamga tegishli bo‘ladi.</p>'
-        + '<button class="btn" id="btnSaveUsername">Saqlash</button>';
-      document.getElementById("btnSaveUsername").addEventListener("click", saveUsername);
+      renderProfileForm(data.profile || {});
     }).catch(function(){
       card.innerHTML = '<p class="note">Yuklab bo‘lmadi, qayta urinib ko‘ring.</p>';
     });
   }
 
+  function renderProfileForm(p){
+    var card = document.getElementById("profileCard");
+    if(!card) return;
+    var pct = profileCompletion(p);
+    var displayName = googleProfile ? googleProfile.name : "";
+    var avatarUrl = googleProfile ? googleProfile.picture : "";
+
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s5);">'
+      +   (avatarUrl
+            ? '<img src="'+escapeHtml(avatarUrl)+'" alt="" referrerpolicy="no-referrer" style="width:48px;height:48px;border-radius:50%;flex-shrink:0;">'
+            : '')
+      +   '<div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:16px;">'+escapeHtml(displayName)+'</div>'
+      +   (p.username ? '<div style="font-size:13px;color:var(--route-dark);">@'+escapeHtml(p.username)+'</div>' : '')
+      + '</div></div>'
+
+      + '<div style="margin-bottom:var(--s5);">'
+      +   '<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">'
+      +     '<span>Profilingiz '+pct+'% tayyor</span></div>'
+      +   '<div style="height:8px;border-radius:999px;background:var(--paper-dark);overflow:hidden;">'
+      +     '<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg, var(--route), var(--stamp));border-radius:999px;transition:width 0.4s var(--ease);"></div>'
+      +   '</div>'
+      + '</div>'
+
+      + '<div class="field"><label for="fUsername">Username</label>'
+      +   '<input type="text" id="fUsername" maxlength="20" placeholder="masalan: dilshod_driver" value="'+escapeHtml(p.username || "")+'"></div>'
+
+      + '<div class="field"><label for="fRole">Kimsiz?</label>'
+      +   '<select id="fRole">'
+      +     '<option value=""'+(!p.role?' selected':'')+'>Tanlanmagan</option>'
+      +     Object.keys(ROLE_LABELS).map(function(k){
+              return '<option value="'+k+'"'+(p.role===k?' selected':'')+'>'+ROLE_LABELS[k]+'</option>';
+            }).join("")
+      +   '</select></div>'
+
+      + '<div class="field"><label for="fProfileCity">Shahar</label>'
+      +   '<select id="fProfileCity"><option value=""'+(!p.city?' selected':'')+'>Tanlanmagan</option>'+cityOptions(p.city)+'</select></div>'
+
+      + '<div class="field"><label for="fPhoneProfile">Telefon (ixtiyoriy)</label>'
+      +   '<input type="tel" id="fPhoneProfile" placeholder="90 123 45 67" value="'+escapeHtml(p.phone || "")+'"></div>'
+
+      + '<div class="field"><label for="fBio">Qisqa bio (ixtiyoriy)</label>'
+      +   '<input type="text" id="fBio" maxlength="200" placeholder="masalan: 5 yillik tajribaga ega yuk tashuvchi" value="'+escapeHtml(p.bio || "")+'"></div>'
+
+      + '<p class="note" id="profileNote">Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo‘ladi.</p>'
+      + '<button class="btn" id="btnSaveUsername">Saqlash</button>';
+
+    document.getElementById("btnSaveUsername").addEventListener("click", saveUsername);
+  }
+
   function saveUsername(){
-    var input = document.getElementById("fUsername");
     var note = document.getElementById("profileNote");
     var btn = document.getElementById("btnSaveUsername");
-    if(!input || !note || !btn) return;
+    if(!note || !btn) return;
 
-    var username = input.value.trim();
+    var payload = {
+      googleIdToken: googleIdToken,
+      username: document.getElementById("fUsername").value.trim(),
+      role: document.getElementById("fRole").value,
+      city: document.getElementById("fProfileCity").value,
+      phone: document.getElementById("fPhoneProfile").value.trim(),
+      bio: document.getElementById("fBio").value.trim()
+    };
+
     btn.disabled = true;
     note.textContent = "";
     note.style.color = "";
@@ -1028,7 +1091,7 @@
     fetch("/api/profile", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken, username: username })
+      body: JSON.stringify(payload)
     }).then(function(r){
       return r.json().then(function(body){ return {ok: r.ok, body: body}; });
     }).then(function(res){
@@ -1037,15 +1100,15 @@
         note.style.color = "#DC2626";
         return;
       }
-      note.textContent = "Saqlandi ✅";
-      toast("Username saqlandi", "@" + res.body.username, "success");
+      toast("Profil saqlandi", res.body.profile.username ? "@" + res.body.profile.username : "", "success");
+      renderProfileForm(res.body.profile || {});
     }).catch(function(){
       note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
       note.style.color = "#DC2626";
-    }).finally(function(){
       btn.disabled = false;
     });
   }
+
 
   /* ============================================================
      Helpers
