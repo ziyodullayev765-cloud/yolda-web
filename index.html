@@ -891,6 +891,28 @@
       </details>
     </div>
 
+    <div class="card reveal" style="text-align:left;margin-bottom:var(--s4);">
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Shikoyat qilish</h3>
+      <p class="note" style="margin-top:0;margin-bottom:var(--s4);">Firibgarlik, soxta e'lon, soxta haydovchi yoki boshqa jiddiy muammoga duch kelsangiz — shu yerdan xabar bering, biz tekshiramiz.</p>
+      <div class="field"><label for="fReportReason">Sabab</label>
+        <select id="fReportReason">
+          <option value="">Tanlang</option>
+          <option value="SCAM">Firibgarlik (Scam)</option>
+          <option value="FAKE_LOAD">Soxta yuk e'loni</option>
+          <option value="FAKE_DRIVER">Soxta haydovchi</option>
+          <option value="PAYMENT">To'lov muammosi</option>
+          <option value="BEHAVIOR">Yomon muomala</option>
+          <option value="DELIVERY">Yetkazib berish muammosi</option>
+          <option value="OTHER">Boshqa</option>
+        </select></div>
+      <div class="field"><label for="fReportTarget">Kimga oid (telefon, username yoki buyurtma kodi, ixtiyoriy)</label>
+        <input type="text" id="fReportTarget" placeholder="+998 90 123 45 67 yoki @username yoki YL-XXXXX"></div>
+      <div class="field"><label for="fReportDesc">Nima bo'lganini tasvirlab bering</label>
+        <input type="text" id="fReportDesc" maxlength="500" placeholder="Batafsil yozing"></div>
+      <p class="note" id="reportNote">Shikoyat yuborish uchun Google orqali kirgan bo'lishingiz kerak.</p>
+      <button class="btn" id="btnSendReport">Shikoyat yuborish</button>
+    </div>
+
     <div class="card reveal" style="text-align:left;">
       <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Muammo bormi? Yozing</h3>
       <div class="field"><label for="fSupportName">Ismingiz</label>
@@ -1207,6 +1229,66 @@
       note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
       note.style.color = "#DC2626";
       btn.disabled = false;
+    });
+  }
+
+  function submitReport(){
+    var note = document.getElementById("reportNote");
+    var btn = document.getElementById("btnSendReport");
+    if(!note || !btn) return;
+
+    if(!googleIdToken){
+      note.textContent = "Shikoyat yuborish uchun Google orqali kiring.";
+      note.style.color = "#DC2626";
+      return;
+    }
+    var reason = document.getElementById("fReportReason").value;
+    if(!reason){
+      note.textContent = "Sababni tanlang.";
+      note.style.color = "#DC2626";
+      return;
+    }
+    var description = document.getElementById("fReportDesc").value.trim();
+    if(!description){
+      note.textContent = "Nima bo'lganini tasvirlab bering.";
+      note.style.color = "#DC2626";
+      return;
+    }
+
+    var payload = {
+      googleIdToken: googleIdToken,
+      reason: reason,
+      targetContact: document.getElementById("fReportTarget").value.trim(),
+      description: description
+    };
+
+    btn.disabled = true;
+    note.textContent = "";
+    note.style.color = "";
+
+    fetch("/api/report", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      btn.disabled = false;
+      if(!res.ok){
+        note.textContent = res.body.error || "Xato yuz berdi";
+        note.style.color = "#DC2626";
+        return;
+      }
+      document.getElementById("fReportReason").value = "";
+      document.getElementById("fReportTarget").value = "";
+      document.getElementById("fReportDesc").value = "";
+      note.textContent = "Shikoyatingiz qabul qilindi. Tez orada ko'rib chiqamiz.";
+      note.style.color = "#16A34A";
+      toast("Shikoyat yuborildi", "Tez orada ko'rib chiqamiz", "success");
+    }).catch(function(){
+      btn.disabled = false;
+      note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
+      note.style.color = "#DC2626";
     });
   }
 
@@ -1579,6 +1661,8 @@
   });
   var btnSendSupport = document.getElementById("btnSendSupport");
   if(btnSendSupport) btnSendSupport.addEventListener("click", submitSupport);
+  var btnSendReport = document.getElementById("btnSendReport");
+  if(btnSendReport) btnSendReport.addEventListener("click", submitReport);
 
   render();
   renderLiveWidget();
