@@ -1,16 +1,22 @@
 /**
- * POST /api/order
+ * /api/order — order creation, status lookup, and rating, in one function.
  *
- * Receives an order from the website, recomputes the price server-side, and
- * posts it to the drivers' Telegram group with an "accept" button.
+ * Folded into one file (from three: order.js, order-status.js, order-rate.js)
+ * because Vercel's Hobby plan caps a deployment at 12 serverless functions,
+ * and this app had grown past that. Dispatch is by HTTP method, plus an
+ * `?action=rate` query param to tell a POST apart from creating an order:
+ *
+ *   POST /api/order                 — create an order (unchanged body/behavior)
+ *   GET  /api/order?code=&phone=    — look up an order's status by code+phone
+ *   POST /api/order?action=rate     — rate the driver once DELIVERED
  *
  * The bot token never reaches the browser — that is the whole reason this
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush, kvSet, kvSismember } from '../lib/kv.js';
+import { kvPush, kvGet, kvSet, kvSismember } from '../lib/kv.js';
 import { verifyGoogleEmail } from '../lib/google.js';
-import { CARGO, buildOrderMessage } from '../lib/orderMessage.js';
+import { CARGO, buildOrderMessage, STATUS_LABELS } from '../lib/orderMessage.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Group id is not a secret, so it ships with the code as a fallback.
@@ -151,10 +157,7 @@ const telegram = async (method, payload) => {
   return json.result;
 };
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const createOrder = async (req, res) => {
   if (!BOT_TOKEN || !GROUP_ID) {
     return res.status(500).json({ error: 'Server sozlanmagan' });
   }
@@ -221,4 +224,106 @@ export default async function handler(req, res) {
     console.error('Telegram send failed:', err.message);
     return res.status(502).json({ error: 'Hozircha yuborib bo‘lmadi, birozdan keyin urinib ko‘ring' });
   }
+};
+
+/** GET ?code=&phone= — a cargo owner checking their own order's status. */
+const getOrderStatus = async (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase();
+  const phone = normalisePhone(req.query.phone || '');
+  if (!code || !phone) return res.status(400).json({ error: 'Kod va telefon kerak' });
+
+  const raw = await kvGet(`order:${code}`);
+  if (!raw) return res.status(404).json({ error: 'Topilmadi. Kod yoki telefon raqamini tekshiring' });
+
+  let order;
+  try {
+    order = JSON.parse(raw);
+  } catch {
+    return res.status(500).json({ error: 'Xato yuz berdi' });
+  }
+
+  if (order.phone !== phone) {
+    return res.status(404).json({ error: 'Topilmadi. Kod yoki telefon raqamini tekshiring' });
+  }
+
+  const status = order.status || 'NEW';
+  return res.status(200).json({
+    ok: true,
+    code: order.code,
+    fromCity: order.fromCity,
+    toCity: order.toCity,
+    status,
+    statusLabel: STATUS_LABELS[status] || status,
+    amount: order.amount,
+    driverName: order.driver ? order.driver.name : null,
+    driverVerified: order.driver ? Boolean(order.driver.verified) : false,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt || order.createdAt,
+    canRate: status === 'DELIVERED' && !order.rating,
+    rating: order.rating || null,
+  });
+};
+
+/**
+ * POST ?action=rate — rate the driver once DELIVERED, using the same
+ * code+phone ownership check as getOrderStatus. One rating per order — the
+ * driver's aggregate is rolled up onto their profile, but only if they
+ * linked a Telegram username to a Google account.
+ */
+const rateOrder = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const code = String(body.code || '').trim().toUpperCase();
+  const phone = normalisePhone(body.phone || '');
+  const stars = Number(body.stars);
+  const comment = String(body.comment || '').trim().slice(0, 300);
+
+  if (!code || !phone) return res.status(400).json({ error: 'Kod va telefon kerak' });
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    return res.status(400).json({ error: 'Baho 1 dan 5 gacha bo‘lsin' });
+  }
+
+  const raw = await kvGet(`order:${code}`);
+  if (!raw) return res.status(404).json({ error: 'Topilmadi' });
+  let order;
+  try {
+    order = JSON.parse(raw);
+  } catch {
+    return res.status(500).json({ error: 'Xato yuz berdi' });
+  }
+
+  if (order.phone !== phone) return res.status(404).json({ error: 'Topilmadi' });
+  if (order.status !== 'DELIVERED') return res.status(400).json({ error: 'Buyurtma hali yetkazilmagan' });
+  if (order.rating) return res.status(409).json({ error: 'Bu buyurtma allaqachon baholangan' });
+
+  order.rating = { stars, comment, ratedAt: Date.now() };
+  const saved = await kvSet(`order:${code}`, JSON.stringify(order));
+  if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+
+  // Best-effort rollup onto the driver's profile — never blocks the rating
+  // itself, which is already safely stored on the order above.
+  if (order.driver && order.driver.telegramUsername) {
+    try {
+      const email = await kvGet(`tgToEmail:${order.driver.telegramUsername.toLowerCase()}`);
+      if (email) {
+        const praw = await kvGet(`profile:${email}`);
+        const profile = praw ? JSON.parse(praw) : {};
+        profile.ratingCount = (profile.ratingCount || 0) + 1;
+        profile.ratingSum = (profile.ratingSum || 0) + stars;
+        await kvSet(`profile:${email}`, JSON.stringify(profile));
+      }
+    } catch {
+      // Non-fatal.
+    }
+  }
+
+  return res.status(200).json({ ok: true });
+};
+
+export default async function handler(req, res) {
+  if (req.method === 'GET') return getOrderStatus(req, res);
+  if (req.method === 'POST') {
+    if (String(req.query.action || '') === 'rate') return rateOrder(req, res);
+    return createOrder(req, res);
+  }
+  return res.status(405).json({ error: 'Method not allowed' });
 }
