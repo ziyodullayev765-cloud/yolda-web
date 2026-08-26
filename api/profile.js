@@ -17,7 +17,7 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
 const CITIES = [
   'Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Nukus', 'Qarshi', 'Urganch',
-  'Farg‘ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
+  'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
 
 /** profile:<email> used to just be the plain username string — read old and new shapes. */
@@ -75,30 +75,28 @@ export default async function handler(req, res) {
     next.username = username;
   }
 
-  if (body.role !== undefined) {
+  // An empty field means "the user didn't touch this one" — it must never
+  // wipe a value that was saved earlier. Only a non-empty value updates it.
+  if (body.role !== undefined && body.role !== null && body.role !== '') {
     const role = String(body.role);
-    if (role && !ROLES.includes(role)) return res.status(400).json({ error: 'Noto‘g‘ri rol' });
+    if (!ROLES.includes(role)) return res.status(400).json({ error: 'Noto‘g‘ri rol' });
     next.role = role;
   }
 
-  if (body.city !== undefined) {
+  if (body.city !== undefined && body.city !== null && body.city !== '') {
     const city = String(body.city);
-    if (city && !CITIES.includes(city)) return res.status(400).json({ error: 'Noto‘g‘ri shahar' });
+    if (!CITIES.includes(city)) return res.status(400).json({ error: 'Noto‘g‘ri shahar' });
     next.city = city;
   }
 
-  if (body.bio !== undefined) {
+  if (body.bio !== undefined && body.bio !== null && body.bio !== '') {
     next.bio = String(body.bio).trim().slice(0, 200);
   }
 
-  if (body.phone !== undefined) {
-    if (body.phone === '') {
-      next.phone = '';
-    } else {
-      const phone = normalisePhone(body.phone);
-      if (!phone) return res.status(400).json({ error: 'Telefon raqam noto‘g‘ri' });
-      next.phone = phone;
-    }
+  if (body.phone !== undefined && body.phone !== null && body.phone !== '') {
+    const phone = normalisePhone(body.phone);
+    if (!phone) return res.status(400).json({ error: 'Telefon raqam noto‘g‘ri' });
+    next.phone = phone;
   }
 
   await kvSet(profileKey, JSON.stringify(next));
