@@ -501,6 +501,11 @@
     background:rgba(34,197,94,0.1);
     border-radius:var(--r-pill);padding:6px 12px;
   }
+  .app-browser-hint{
+    border:1px solid rgba(217,119,6,0.35);background:rgba(217,119,6,0.08);
+    border-radius:var(--r-md);padding:var(--s3) var(--s4);margin:0 0 var(--s3);
+  }
+  .app-browser-hint p{margin:0 0 var(--s2);font-size:13.5px;color:var(--ink-soft);line-height:1.5;}
   .cargo-badge{
     font-size:12px;background:var(--paper-dark);color:var(--ink-soft);
     padding:5px 11px;border-radius:var(--r-pill);
@@ -773,6 +778,10 @@
       <p class="section-sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
     </div>
 
+    <div id="appBrowserHint" class="app-browser-hint" style="display:none;">
+      <p>Google orqali kirish Telegram/Instagram kabi ilovalar ichidagi brauzerda ishlamaydi. Havolani nusxalab, <strong>Safari</strong> yoki <strong>Chrome</strong>da oching:</p>
+      <button type="button" class="btn ghost small" id="copyLinkBtn">Havolani nusxalash</button>
+    </div>
     <div id="googleGate" style="margin:0 0 16px;"></div>
     <div id="content" aria-live="polite"></div>
 
@@ -877,12 +886,45 @@
     render();
   }
 
+  /**
+   * Google blocks sign-in inside in-app browsers (Telegram, Instagram, and
+   * friends) outright — there is no code-side fix, only a way to tell the
+   * user to open the link in Safari/Chrome instead.
+   */
+  function isInAppBrowser(){
+    return /Telegram|Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|Snapchat/i.test(navigator.userAgent || "");
+  }
+
+  function showAppBrowserHint(){
+    var hint = document.getElementById("appBrowserHint");
+    if(hint) hint.style.display = "block";
+  }
+
   function initGoogleSignIn(){
+    var copyBtn = document.getElementById("copyLinkBtn");
+    if(copyBtn) copyBtn.addEventListener("click", function(){
+      var url = location.href;
+      var done = function(){ toast("Nusxalandi", "Endi Safari yoki Chrome'da joylashtiring (paste).", "success"); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(done).catch(function(){ window.prompt("Havolani nusxalang:", url); });
+      } else {
+        window.prompt("Havolani nusxalang:", url);
+      }
+    });
+
+    if(isInAppBrowser()) showAppBrowserHint();
+
     fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
       if(!cfg.googleClientId || !window.google || !google.accounts) return;
       google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn });
       var gate = document.getElementById("googleGate");
       if(gate) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
+
+      // Belt and braces: if the button never actually renders (some in-app
+      // browsers we didn't think to name above), show the hint anyway.
+      setTimeout(function(){
+        if(gate && !gate.querySelector("iframe")) showAppBrowserHint();
+      }, 2500);
     }).catch(function(){});
   }
 
