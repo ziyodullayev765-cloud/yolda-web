@@ -733,9 +733,9 @@
 
 <div id="toastHost" role="status" aria-live="polite" aria-atomic="false"></div>
 
-<nav class="nav" aria-label="Asosiy navigatsiya">
-  <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg><span class="word">YO'LDA</span><span class="dot" aria-hidden="true">.</span></a>
-  <a class="nav-cta" href="#" data-tab-link="order">Boshlash</a>
+<nav class="nav" aria-label="Asosiy navigatsiya" style="position:relative;">
+  <div id="googleGateHome"></div>
+  <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);"><span class="word">YO'LDA</span></a>
 </nav>
 
 <main>
@@ -750,10 +750,6 @@
     <div class="hero-ctas hero-seq">
       <a class="btn-primary" href="#" data-tab-link="order">Yuk berish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
       <a class="btn-secondary" href="#" data-tab-link="drivers">Yuk olish <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg></a>
-    </div>
-    <div class="hero-seq" style="display:flex;flex-direction:column;align-items:center;gap:var(--s2);margin-bottom:var(--s6);">
-      <div id="googleGateHome"></div>
-      <span style="font-size:12px;color:var(--muted);">Google bilan kirish</span>
     </div>
     <div class="hero-widget hero-seq" id="liveWidget">
       <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> Jonli faoliyat</p>
@@ -977,10 +973,10 @@
       var gate = document.getElementById("googleGate");
       if(gate) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
 
-      // Round, icon-only version on the home screen — same sign-in, just a
+      // Round, icon-only version in the top nav — same sign-in, just a
       // compact circular button instead of the full pill.
       var gateHome = document.getElementById("googleGateHome");
-      if(gateHome) google.accounts.id.renderButton(gateHome, { theme:"filled_blue", size:"large", shape:"circle", type:"icon" });
+      if(gateHome) google.accounts.id.renderButton(gateHome, { theme:"filled_blue", size:"medium", shape:"circle", type:"icon" });
 
       // Belt and braces: if the button never actually renders (some in-app
       // browsers we didn't think to name above), show the hint anyway.
