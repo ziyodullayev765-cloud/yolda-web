@@ -469,6 +469,30 @@
   .track-line{flex:1;height:2px;background:var(--border);margin-top:6px;min-width:12px;}
   .track-line--done{background:var(--route);}
   .star-btn{background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#F59E0B;padding:2px;}
+  .chat-row{
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+    padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;
+  }
+  .chat-row:last-child{border-bottom:none;}
+  .chat-row:hover{opacity:0.8;}
+  .chat-row .u{font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;}
+  .chat-row .preview{
+    font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;margin-left:var(--s3);flex:1;text-align:right;
+  }
+  .chat-thread{
+    display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;
+    margin:var(--s3) 0;padding-right:4px;
+  }
+  .chat-bubble{max-width:78%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4;word-wrap:break-word;}
+  .chat-bubble.mine{align-self:flex-end;background:var(--route);color:#fff;border-bottom-right-radius:4px;}
+  .chat-bubble.theirs{align-self:flex-start;background:var(--paper-dark);color:var(--ink);border-bottom-left-radius:4px;}
+  .chat-input-row{display:flex;gap:8px;}
+  .chat-input-row input{flex:1;}
+  .chat-back{
+    background:none;border:none;color:var(--route);font-weight:600;font-size:13px;
+    cursor:pointer;padding:0;margin-bottom:var(--s3);display:flex;align-items:center;gap:4px;
+  }
   .field{margin-bottom:var(--s4);}
   .field label{
     display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
@@ -853,6 +877,7 @@
       <p class="section-sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
     </div>
     <div class="card reveal" id="profileCard"></div>
+    <div class="card reveal" id="chatCard" style="margin-top:var(--s4);" hidden></div>
   </div>
 </section>
 
@@ -1127,11 +1152,13 @@
 
   function renderProfile(){
     var card = document.getElementById("profileCard");
+    var chatCard = document.getElementById("chatCard");
     if(!card) return;
 
     if(!googleIdToken){
       card.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
         + 'Profilni ko‘rish uchun avval yuqoridagi (yoki "Yuk berish" bo‘limidagi) tugma orqali Google bilan kiring.</p>';
+      if(chatCard){ chatCard.hidden = true; stopChatPoll(); }
       return;
     }
 
@@ -1146,6 +1173,11 @@
     }).catch(function(){
       card.innerHTML = '<p class="note">Yuklab bo‘lmadi, qayta urinib ko‘ring.</p>';
     });
+
+    if(chatCard){
+      chatCard.hidden = false;
+      renderChatShell();
+    }
   }
 
   function renderProfileForm(p){
@@ -1261,6 +1293,180 @@
       note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
       note.style.color = "#DC2626";
       btn.disabled = false;
+    });
+  }
+
+  /* ============================================================
+     Chat — search a username, message them directly. Lives inside the
+     Profile tab (behind the same Google sign-in gate) rather than adding a
+     6th bottom-nav button.
+     ============================================================ */
+  var chatWithEmail = null;
+  var chatWithUsername = null;
+  var chatPollTimer = null;
+  var chatSearchDebounce = null;
+
+  function stopChatPoll(){
+    if(chatPollTimer){ clearInterval(chatPollTimer); chatPollTimer = null; }
+  }
+
+  function renderChatShell(){
+    var chatCard = document.getElementById("chatCard");
+    if(!chatCard) return;
+    stopChatPoll();
+    chatWithEmail = null;
+    chatWithUsername = null;
+
+    chatCard.innerHTML =
+      '<h3 class="card-title">'+icon("iconTelegram")+' Xabarlashuv</h3>'
+      + '<div class="field"><label for="fChatSearch">Username qidirish</label>'
+      +   '<input type="text" id="fChatSearch" placeholder="masalan: dilshod_driver"></div>'
+      + '<div id="chatSearchResults"></div>'
+      + '<div id="chatInboxWrap">'
+      +   '<p class="note" id="chatInboxLabel" style="margin:var(--s3) 0 0;">Suhbatlar</p>'
+      +   '<div id="chatInboxList"></div>'
+      + '</div>';
+
+    var search = document.getElementById("fChatSearch");
+    search.addEventListener("input", function(){
+      var q = search.value.trim();
+      clearTimeout(chatSearchDebounce);
+      if(q.length < 2){
+        document.getElementById("chatSearchResults").innerHTML = "";
+        return;
+      }
+      chatSearchDebounce = setTimeout(function(){ runChatSearch(q); }, 300);
+    });
+
+    loadChatInbox();
+  }
+
+  function runChatSearch(q){
+    fetch("/api/chat?action=search&q=" + encodeURIComponent(q) + "&googleIdToken=" + encodeURIComponent(googleIdToken))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var results = document.getElementById("chatSearchResults");
+        if(!results) return;
+        var users = data.users || [];
+        results.innerHTML = users.length
+          ? users.map(function(u){
+              return '<div class="chat-row" data-username="'+escapeHtml(u.username)+'">'
+                + '<span class="u">@'+escapeHtml(u.username)+'</span>'
+                + '<span class="preview">'+escapeHtml(ROLE_LABELS[u.role] || "")+'</span>'
+                + '</div>';
+            }).join("")
+          : '<p class="note" style="margin:8px 0 0;">Hech kim topilmadi</p>';
+        results.querySelectorAll("[data-username]").forEach(function(row){
+          row.addEventListener("click", function(){
+            document.getElementById("fChatSearch").value = "";
+            document.getElementById("chatSearchResults").innerHTML = "";
+            openChatThread(null, row.getAttribute("data-username"));
+          });
+        });
+      }).catch(function(){});
+  }
+
+  function loadChatInbox(){
+    var list = document.getElementById("chatInboxList");
+    if(!list) return;
+    list.innerHTML = '<div class="skeleton sk-line" style="width:80%;"></div>';
+    fetch("/api/chat?action=inbox&googleIdToken=" + encodeURIComponent(googleIdToken))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var conversations = data.conversations || [];
+        var label = document.getElementById("chatInboxLabel");
+        if(label) label.style.display = conversations.length ? "" : "none";
+        list.innerHTML = conversations.length
+          ? conversations.map(function(c){
+              var preview = (c.lastFromMe ? "Siz: " : "") + (c.lastText || "");
+              return '<div class="chat-row" data-email="'+escapeHtml(c.email)+'" data-username="'+escapeHtml(c.username)+'">'
+                + '<span class="u">@'+escapeHtml(c.username)+'</span>'
+                + '<span class="preview">'+escapeHtml(preview)+'</span>'
+                + '</div>';
+            }).join("")
+          : "";
+        list.querySelectorAll("[data-email]").forEach(function(row){
+          row.addEventListener("click", function(){
+            openChatThread(row.getAttribute("data-email"), row.getAttribute("data-username"));
+          });
+        });
+      }).catch(function(){ list.innerHTML = ""; });
+  }
+
+  function openChatThread(email, username){
+    chatWithEmail = email;
+    chatWithUsername = username;
+    var chatCard = document.getElementById("chatCard");
+    if(!chatCard) return;
+    stopChatPoll();
+
+    chatCard.innerHTML =
+      '<button type="button" class="chat-back" id="btnChatBack">&larr; Orqaga</button>'
+      + '<h3 class="card-title" style="margin-top:0;">@'+escapeHtml(username)+'</h3>'
+      + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
+      + '<div class="chat-input-row">'
+      +   '<input type="text" id="fChatMessage" maxlength="1000" placeholder="Xabar yozing...">'
+      +   '<button class="btn" id="btnChatSend" style="width:auto;padding:0 var(--s5);">'+icon("iconArrowRight")+'</button>'
+      + '</div>'
+      + '<p class="note" id="chatSendNote"></p>';
+
+    document.getElementById("btnChatBack").addEventListener("click", renderChatShell);
+    document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
+    document.getElementById("fChatMessage").addEventListener("keydown", function(e){
+      if(e.key === "Enter") sendChatMessage();
+    });
+
+    loadChatThread(true);
+    chatPollTimer = setInterval(function(){ loadChatThread(false); }, 4000);
+  }
+
+  function loadChatThread(scrollDown){
+    if(!chatWithUsername) return;
+    var body = document.getElementById("chatThreadBody");
+    if(!body) return;
+    var url = "/api/chat?action=thread&googleIdToken=" + encodeURIComponent(googleIdToken)
+      + (chatWithEmail ? "&withEmail=" + encodeURIComponent(chatWithEmail) : "&withUsername=" + encodeURIComponent(chatWithUsername));
+    fetch(url).then(function(r){ return r.json(); }).then(function(data){
+      if(!chatWithUsername) return; // user navigated away while this was in flight
+      if(data.withEmail) chatWithEmail = data.withEmail;
+      var messages = data.messages || [];
+      body.innerHTML = messages.length
+        ? messages.map(function(m){
+            return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+'">'+escapeHtml(m.text)+'</div>';
+          }).join("")
+        : '<p class="note" style="margin:0;">Hali xabar yo\'q. Birinchi bo\'lib yozing!</p>';
+      if(scrollDown) body.scrollTop = body.scrollHeight;
+    }).catch(function(){});
+  }
+
+  function sendChatMessage(){
+    var input = document.getElementById("fChatMessage");
+    var note = document.getElementById("chatSendNote");
+    if(!input || !chatWithUsername) return;
+    var text = input.value.trim();
+    if(!text) return;
+
+    var btn = document.getElementById("btnChatSend");
+    if(btn) btn.disabled = true;
+    if(note) note.textContent = "";
+
+    fetch("/api/chat?action=send", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken, toUsername: chatWithUsername, text: text })
+    }).then(function(r){
+      return r.json().then(function(b){ return {ok: r.ok, body: b}; });
+    }).then(function(res){
+      if(btn) btn.disabled = false;
+      if(!res.ok){
+        if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
+        return;
+      }
+      input.value = "";
+      loadChatThread(true);
+    }).catch(function(){
+      if(btn) btn.disabled = false;
+      if(note){ note.textContent = "Yuborilmadi, qayta urinib ko'ring."; note.style.color = "#DC2626"; }
     });
   }
 
@@ -1808,6 +2014,7 @@
       active.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
     }
     if(name === "profile") renderProfile();
+    else stopChatPoll();
     window.scrollTo(0, 0);
   }
   document.querySelectorAll("[data-tab-link]").forEach(function(el){
