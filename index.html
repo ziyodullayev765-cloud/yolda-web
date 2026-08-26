@@ -172,6 +172,31 @@
   }
   .nav-cta:hover{background:var(--route);transform:translateY(-2px);box-shadow:var(--sh-brand);}
   .nav-cta:active{transform:translateY(0);}
+
+  /* ---------- BOTTOM NAV ---------- */
+  .bottom-nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:80;
+    display:flex;
+    background:var(--glass);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    backdrop-filter:saturate(180%) blur(20px);
+    border-top:1px solid rgba(226,232,240,0.8);
+    box-shadow:0 -4px 16px rgba(15,23,42,0.06);
+    padding-bottom:env(safe-area-inset-bottom, 0);
+  }
+  .bn-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    background:none;border:none;cursor:pointer;
+    padding:9px 4px 10px;
+    font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.01em;
+    color:var(--muted);
+    transition:color 0.2s var(--ease);
+  }
+  .bn-item .ic-svg{font-size:21px;}
+  .bn-item.active{color:var(--route);}
+  .bn-item:hover{color:var(--route-dark);}
+  body{padding-bottom:66px;}
+
   @media(max-width:760px){
     .nav{padding:var(--s3) var(--s4);}
     .nav-links{display:none;}
@@ -273,7 +298,7 @@
   /* ---------- STATS ---------- */
   .stats-bar{
     max-width:1000px;margin:0 auto;padding:var(--s2) var(--s5) 0;
-    display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3);
+    display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3);
   }
   .stat-cell{
     padding:var(--s5) var(--s3);text-align:center;
@@ -363,11 +388,10 @@
   @media(max-width:640px){ .features{grid-template-columns:1fr;} }
 
   /* ---------- APP SECTION ---------- */
-  #ilova{
+  #tab-order{
     background:
       radial-gradient(circle at 50% 0%, rgba(29,78,216,0.05), transparent 55%),
       var(--paper-dark);
-    border-top:1px solid var(--border);border-bottom:1px solid var(--border);
   }
   .app-shell{max-width:660px;margin:0 auto;padding:var(--s9) var(--s5) var(--s9);}
 
@@ -642,7 +666,7 @@
   }
 
   /* ---------- BACKGROUND TRUCK ART ---------- */
-  .hero-wrap,.section,#ilova,.foot{position:relative;overflow:hidden;}
+  .hero-wrap,.section,.tabview{position:relative;overflow:hidden;}
   .bg-truck{position:absolute;z-index:0;color:var(--ink);opacity:0.05;pointer-events:none;}
   .bg-truck--hero{width:380px;top:-36px;right:-70px;transform:rotate(-6deg);}
   .bg-truck--steps{width:300px;bottom:-46px;left:-56px;transform:scaleX(-1) rotate(3deg);}
@@ -685,6 +709,7 @@
 
   <g id="icon-defs" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <symbol id="iconBox" viewBox="0 0 24 24"><path d="M12 3 20 7.5V16.5L12 21 4 16.5V7.5Z"/><path d="M12 12V21M12 12 20 7.5M12 12 4 7.5"/></symbol>
+    <symbol id="iconHome" viewBox="0 0 24 24"><path d="M4 11 12 4 20 11"/><path d="M6 9.5V20H18V9.5"/><path d="M10 20V14H14V20"/></symbol>
     <symbol id="iconTruck" viewBox="0 0 24 24"><rect x="1.5" y="8" width="12" height="8"/><path d="M13.5 11H17.5L21 14.5V16H13.5Z"/><circle cx="6" cy="18.2" r="1.6"/><circle cx="16.5" cy="18.2" r="1.6"/></symbol>
     <symbol id="iconSnow" viewBox="0 0 24 24"><path d="M12 3V21M4.8 7.5 19.2 16.5M4.8 16.5 19.2 7.5"/></symbol>
     <symbol id="iconGem" viewBox="0 0 24 24"><path d="M6 3H18L22 9 12 21 2 9Z"/><path d="M2 9H22"/></symbol>
@@ -704,74 +729,42 @@
   </g>
 </svg>
 
-<a class="skip-link" href="#ilova">Asosiy qismga o'tish</a>
 <div id="toastHost" role="status" aria-live="polite" aria-atomic="false"></div>
 
-<div id="scrollProgress" aria-hidden="true"></div>
-
 <nav class="nav" aria-label="Asosiy navigatsiya">
-  <a class="nav-logo" href="#" aria-label="YO'LDA — bosh sahifa" style="text-decoration:none;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg><span class="word">YO'LDA</span><span class="dot" aria-hidden="true">.</span></a>
-  <ul class="nav-links">
-    <li><a href="#nega">Afzalliklar</a></li>
-    <li><a href="#ilova">Ilova</a></li>
-  </ul>
-  <a class="nav-cta" href="#ilova">Boshlash</a>
+  <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg><span class="word">YO'LDA</span><span class="dot" aria-hidden="true">.</span></a>
+  <a class="nav-cta" href="#" data-tab-link="order">Boshlash</a>
 </nav>
 
-<header class="hero-wrap">
-  <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> Yuk bozori · O'zbekiston</p>
-  <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
-  <h1 class="brand hero-seq">YO'LDA</h1>
-  <p class="tagline hero-seq">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Narxni bir zumda hisoblang, buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
-  <div class="hero-ctas hero-seq">
-    <a class="btn-primary" href="#ilova">Yukni hisoblash <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
-    <a class="btn-secondary" href="#nega">Afzalliklar</a>
-  </div>
-  <div class="hero-widget hero-seq" id="liveWidget">
-    <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> Jonli faoliyat</p>
-    <div class="hero-widget-body" id="liveWidgetBody"></div>
-  </div>
-</header>
+<main>
 
-<div class="stats-bar">
-  <div class="stat-cell reveal"><div class="v" data-count="8">8</div><div class="k">Shahar</div></div>
-  <div class="stat-cell reveal"><div class="v">24/7</div><div class="k">Ish vaqti</div></div>
-  <div class="stat-cell reveal"><div class="v" data-count="2500">2 500</div><div class="k">So'm / km dan</div></div>
-  <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k">Ro'yxatdan o'tish narxi</div></div>
-</div>
+<section class="tabview" id="tab-home" data-tab="home">
+  <header class="hero-wrap">
+    <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
+    <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> Yuk bozori · O'zbekiston</p>
+    <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
+    <h1 class="brand hero-seq">YO'LDA</h1>
+    <p class="tagline hero-seq">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
+    <div class="hero-ctas hero-seq">
+      <a class="btn-primary" href="#" data-tab-link="order">Yuk berish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
+      <a class="btn-secondary" href="#" data-tab-link="perks">Afzalliklar</a>
+    </div>
+    <div class="hero-widget hero-seq" id="liveWidget">
+      <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> Jonli faoliyat</p>
+      <div class="hero-widget-body" id="liveWidgetBody"></div>
+    </div>
+  </header>
 
-<section class="section" id="nega">
-  <svg class="bg-truck bg-truck--features" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <div class="section-head reveal">
-    <div class="section-eyebrow">Afzalliklar</div>
-    <h2 class="section-title">Nega <span class="accent alt">YO'LDA</span></h2>
-    <p class="section-sub">Oddiy, ochiq va tezkor — na yashirin komissiya, na uzoq kutish.</p>
-  </div>
-  <div class="features">
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconBolt"/></svg></span>
-      <div><h3>Tezkor narx hisob-kitobi</h3><p>Masofa va og'irlikka qarab narx bir zumda chiqadi — qo'ng'iroq qilib so'rashning hojati yo'q.</p></div>
-    </div>
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconMap"/></svg></span>
-      <div><h3>Ochiq bozor</h3><p>Har bir buyurtma barcha haydovchilarga bir vaqtda ko'rinadi — birinchi kelgan oladi.</p></div>
-    </div>
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconReceipt"/></svg></span>
-      <div><h3>Aniq waybill raqami</h3><p>Har bir buyurtma o'z raqami bilan kuzatiladi — chalkashlik yo'q.</p></div>
-    </div>
-    <div class="feature reveal">
-      <span class="ic"><svg class="ic-svg"><use href="#iconFree"/></svg></span>
-      <div><h3>Bepul foydalanish</h3><p>Ro'yxatdan o'tish va e'lon joylashtirish uchun hech qanday to'lov talab qilinmaydi.</p></div>
-    </div>
+  <div class="stats-bar">
+    <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k">Shahar</div></div>
+    <div class="stat-cell reveal"><div class="v">24/7</div><div class="k">Ish vaqti</div></div>
+    <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k">Ro'yxatdan o'tish narxi</div></div>
   </div>
 </section>
 
-
-<section id="ilova">
-  <svg class="bg-truck bg-truck--app" aria-hidden="true"><use href="#truckIcon"/></svg>
+<section class="tabview" id="tab-order" data-tab="order" hidden>
   <div class="app-shell">
+    <svg class="bg-truck bg-truck--app" aria-hidden="true"><use href="#truckIcon"/></svg>
     <div class="section-head reveal" style="margin-bottom:var(--s5);">
       <div class="section-eyebrow">Buyurtma</div>
       <h2 class="section-title">Hisoblang va <span class="accent">yuboring</span></h2>
@@ -784,47 +777,70 @@
     </div>
     <div id="googleGate" style="margin:0 0 16px;"></div>
     <div id="content" aria-live="polite"></div>
+  </div>
+</section>
 
+<section class="tabview" id="tab-perks" data-tab="perks" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);">
+    <svg class="bg-truck bg-truck--features" aria-hidden="true"><use href="#truckIcon"/></svg>
+    <div class="section-head reveal">
+      <div class="section-eyebrow">Afzalliklar</div>
+      <h2 class="section-title">Nega <span class="accent alt">YO'LDA</span></h2>
+      <p class="section-sub">Oddiy, ochiq va tezkor — na yashirin komissiya, na uzoq kutish.</p>
+    </div>
+    <div class="features">
+      <div class="feature reveal">
+        <span class="ic"><svg class="ic-svg"><use href="#iconBolt"/></svg></span>
+        <div><h3>Tezkor narx hisob-kitobi</h3><p>Masofa va og'irlikka qarab narx bir zumda chiqadi — qo'ng'iroq qilib so'rashning hojati yo'q.</p></div>
+      </div>
+      <div class="feature reveal">
+        <span class="ic"><svg class="ic-svg"><use href="#iconMap"/></svg></span>
+        <div><h3>Ochiq bozor</h3><p>Har bir buyurtma barcha haydovchilarga bir vaqtda ko'rinadi — birinchi kelgan oladi.</p></div>
+      </div>
+      <div class="feature reveal">
+        <span class="ic"><svg class="ic-svg"><use href="#iconReceipt"/></svg></span>
+        <div><h3>Aniq waybill raqami</h3><p>Har bir buyurtma o'z raqami bilan kuzatiladi — chalkashlik yo'q.</p></div>
+      </div>
+      <div class="feature reveal">
+        <span class="ic"><svg class="ic-svg"><use href="#iconFree"/></svg></span>
+        <div><h3>Bepul foydalanish</h3><p>Ro'yxatdan o'tish va e'lon joylashtirish uchun hech qanday to'lov talab qilinmaydi.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tabview" id="tab-drivers" data-tab="drivers" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:600px;">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">Haydovchilar</div>
+      <h2 class="section-title">Yuk <span class="accent">toping</span></h2>
+      <p class="section-sub">Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.</p>
+    </div>
     <div class="card driver-invite">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> Haydovchimisiz?</h3>
-      <p style="font-size:14.5px;color:var(--ink-soft);margin:0 0 var(--s4);line-height:1.65;">
-        Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.
-      </p>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> Haydovchilar guruhi</h3>
       <a class="btn ghost" id="driverGroupLink" href="#" target="_blank" rel="noopener">
         Guruhga qo'shilish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg>
       </a>
     </div>
-
-    <p class="note" style="text-align:center;margin-top:var(--s4);"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Narx masofa va og'irlik bo'yicha taxminiy hisoblanadi. Yakuniy narxni haydovchi bilan kelishasiz.</p>
   </div>
 </section>
 
-<footer class="foot">
-  <svg class="bg-truck bg-truck--foot" aria-hidden="true"><use href="#truckIcon"/></svg>
-  <div class="foot-top">
-    <div>
-      <div class="foot-brand"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg>YO'LDA<span aria-hidden="true">.</span></div>
-      <p class="foot-note">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi O'zbekiston yuk tashish bozori. Narx hisob-kitobi bepul, e'lon joylashtirish komissiyasiz.</p>
-    </div>
-    <div class="foot-cols">
-      <div class="foot-col">
-        <h4>Sahifa</h4>
-        <a href="#nega">Afzalliklar</a>
-        <a href="#ilova">Ilova</a>
-      </div>
-      <div class="foot-col">
-        <h4>Yo'nalishlar</h4>
-        <span>Toshkent — Samarqand</span>
-        <span>Buxoro — Nukus</span>
-        <span>Andijon — Namangan</span>
-      </div>
-    </div>
+<section class="tabview" id="tab-contact" data-tab="contact" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);text-align:center;">
+    <div class="foot-brand" style="justify-content:center;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg>YO'LDA<span aria-hidden="true">.</span></div>
+    <p style="color:var(--muted);font-size:13px;margin-top:var(--s4);">© 2026 YO'LDA</p>
   </div>
-  <div class="foot-bottom">
-    <span>© 2026 YO'LDA</span>
-    <span>Demo loyiha — real to'lov yoki yuridik xizmat emas.</span>
-  </div>
-</footer>
+</section>
+
+</main>
+
+<nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
+  <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span>Bosh sahifa</span></button>
+  <button type="button" class="bn-item" data-tab-link="order"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span>Yuk berish</span></button>
+  <button type="button" class="bn-item" data-tab-link="perks"><svg class="ic-svg" aria-hidden="true"><use href="#iconBolt"/></svg><span>Afzalliklar</span></button>
+  <button type="button" class="bn-item" data-tab-link="drivers"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span>Haydovchilar</span></button>
+  <button type="button" class="bn-item" data-tab-link="contact"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg><span>Aloqa</span></button>
+</nav>
 
 <script>
 (function(){
@@ -838,33 +854,52 @@
   // Public invite link to the drivers' group. Replace with your own.
   var DRIVER_GROUP_URL = "https://t.me/yoldaku";
 
-  var CITIES = ["Toshkent","Samarqand","Buxoro","Andijon","Namangan","Nukus","Qarshi","Urganch"];
+  var CITIES = ["Toshkent","Samarqand","Buxoro","Andijon","Namangan","Nukus","Qarshi","Urganch","Farg'ona","Jizzax","Navoiy","Guliston","Termiz"];
 
   var DIST = {
-    "Andijon|Buxoro":700, "Andijon|Namangan":90, "Andijon|Nukus":1450, "Andijon|Qarshi":750,
-    "Andijon|Samarqand":480, "Andijon|Toshkent":320, "Andijon|Urganch":1300,
-    "Buxoro|Namangan":650, "Buxoro|Nukus":550, "Buxoro|Qarshi":280, "Buxoro|Samarqand":270,
-    "Buxoro|Toshkent":450, "Buxoro|Urganch":450,
-    "Namangan|Nukus":1400, "Namangan|Qarshi":700, "Namangan|Samarqand":440, "Namangan|Toshkent":280,
-    "Namangan|Urganch":1250,
-    "Nukus|Qarshi":700, "Nukus|Samarqand":950, "Nukus|Toshkent":1200, "Nukus|Urganch":180,
-    "Qarshi|Samarqand":220, "Qarshi|Toshkent":520, "Qarshi|Urganch":750,
-    "Samarqand|Toshkent":300, "Samarqand|Urganch":800,
-    "Toshkent|Urganch":1050
+    "Andijon|Buxoro":700, "Andijon|Farg'ona":75, "Andijon|Guliston":350, "Andijon|Jizzax":420,
+    "Andijon|Namangan":90, "Andijon|Navoiy":600, "Andijon|Nukus":1450, "Andijon|Qarshi":750,
+    "Andijon|Samarqand":480, "Andijon|Termiz":950, "Andijon|Toshkent":320, "Andijon|Urganch":1300,
+    "Buxoro|Farg'ona":730, "Buxoro|Guliston":450, "Buxoro|Jizzax":350, "Buxoro|Namangan":650,
+    "Buxoro|Navoiy":120, "Buxoro|Nukus":550, "Buxoro|Qarshi":280, "Buxoro|Samarqand":270,
+    "Buxoro|Termiz":530, "Buxoro|Toshkent":450, "Buxoro|Urganch":450, "Farg'ona|Guliston":380,
+    "Farg'ona|Jizzax":420, "Farg'ona|Namangan":110, "Farg'ona|Navoiy":650, "Farg'ona|Nukus":1470,
+    "Farg'ona|Qarshi":780, "Farg'ona|Samarqand":500, "Farg'ona|Termiz":950, "Farg'ona|Toshkent":330,
+    "Farg'ona|Urganch":1320, "Guliston|Jizzax":120, "Guliston|Namangan":320, "Guliston|Navoiy":330,
+    "Guliston|Nukus":950, "Guliston|Qarshi":400, "Guliston|Samarqand":200, "Guliston|Termiz":600,
+    "Guliston|Toshkent":120, "Guliston|Urganch":800, "Jizzax|Namangan":380, "Jizzax|Navoiy":200,
+    "Jizzax|Nukus":850, "Jizzax|Qarshi":330, "Jizzax|Samarqand":100, "Jizzax|Termiz":500,
+    "Jizzax|Toshkent":200, "Jizzax|Urganch":700, "Namangan|Navoiy":570, "Namangan|Nukus":1400,
+    "Namangan|Qarshi":700, "Namangan|Samarqand":440, "Namangan|Termiz":900, "Namangan|Toshkent":280,
+    "Namangan|Urganch":1250, "Navoiy|Nukus":430, "Navoiy|Qarshi":230, "Navoiy|Samarqand":150,
+    "Navoiy|Termiz":450, "Navoiy|Toshkent":430, "Navoiy|Urganch":330, "Nukus|Qarshi":700,
+    "Nukus|Samarqand":950, "Nukus|Termiz":1150, "Nukus|Toshkent":1200, "Nukus|Urganch":180,
+    "Qarshi|Samarqand":220, "Qarshi|Termiz":280, "Qarshi|Toshkent":520, "Qarshi|Urganch":750,
+    "Samarqand|Termiz":420, "Samarqand|Toshkent":300, "Samarqand|Urganch":800, "Termiz|Toshkent":700,
+    "Termiz|Urganch":1000, "Toshkent|Urganch":1050
   };
 
   var CARGO = [
-    {id:"GENERAL",    label:"Umumiy yuk",         icon:"iconBox",    mult:1.0},
-    {id:"PERISHABLE", label:"Tez buziluvchi",     icon:"iconSnow",   mult:1.3},
-    {id:"FRAGILE",    label:"Qimmatbaho / mo'rt", icon:"iconGem",    mult:1.5},
-    {id:"HEAVY",      label:"Og'ir texnika",      icon:"iconWeight", mult:1.4}
+    {id:"GENERAL",      label:"Umumiy yuk",                  icon:"iconBox",       mult:1.0},
+    {id:"FOOD",         label:"Oziq-ovqat",                  icon:"iconBox",       mult:1.15},
+    {id:"CONSTRUCTION", label:"Qurilish materiallari",       icon:"iconWeight",    mult:1.2},
+    {id:"FURNITURE",    label:"Mebel",                       icon:"iconBox",       mult:1.25},
+    {id:"ELECTRONICS",  label:"Elektronika",                 icon:"iconGem",       mult:1.4},
+    {id:"AGRICULTURE",  label:"Qishloq xo'jaligi mahsulotlari", icon:"iconBox",   mult:1.1},
+    {id:"CLOTHING",     label:"Kiyim-kechak",                icon:"iconBox",       mult:1.05},
+    {id:"MACHINERY",    label:"Texnika / mashinalar",        icon:"iconWeight",    mult:1.35},
+    {id:"DOCUMENTS",    label:"Hujjatlar",                   icon:"iconReceipt",   mult:0.9},
+    {id:"PERISHABLE",   label:"Tez buziluvchi",              icon:"iconSnow",      mult:1.3},
+    {id:"FRAGILE",      label:"Qimmatbaho / mo'rt",          icon:"iconGem",       mult:1.5},
+    {id:"HEAVY",        label:"Og'ir texnika",               icon:"iconWeight",    mult:1.4},
+    {id:"OTHER",        label:"Boshqa (o'zingiz yozing)",    icon:"iconBox",       mult:1.1}
   ];
 
   // Preview only — the server recomputes the price before publishing.
   var BASE_PER_KM = 2500, BASE_PER_KG = 300, MIN_PRICE = 150000;
 
   var state = {
-    from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL",
+    from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL", customCargoLabel: "",
     name: "", phone: "", note: "", customPrice: "",
     submitting: false, sent: null
   };
@@ -1005,7 +1040,8 @@
     var cargo = cargoById(state.cargo);
     var price = calcPrice(distance, state.weight, cargo.mult);
     var sameCity = state.from === state.to;
-    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken;
+    var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
+    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken && cargoReady;
 
     return '<div class="card">'
       + '<h3 class="card-title">'+icon("iconClipboard")+' Yuk ma\'lumotlari</h3>'
@@ -1016,15 +1052,17 @@
       + '<div class="field"><label for="fWeight">Yuk og\'irligi (kg)</label>'
       +   '<input type="number" id="fWeight" min="1" max="50000" inputmode="numeric" value="'+state.weight+'"></div>'
       + '<div class="field">'
-      +   '<span style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Yuk turi</span>'
-      +   '<div class="cargo-grid" role="group" aria-label="Yuk turi">'
+      +   '<label for="fCargo">Yuk turi</label>'
+      +   '<select id="fCargo">'
       +   CARGO.map(function(c){
-            return '<button type="button" class="cargo-opt'+(c.id===state.cargo?' sel':'')+'" data-cargo="'+c.id+'" aria-pressed="'+(c.id===state.cargo)+'">'
-              + '<span class="ic">'+icon(c.icon)+'</span><span class="lbl">'+c.label+'</span>'
-              + '<span class="mult">×'+c.mult.toFixed(1)+'</span></button>';
+            return '<option value="'+c.id+'"'+(c.id===state.cargo?' selected':'')+'>'+c.label+'</option>';
           }).join("")
-      +   '</div>'
+      +   '</select>'
       + '</div>'
+      + (state.cargo === "OTHER"
+          ? '<div class="field"><label for="fCargoCustom">Yuk turini o\'zingiz yozing</label>'
+            + '<input type="text" id="fCargoCustom" maxlength="60" placeholder="Masalan: haykal, mebel qismlari" value="'+escapeHtml(state.customCargoLabel)+'"></div>'
+          : '')
 
       + '<div class="tear"></div>'
 
@@ -1048,9 +1086,8 @@
       + '<div class="stub-stats">'
       +   '<div class="stat"><div class="v">'+formatNum(distance)+' km</div><div class="k">Masofa</div></div>'
       +   '<div class="stat"><div class="v">'+formatNum(state.weight)+' kg</div><div class="k">Og\'irlik</div></div>'
-      +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+cargo.label+'</div><div class="k">Yuk turi</div></div>'
+      +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+(state.cargo==="OTHER" && state.customCargoLabel ? escapeHtml(state.customCargoLabel) : cargo.label)+'</div><div class="k">Yuk turi</div></div>'
       + '</div>'
-      + '<div class="price-line"><span class="k">Taxminiy narx</span><span class="v">'+formatNum(price)+' so\'m</span></div>'
 
       + '<div class="field" style="margin-top:var(--s3);">'
       +   '<label for="fCustomPrice">O\'z narxingizni taklif qilasizmi? (ixtiyoriy)</label>'
@@ -1079,7 +1116,6 @@
     if(btn) btn.addEventListener("click", function(){
       state.sent = null;
       render();
-      document.getElementById("ilova").scrollIntoView({behavior:"smooth", block:"start"});
     });
   }
 
@@ -1089,8 +1125,9 @@
     var refreshButton = function(){
       var btn = document.getElementById("btnSend");
       if(!btn) return;
+      var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
       var ready = state.from !== state.to && state.weight > 0
-        && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken;
+        && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken && cargoReady;
       btn.disabled = !ready || state.submitting;
     };
 
@@ -1102,19 +1139,17 @@
     });
     document.getElementById("fWeight").addEventListener("input", function(e){
       state.weight = Math.max(0, parseInt(e.target.value || "0", 10));
-      var d = distanceBetween(state.from, state.to);
-      var p = calcPrice(d, state.weight, cargoById(state.cargo).mult);
-      var el = document.querySelector(".price-line .v");
-      if(el) el.textContent = formatNum(p) + " so'm";
       var w = document.querySelectorAll(".stub-stats .stat .v")[1];
       if(w) w.textContent = formatNum(state.weight) + " kg";
       refreshButton();
     });
 
-    document.querySelectorAll(".cargo-opt").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        state.cargo = btn.getAttribute("data-cargo"); render();
-      });
+    document.getElementById("fCargo").addEventListener("change", function(e){
+      state.cargo = e.target.value; render();
+    });
+    var cargoCustom = document.getElementById("fCargoCustom");
+    if(cargoCustom) cargoCustom.addEventListener("input", function(e){
+      state.customCargoLabel = e.target.value; refreshButton();
     });
 
     document.getElementById("fName").addEventListener("input", function(e){
@@ -1148,6 +1183,7 @@
           toCity: state.to,
           weightKg: state.weight,
           cargoType: state.cargo,
+          customCargoLabel: state.customCargoLabel.trim(),
           name: state.name.trim(),
           phone: normalisePhone(state.phone),
           note: state.note.trim(),
@@ -1169,7 +1205,7 @@
         phone: normalisePhone(state.phone)
       };
       toast("Buyurtma yuborildi", "№ " + json.code + " — haydovchilar ko'rmoqda", "success");
-      state.name = ""; state.phone = ""; state.note = ""; state.customPrice = "";
+      state.name = ""; state.phone = ""; state.note = ""; state.customPrice = ""; state.customCargoLabel = "";
     }catch(err){
       toast("Yuborilmadi", err.message || "Internetni tekshirib qayta urinib ko'ring.", "info");
     }finally{
@@ -1215,6 +1251,35 @@
   if(groupLink) groupLink.href = DRIVER_GROUP_URL;
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ============================================================
+     Tab navigation — the whole app is 5 screens (bottom nav),
+     switched here instead of scrolling through one long page.
+     ============================================================ */
+  var TABS = ["home", "order", "perks", "drivers", "contact"];
+  function switchTab(name){
+    if(TABS.indexOf(name) === -1) return;
+    TABS.forEach(function(t){
+      var el = document.getElementById("tab-" + t);
+      if(el) el.hidden = (t !== name);
+    });
+    document.querySelectorAll(".bn-item").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
+    });
+    var active = document.getElementById("tab-" + name);
+    if(active){
+      // IntersectionObserver never fires for content that was hidden —
+      // reveal it immediately instead of waiting on a scroll that won't come.
+      active.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
+    }
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll("[data-tab-link]").forEach(function(el){
+    el.addEventListener("click", function(e){
+      e.preventDefault();
+      switchTab(el.getAttribute("data-tab-link"));
+    });
+  });
 
   render();
   renderLiveWidget();
