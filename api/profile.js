@@ -11,7 +11,7 @@
  *   profile:<email>        -> JSON blob { username, role, city, bio, phone }
  */
 import { verifyGoogleEmail } from '../lib/google.js';
-import { kvConfigured, kvGet, kvSet, kvDel } from '../lib/kv.js';
+import { kvConfigured, kvGet, kvSet, kvDel, kvSadd } from '../lib/kv.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -19,6 +19,7 @@ const CITIES = [
   'Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Nukus', 'Qarshi', 'Urganch',
   'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
+const VEHICLE_TYPES = ['ISUZU', 'GAZEL', 'FURGON', 'YARIM_TREYLER', 'SAMOSVAL', 'BOSHQA'];
 
 /** profile:<email> used to just be the plain username string — read old and new shapes. */
 const parseProfile = (raw) => {
@@ -52,7 +53,8 @@ export default async function handler(req, res) {
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
 
-  const touchesAnyField = ['username', 'role', 'city', 'bio', 'phone'].some((k) => body[k] !== undefined);
+  const touchesAnyField = ['username', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber']
+    .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
     return res.status(200).json({ ok: true, profile: existing });
   }
@@ -105,9 +107,24 @@ export default async function handler(req, res) {
     next.phone = phone;
   }
 
+  // Driver-only fields — only meaningful once a role is DRIVER or BOTH, but
+  // saved as sent so switching role back and forth doesn't lose them.
+  if (body.vehicleType !== undefined && body.vehicleType !== null && body.vehicleType !== '') {
+    const vehicleType = String(body.vehicleType);
+    if (!VEHICLE_TYPES.includes(vehicleType)) return res.status(400).json({ error: 'Noto‘g‘ri mashina turi' });
+    next.vehicleType = vehicleType;
+  }
+
+  if (body.plateNumber !== undefined && body.plateNumber !== null && body.plateNumber !== '') {
+    next.plateNumber = String(body.plateNumber).trim().toUpperCase().slice(0, 12);
+  }
+
   const saved = await kvSet(profileKey, JSON.stringify(next));
   if (!saved) {
     return res.status(502).json({ error: 'Saqlab bo‘lmadi (bazachaga yozib bo‘lmadi), qayta urinib ko‘ring' });
   }
+  // Registers this email in the admin panel's user index. Safe to repeat —
+  // SADD is a no-op if it's already a member.
+  await kvSadd('profile_emails', email);
   return res.status(200).json({ ok: true, profile: next });
 }
