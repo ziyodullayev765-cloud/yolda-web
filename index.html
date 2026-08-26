@@ -458,6 +458,17 @@
   .faq-item p{
     font-size:13.5px;color:var(--ink-soft);line-height:1.65;margin:var(--s2) 0 0;
   }
+  .track-steps{display:flex;align-items:flex-start;margin:var(--s3) 0 0;}
+  .track-step{
+    display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;
+    color:var(--muted);width:70px;text-align:center;flex-shrink:0;
+  }
+  .track-step .track-dot{width:12px;height:12px;border-radius:50%;background:var(--border);}
+  .track-step--done .track-dot, .track-step--current .track-dot{background:var(--route);}
+  .track-step--done, .track-step--current{color:var(--ink);font-weight:600;}
+  .track-line{flex:1;height:2px;background:var(--border);margin-top:6px;min-width:12px;}
+  .track-line--done{background:var(--route);}
+  .star-btn{background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#F59E0B;padding:2px;}
   .field{margin-bottom:var(--s4);}
   .field label{
     display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
@@ -817,6 +828,20 @@
     </div>
     <div id="googleGate" style="margin:0 0 16px;"></div>
     <div id="content" aria-live="polite"></div>
+
+    <div class="card reveal" style="margin-top:var(--s4);">
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg> Buyurtmani kuzatish</h3>
+      <p class="note" style="margin-top:0;margin-bottom:var(--s4);">Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.</p>
+      <div class="row2">
+        <div class="field"><label for="fTrackCode">Buyurtma kodi</label>
+          <input type="text" id="fTrackCode" placeholder="YL-XXXXX"></div>
+        <div class="field"><label for="fTrackPhone">Telefon</label>
+          <input type="tel" id="fTrackPhone" placeholder="90 123 45 67"></div>
+      </div>
+      <p class="note" id="trackNote"></p>
+      <button class="btn ghost" id="btnTrack">Holatni tekshirish</button>
+      <div id="trackResult"></div>
+    </div>
   </div>
 </section>
 
@@ -1137,6 +1162,8 @@
             : '')
       +   '<div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:16px;">'+escapeHtml(displayName)+'</div>'
       +   (p.username ? '<div style="font-size:13px;color:var(--route-dark);">@'+escapeHtml(p.username)+'</div>' : '')
+      +   (p.verified ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:#16A34A;background:rgba(34,197,94,0.12);padding:2px 8px;border-radius:999px;margin-top:4px;">✓ Tasdiqlangan haydovchi</div>' : '')
+      +   (p.ratingCount ? '<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">★ '+(p.ratingSum/p.ratingCount).toFixed(1)+' ('+p.ratingCount+' baho)</div>' : '')
       + '</div></div>'
 
       + '<div style="margin-bottom:var(--s5);">'
@@ -1174,6 +1201,9 @@
       +     '</select></div>'
       +   '<div class="field"><label for="fPlateNumber">Davlat raqami (ixtiyoriy)</label>'
       +     '<input type="text" id="fPlateNumber" maxlength="12" placeholder="01 A 123 BB" value="'+escapeHtml(p.plateNumber || "")+'"></div>'
+      +   '<div class="field"><label for="fTelegramUsername">Telegram username (ixtiyoriy)</label>'
+      +     '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'+escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : "")+'"></div>'
+      +   '<p class="note" style="margin-top:-6px;">Guruhda yukni olganda "✓ Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
       + '</div>'
 
       + '<div class="field"><label for="fBio">Qisqa bio (ixtiyoriy)</label>'
@@ -1196,6 +1226,7 @@
 
     var vehicleType = document.getElementById("fVehicleType");
     var plateNumber = document.getElementById("fPlateNumber");
+    var telegramUsername = document.getElementById("fTelegramUsername");
     var payload = {
       googleIdToken: googleIdToken,
       username: document.getElementById("fUsername").value.trim(),
@@ -1204,7 +1235,8 @@
       phone: document.getElementById("fPhoneProfile").value.trim(),
       bio: document.getElementById("fBio").value.trim(),
       vehicleType: vehicleType ? vehicleType.value : "",
-      plateNumber: plateNumber ? plateNumber.value.trim() : ""
+      plateNumber: plateNumber ? plateNumber.value.trim() : "",
+      telegramUsername: telegramUsername ? telegramUsername.value.trim().replace(/^@/, "") : ""
     };
 
     btn.disabled = true;
@@ -1495,6 +1527,131 @@
       state.sent = null;
       render();
     });
+    // Auto-check the order they just submitted so they see it's live right away.
+    if(state.sent) submitTrack(state.sent.code, state.sent.phone);
+  }
+
+  /* ============================================================
+     Order tracking — "Buyurtmani kuzatish" card, static on the Order tab
+     (outside #content, so it survives formView()/successView() re-renders).
+     ============================================================ */
+  var TRACK_STATUS_ORDER = ["NEW", "DRIVER_FOUND", "ON_THE_WAY", "DELIVERED"];
+  var TRACK_STATUS_LABELS = {
+    NEW: "Yangi", DRIVER_FOUND: "Haydovchi topildi", ON_THE_WAY: "Yo'lda", DELIVERED: "Yetkazildi"
+  };
+
+  function renderTrackResult(data){
+    var idx = TRACK_STATUS_ORDER.indexOf(data.status);
+    var parts = [];
+    TRACK_STATUS_ORDER.forEach(function(s, i){
+      var cls = i < idx ? "done" : (i === idx ? "current" : "todo");
+      parts.push('<div class="track-step track-step--'+cls+'"><span class="track-dot"></span><span>'+TRACK_STATUS_LABELS[s]+'</span></div>');
+      if(i < TRACK_STATUS_ORDER.length - 1){
+        parts.push('<div class="track-line'+(i < idx ? ' track-line--done' : '')+'"></div>');
+      }
+    });
+
+    var driverHtml = data.driverName
+      ? '<p class="note" style="margin-top:var(--s3);">Haydovchi: <strong>'+escapeHtml(data.driverName)+'</strong>'+(data.driverVerified ? ' <span style="color:#16A34A;">✓ Tasdiqlangan</span>' : '')+'</p>'
+      : '';
+
+    var ratingHtml = '';
+    if(data.canRate){
+      ratingHtml = '<div style="margin-top:var(--s4);">'
+        + '<p class="note" style="margin:0 0 8px;">Haydovchini baholang:</p>'
+        + '<div id="starPicker" style="display:flex;gap:6px;margin-bottom:10px;">'
+        +   [1,2,3,4,5].map(function(n){ return '<button type="button" class="star-btn" data-star="'+n+'">☆</button>'; }).join("")
+        + '</div>'
+        + '<input type="text" id="fRatingComment" maxlength="300" placeholder="Izoh (ixtiyoriy)">'
+        + '<button class="btn ghost" id="btnSubmitRating" disabled style="margin-top:10px;">Baho yuborish</button>'
+        + '</div>';
+    } else if(data.rating){
+      ratingHtml = '<p class="note" style="margin-top:var(--s3);">Siz bergan baho: '+'★'.repeat(data.rating.stars)+'☆'.repeat(5-data.rating.stars)+'</p>';
+    }
+
+    document.getElementById("trackResult").innerHTML = '<div class="track-steps">'+parts.join("")+'</div>' + driverHtml + ratingHtml;
+
+    if(data.canRate){
+      var selectedStar = 0;
+      var starBtns = document.querySelectorAll(".star-btn");
+      starBtns.forEach(function(b){
+        b.addEventListener("click", function(){
+          selectedStar = parseInt(b.getAttribute("data-star"), 10);
+          starBtns.forEach(function(sb){
+            sb.textContent = parseInt(sb.getAttribute("data-star"), 10) <= selectedStar ? "★" : "☆";
+          });
+          document.getElementById("btnSubmitRating").disabled = false;
+        });
+      });
+      document.getElementById("btnSubmitRating").addEventListener("click", function(){
+        if(!selectedStar) return;
+        submitRating(data.code, document.getElementById("fTrackPhone").value, selectedStar, document.getElementById("fRatingComment").value.trim());
+      });
+    }
+  }
+
+  function submitTrack(prefillCode, prefillPhone){
+    var note = document.getElementById("trackNote");
+    var btn = document.getElementById("btnTrack");
+    var codeInput = document.getElementById("fTrackCode");
+    var phoneInput = document.getElementById("fTrackPhone");
+    if(!note || !btn || !codeInput || !phoneInput) return;
+
+    if(prefillCode !== undefined) codeInput.value = prefillCode;
+    if(prefillPhone !== undefined) phoneInput.value = prefillPhone;
+
+    var code = codeInput.value.trim();
+    var phone = normalisePhone(phoneInput.value);
+
+    if(!code || !phone){
+      note.textContent = "Kod va telefon raqamini kiriting.";
+      note.style.color = "#DC2626";
+      return;
+    }
+
+    btn.disabled = true;
+    note.textContent = "";
+    note.style.color = "";
+    document.getElementById("trackResult").innerHTML = "";
+
+    fetch("/api/order-status?code=" + encodeURIComponent(code) + "&phone=" + encodeURIComponent(phone))
+      .then(function(r){ return r.json().then(function(body){ return {ok: r.ok, body: body}; }); })
+      .then(function(res){
+        btn.disabled = false;
+        if(!res.ok){
+          note.textContent = res.body.error || "Topilmadi";
+          note.style.color = "#DC2626";
+          return;
+        }
+        renderTrackResult(res.body);
+      }).catch(function(){
+        btn.disabled = false;
+        note.textContent = "Yuklab bo'lmadi, qayta urinib ko'ring.";
+        note.style.color = "#DC2626";
+      });
+  }
+
+  function submitRating(code, phone, stars, comment){
+    var btn = document.getElementById("btnSubmitRating");
+    if(btn) btn.disabled = true;
+    fetch("/api/order-rate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ code: code, phone: normalisePhone(phone), stars: stars, comment: comment })
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      if(!res.ok){
+        alert(res.body.error || "Yuborilmadi");
+        if(btn) btn.disabled = false;
+        return;
+      }
+      toast("Rahmat!", "Bahoyingiz qabul qilindi", "success");
+      submitTrack(code, normalisePhone(phone));
+    }).catch(function(){
+      alert("Yuborilmadi, qayta urinib ko'ring.");
+      if(btn) btn.disabled = false;
+    });
   }
 
   function bindForm(){
@@ -1663,6 +1820,8 @@
   if(btnSendSupport) btnSendSupport.addEventListener("click", submitSupport);
   var btnSendReport = document.getElementById("btnSendReport");
   if(btnSendReport) btnSendReport.addEventListener("click", submitReport);
+  var btnTrack = document.getElementById("btnTrack");
+  if(btnTrack) btnTrack.addEventListener("click", function(){ submitTrack(); });
 
   render();
   renderLiveWidget();
