@@ -378,7 +378,7 @@
     var btn = document.getElementById("ordersRefresh");
     if(forceSpin) btn.classList.add("spinning");
     if(!allOrders.length) document.getElementById("ordersRows").innerHTML = skeletonRows(10, 6);
-    fetch("/api/admin-orders").then(function(r){
+    fetch("/api/admin-data?resource=orders").then(function(r){
       if(!r.ok) throw new Error(r.status === 401 ? "unauth" : "fail");
       return r.json();
     }).then(function(data){
@@ -436,7 +436,7 @@
     }));
   }
   function setDriverVerified(email, verified){
-    fetch("/api/admin-verify-driver", {
+    fetch("/api/admin-data?action=verify-driver", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({email: email, verified: verified})
@@ -456,7 +456,7 @@
     var btn = document.getElementById("usersRefresh");
     if(forceSpin) btn.classList.add("spinning");
     if(!allUsers.length) document.getElementById("usersRows").innerHTML = skeletonRows(6, 6);
-    fetch("/api/admin-users").then(function(r){
+    fetch("/api/admin-data?resource=users").then(function(r){
       if(!r.ok) throw new Error("fail");
       return r.json();
     }).then(function(data){
@@ -503,7 +503,7 @@
     var btn = document.getElementById("messagesRefresh");
     if(forceSpin) btn.classList.add("spinning");
     if(!allMessages.length) document.getElementById("messagesRows").innerHTML = skeletonRows(4, 6);
-    fetch("/api/admin-messages").then(function(r){
+    fetch("/api/admin-data?resource=messages").then(function(r){
       if(!r.ok) throw new Error("fail");
       return r.json();
     }).then(function(data){
@@ -573,7 +573,7 @@
     var btn = document.getElementById("reportsRefresh");
     if(forceSpin) btn.classList.add("spinning");
     if(!allReports.length) document.getElementById("reportsRows").innerHTML = skeletonRows(7, 6);
-    fetch("/api/admin-reports").then(function(r){
+    fetch("/api/admin-data?resource=reports").then(function(r){
       if(!r.ok) throw new Error("fail");
       return r.json();
     }).then(function(data){
@@ -589,7 +589,7 @@
   }
 
   function updateReportStatus(id, status){
-    fetch("/api/admin-report-update", {
+    fetch("/api/admin-data?action=update-report", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({id: id, status: status})
