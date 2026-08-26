@@ -143,6 +143,7 @@
     <nav class="admin-nav">
       <button type="button" class="admin-nav-item active" data-panel="orders">📦 Buyurtmalar</button>
       <button type="button" class="admin-nav-item" data-panel="users">👥 Foydalanuvchilar</button>
+      <button type="button" class="admin-nav-item" data-panel="messages">✉️ Xabarlar</button>
     </nav>
     <div class="admin-logout"><button type="button" id="logoutBtn">Chiqish</button></div>
   </aside>
@@ -187,10 +188,33 @@
         <table>
           <thead>
             <tr>
-              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Bio</th>
+              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Mashina</th><th>Raqami</th><th>Bio</th>
             </tr>
           </thead>
           <tbody id="usersRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-panel" id="panel-messages" hidden>
+      <div class="admin-panel-head">
+        <div><h1>Xabarlar</h1><p class="muted" id="messagesCount">Yuklanmoqda…</p></div>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="messagesSearch" placeholder="Qidirish: ism, aloqa, xabar...">
+        <button type="button" class="icon-btn" id="messagesRefresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12A8 8 0 0 1 18 6.3"/><path d="M20 12A8 8 0 0 1 6 17.7"/><path d="M18 3.5V7H14.5M6 20.5V17H9.5"/></svg>
+          Yangilash
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Vaqt</th><th>Ism</th><th>Aloqa</th><th>Xabar</th>
+            </tr>
+          </thead>
+          <tbody id="messagesRows"></tbody>
         </table>
       </div>
     </section>
@@ -202,6 +226,10 @@
   "use strict";
 
   var ROLE_LABELS = { DRIVER: "Haydovchi", OWNER: "Yuk beruvchi", BOTH: "Ikkalasi ham" };
+  var VEHICLE_LABELS = {
+    ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon", YARIM_TREYLER: "Yarim treyler",
+    SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
+  };
 
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
   function esc(s){
@@ -230,7 +258,7 @@
   });
 
   /* ---------- Panels ---------- */
-  var PANELS = ["orders", "users"];
+  var PANELS = ["orders", "users", "messages"];
   function switchPanel(name){
     if(PANELS.indexOf(name) === -1) return;
     PANELS.forEach(function(p){
@@ -242,6 +270,7 @@
     });
     if(name === "orders") loadOrders();
     if(name === "users") loadUsers();
+    if(name === "messages") loadMessages();
   }
   document.querySelectorAll(".admin-nav-item").forEach(function(b){
     b.addEventListener("click", function(){ switchPanel(b.getAttribute("data-panel")); });
@@ -304,6 +333,8 @@
       + "<td>" + esc(ROLE_LABELS[u.role] || "") + "</td>"
       + "<td>" + esc(u.city) + "</td>"
       + "<td>" + esc(u.phone) + "</td>"
+      + "<td>" + esc(VEHICLE_LABELS[u.vehicleType] || "") + "</td>"
+      + "<td>" + esc(u.plateNumber) + "</td>"
       + "<td class=\"muted-cell\">" + esc(u.bio) + "</td>"
       + "</tr>";
   }
@@ -311,13 +342,13 @@
     document.getElementById("usersCount").textContent =
       list.length + " / " + allUsers.length + " ta foydalanuvchi ko'rsatilmoqda";
     document.getElementById("usersRows").innerHTML =
-      list.map(userRowHtml).join("") || "<tr><td colspan=\"6\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+      list.map(userRowHtml).join("") || "<tr><td colspan=\"8\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
   }
   function filterUsers(){
     var q = document.getElementById("usersSearch").value.trim().toLowerCase();
     if(!q) return renderUsers(allUsers);
     renderUsers(allUsers.filter(function(u){
-      return [u.username, u.email, u.city, u.phone, u.bio]
+      return [u.username, u.email, u.city, u.phone, u.bio, u.plateNumber]
         .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
     }));
   }
@@ -334,6 +365,47 @@
     }).then(function(data){
       allUsers = data.users || [];
       filterUsers();
+    }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
+  }
+
+  /* ---------- Messages ---------- */
+  var allMessages = [];
+  function messageRowHtml(m){
+    var d = m.createdAt ? new Date(m.createdAt) : null;
+    return "<tr>"
+      + "<td>" + (d ? esc(d.toLocaleString("uz-UZ")) : "") + "</td>"
+      + "<td>" + esc(m.name) + "</td>"
+      + "<td>" + esc(m.contact) + "</td>"
+      + "<td class=\"muted-cell\" style=\"white-space:normal;min-width:280px;\">" + esc(m.message) + "</td>"
+      + "</tr>";
+  }
+  function renderMessages(list){
+    document.getElementById("messagesCount").textContent =
+      list.length + " / " + allMessages.length + " ta xabar ko'rsatilmoqda (eng yangisi tepada)";
+    document.getElementById("messagesRows").innerHTML =
+      list.map(messageRowHtml).join("") || "<tr><td colspan=\"4\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+  }
+  function filterMessages(){
+    var q = document.getElementById("messagesSearch").value.trim().toLowerCase();
+    if(!q) return renderMessages(allMessages);
+    renderMessages(allMessages.filter(function(m){
+      return [m.name, m.contact, m.message]
+        .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
+    }));
+  }
+  document.getElementById("messagesSearch").addEventListener("input", filterMessages);
+  document.getElementById("messagesRefresh").addEventListener("click", function(){ loadMessages(true); });
+
+  function loadMessages(forceSpin){
+    var btn = document.getElementById("messagesRefresh");
+    if(forceSpin) btn.classList.add("spinning");
+    if(!allMessages.length) document.getElementById("messagesRows").innerHTML = skeletonRows(4, 6);
+    fetch("/api/admin-messages").then(function(r){
+      if(!r.ok) throw new Error("unauth");
+      return r.json();
+    }).then(function(data){
+      allMessages = data.messages || [];
+      filterMessages();
     }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
   }
 
