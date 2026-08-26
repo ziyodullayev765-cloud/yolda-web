@@ -8,8 +8,9 @@
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush, kvSismember } from '../lib/kv.js';
+import { kvPush, kvSet, kvSismember } from '../lib/kv.js';
 import { verifyGoogleEmail } from '../lib/google.js';
+import { CARGO, buildOrderMessage } from '../lib/orderMessage.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Group id is not a secret, so it ships with the code as a fallback.
@@ -53,22 +54,6 @@ const DISTANCE = {
   'Termiz|Toshkent': 700, 'Termiz|Urganch': 1000, 'Toshkent|Urganch': 1050
 };
 
-const CARGO = {
-  GENERAL: { label: 'Umumiy yuk', emoji: '📦', mult: 1.0 },
-  FOOD: { label: 'Oziq-ovqat', emoji: '🍞', mult: 1.15 },
-  CONSTRUCTION: { label: 'Qurilish materiallari', emoji: '🧱', mult: 1.2 },
-  FURNITURE: { label: 'Mebel', emoji: '🛋️', mult: 1.25 },
-  ELECTRONICS: { label: 'Elektronika', emoji: '📺', mult: 1.4 },
-  AGRICULTURE: { label: 'Qishloq xo\u2018jaligi mahsulotlari', emoji: '🌾', mult: 1.1 },
-  CLOTHING: { label: 'Kiyim-kechak', emoji: '👕', mult: 1.05 },
-  MACHINERY: { label: 'Texnika / mashinalar', emoji: '⚙️', mult: 1.35 },
-  DOCUMENTS: { label: 'Hujjatlar', emoji: '📄', mult: 0.9 },
-  PERISHABLE: { label: 'Tez buziluvchi', emoji: '🧊', mult: 1.3 },
-  FRAGILE: { label: 'Qimmatbaho / mo\u2018rt', emoji: '💎', mult: 1.5 },
-  HEAVY: { label: 'Og\u2018ir texnika', emoji: '🏗', mult: 1.4 },
-  OTHER: { label: 'Boshqa', emoji: '📦', mult: 1.1 },
-};
-
 const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 const generateCode = () => {
@@ -78,11 +63,6 @@ const generateCode = () => {
   }
   return `YL-${out}`;
 };
-
-const formatNum = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-
-/** Telegram MarkdownV2 requires escaping a long list of characters. */
-const escapeMd = (s) => String(s).replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, (m) => `\\${m}`);
 
 const normalisePhone = (v) => {
   const d = String(v).replace(/\D/g, '');
@@ -110,17 +90,17 @@ const validate = (body) => {
 
   const fromCity = String(body.fromCity || '');
   const toCity = String(body.toCity || '');
-  if (!CITIES.includes(fromCity)) errors.push('Noto\u2018g\u2018ri shahar (qayerdan)');
-  if (!CITIES.includes(toCity)) errors.push('Noto\u2018g\u2018ri shahar (qayerga)');
-  if (fromCity && fromCity === toCity) errors.push('Shaharlar bir xil bo\u2018lmasin');
+  if (!CITIES.includes(fromCity)) errors.push('Noto‘g‘ri shahar (qayerdan)');
+  if (!CITIES.includes(toCity)) errors.push('Noto‘g‘ri shahar (qayerga)');
+  if (fromCity && fromCity === toCity) errors.push('Shaharlar bir xil bo‘lmasin');
 
   const weightKg = Number(body.weightKg);
   if (!Number.isInteger(weightKg) || weightKg < 1 || weightKg > 50_000) {
-    errors.push('Og\u2018irlik 1 dan 50000 kg gacha bo\u2018lsin');
+    errors.push('Og‘irlik 1 dan 50000 kg gacha bo‘lsin');
   }
 
   const cargoType = String(body.cargoType || 'GENERAL');
-  if (!CARGO[cargoType]) errors.push('Noto\u2018g\u2018ri yuk turi');
+  if (!CARGO[cargoType]) errors.push('Noto‘g‘ri yuk turi');
 
   let customCargoLabel = '';
   if (cargoType === 'OTHER') {
@@ -132,7 +112,7 @@ const validate = (body) => {
   if (name.length < 2) errors.push('Ismni kiriting');
 
   const phone = normalisePhone(body.phone);
-  if (!phone) errors.push('Telefon raqam noto\u2018g\u2018ri');
+  if (!phone) errors.push('Telefon raqam noto‘g‘ri');
 
   const note = String(body.note || '').trim().slice(0, 300);
 
@@ -158,29 +138,6 @@ const quote = ({ fromCity, toCity, weightKg, cargoType }) => {
   const mult = CARGO[cargoType].mult;
   const rounded = Math.round(((distanceKm * PRICE_PER_KM + weightKg * PRICE_PER_KG) * mult) / 1000) * 1000;
   return { distanceKm, amount: Math.max(PRICE_MINIMUM, rounded) };
-};
-
-const buildMessage = (order) => {
-  const cargo = CARGO[order.cargoType];
-  const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel ? order.customCargoLabel : cargo.label;
-  return [
-    `🚚 *YANGI YUK* \\| \`${escapeMd(order.code)}\``,
-    '',
-    `📍 *${escapeMd(order.fromCity)}* → *${escapeMd(order.toCity)}*`,
-    `📏 ${escapeMd(formatNum(order.distanceKm))} km`,
-    `⚖️ ${escapeMd(formatNum(order.weightKg))} kg`,
-    `${cargo.emoji} ${escapeMd(cargoLabel)}`,
-    '',
-    order.isProposed
-      ? `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(yuk beruvchi taklifi, hisoblangan: ${escapeMd(formatNum(order.estimatedAmount))} so\u2018m\\)`
-      : `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(taxminiy\\)`,
-    '',
-    `👤 ${escapeMd(order.name)}`,
-    order.googleEmail ? `✅ Google: ${escapeMd(order.googleEmail)}` : null,
-    order.note ? `📝 ${escapeMd(order.note)}` : null,
-    '',
-    '_Raqam buyurtmani qabul qilgandan keyin ko\u2018rinadi\\._',
-  ].filter(Boolean).join('\n');
 };
 
 const telegram = async (method, payload) => {
@@ -221,39 +178,47 @@ export default async function handler(req, res) {
   }
 
   if (isThrottled(value.phone)) {
-    return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko\u2018ring' });
+    return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko‘ring' });
   }
 
   const { distanceKm, amount: estimatedAmount } = quote(value);
   const code = generateCode();
   const isProposed = value.proposedAmount != null;
   const amount = isProposed ? value.proposedAmount : estimatedAmount;
-  const order = { ...value, code, distanceKm, amount, estimatedAmount, isProposed, googleEmail };
+  // status/driver/rating are the fields /api/telegram updates as the order
+  // moves through its lifecycle — see lib/orderMessage.js for the states.
+  const order = {
+    ...value, code, distanceKm, amount, estimatedAmount, isProposed, googleEmail,
+    status: 'NEW', driver: null, rating: null,
+  };
 
   try {
     await telegram('sendMessage', {
       chat_id: GROUP_ID,
-      text: buildMessage(order),
+      text: buildOrderMessage(order),
       parse_mode: 'MarkdownV2',
       reply_markup: {
         inline_keyboard: [[
           {
             text: '✅ Men olaman',
             // The phone rides in callback_data so the bot can reveal it to
-            // whoever taps first — no database required.
+            // whoever taps first, even if the KV write below never lands.
             callback_data: `take:${code}:${value.phone}`,
           },
         ]],
       },
     });
 
-    // Logged for the admin panel. Best-effort — the order already went to
-    // Telegram either way, so a logging hiccup never blocks the customer.
-    kvPush('orders', JSON.stringify({ ...order, createdAt: Date.now() })).catch(() => {});
+    // Persisted as its own key (not just appended to a list) so /api/telegram
+    // can update its status later, and so the owner can track it by code.
+    // Best-effort — the order already went to Telegram either way, so a
+    // logging hiccup never blocks the customer.
+    kvSet(`order:${code}`, JSON.stringify({ ...order, createdAt: Date.now() })).catch(() => {});
+    kvPush('order_codes', code).catch(() => {});
 
     return res.status(200).json({ ok: true, code, amount, distanceKm });
   } catch (err) {
     console.error('Telegram send failed:', err.message);
-    return res.status(502).json({ error: 'Hozircha yuborib bo\u2018lmadi, birozdan keyin urinib ko\u2018ring' });
+    return res.status(502).json({ error: 'Hozircha yuborib bo‘lmadi, birozdan keyin urinib ko‘ring' });
   }
 }
