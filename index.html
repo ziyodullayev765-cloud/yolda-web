@@ -316,6 +316,7 @@
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .stat-cell .k{font-size:12px;color:var(--muted);letter-spacing:0.02em;margin-top:var(--s1);font-weight:500;}
+  .stat-cell .kk{font-size:10.5px;color:var(--muted);opacity:0.75;margin-top:2px;}
   @media(max-width:640px){
     .stats-bar{grid-template-columns:repeat(2,1fr);gap:var(--s2);padding-left:var(--s4);padding-right:var(--s4);}
     .stat-cell{padding:var(--s4) var(--s2);}
@@ -431,6 +432,32 @@
     color:var(--ink);margin:0 0 var(--s5);display:flex;align-items:center;gap:var(--s2);
   }
   .card-title .ic-svg{color:var(--route);}
+  .how-steps{margin:0;padding-left:20px;font-size:14px;color:var(--ink-soft);line-height:1.7;}
+  .how-steps li{margin-bottom:6px;}
+  .how-steps li:last-child{margin-bottom:0;}
+  .link-btn{
+    background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;
+    color:var(--route);text-decoration:underline;cursor:pointer;
+  }
+  .faq-item{
+    border-bottom:1px solid var(--border);padding:var(--s3) 0;
+  }
+  .faq-item:last-child{border-bottom:none;padding-bottom:0;}
+  .faq-item:first-child{padding-top:0;}
+  .faq-item summary{
+    font-size:14.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    list-style:none;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .faq-item summary::-webkit-details-marker{display:none;}
+  .faq-item summary::after{
+    content:"+";flex:none;font-size:18px;font-weight:400;color:var(--muted);
+    transition:transform 0.24s var(--ease);
+  }
+  .faq-item[open] summary::after{transform:rotate(45deg);}
+  .faq-item p{
+    font-size:13.5px;color:var(--ink-soft);line-height:1.65;margin:var(--s2) 0 0;
+  }
   .field{margin-bottom:var(--s4);}
   .field label{
     display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
@@ -759,9 +786,9 @@
   </header>
 
   <div class="stats-bar">
-    <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k">Shahar</div></div>
-    <div class="stat-cell reveal"><div class="v">24/7</div><div class="k">Ish vaqti</div></div>
-    <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k">Ro'yxatdan o'tish narxi</div></div>
+    <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k">Shahar</div><div class="kk">Butun O'zbekiston bo'ylab</div></div>
+    <div class="stat-cell reveal"><div class="v">24/7</div><div class="k">Ish vaqti</div><div class="kk">Istalgan vaqtda buyurtma bering</div></div>
+    <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k">Ro'yxatdan o'tish narxi</div><div class="kk">Komissiya ham yo'q</div></div>
   </div>
 </section>
 
@@ -772,6 +799,16 @@
       <div class="section-eyebrow">Buyurtma</div>
       <h2 class="section-title">Hisoblang va <span class="accent">yuboring</span></h2>
       <p class="section-sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
+    </div>
+
+    <div class="card reveal" style="margin-bottom:var(--s4);">
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> Qanday ishlaydi?</h3>
+      <ol class="how-steps">
+        <li>Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>
+        <li>Birinchi bo'lib <strong>"✅ Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>
+        <li>Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>
+        <li>Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo'limidan yozing.</li>
+      </ol>
     </div>
 
     <div id="appBrowserHint" class="app-browser-hint" style="display:none;">
@@ -811,23 +848,62 @@
 </section>
 
 <section class="tabview" id="tab-contact" data-tab="contact" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);text-align:center;">
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);text-align:center;max-width:600px;">
     <div class="foot-brand" style="justify-content:center;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg>YO'LDA<span aria-hidden="true">.</span></div>
     <p class="section-sub reveal" style="margin:var(--s3) auto var(--s6);">Savol yoki yordam kerakmi? Biz bilan bog'laning.</p>
 
-    <div class="card reveal" style="max-width:360px;margin:0 auto var(--s4);text-align:left;">
+    <div class="card reveal" style="margin:0 auto var(--s4);text-align:left;">
       <a class="btn ghost" href="tel:+998944402090" style="justify-content:flex-start;gap:12px;">
         <svg class="ic-svg" aria-hidden="true"><use href="#iconPhone"/></svg> +998 94 440 20 90
       </a>
     </div>
-    <div class="card reveal" style="max-width:360px;margin:0 auto var(--s6);text-align:left;">
+    <div class="card reveal" style="margin:0 auto var(--s6);text-align:left;">
       <a class="btn ghost" href="https://t.me/ziyodullayv" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
         <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg> @ziyodullayv
       </a>
     </div>
 
-    <p style="color:var(--muted);font-size:13px;margin-top:var(--s4);">© 2026 YO'LDA</p>
-    <a href="/admin.html" style="display:inline-block;margin-top:var(--s3);color:var(--muted);font-size:12px;text-decoration:underline;">Admin panel</a>
+    <div class="card reveal" style="text-align:left;margin-bottom:var(--s4);">
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> Ko'p so'raladigan savollar</h3>
+      <details class="faq-item">
+        <summary>Xizmat pullikmi?</summary>
+        <p>Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Buyurtmam qanday tasdiqlanadi?</summary>
+        <p>Guruhda birinchi bo'lib <strong>«✅ Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Narx qanday kelishiladi?</summary>
+        <p>Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Haydovchi kelmasa yoki javob bermasa nima qilaman?</summary>
+        <p>Saytga qaytib, yangi buyurtma joylashtiring — u yana barcha haydovchilarga ko'rinadi. Takrorlanadigan bo'lsa, pastdagi forma orqali bizga xabar bering.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Buyurtmani bekor qila olamanmi?</summary>
+        <p>Ha. Agar hali hech kim olmagan bo'lsa, guruhda yozib qo'ying yoki pastdagi forma orqali bizga ayting — biz yordam beramiz.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Telefon raqamim kimga ko'rinadi?</summary>
+        <p>Faqat yukingizni «olgan» haydovchiga — u ham buyurtmani qabul qilgandan keyingina. Boshqa hech kimga oshkor qilinmaydi.</p>
+      </details>
+    </div>
+
+    <div class="card reveal" style="text-align:left;">
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Muammo bormi? Yozing</h3>
+      <div class="field"><label for="fSupportName">Ismingiz</label>
+        <input type="text" id="fSupportName" placeholder="Ismingiz"></div>
+      <div class="field"><label for="fSupportContact">Telefon yoki Telegram (ixtiyoriy)</label>
+        <input type="text" id="fSupportContact" placeholder="90 123 45 67 yoki @username"></div>
+      <div class="field"><label for="fSupportMessage">Xabaringiz</label>
+        <input type="text" id="fSupportMessage" maxlength="500" placeholder="Nima bo'lganini yozing"></div>
+      <p class="note" id="supportNote"></p>
+      <button class="btn" id="btnSendSupport">Yuborish</button>
+    </div>
+
+    <p style="color:var(--muted);font-size:13px;margin-top:var(--s6);">© 2026 YO'LDA</p>
   </div>
 </section>
 
@@ -992,6 +1068,10 @@
      ============================================================ */
   var PROFILE_FIELDS = ["username", "role", "city", "bio", "phone"];
   var ROLE_LABELS = { DRIVER: "Haydovchiman", OWNER: "Yuk beruvchiman", BOTH: "Ikkalasi ham" };
+  var VEHICLE_LABELS = {
+    ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon", YARIM_TREYLER: "Yarim treyler",
+    SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
+  };
 
   function profileCompletion(p){
     var filled = PROFILE_FIELDS.filter(function(f){ return p[f] && String(p[f]).trim(); }).length;
@@ -1062,6 +1142,18 @@
       + '<div class="field"><label for="fPhoneProfile">Telefon (ixtiyoriy)</label>'
       +   '<input type="tel" id="fPhoneProfile" placeholder="90 123 45 67" value="'+escapeHtml(p.phone || "")+'"></div>'
 
+      + '<div id="driverFields"'+(p.role==="DRIVER"||p.role==="BOTH" ? "" : " hidden")+'>'
+      +   '<div class="field"><label for="fVehicleType">Mashina turi</label>'
+      +     '<select id="fVehicleType">'
+      +       '<option value=""'+(!p.vehicleType?' selected':'')+'>Tanlanmagan</option>'
+      +       Object.keys(VEHICLE_LABELS).map(function(k){
+                return '<option value="'+k+'"'+(p.vehicleType===k?' selected':'')+'>'+VEHICLE_LABELS[k]+'</option>';
+              }).join("")
+      +     '</select></div>'
+      +   '<div class="field"><label for="fPlateNumber">Davlat raqami (ixtiyoriy)</label>'
+      +     '<input type="text" id="fPlateNumber" maxlength="12" placeholder="01 A 123 BB" value="'+escapeHtml(p.plateNumber || "")+'"></div>'
+      + '</div>'
+
       + '<div class="field"><label for="fBio">Qisqa bio (ixtiyoriy)</label>'
       +   '<input type="text" id="fBio" maxlength="200" placeholder="masalan: 5 yillik tajribaga ega yuk tashuvchi" value="'+escapeHtml(p.bio || "")+'"></div>'
 
@@ -1069,6 +1161,10 @@
       + '<button class="btn" id="btnSaveUsername">Saqlash</button>';
 
     document.getElementById("btnSaveUsername").addEventListener("click", saveUsername);
+    document.getElementById("fRole").addEventListener("change", function(e){
+      var df = document.getElementById("driverFields");
+      if(df) df.hidden = !(e.target.value === "DRIVER" || e.target.value === "BOTH");
+    });
   }
 
   function saveUsername(){
@@ -1076,13 +1172,17 @@
     var btn = document.getElementById("btnSaveUsername");
     if(!note || !btn) return;
 
+    var vehicleType = document.getElementById("fVehicleType");
+    var plateNumber = document.getElementById("fPlateNumber");
     var payload = {
       googleIdToken: googleIdToken,
       username: document.getElementById("fUsername").value.trim(),
       role: document.getElementById("fRole").value,
       city: document.getElementById("fProfileCity").value,
       phone: document.getElementById("fPhoneProfile").value.trim(),
-      bio: document.getElementById("fBio").value.trim()
+      bio: document.getElementById("fBio").value.trim(),
+      vehicleType: vehicleType ? vehicleType.value : "",
+      plateNumber: plateNumber ? plateNumber.value.trim() : ""
     };
 
     btn.disabled = true;
@@ -1107,6 +1207,54 @@
       note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
       note.style.color = "#DC2626";
       btn.disabled = false;
+    });
+  }
+
+  function submitSupport(){
+    var note = document.getElementById("supportNote");
+    var btn = document.getElementById("btnSendSupport");
+    if(!note || !btn) return;
+
+    var message = document.getElementById("fSupportMessage").value.trim();
+    if(!message){
+      note.textContent = "Xabar matnini yozing.";
+      note.style.color = "#DC2626";
+      return;
+    }
+
+    var payload = {
+      name: document.getElementById("fSupportName").value.trim(),
+      contact: document.getElementById("fSupportContact").value.trim(),
+      message: message
+    };
+
+    btn.disabled = true;
+    note.textContent = "";
+    note.style.color = "";
+
+    fetch("/api/support", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      btn.disabled = false;
+      if(!res.ok){
+        note.textContent = res.body.error || "Xato yuz berdi";
+        note.style.color = "#DC2626";
+        return;
+      }
+      document.getElementById("fSupportName").value = "";
+      document.getElementById("fSupportContact").value = "";
+      document.getElementById("fSupportMessage").value = "";
+      note.textContent = "Xabaringiz yuborildi. Tez orada bog'lanamiz.";
+      note.style.color = "#16A34A";
+      toast("Xabar yuborildi", "Tez orada bog'lanamiz", "success");
+    }).catch(function(){
+      btn.disabled = false;
+      note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
+      note.style.color = "#DC2626";
     });
   }
 
@@ -1429,6 +1577,8 @@
       switchTab(el.getAttribute("data-tab-link"));
     });
   });
+  var btnSendSupport = document.getElementById("btnSendSupport");
+  if(btnSendSupport) btnSendSupport.addEventListener("click", submitSupport);
 
   render();
   renderLiveWidget();
