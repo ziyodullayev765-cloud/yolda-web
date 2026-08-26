@@ -11,7 +11,7 @@
  *   profile:<email>        -> JSON blob { username, role, city, bio, phone }
  */
 import { verifyGoogleEmail } from '../lib/google.js';
-import { kvConfigured, kvGet, kvSet, kvDel, kvSadd } from '../lib/kv.js';
+import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSismember } from '../lib/kv.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -57,6 +57,9 @@ export default async function handler(req, res) {
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
     return res.status(200).json({ ok: true, profile: existing });
+  }
+  if (await kvSismember('banned', email.toLowerCase())) {
+    return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
   }
 
   const next = { ...existing };
