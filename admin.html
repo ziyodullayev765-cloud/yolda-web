@@ -22,12 +22,16 @@
     font-size:15px;margin-bottom:12px;background:#fff;color:var(--ink);
   }
   .login-wrap input:focus{outline:none;border-color:var(--route);}
-  .login-wrap button{
+  /* Scoped to the card's direct-child submit button only — a plain
+     ".login-wrap button" selector would also (more specifically than
+     ".pw-toggle") match the eye-icon button nested inside .pw-field,
+     stretching it to width:100% and painting it blue. */
+  .login-wrap .card > button{
     padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:#fff;
     font-weight:600;cursor:pointer;font-size:15px;width:100%;
   }
-  .login-wrap button:hover{opacity:0.92;}
-  .login-wrap button:disabled{opacity:0.5;cursor:not-allowed;}
+  .login-wrap .card > button:hover{opacity:0.92;}
+  .login-wrap .card > button:disabled{opacity:0.5;cursor:not-allowed;}
   .err{color:#F87171;font-size:13.5px;margin-top:4px;min-height:18px;}
   .login-wrap .err{color:#DC2626;}
 
