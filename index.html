@@ -1614,7 +1614,7 @@
     note.style.color = "";
     document.getElementById("trackResult").innerHTML = "";
 
-    fetch("/api/order-status?code=" + encodeURIComponent(code) + "&phone=" + encodeURIComponent(phone))
+    fetch("/api/order?code=" + encodeURIComponent(code) + "&phone=" + encodeURIComponent(phone))
       .then(function(r){ return r.json().then(function(body){ return {ok: r.ok, body: body}; }); })
       .then(function(res){
         btn.disabled = false;
@@ -1634,7 +1634,7 @@
   function submitRating(code, phone, stars, comment){
     var btn = document.getElementById("btnSubmitRating");
     if(btn) btn.disabled = true;
-    fetch("/api/order-rate", {
+    fetch("/api/order?action=rate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ code: code, phone: normalisePhone(phone), stars: stars, comment: comment })
