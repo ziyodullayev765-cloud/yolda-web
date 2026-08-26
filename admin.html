@@ -319,13 +319,23 @@
     if(forceSpin) btn.classList.add("spinning");
     if(!allOrders.length) document.getElementById("ordersRows").innerHTML = skeletonRows(10, 6);
     fetch("/api/admin-orders").then(function(r){
-      if(!r.ok) throw new Error("unauth");
+      if(!r.ok) throw new Error(r.status === 401 ? "unauth" : "fail");
       return r.json();
     }).then(function(data){
       showAdmin();
       allOrders = data.orders || [];
       filterOrders();
-    }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
+    }).catch(function(e){
+      // A 401 on page load just means there's no session yet — that's the
+      // normal state of the login screen, stay quiet. Any other failure
+      // (already logged in, something broke) should be visible, not silent.
+      if(e.message === "unauth" && loginBox.style.display !== "none") return;
+      document.getElementById("ordersCount").textContent = "Yuklab bo'lmadi — qayta urinib ko'ring";
+      if(!allOrders.length){
+        document.getElementById("ordersRows").innerHTML =
+          "<tr><td colspan=\"10\" class=\"muted-cell\">Yuklab bo'lmadi. \"Yangilash\" tugmasini bosing yoki sahifani qayta oching.</td></tr>";
+      }
+    }).finally(function(){ btn.classList.remove("spinning"); });
   }
 
   /* ---------- Users ---------- */
@@ -364,12 +374,18 @@
     if(forceSpin) btn.classList.add("spinning");
     if(!allUsers.length) document.getElementById("usersRows").innerHTML = skeletonRows(6, 6);
     fetch("/api/admin-users").then(function(r){
-      if(!r.ok) throw new Error("unauth");
+      if(!r.ok) throw new Error("fail");
       return r.json();
     }).then(function(data){
       allUsers = data.users || [];
       filterUsers();
-    }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
+    }).catch(function(){
+      document.getElementById("usersCount").textContent = "Yuklab bo'lmadi — qayta urinib ko'ring";
+      if(!allUsers.length){
+        document.getElementById("usersRows").innerHTML =
+          "<tr><td colspan=\"8\" class=\"muted-cell\">Yuklab bo'lmadi. \"Yangilash\" tugmasini bosing.</td></tr>";
+      }
+    }).finally(function(){ btn.classList.remove("spinning"); });
   }
 
   /* ---------- Messages ---------- */
@@ -405,12 +421,18 @@
     if(forceSpin) btn.classList.add("spinning");
     if(!allMessages.length) document.getElementById("messagesRows").innerHTML = skeletonRows(4, 6);
     fetch("/api/admin-messages").then(function(r){
-      if(!r.ok) throw new Error("unauth");
+      if(!r.ok) throw new Error("fail");
       return r.json();
     }).then(function(data){
       allMessages = data.messages || [];
       filterMessages();
-    }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
+    }).catch(function(){
+      document.getElementById("messagesCount").textContent = "Yuklab bo'lmadi — qayta urinib ko'ring";
+      if(!allMessages.length){
+        document.getElementById("messagesRows").innerHTML =
+          "<tr><td colspan=\"4\" class=\"muted-cell\">Yuklab bo'lmadi. \"Yangilash\" tugmasini bosing.</td></tr>";
+      }
+    }).finally(function(){ btn.classList.remove("spinning"); });
   }
 
   /* ---------- Login / logout ---------- */
@@ -434,6 +456,10 @@
         return j;
       });
     }).then(function(){
+      // Show the shell as soon as the password is confirmed — don't wait
+      // on the orders fetch too, or a hiccup there leaves the admin stuck
+      // staring at the login screen with no error shown.
+      showAdmin();
       loadOrders();
     }).catch(function(e){
       loginErr.textContent = e.message;
