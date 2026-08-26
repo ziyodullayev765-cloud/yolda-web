@@ -8,7 +8,7 @@
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush } from '../lib/kv.js';
+import { kvPush, kvSismember } from '../lib/kv.js';
 import { verifyGoogleEmail } from '../lib/google.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -208,10 +208,16 @@ export default async function handler(req, res) {
   if (!googleEmail) {
     return res.status(401).json({ error: 'Avval Google orqali kiring' });
   }
+  if (await kvSismember('banned', googleEmail.toLowerCase())) {
+    return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
+  }
 
   const { errors, value } = validate(body);
   if (errors.length) {
     return res.status(400).json({ error: errors[0], errors });
+  }
+  if (value.phone && (await kvSismember('banned', value.phone.toLowerCase()))) {
+    return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
   }
 
   if (isThrottled(value.phone)) {
