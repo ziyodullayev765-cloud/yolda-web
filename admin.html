@@ -79,6 +79,9 @@
   .status-pill.st-CONTACTED{background:rgba(79,140,255,0.16);color:#93C5FD;}
   .status-pill.st-RESOLVED{background:rgba(34,197,94,0.16);color:#86EFAC;}
   .status-pill.st-BANNED{background:rgba(255,255,255,0.08);color:var(--text-soft);}
+  .status-pill.st-DRIVER_FOUND{background:rgba(245,158,11,0.16);color:#FCD34D;}
+  .status-pill.st-ON_THE_WAY{background:rgba(79,140,255,0.16);color:#93C5FD;}
+  .status-pill.st-DELIVERED{background:rgba(34,197,94,0.16);color:#86EFAC;}
   .status-select{
     padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--panel);
     color:var(--text);font-size:12.5px;
@@ -187,7 +190,7 @@
           <thead>
             <tr>
               <th>Vaqt</th><th>Kod</th><th>Yo'nalish</th><th>Og'irlik</th><th>Yuk turi</th><th>Narx</th>
-              <th>Ism</th><th>Telefon</th><th>Google</th><th>Izoh</th>
+              <th>Ism</th><th>Telefon</th><th>Google</th><th>Holat</th><th>Haydovchi</th><th>Izoh</th>
             </tr>
           </thead>
           <tbody id="ordersRows"></tbody>
@@ -210,7 +213,7 @@
         <table>
           <thead>
             <tr>
-              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Mashina</th><th>Raqami</th><th>Bio</th>
+              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Mashina</th><th>Raqami</th><th>Tasdiq</th><th>Baho</th><th>Bio</th>
             </tr>
           </thead>
           <tbody id="usersRows"></tbody>
@@ -285,6 +288,9 @@
     RESOLVED: "Hal qilindi", BANNED: "Bloklandi"
   };
   var STATUS_FLOW = ["NEW", "INVESTIGATING", "CONTACTED", "RESOLVED", "BANNED"];
+  var ORDER_STATUS_LABELS = {
+    NEW: "Yangi", DRIVER_FOUND: "Haydovchi topildi", ON_THE_WAY: "Yo'lda", DELIVERED: "Yetkazildi"
+  };
 
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
   function esc(s){
@@ -346,6 +352,8 @@
       + "<td>" + esc(o.name) + "</td>"
       + "<td>" + esc(o.phone) + "</td>"
       + "<td>" + esc(o.googleEmail) + "</td>"
+      + "<td><span class=\"status-pill st-" + esc(o.status || "NEW") + "\">" + esc(ORDER_STATUS_LABELS[o.status] || ORDER_STATUS_LABELS.NEW) + "</span></td>"
+      + "<td>" + (o.driver ? esc(o.driver.name) + (o.driver.verified ? " ✓" : "") : "") + "</td>"
       + "<td class=\"muted-cell\">" + esc(o.note) + "</td>"
       + "</tr>";
   }
@@ -353,7 +361,7 @@
     document.getElementById("ordersCount").textContent =
       list.length + " / " + allOrders.length + " ta buyurtma ko'rsatilmoqda (eng yangisi tepada)";
     document.getElementById("ordersRows").innerHTML =
-      list.map(orderRowHtml).join("") || "<tr><td colspan=\"10\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+      list.map(orderRowHtml).join("") || "<tr><td colspan=\"12\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
   }
   function filterOrders(){
     var q = document.getElementById("ordersSearch").value.trim().toLowerCase();
@@ -401,6 +409,10 @@
       + "<td>" + esc(u.phone) + "</td>"
       + "<td>" + esc(VEHICLE_LABELS[u.vehicleType] || "") + "</td>"
       + "<td>" + esc(u.plateNumber) + "</td>"
+      + "<td>" + ((u.role === "DRIVER" || u.role === "BOTH")
+            ? ("<button type=\"button\" class=\"icon-btn verify-btn\" data-email=\"" + esc(u.email) + "\" data-verified=\"" + (u.verified ? "1" : "0") + "\" style=\"padding:6px 10px;font-size:12px;" + (u.verified ? "border-color:#22C55E;color:#86EFAC;" : "") + "\">" + (u.verified ? "✓ Tasdiqlangan" : "Tasdiqlash") + "</button>")
+            : "") + "</td>"
+      + "<td>" + (u.ratingCount ? "★ " + (u.ratingSum / u.ratingCount).toFixed(1) + " (" + u.ratingCount + ")" : "") + "</td>"
       + "<td class=\"muted-cell\">" + esc(u.bio) + "</td>"
       + "</tr>";
   }
@@ -408,7 +420,12 @@
     document.getElementById("usersCount").textContent =
       list.length + " / " + allUsers.length + " ta foydalanuvchi ko'rsatilmoqda";
     document.getElementById("usersRows").innerHTML =
-      list.map(userRowHtml).join("") || "<tr><td colspan=\"8\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+      list.map(userRowHtml).join("") || "<tr><td colspan=\"10\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+    document.querySelectorAll(".verify-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        setDriverVerified(btn.getAttribute("data-email"), btn.getAttribute("data-verified") !== "1");
+      });
+    });
   }
   function filterUsers(){
     var q = document.getElementById("usersSearch").value.trim().toLowerCase();
@@ -417,6 +434,20 @@
       return [u.username, u.email, u.city, u.phone, u.bio, u.plateNumber]
         .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
     }));
+  }
+  function setDriverVerified(email, verified){
+    fetch("/api/admin-verify-driver", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({email: email, verified: verified})
+    }).then(function(r){
+      if(!r.ok) throw new Error("fail");
+      return r.json();
+    }).then(function(){
+      loadUsers();
+    }).catch(function(){
+      alert("Yangilab bo'lmadi, qayta urinib ko'ring.");
+    });
   }
   document.getElementById("usersSearch").addEventListener("input", filterUsers);
   document.getElementById("usersRefresh").addEventListener("click", function(){ loadUsers(true); });
