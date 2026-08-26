@@ -11,7 +11,7 @@
  *   profile:<email>        -> JSON blob { username, role, city, bio, phone }
  */
 import { verifyGoogleEmail } from '../lib/google.js';
-import { kvGet, kvSet, kvDel } from '../lib/kv.js';
+import { kvConfigured, kvGet, kvSet, kvDel } from '../lib/kv.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -41,6 +41,9 @@ const normalisePhone = (v) => {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!kvConfigured) {
+    return res.status(500).json({ error: 'Bazacha ulanmagan (KV_REST_API_URL/TOKEN yo‘q) — administratorga xabar bering' });
+  }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const email = await verifyGoogleEmail(body.googleIdToken);
@@ -71,7 +74,10 @@ export default async function handler(req, res) {
     if (existing.username && existing.username.toLowerCase() !== username.toLowerCase()) {
       await kvDel(`username:${existing.username.toLowerCase()}`);
     }
-    await kvSet(usernameKey, email);
+    const claimed = await kvSet(usernameKey, email);
+    if (!claimed) {
+      return res.status(502).json({ error: 'Username saqlab bo‘lmadi, qayta urinib ko‘ring' });
+    }
     next.username = username;
   }
 
@@ -99,6 +105,9 @@ export default async function handler(req, res) {
     next.phone = phone;
   }
 
-  await kvSet(profileKey, JSON.stringify(next));
+  const saved = await kvSet(profileKey, JSON.stringify(next));
+  if (!saved) {
+    return res.status(502).json({ error: 'Saqlab bo‘lmadi (bazachaga yozib bo‘lmadi), qayta urinib ko‘ring' });
+  }
   return res.status(200).json({ ok: true, profile: next });
 }
