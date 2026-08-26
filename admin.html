@@ -66,6 +66,23 @@
   }
   .admin-nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
   .admin-nav-item.active{background:var(--accent);color:#fff;}
+  .nav-badge{
+    margin-left:auto;background:#EF4444;color:#fff;font-size:11px;font-weight:700;
+    line-height:1;padding:3px 6px;border-radius:999px;
+  }
+  .status-pill{
+    display:inline-block;padding:4px 9px;border-radius:999px;font-size:11.5px;font-weight:600;
+    white-space:nowrap;
+  }
+  .status-pill.st-NEW{background:rgba(239,68,68,0.16);color:#FCA5A5;}
+  .status-pill.st-INVESTIGATING{background:rgba(245,158,11,0.16);color:#FCD34D;}
+  .status-pill.st-CONTACTED{background:rgba(79,140,255,0.16);color:#93C5FD;}
+  .status-pill.st-RESOLVED{background:rgba(34,197,94,0.16);color:#86EFAC;}
+  .status-pill.st-BANNED{background:rgba(255,255,255,0.08);color:var(--text-soft);}
+  .status-select{
+    padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--panel);
+    color:var(--text);font-size:12.5px;
+  }
   .admin-logout{margin-top:auto;}
   .admin-logout button{
     width:100%;padding:11px 12px;border:none;border-radius:8px;
@@ -148,6 +165,7 @@
       <button type="button" class="admin-nav-item active" data-panel="orders">📦 Buyurtmalar</button>
       <button type="button" class="admin-nav-item" data-panel="users">👥 Foydalanuvchilar</button>
       <button type="button" class="admin-nav-item" data-panel="messages">✉️ Xabarlar</button>
+      <button type="button" class="admin-nav-item" data-panel="reports">🚨 Shikoyatlar<span class="nav-badge" id="reportsBadge" hidden></span></button>
     </nav>
     <div class="admin-logout"><button type="button" id="logoutBtn">Chiqish</button></div>
   </aside>
@@ -222,6 +240,29 @@
         </table>
       </div>
     </section>
+
+    <section class="admin-panel" id="panel-reports" hidden>
+      <div class="admin-panel-head">
+        <div><h1>Shikoyatlar</h1><p class="muted" id="reportsCount">Yuklanmoqda…</p></div>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="reportsSearch" placeholder="Qidirish: sabab, kimga oid, tavsif...">
+        <button type="button" class="icon-btn" id="reportsRefresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12A8 8 0 0 1 18 6.3"/><path d="M20 12A8 8 0 0 1 6 17.7"/><path d="M18 3.5V7H14.5M6 20.5V17H9.5"/></svg>
+          Yangilash
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Vaqt</th><th>Sabab</th><th>Kimga oid</th><th>Tavsif</th><th>Yuborgan</th><th>Holat</th><th>Amal</th>
+            </tr>
+          </thead>
+          <tbody id="reportsRows"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -234,6 +275,16 @@
     ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon", YARIM_TREYLER: "Yarim treyler",
     SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
   };
+  var REASON_LABELS = {
+    SCAM: "Firibgarlik", FAKE_LOAD: "Soxta yuk e'loni", FAKE_DRIVER: "Soxta haydovchi",
+    PAYMENT: "To'lov muammosi", BEHAVIOR: "Yomon muomala", DELIVERY: "Yetkazib berish muammosi",
+    OTHER: "Boshqa"
+  };
+  var STATUS_LABELS = {
+    NEW: "Yangi", INVESTIGATING: "Tekshirilmoqda", CONTACTED: "Bog'lanildi",
+    RESOLVED: "Hal qilindi", BANNED: "Bloklandi"
+  };
+  var STATUS_FLOW = ["NEW", "INVESTIGATING", "CONTACTED", "RESOLVED", "BANNED"];
 
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
   function esc(s){
@@ -262,7 +313,7 @@
   });
 
   /* ---------- Panels ---------- */
-  var PANELS = ["orders", "users", "messages"];
+  var PANELS = ["orders", "users", "messages", "reports"];
   function switchPanel(name){
     if(PANELS.indexOf(name) === -1) return;
     PANELS.forEach(function(p){
@@ -275,6 +326,7 @@
     if(name === "orders") loadOrders();
     if(name === "users") loadUsers();
     if(name === "messages") loadMessages();
+    if(name === "reports") loadReports();
   }
   document.querySelectorAll(".admin-nav-item").forEach(function(b){
     b.addEventListener("click", function(){ switchPanel(b.getAttribute("data-panel")); });
@@ -435,10 +487,97 @@
     }).finally(function(){ btn.classList.remove("spinning"); });
   }
 
+  /* ---------- Reports ---------- */
+  var allReports = [];
+  function reportRowHtml(r){
+    var d = r.createdAt ? new Date(r.createdAt) : null;
+    var options = STATUS_FLOW.map(function(s){
+      return "<option value=\"" + s + "\"" + (r.status === s ? " selected" : "") + ">" + STATUS_LABELS[s] + "</option>";
+    }).join("");
+    return "<tr>"
+      + "<td>" + (d ? esc(d.toLocaleString("uz-UZ")) : "") + "</td>"
+      + "<td>" + esc(REASON_LABELS[r.reason] || r.reason) + "</td>"
+      + "<td>" + esc(r.targetContact) + "</td>"
+      + "<td class=\"muted-cell\" style=\"white-space:normal;min-width:260px;\">" + esc(r.description) + "</td>"
+      + "<td class=\"muted-cell\">" + esc(r.reporterEmail) + "</td>"
+      + "<td><span class=\"status-pill st-" + esc(r.status) + "\">" + esc(STATUS_LABELS[r.status] || r.status) + "</span></td>"
+      + "<td><select class=\"status-select\" data-report-id=\"" + esc(r.id) + "\">" + options + "</select></td>"
+      + "</tr>";
+  }
+  function renderReports(list){
+    var newCount = allReports.filter(function(r){ return r.status === "NEW"; }).length;
+    document.getElementById("reportsCount").textContent =
+      list.length + " / " + allReports.length + " ta shikoyat ko'rsatilmoqda (" + newCount + " ta yangi)";
+    document.getElementById("reportsRows").innerHTML =
+      list.map(reportRowHtml).join("") || "<tr><td colspan=\"7\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+    document.querySelectorAll("[data-report-id]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        updateReportStatus(sel.getAttribute("data-report-id"), sel.value);
+      });
+    });
+    updateReportsBadge(newCount);
+  }
+  function updateReportsBadge(newCount){
+    var badge = document.getElementById("reportsBadge");
+    if(!badge) return;
+    if(newCount > 0){
+      badge.textContent = newCount;
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  }
+  function filterReports(){
+    var q = document.getElementById("reportsSearch").value.trim().toLowerCase();
+    if(!q) return renderReports(allReports);
+    renderReports(allReports.filter(function(r){
+      return [REASON_LABELS[r.reason], r.targetContact, r.description, r.reporterEmail]
+        .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
+    }));
+  }
+  document.getElementById("reportsSearch").addEventListener("input", filterReports);
+  document.getElementById("reportsRefresh").addEventListener("click", function(){ loadReports(true); });
+
+  function loadReports(forceSpin){
+    var btn = document.getElementById("reportsRefresh");
+    if(forceSpin) btn.classList.add("spinning");
+    if(!allReports.length) document.getElementById("reportsRows").innerHTML = skeletonRows(7, 6);
+    fetch("/api/admin-reports").then(function(r){
+      if(!r.ok) throw new Error("fail");
+      return r.json();
+    }).then(function(data){
+      allReports = (data.reports || []).slice().sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+      filterReports();
+    }).catch(function(){
+      document.getElementById("reportsCount").textContent = "Yuklab bo'lmadi — qayta urinib ko'ring";
+      if(!allReports.length){
+        document.getElementById("reportsRows").innerHTML =
+          "<tr><td colspan=\"7\" class=\"muted-cell\">Yuklab bo'lmadi. \"Yangilash\" tugmasini bosing.</td></tr>";
+      }
+    }).finally(function(){ btn.classList.remove("spinning"); });
+  }
+
+  function updateReportStatus(id, status){
+    fetch("/api/admin-report-update", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({id: id, status: status})
+    }).then(function(r){
+      if(!r.ok) throw new Error("fail");
+      return r.json();
+    }).then(function(){
+      loadReports();
+    }).catch(function(){
+      alert("Holatni yangilab bo'lmadi, qayta urinib ko'ring.");
+      loadReports();
+    });
+  }
+
   /* ---------- Login / logout ---------- */
   function showAdmin(){
     loginBox.style.display = "none";
     adminShell.style.display = "flex";
+    loadReports();
   }
 
   function doLogin(){
