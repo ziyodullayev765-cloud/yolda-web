@@ -6,29 +6,49 @@
 <meta name="robots" content="noindex, nofollow">
 <title>YO'LDA — Admin</title>
 <style>
-  :root{ --ink:#0F172A; --ink-soft:#475569; --route:#1D4ED8; --route-dark:#1E40AF; --border:#E2E8F0; --paper:#F9FAFB; --card:#FFFFFF; --sidebar:#0F172A; }
+  :root{
+    --ink:#0F172A; --ink-soft:#475569; --route:#1D4ED8; --route-dark:#1E40AF;
+    --border:#E2E8F0; --paper:#F9FAFB; --card:#FFFFFF;
+  }
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
 
-  /* ---------- Login ---------- */
+  /* ---------- Login (stays light) ---------- */
   .login-wrap{max-width:340px;margin:80px auto;padding:0 20px;}
   .login-wrap h1{font-size:20px;margin:0 0 20px;letter-spacing:-0.01em;}
+  .login-wrap .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;}
+  .login-wrap input{
+    width:100%;padding:12px 44px 12px 14px;border:1px solid var(--border);border-radius:8px;
+    font-size:15px;margin-bottom:12px;background:#fff;color:var(--ink);
+  }
+  .login-wrap input:focus{outline:none;border-color:var(--route);}
+  .login-wrap button{
+    padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:#fff;
+    font-weight:600;cursor:pointer;font-size:15px;width:100%;
+  }
+  .login-wrap button:hover{opacity:0.92;}
+  .login-wrap button:disabled{opacity:0.5;cursor:not-allowed;}
+  .err{color:#F87171;font-size:13.5px;margin-top:4px;min-height:18px;}
+  .login-wrap .err{color:#DC2626;}
 
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;}
-  input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:12px;}
-  input:focus{outline:none;border-color:var(--route);}
-  button{padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:#fff;font-weight:600;cursor:pointer;font-size:15px;width:100%;}
-  button:hover{opacity:0.92;}
-  button:disabled{opacity:0.5;cursor:not-allowed;}
-  .err{color:#DC2626;font-size:13.5px;margin-top:4px;min-height:18px;}
-  .muted{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px;}
+  .pw-field{position:relative;}
+  .pw-toggle{
+    position:absolute;right:6px;top:6px;width:32px;height:32px;
+    display:flex;align-items:center;justify-content:center;
+    background:none;border:none;padding:0;cursor:pointer;color:var(--ink-soft);
+  }
+  .pw-toggle svg{width:19px;height:19px;}
 
-  /* ---------- Admin shell: sidebar + content, full desktop layout ---------- */
-  .admin-shell{display:flex;min-height:100vh;}
+  /* ---------- Admin shell: dark, sidebar + content, full desktop layout ---------- */
+  .admin-shell{
+    --bg:#0B1220; --panel:#111B31; --card2:#141F3B; --line:rgba(255,255,255,0.08);
+    --text:#E7ECF7; --text-soft:#8B97B3; --accent:#4F8CFF; --accent-dark:#3D6FE0;
+    display:flex;min-height:100vh;background:var(--bg);color:var(--text);
+  }
   .admin-sidebar{
-    width:240px;flex-shrink:0;background:var(--sidebar);color:#fff;
+    width:240px;flex-shrink:0;background:#070C18;color:#fff;
     padding:24px 16px;display:flex;flex-direction:column;gap:24px;
-    position:sticky;top:0;height:100vh;
+    position:sticky;top:0;height:100vh;border-right:1px solid var(--line);
   }
   .admin-brand{font-size:17px;font-weight:700;letter-spacing:-0.01em;padding:0 8px;}
   .admin-brand span{color:#38BDF8;}
@@ -36,23 +56,59 @@
   .admin-nav-item{
     display:flex;align-items:center;gap:10px;
     width:100%;text-align:left;background:none;border:none;
-    color:rgba(255,255,255,0.7);padding:11px 12px;border-radius:8px;
+    color:var(--text-soft);padding:11px 12px;border-radius:8px;
     font-size:14.5px;font-weight:500;cursor:pointer;
+    transition:background 0.15s ease, color 0.15s ease;
   }
   .admin-nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
-  .admin-nav-item.active{background:var(--route);color:#fff;}
+  .admin-nav-item.active{background:var(--accent);color:#fff;}
   .admin-logout{margin-top:auto;}
-  .admin-logout button{background:rgba(255,255,255,0.08);}
-  .admin-logout button:hover{background:rgba(255,255,255,0.14);}
+  .admin-logout button{
+    width:100%;padding:11px 12px;border:none;border-radius:8px;
+    background:rgba(255,255,255,0.06);color:var(--text-soft);font-weight:500;font-size:14px;cursor:pointer;
+  }
+  .admin-logout button:hover{background:rgba(255,255,255,0.12);color:#fff;}
 
-  .admin-main{flex:1;padding:36px 40px;max-width:1400px;}
-  .admin-panel h1{font-size:22px;margin:0 0 4px;letter-spacing:-0.01em;}
+  .admin-main{flex:1;padding:32px 40px;max-width:1500px;min-width:0;}
+  .admin-panel-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+  .admin-panel h1{font-size:21px;margin:0;letter-spacing:-0.01em;}
+  .admin-shell .muted{color:var(--text-soft);font-size:13.5px;margin:2px 0 0;}
 
-  .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .toolbar input[type=search]{
+    flex:1;min-width:200px;max-width:340px;padding:10px 14px;border-radius:8px;
+    border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:14px;
+  }
+  .toolbar input[type=search]::placeholder{color:var(--text-soft);}
+  .toolbar input[type=search]:focus{outline:none;border-color:var(--accent);}
+  .icon-btn{
+    display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:8px;
+    border:1px solid var(--line);background:var(--card2);color:var(--text);
+    font-size:13.5px;font-weight:500;cursor:pointer;white-space:nowrap;
+  }
+  .icon-btn:hover{border-color:var(--accent);color:#fff;}
+  .icon-btn svg{width:15px;height:15px;}
+  .icon-btn.spinning svg{animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .table-scroll{
+    overflow:auto;max-height:calc(100vh - 190px);
+    border:1px solid var(--line);border-radius:12px;background:var(--card2);
+  }
   table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;}
   tr:last-child td{border-bottom:none;}
-  th{color:var(--ink-soft);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;background:var(--paper);}
+  tbody tr{transition:background 0.1s ease;}
+  tbody tr:hover{background:rgba(255,255,255,0.035);}
+  th{
+    color:var(--text-soft);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;
+    background:var(--panel);position:sticky;top:0;z-index:1;
+  }
+  td.muted-cell{color:var(--text-soft);}
+
+  .skel-row td{padding:14px;}
+  .skel{height:12px;border-radius:5px;background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.11) 37%, rgba(255,255,255,0.05) 63%);background-size:400% 100%;animation:shimmer 1.3s ease-in-out infinite;}
+  @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
 
   @media(max-width:860px){
     .admin-shell{flex-direction:column;}
@@ -60,7 +116,8 @@
     .admin-nav{flex-direction:row;}
     .admin-logout{margin-top:0;margin-left:auto;width:auto;}
     .admin-logout button{width:auto;padding:9px 14px;}
-    .admin-main{padding:20px;}
+    .admin-main{padding:18px;}
+    .table-scroll{max-height:none;}
   }
 </style>
 </head>
@@ -69,7 +126,12 @@
 <div class="login-wrap" id="loginBox">
   <h1>YO'LDA — Admin panel</h1>
   <div class="card">
-    <input type="password" id="pw" placeholder="Parol" autocomplete="current-password">
+    <div class="pw-field">
+      <input type="password" id="pw" placeholder="Parol" autocomplete="current-password">
+      <button type="button" class="pw-toggle" id="pwToggle" aria-label="Parolni ko'rsatish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <button id="loginBtn">Kirish</button>
     <div class="err" id="loginErr"></div>
   </div>
@@ -87,8 +149,16 @@
 
   <main class="admin-main">
     <section class="admin-panel" id="panel-orders">
-      <h1>Buyurtmalar</h1>
-      <p class="muted" id="ordersCount"></p>
+      <div class="admin-panel-head">
+        <div><h1>Buyurtmalar</h1><p class="muted" id="ordersCount">Yuklanmoqda…</p></div>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="ordersSearch" placeholder="Qidirish: kod, shahar, ism, telefon...">
+        <button type="button" class="icon-btn" id="ordersRefresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12A8 8 0 0 1 18 6.3"/><path d="M20 12A8 8 0 0 1 6 17.7"/><path d="M18 3.5V7H14.5M6 20.5V17H9.5"/></svg>
+          Yangilash
+        </button>
+      </div>
       <div class="table-scroll">
         <table>
           <thead>
@@ -103,8 +173,16 @@
     </section>
 
     <section class="admin-panel" id="panel-users" hidden>
-      <h1>Foydalanuvchilar</h1>
-      <p class="muted" id="usersCount"></p>
+      <div class="admin-panel-head">
+        <div><h1>Foydalanuvchilar</h1><p class="muted" id="usersCount">Yuklanmoqda…</p></div>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="usersSearch" placeholder="Qidirish: username, email, shahar...">
+        <button type="button" class="icon-btn" id="usersRefresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12A8 8 0 0 1 18 6.3"/><path d="M20 12A8 8 0 0 1 6 17.7"/><path d="M18 3.5V7H14.5M6 20.5V17H9.5"/></svg>
+          Yangilash
+        </button>
+      </div>
       <div class="table-scroll">
         <table>
           <thead>
@@ -131,12 +209,25 @@
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
     });
   }
+  function skeletonRows(cols, count){
+    var row = "<tr class=\"skel-row\">" + Array(cols).fill(0).map(function(){
+      return "<td><div class=\"skel\" style=\"width:" + (50 + Math.random()*40) + "px;\"></div></td>";
+    }).join("") + "</tr>";
+    return Array(count).fill(row).join("");
+  }
 
   var loginBox = document.getElementById("loginBox");
   var adminShell = document.getElementById("adminShell");
   var loginErr = document.getElementById("loginErr");
   var loginBtn = document.getElementById("loginBtn");
   var pwInput = document.getElementById("pw");
+
+  /* ---------- Show/hide password ---------- */
+  document.getElementById("pwToggle").addEventListener("click", function(){
+    var showing = pwInput.type === "text";
+    pwInput.type = showing ? "password" : "text";
+    this.setAttribute("aria-label", showing ? "Parolni ko'rsatish" : "Parolni yashirish");
+  });
 
   /* ---------- Panels ---------- */
   var PANELS = ["orders", "users"];
@@ -157,59 +248,93 @@
   });
 
   /* ---------- Orders ---------- */
-  function showOrders(orders){
-    document.getElementById("ordersCount").textContent = orders.length + " ta buyurtma (oxirgi 200 tasi, eng yangisi tepada)";
-    var rows = orders.map(function(o){
-      var d = o.createdAt ? new Date(o.createdAt) : null;
-      return "<tr>"
-        + "<td>" + (d ? esc(d.toLocaleString("uz-UZ")) : "") + "</td>"
-        + "<td>" + esc(o.code) + "</td>"
-        + "<td>" + esc(o.fromCity) + " → " + esc(o.toCity) + "</td>"
-        + "<td>" + fmt(o.weightKg || 0) + " kg</td>"
-        + "<td>" + esc(o.cargoType === "OTHER" && o.customCargoLabel ? o.customCargoLabel : o.cargoType) + "</td>"
-        + "<td>" + fmt(o.amount || 0) + " so'm</td>"
-        + "<td>" + esc(o.name) + "</td>"
-        + "<td>" + esc(o.phone) + "</td>"
-        + "<td>" + esc(o.googleEmail) + "</td>"
-        + "<td>" + esc(o.note) + "</td>"
-        + "</tr>";
-    }).join("");
-    document.getElementById("ordersRows").innerHTML = rows || "<tr><td colspan=\"10\" class=\"muted\">Hali buyurtma yo'q</td></tr>";
+  var allOrders = [];
+  function orderRowHtml(o){
+    var d = o.createdAt ? new Date(o.createdAt) : null;
+    return "<tr>"
+      + "<td>" + (d ? esc(d.toLocaleString("uz-UZ")) : "") + "</td>"
+      + "<td>" + esc(o.code) + "</td>"
+      + "<td>" + esc(o.fromCity) + " → " + esc(o.toCity) + "</td>"
+      + "<td>" + fmt(o.weightKg || 0) + " kg</td>"
+      + "<td>" + esc(o.cargoType === "OTHER" && o.customCargoLabel ? o.customCargoLabel : o.cargoType) + "</td>"
+      + "<td>" + fmt(o.amount || 0) + " so'm</td>"
+      + "<td>" + esc(o.name) + "</td>"
+      + "<td>" + esc(o.phone) + "</td>"
+      + "<td>" + esc(o.googleEmail) + "</td>"
+      + "<td class=\"muted-cell\">" + esc(o.note) + "</td>"
+      + "</tr>";
   }
+  function renderOrders(list){
+    document.getElementById("ordersCount").textContent =
+      list.length + " / " + allOrders.length + " ta buyurtma ko'rsatilmoqda (eng yangisi tepada)";
+    document.getElementById("ordersRows").innerHTML =
+      list.map(orderRowHtml).join("") || "<tr><td colspan=\"10\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+  }
+  function filterOrders(){
+    var q = document.getElementById("ordersSearch").value.trim().toLowerCase();
+    if(!q) return renderOrders(allOrders);
+    renderOrders(allOrders.filter(function(o){
+      return [o.code, o.fromCity, o.toCity, o.name, o.phone, o.googleEmail, o.note]
+        .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
+    }));
+  }
+  document.getElementById("ordersSearch").addEventListener("input", filterOrders);
+  document.getElementById("ordersRefresh").addEventListener("click", function(){ loadOrders(true); });
 
-  function loadOrders(){
+  function loadOrders(forceSpin){
+    var btn = document.getElementById("ordersRefresh");
+    if(forceSpin) btn.classList.add("spinning");
+    if(!allOrders.length) document.getElementById("ordersRows").innerHTML = skeletonRows(10, 6);
     fetch("/api/admin-orders").then(function(r){
       if(!r.ok) throw new Error("unauth");
       return r.json();
     }).then(function(data){
       showAdmin();
-      showOrders(data.orders || []);
-    }).catch(function(){});
+      allOrders = data.orders || [];
+      filterOrders();
+    }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
   }
 
   /* ---------- Users ---------- */
-  function showUsers(users){
-    document.getElementById("usersCount").textContent = users.length + " ta foydalanuvchi ro'yxatdan o'tgan";
-    var rows = users.map(function(u){
-      return "<tr>"
-        + "<td>" + (u.username ? "@" + esc(u.username) : "") + "</td>"
-        + "<td>" + esc(u.email) + "</td>"
-        + "<td>" + esc(ROLE_LABELS[u.role] || "") + "</td>"
-        + "<td>" + esc(u.city) + "</td>"
-        + "<td>" + esc(u.phone) + "</td>"
-        + "<td>" + esc(u.bio) + "</td>"
-        + "</tr>";
-    }).join("");
-    document.getElementById("usersRows").innerHTML = rows || "<tr><td colspan=\"6\" class=\"muted\">Hali foydalanuvchi yo'q</td></tr>";
+  var allUsers = [];
+  function userRowHtml(u){
+    return "<tr>"
+      + "<td>" + (u.username ? "@" + esc(u.username) : "") + "</td>"
+      + "<td>" + esc(u.email) + "</td>"
+      + "<td>" + esc(ROLE_LABELS[u.role] || "") + "</td>"
+      + "<td>" + esc(u.city) + "</td>"
+      + "<td>" + esc(u.phone) + "</td>"
+      + "<td class=\"muted-cell\">" + esc(u.bio) + "</td>"
+      + "</tr>";
   }
+  function renderUsers(list){
+    document.getElementById("usersCount").textContent =
+      list.length + " / " + allUsers.length + " ta foydalanuvchi ko'rsatilmoqda";
+    document.getElementById("usersRows").innerHTML =
+      list.map(userRowHtml).join("") || "<tr><td colspan=\"6\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+  }
+  function filterUsers(){
+    var q = document.getElementById("usersSearch").value.trim().toLowerCase();
+    if(!q) return renderUsers(allUsers);
+    renderUsers(allUsers.filter(function(u){
+      return [u.username, u.email, u.city, u.phone, u.bio]
+        .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
+    }));
+  }
+  document.getElementById("usersSearch").addEventListener("input", filterUsers);
+  document.getElementById("usersRefresh").addEventListener("click", function(){ loadUsers(true); });
 
-  function loadUsers(){
+  function loadUsers(forceSpin){
+    var btn = document.getElementById("usersRefresh");
+    if(forceSpin) btn.classList.add("spinning");
+    if(!allUsers.length) document.getElementById("usersRows").innerHTML = skeletonRows(6, 6);
     fetch("/api/admin-users").then(function(r){
       if(!r.ok) throw new Error("unauth");
       return r.json();
     }).then(function(data){
-      showUsers(data.users || []);
-    }).catch(function(){});
+      allUsers = data.users || [];
+      filterUsers();
+    }).catch(function(){}).finally(function(){ btn.classList.remove("spinning"); });
   }
 
   /* ---------- Login / logout ---------- */
