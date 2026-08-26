@@ -21,28 +21,53 @@ const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
 const PRICE_MINIMUM = Number(process.env.PRICE_MINIMUM || 150000);
 
 const CITIES = [
-  'Toshkent', 'Samarqand', 'Buxoro', 'Andijon',
-  'Namangan', 'Nukus', 'Qarshi', 'Urganch',
+  'Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Nukus', 'Qarshi', 'Urganch',
+  'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
 
 const DISTANCE = {
-  'Andijon|Buxoro': 700, 'Andijon|Namangan': 90, 'Andijon|Nukus': 1450, 'Andijon|Qarshi': 750,
-  'Andijon|Samarqand': 480, 'Andijon|Toshkent': 320, 'Andijon|Urganch': 1300,
-  'Buxoro|Namangan': 650, 'Buxoro|Nukus': 550, 'Buxoro|Qarshi': 280, 'Buxoro|Samarqand': 270,
-  'Buxoro|Toshkent': 450, 'Buxoro|Urganch': 450,
+  'Andijon|Buxoro': 700, 'Andijon|Farg\'ona': 75, 'Andijon|Guliston': 350,
+  'Andijon|Jizzax': 420, 'Andijon|Namangan': 90, 'Andijon|Navoiy': 600,
+  'Andijon|Nukus': 1450, 'Andijon|Qarshi': 750, 'Andijon|Samarqand': 480,
+  'Andijon|Termiz': 950, 'Andijon|Toshkent': 320, 'Andijon|Urganch': 1300,
+  'Buxoro|Farg\'ona': 730, 'Buxoro|Guliston': 450, 'Buxoro|Jizzax': 350,
+  'Buxoro|Namangan': 650, 'Buxoro|Navoiy': 120, 'Buxoro|Nukus': 550,
+  'Buxoro|Qarshi': 280, 'Buxoro|Samarqand': 270, 'Buxoro|Termiz': 530,
+  'Buxoro|Toshkent': 450, 'Buxoro|Urganch': 450, 'Farg\'ona|Guliston': 380,
+  'Farg\'ona|Jizzax': 420, 'Farg\'ona|Namangan': 110, 'Farg\'ona|Navoiy': 650,
+  'Farg\'ona|Nukus': 1470, 'Farg\'ona|Qarshi': 780, 'Farg\'ona|Samarqand': 500,
+  'Farg\'ona|Termiz': 950, 'Farg\'ona|Toshkent': 330, 'Farg\'ona|Urganch': 1320,
+  'Guliston|Jizzax': 120, 'Guliston|Namangan': 320, 'Guliston|Navoiy': 330,
+  'Guliston|Nukus': 950, 'Guliston|Qarshi': 400, 'Guliston|Samarqand': 200,
+  'Guliston|Termiz': 600, 'Guliston|Toshkent': 120, 'Guliston|Urganch': 800,
+  'Jizzax|Namangan': 380, 'Jizzax|Navoiy': 200, 'Jizzax|Nukus': 850,
+  'Jizzax|Qarshi': 330, 'Jizzax|Samarqand': 100, 'Jizzax|Termiz': 500,
+  'Jizzax|Toshkent': 200, 'Jizzax|Urganch': 700, 'Namangan|Navoiy': 570,
   'Namangan|Nukus': 1400, 'Namangan|Qarshi': 700, 'Namangan|Samarqand': 440,
-  'Namangan|Toshkent': 280, 'Namangan|Urganch': 1250,
-  'Nukus|Qarshi': 700, 'Nukus|Samarqand': 950, 'Nukus|Toshkent': 1200, 'Nukus|Urganch': 180,
-  'Qarshi|Samarqand': 220, 'Qarshi|Toshkent': 520, 'Qarshi|Urganch': 750,
-  'Samarqand|Toshkent': 300, 'Samarqand|Urganch': 800,
-  'Toshkent|Urganch': 1050,
+  'Namangan|Termiz': 900, 'Namangan|Toshkent': 280, 'Namangan|Urganch': 1250,
+  'Navoiy|Nukus': 430, 'Navoiy|Qarshi': 230, 'Navoiy|Samarqand': 150,
+  'Navoiy|Termiz': 450, 'Navoiy|Toshkent': 430, 'Navoiy|Urganch': 330,
+  'Nukus|Qarshi': 700, 'Nukus|Samarqand': 950, 'Nukus|Termiz': 1150,
+  'Nukus|Toshkent': 1200, 'Nukus|Urganch': 180, 'Qarshi|Samarqand': 220,
+  'Qarshi|Termiz': 280, 'Qarshi|Toshkent': 520, 'Qarshi|Urganch': 750,
+  'Samarqand|Termiz': 420, 'Samarqand|Toshkent': 300, 'Samarqand|Urganch': 800,
+  'Termiz|Toshkent': 700, 'Termiz|Urganch': 1000, 'Toshkent|Urganch': 1050
 };
 
 const CARGO = {
   GENERAL: { label: 'Umumiy yuk', emoji: '📦', mult: 1.0 },
+  FOOD: { label: 'Oziq-ovqat', emoji: '🍞', mult: 1.15 },
+  CONSTRUCTION: { label: 'Qurilish materiallari', emoji: '🧱', mult: 1.2 },
+  FURNITURE: { label: 'Mebel', emoji: '🛋️', mult: 1.25 },
+  ELECTRONICS: { label: 'Elektronika', emoji: '📺', mult: 1.4 },
+  AGRICULTURE: { label: 'Qishloq xo\u2018jaligi mahsulotlari', emoji: '🌾', mult: 1.1 },
+  CLOTHING: { label: 'Kiyim-kechak', emoji: '👕', mult: 1.05 },
+  MACHINERY: { label: 'Texnika / mashinalar', emoji: '⚙️', mult: 1.35 },
+  DOCUMENTS: { label: 'Hujjatlar', emoji: '📄', mult: 0.9 },
   PERISHABLE: { label: 'Tez buziluvchi', emoji: '🧊', mult: 1.3 },
   FRAGILE: { label: 'Qimmatbaho / mo\u2018rt', emoji: '💎', mult: 1.5 },
   HEAVY: { label: 'Og\u2018ir texnika', emoji: '🏗', mult: 1.4 },
+  OTHER: { label: 'Boshqa', emoji: '📦', mult: 1.1 },
 };
 
 const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -98,6 +123,12 @@ const validate = (body) => {
   const cargoType = String(body.cargoType || 'GENERAL');
   if (!CARGO[cargoType]) errors.push('Noto\u2018g\u2018ri yuk turi');
 
+  let customCargoLabel = '';
+  if (cargoType === 'OTHER') {
+    customCargoLabel = String(body.customCargoLabel || '').trim().slice(0, 60);
+    if (!customCargoLabel) errors.push('Yuk turini yozing');
+  }
+
   const name = String(body.name || '').trim().slice(0, 80);
   if (name.length < 2) errors.push('Ismni kiriting');
 
@@ -117,7 +148,10 @@ const validate = (body) => {
     }
   }
 
-  return { errors, value: { fromCity, toCity, weightKg, cargoType, name, phone, note, proposedAmount } };
+  return {
+    errors,
+    value: { fromCity, toCity, weightKg, cargoType, customCargoLabel, name, phone, note, proposedAmount },
+  };
 };
 
 const quote = ({ fromCity, toCity, weightKg, cargoType }) => {
@@ -129,13 +163,14 @@ const quote = ({ fromCity, toCity, weightKg, cargoType }) => {
 
 const buildMessage = (order) => {
   const cargo = CARGO[order.cargoType];
+  const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel ? order.customCargoLabel : cargo.label;
   return [
     `🚚 *YANGI YUK* \\| \`${escapeMd(order.code)}\``,
     '',
     `📍 *${escapeMd(order.fromCity)}* → *${escapeMd(order.toCity)}*`,
     `📏 ${escapeMd(formatNum(order.distanceKm))} km`,
     `⚖️ ${escapeMd(formatNum(order.weightKg))} kg`,
-    `${cargo.emoji} ${escapeMd(cargo.label)}`,
+    `${cargo.emoji} ${escapeMd(cargoLabel)}`,
     '',
     order.isProposed
       ? `💰 *${escapeMd(formatNum(order.amount))} so\u2018m* \\(yuk beruvchi taklifi, hisoblangan: ${escapeMd(formatNum(order.estimatedAmount))} so\u2018m\\)`
