@@ -282,7 +282,7 @@
     70%{box-shadow:0 0 0 8px rgba(6,182,212,0);}
     100%{box-shadow:0 0 0 0 rgba(6,182,212,0);}
   }
-  .hero-widget-body{transition:opacity 0.35s var(--ease);min-height:50px;}
+  .hero-widget-body{min-height:50px;}
   .hero-widget-route{
     display:flex;align-items:center;gap:var(--s2);
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;
@@ -710,6 +710,7 @@
   <g id="icon-defs" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <symbol id="iconBox" viewBox="0 0 24 24"><path d="M12 3 20 7.5V16.5L12 21 4 16.5V7.5Z"/><path d="M12 12V21M12 12 20 7.5M12 12 4 7.5"/></symbol>
     <symbol id="iconHome" viewBox="0 0 24 24"><path d="M4 11 12 4 20 11"/><path d="M6 9.5V20H18V9.5"/><path d="M10 20V14H14V20"/></symbol>
+    <symbol id="iconUser" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20"/></symbol>
     <symbol id="iconPhone" viewBox="0 0 24 24"><path d="M6.6 3.5 9.3 4.2 10.4 8.1 8.3 9.9C9.3 12.9 11.1 14.7 14.1 15.7L15.9 13.6 19.8 14.7 20.5 17.4C20.5 19.2 19 20.5 17.3 20.3C10 19.3 4.7 14 3.7 6.7 3.5 5 4.8 3.5 6.6 3.5Z"/></symbol>
     <symbol id="iconTelegram" viewBox="0 0 24 24"><path d="M21 4 3 11 9 13"/><path d="M21 4 15 20 9 13"/><path d="M21 4 9 13"/></symbol>
     <symbol id="iconTruck" viewBox="0 0 24 24"><rect x="1.5" y="8" width="12" height="8"/><path d="M13.5 11H17.5L21 14.5V16H13.5Z"/><circle cx="6" cy="18.2" r="1.6"/><circle cx="16.5" cy="18.2" r="1.6"/></symbol>
@@ -782,32 +783,14 @@
   </div>
 </section>
 
-<section class="tabview" id="tab-perks" data-tab="perks" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);">
-    <svg class="bg-truck bg-truck--features" aria-hidden="true"><use href="#truckIcon"/></svg>
+<section class="tabview" id="tab-profile" data-tab="profile" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:440px;">
     <div class="section-head reveal">
-      <div class="section-eyebrow">Afzalliklar</div>
-      <h2 class="section-title">Nega <span class="accent alt">YO'LDA</span></h2>
-      <p class="section-sub">Oddiy, ochiq va tezkor — na yashirin komissiya, na uzoq kutish.</p>
+      <div class="section-eyebrow">Profil</div>
+      <h2 class="section-title">Sizning <span class="accent alt">profilingiz</span></h2>
+      <p class="section-sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
     </div>
-    <div class="features">
-      <div class="feature reveal">
-        <span class="ic"><svg class="ic-svg"><use href="#iconBolt"/></svg></span>
-        <div><h3>Tezkor narx hisob-kitobi</h3><p>Masofa va og'irlikka qarab narx bir zumda chiqadi — qo'ng'iroq qilib so'rashning hojati yo'q.</p></div>
-      </div>
-      <div class="feature reveal">
-        <span class="ic"><svg class="ic-svg"><use href="#iconMap"/></svg></span>
-        <div><h3>Ochiq bozor</h3><p>Har bir buyurtma barcha haydovchilarga bir vaqtda ko'rinadi — birinchi kelgan oladi.</p></div>
-      </div>
-      <div class="feature reveal">
-        <span class="ic"><svg class="ic-svg"><use href="#iconReceipt"/></svg></span>
-        <div><h3>Aniq waybill raqami</h3><p>Har bir buyurtma o'z raqami bilan kuzatiladi — chalkashlik yo'q.</p></div>
-      </div>
-      <div class="feature reveal">
-        <span class="ic"><svg class="ic-svg"><use href="#iconFree"/></svg></span>
-        <div><h3>Bepul foydalanish</h3><p>Ro'yxatdan o'tish va e'lon joylashtirish uchun hech qanday to'lov talab qilinmaydi.</p></div>
-      </div>
-    </div>
+    <div class="card reveal" id="profileCard"></div>
   </div>
 </section>
 
@@ -852,7 +835,7 @@
 <nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span>Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="order"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span>Yuk berish</span></button>
-  <button type="button" class="bn-item" data-tab-link="perks"><svg class="ic-svg" aria-hidden="true"><use href="#iconBolt"/></svg><span>Afzalliklar</span></button>
+  <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span>Profil</span></button>
   <button type="button" class="bn-item" data-tab-link="drivers"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span>Haydovchilar</span></button>
   <button type="button" class="bn-item" data-tab-link="contact"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg><span>Aloqa</span></button>
 </nav>
@@ -930,11 +913,24 @@
     try{
       var payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
       if(!state.name) state.name = payload.name || "";
-      var badge = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(payload.email)+' orqali kirdingiz</span>';
+
       var gate = document.getElementById("googleGate");
-      if(gate) gate.innerHTML = badge;
+      if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(payload.email)+' orqali kirdingiz</span>';
+
+      // In the nav, the round button becomes the user's own avatar —
+      // tapping it opens the Profil tab (that's "the profile").
       var gateHome = document.getElementById("googleGateHome");
-      if(gateHome) gateHome.innerHTML = badge;
+      if(gateHome){
+        var initial = escapeHtml((payload.name || payload.email || "?").charAt(0).toUpperCase());
+        var avatar = payload.picture
+          ? '<img src="'+escapeHtml(payload.picture)+'" alt="" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;display:block;">'
+          : '<span style="width:32px;height:32px;border-radius:50%;background:var(--route);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">'+initial+'</span>';
+        gateHome.innerHTML = '<button type="button" id="navProfileBtn" aria-label="Profil" style="border:none;background:none;padding:0;cursor:pointer;line-height:0;">'+avatar+'</button>';
+        var navBtn = document.getElementById("navProfileBtn");
+        if(navBtn) navBtn.addEventListener("click", function(){ switchTab("profile"); });
+      }
+
+      renderProfile();
     }catch(e){}
     render();
   }
@@ -984,6 +980,71 @@
         if(gate && !gate.querySelector("iframe")) showAppBrowserHint();
       }, 2500);
     }).catch(function(){});
+  }
+
+  /* ============================================================
+     Profile — set once signed in with Google. The username is unique
+     across all accounts, enforced server-side in /api/profile.
+     ============================================================ */
+  function renderProfile(){
+    var card = document.getElementById("profileCard");
+    if(!card) return;
+
+    if(!googleIdToken){
+      card.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
+        + 'Profilni ko‘rish uchun avval yuqoridagi (yoki "Yuk berish" bo‘limidagi) tugma orqali Google bilan kiring.</p>';
+      return;
+    }
+
+    card.innerHTML = '<div class="skeleton sk-line" style="width:70%;"></div><div class="skeleton sk-line" style="width:45%;"></div>';
+
+    fetch("/api/profile", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken })
+    }).then(function(r){ return r.json(); }).then(function(data){
+      card.innerHTML =
+        '<div class="field"><label for="fUsername">Username</label>'
+        + '<input type="text" id="fUsername" maxlength="20" placeholder="masalan: dilshod_driver" value="'+escapeHtml(data.username || "")+'"></div>'
+        + '<p class="note" id="profileNote">3-20 belgi, faqat lotin harflari, raqam va pastki chiziq (_). Har bir username faqat bitta odamga tegishli bo‘ladi.</p>'
+        + '<button class="btn" id="btnSaveUsername">Saqlash</button>';
+      document.getElementById("btnSaveUsername").addEventListener("click", saveUsername);
+    }).catch(function(){
+      card.innerHTML = '<p class="note">Yuklab bo‘lmadi, qayta urinib ko‘ring.</p>';
+    });
+  }
+
+  function saveUsername(){
+    var input = document.getElementById("fUsername");
+    var note = document.getElementById("profileNote");
+    var btn = document.getElementById("btnSaveUsername");
+    if(!input || !note || !btn) return;
+
+    var username = input.value.trim();
+    btn.disabled = true;
+    note.textContent = "";
+    note.style.color = "";
+
+    fetch("/api/profile", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken, username: username })
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      if(!res.ok){
+        note.textContent = res.body.error || "Xato yuz berdi";
+        note.style.color = "#DC2626";
+        return;
+      }
+      note.textContent = "Saqlandi ✅";
+      toast("Username saqlandi", "@" + res.body.username, "success");
+    }).catch(function(){
+      note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
+      note.style.color = "#DC2626";
+    }).finally(function(){
+      btn.disabled = false;
+    });
   }
 
   /* ============================================================
@@ -1256,14 +1317,14 @@
     var dist = distanceBetween(s.from, s.to);
     var cargo = cargoById(s.cargo);
     var price = calcPrice(dist, s.weight, cargo.mult);
-    body.style.opacity = 0;
-    setTimeout(function(){
-      body.innerHTML = '<div class="hero-widget-route"><span>'+s.from+'</span>'
-        + '<span class="arrow">→</span><span>'+s.to+'</span></div>'
-        + '<div class="hero-widget-meta"><span>'+icon(cargo.icon)+' '+formatNum(s.weight)+' kg · '
-        + formatNum(dist)+' km</span><span class="hero-widget-price">'+formatNum(price)+' so\'m</span></div>';
-      body.style.opacity = 1;
-    }, 300);
+    // Swap content directly — no opacity fade. A background/foreground tab
+    // switch can let several delayed timeouts fire in a burst, and with the
+    // old fade-through approach that briefly painted two samples on top of
+    // each other (the "text over text" glitch). A plain swap can't do that.
+    body.innerHTML = '<div class="hero-widget-route"><span>'+s.from+'</span>'
+      + '<span class="arrow">→</span><span>'+s.to+'</span></div>'
+      + '<div class="hero-widget-meta"><span>'+icon(cargo.icon)+' '+formatNum(s.weight)+' kg · '
+      + formatNum(dist)+' km</span><span class="hero-widget-price">'+formatNum(price)+' so\'m</span></div>';
     liveIdx++;
   }
 
@@ -1279,7 +1340,7 @@
      Tab navigation — the whole app is 5 screens (bottom nav),
      switched here instead of scrolling through one long page.
      ============================================================ */
-  var TABS = ["home", "order", "perks", "drivers", "contact"];
+  var TABS = ["home", "order", "profile", "drivers", "contact"];
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
     TABS.forEach(function(t){
@@ -1295,6 +1356,7 @@
       // reveal it immediately instead of waiting on a scroll that won't come.
       active.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
     }
+    if(name === "profile") renderProfile();
     window.scrollTo(0, 0);
   }
   document.querySelectorAll("[data-tab-link]").forEach(function(el){
