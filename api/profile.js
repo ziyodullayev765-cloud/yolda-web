@@ -53,7 +53,7 @@ export default async function handler(req, res) {
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
 
-  const touchesAnyField = ['username', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber']
+  const touchesAnyField = ['username', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername']
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
     return res.status(200).json({ ok: true, profile: existing });
@@ -120,6 +120,18 @@ export default async function handler(req, res) {
 
   if (body.plateNumber !== undefined && body.plateNumber !== null && body.plateNumber !== '') {
     next.plateNumber = String(body.plateNumber).trim().toUpperCase().slice(0, 12);
+  }
+
+  // Links this account to a Telegram @username so /api/telegram can show a
+  // "✓ Tasdiqlangan" tag when this driver claims a load, and so a rating
+  // left after delivery can be attributed back to this profile.
+  if (body.telegramUsername !== undefined && body.telegramUsername !== null && body.telegramUsername !== '') {
+    const tg = String(body.telegramUsername).trim().replace(/^@/, '').toLowerCase();
+    if (!/^[a-zA-Z0-9_]{5,32}$/.test(tg)) {
+      return res.status(400).json({ error: 'Telegram username noto‘g‘ri (masalan: username)' });
+    }
+    next.telegramUsername = tg;
+    await kvSet(`tgToEmail:${tg}`, email);
   }
 
   const saved = await kvSet(profileKey, JSON.stringify(next));
