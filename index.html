@@ -22,6 +22,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Telegram Web App (Mini App) SDK — a no-op everywhere except inside
+     Telegram's own in-app browser, where it exposes window.Telegram.WebApp.
+     Loaded synchronously (no async/defer) per Telegram's own guidance, so
+     it's ready before initTelegramWebApp() runs. -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <!-- Leaflet + OpenStreetMap tiles for the "Yuklar" map view — free, no API key. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" defer></script>
@@ -1156,6 +1161,14 @@
       <button type="button" class="btn ghost small" id="copyLinkBtn">Havolani nusxalash</button>
     </div>
     <div id="googleGate" style="margin:0 0 16px;"></div>
+    <!-- Shown only in a normal browser tab (hidden once already signed in,
+         and hidden inside Telegram itself, where auto-login already ran) —
+         opens the bot's own Web App for a Telegram-based login instead. -->
+    <div id="telegramLoginRow" style="display:none;margin:0 0 16px;">
+      <a class="btn ghost" id="telegramLoginBtn" href="#" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg> Telegram bilan davom etish
+      </a>
+    </div>
     <div id="content" aria-live="polite"></div>
 
     <div class="card reveal" style="margin-top:var(--s4);">
@@ -1250,7 +1263,7 @@
     <div class="section-head reveal">
       <div class="section-eyebrow" data-i18n="profile.eyebrow">Profil</div>
       <h2 class="section-title"><span data-i18n="profile.titleA">Sizning</span> <span class="accent alt" data-i18n="profile.titleB">profilingiz</span></h2>
-      <p class="section-sub" data-i18n="profile.sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
+      <p class="section-sub" data-i18n="profile.sub">Google yoki Telegram hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
     </div>
     <div class="card reveal" id="profileCard"></div>
   </div>
@@ -1350,6 +1363,19 @@
         <li><button type="button" class="settings-row" data-settings-page="notifications">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"/></svg>
           <span data-i18n="settings.notifications">Bildirishnomalar</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <!-- Account linking (requirement #6) — only one of these two is ever
+             relevant to a given visitor, so both start hidden and
+             updateAccountLinkRows() shows the right one for their context. -->
+        <li id="rowLinkTelegram" hidden><button type="button" class="settings-row" data-settings-page="link-telegram">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+          <span data-i18n="settings.linkTelegram">Telegram bilan bog'lash</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li id="rowLinkGoogle" hidden><button type="button" class="settings-row" data-settings-page="link-google">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg>
+          <span data-i18n="settings.linkGoogle">Google akkauntga bog'lash</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
         <li><button type="button" class="settings-row" data-tab-link="contact">
@@ -1467,7 +1493,7 @@
       "order.trackCodeLabel": "Buyurtma kodi", "order.trackPhoneLabel": "Telefon", "order.trackBtn": "Holatni tekshirish",
 
       "profile.eyebrow": "Profil", "profile.titleA": "Sizning", "profile.titleB": "profilingiz",
-      "profile.sub": "Google hisobingizga bog'liq, boshqa hech kim ololmaydigan username tanlang.",
+      "profile.sub": "Google yoki Telegram hisobingizga bog'liq, boshqa hech kim ololmaydigan username tanlang.",
 
       "drivers.eyebrow": "Haydovchilar", "drivers.titleA": "Yuk", "drivers.titleB": "toping",
       "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
@@ -1506,7 +1532,18 @@
       "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
       "settings.notifications": "Bildirishnomalar", "settings.feedback": "Fikr bildirish",
       "settings.about": "Yolda haqida", "settings.terms": "Foydalanish shartlari",
+      "settings.linkTelegram": "Telegram bilan bog'lash", "settings.linkGoogle": "Google akkauntga bog'lash",
       "settings.langPageTitle": "Tilni tanlang", "settings.themePageTitle": "Ko'rinishni tanlang",
+      "link.startTitle": "Telegram bilan bog'lash",
+      "link.startIntro": "Google va Telegram hisobingizni bitta profilga birlashtirish uchun quyidagi kodni Telegram botiga kiriting.",
+      "link.generating": "Kod yaratilmoqda…",
+      "link.codeExpires": "Kod 10 daqiqa amal qiladi.",
+      "link.openBot": "Botni ochish",
+      "link.startError": "Kod yaratib bo'lmadi",
+      "link.finishTitle": "Google akkauntga bog'lash",
+      "link.finishIntro": "Yolda saytida (brauzerda) Google bilan kirib, Sozlamalar → \"Telegram bilan bog'lash\" bo'limida ko'rsatilgan 6 xonali kodni shu yerga kiriting.",
+      "link.codeLabel": "6 xonali kod", "link.finishBtn": "Bog'lash",
+      "link.success": "Bog'landi! Endi ikkala usul bilan ham shu profilga kirasiz.",
       "notif.soundLabel": "Yangi xabar ovozi", "notif.soundSub": "Suhbat ochiq turganda yangi xabar kelsa, qisqa signal chalinadi.",
       "notif.motionLabel": "Animatsiyalarni kamaytirish", "notif.motionSub": "Qurilma sozlamasidan qat'i nazar, ilovadagi harakatlarni kamaytiradi.",
       "notif.note": "Hozircha bildirishnomalar faqat ilova ochiq turgan holatda ishlaydi — push-bildirishnoma tizimi keyinroq qo'shiladi.",
@@ -1582,7 +1619,7 @@
       "order.trackCodeLabel": "Код заказа", "order.trackPhoneLabel": "Телефон", "order.trackBtn": "Проверить статус",
 
       "profile.eyebrow": "Профиль", "profile.titleA": "Ваш", "profile.titleB": "профиль",
-      "profile.sub": "Привязан к вашему Google-аккаунту — выберите username, который никто больше не сможет занять.",
+      "profile.sub": "Привязан к вашему аккаунту Google или Telegram — выберите username, который никто больше не сможет занять.",
 
       "drivers.eyebrow": "Водители", "drivers.titleA": "Найдите", "drivers.titleB": "груз",
       "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
@@ -1621,7 +1658,18 @@
       "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
       "settings.notifications": "Уведомления", "settings.feedback": "Оставить отзыв",
       "settings.about": "О Yolda", "settings.terms": "Условия использования",
+      "settings.linkTelegram": "Привязать Telegram", "settings.linkGoogle": "Привязать к аккаунту Google",
       "settings.langPageTitle": "Выберите язык", "settings.themePageTitle": "Выберите оформление",
+      "link.startTitle": "Привязать Telegram",
+      "link.startIntro": "Чтобы объединить аккаунты Google и Telegram в один профиль, введите этот код в Telegram-боте.",
+      "link.generating": "Код создаётся…",
+      "link.codeExpires": "Код действителен 10 минут.",
+      "link.openBot": "Открыть бота",
+      "link.startError": "Не удалось создать код",
+      "link.finishTitle": "Привязать к аккаунту Google",
+      "link.finishIntro": "Войдите на сайт Yolda в браузере через Google, откройте Настройки → «Привязать Telegram» и введите здесь показанный 6-значный код.",
+      "link.codeLabel": "6-значный код", "link.finishBtn": "Привязать",
+      "link.success": "Привязано! Теперь вход возможен обоими способами в этот же профиль.",
       "notif.soundLabel": "Звук нового сообщения", "notif.soundSub": "Пока диалог открыт, новое сообщение сопровождается коротким сигналом.",
       "notif.motionLabel": "Меньше анимации", "notif.motionSub": "Уменьшает анимацию в приложении независимо от настроек устройства.",
       "notif.note": "Пока уведомления работают только при открытом приложении — push-уведомления появятся позже.",
@@ -1697,7 +1745,7 @@
       "order.trackCodeLabel": "Order code", "order.trackPhoneLabel": "Phone", "order.trackBtn": "Check status",
 
       "profile.eyebrow": "Profile", "profile.titleA": "Your", "profile.titleB": "profile",
-      "profile.sub": "Tied to your Google account — pick a username no one else can take.",
+      "profile.sub": "Tied to your Google or Telegram account — pick a username no one else can take.",
 
       "drivers.eyebrow": "Drivers", "drivers.titleA": "Find", "drivers.titleB": "cargo",
       "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
@@ -1736,7 +1784,18 @@
       "settings.support": "Help", "settings.privacy": "Privacy policy",
       "settings.notifications": "Notifications", "settings.feedback": "Send feedback",
       "settings.about": "About Yolda", "settings.terms": "Terms of use",
+      "settings.linkTelegram": "Link Telegram", "settings.linkGoogle": "Link to Google account",
       "settings.langPageTitle": "Choose language", "settings.themePageTitle": "Choose appearance",
+      "link.startTitle": "Link Telegram",
+      "link.startIntro": "To merge your Google and Telegram accounts into one profile, enter this code in the Telegram bot.",
+      "link.generating": "Generating code…",
+      "link.codeExpires": "The code is valid for 10 minutes.",
+      "link.openBot": "Open the bot",
+      "link.startError": "Couldn't generate a code",
+      "link.finishTitle": "Link to Google account",
+      "link.finishIntro": "Sign in with Google on the Yolda website in a browser, open Settings → \"Link Telegram\", and enter the 6-digit code shown there.",
+      "link.codeLabel": "6-digit code", "link.finishBtn": "Link",
+      "link.success": "Linked! You can now sign in with either method into this same profile.",
       "notif.soundLabel": "New message sound", "notif.soundSub": "Plays a short sound when a new message arrives while a chat is open.",
       "notif.motionLabel": "Reduce motion", "notif.motionSub": "Reduces animation across the app regardless of your device setting.",
       "notif.note": "Notifications currently only work while the app is open — push notifications are coming later.",
@@ -2133,6 +2192,92 @@
     });
   }
 
+  /* ---------- Account linking (requirement #6) ----------
+     Two pages, one for each side of the two-step code flow described in
+     lib/identity.js. Which row even shows up in Settings is decided by
+     updateAccountLinkRows() below, from the same isSignedIn()/
+     isTelegramWebApp state everything else already uses. ---------- */
+  function renderLinkTelegramPage(){
+    return '<p class="note" data-i18n="link.startIntro" style="margin-top:0;"></p>'
+      + '<div id="linkCodeBox" style="text-align:center;padding:var(--s5) 0;">'
+      +   '<p class="note" data-i18n="link.generating">Kod yaratilmoqda…</p>'
+      + '</div>';
+  }
+  function bindLinkTelegramPage(container){
+    var box = container.querySelector("#linkCodeBox");
+    if(!box) return;
+    fetch("/api/profile?action=link-telegram-start", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken })
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok){
+          box.innerHTML = '<p class="note" style="color:#DC2626;">'+escapeHtml(res.body.error || t("link.startError") || "")+'</p>';
+          return;
+        }
+        var botLink = TELEGRAM_BOT_USERNAME ? "https://t.me/" + TELEGRAM_BOT_USERNAME : "";
+        box.innerHTML =
+          '<div style="font-family:\'JetBrains Mono\',monospace;font-size:36px;font-weight:700;letter-spacing:0.08em;color:var(--route-dark);margin-bottom:var(--s3);" data-autofocus tabindex="-1">'
+          +   escapeHtml(res.body.code)
+          + '</div>'
+          + '<p class="note" data-i18n="link.codeExpires" style="margin-bottom:var(--s4);"></p>'
+          + (botLink ? '<a class="btn ghost" href="'+escapeHtml(botLink)+'" target="_blank" rel="noopener" data-i18n="link.openBot">Botni ochish</a>' : '');
+        applyLang();
+      }).catch(function(){
+        box.innerHTML = '<p class="note" style="color:#DC2626;">'+escapeHtml(t("link.startError") || "")+'</p>';
+      });
+  }
+
+  function renderLinkGooglePage(){
+    return '<p class="note" data-i18n="link.finishIntro" style="margin-top:0;"></p>'
+      + '<div class="field"><label for="fLinkCode" data-i18n="link.codeLabel">6 xonali kod</label>'
+      +   '<input type="text" id="fLinkCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" data-autofocus></div>'
+      + '<p class="note" id="linkGoogleNote"></p>'
+      + '<button class="btn" id="btnLinkGoogleFinish" data-i18n="link.finishBtn">Bog\'lash</button>';
+  }
+  function bindLinkGooglePage(container){
+    var btn = container.querySelector("#btnLinkGoogleFinish");
+    if(!btn) return;
+    btn.addEventListener("click", function(){
+      var input = document.getElementById("fLinkCode");
+      var note = document.getElementById("linkGoogleNote");
+      var code = input ? input.value.trim() : "";
+      if(!/^\d{6}$/.test(code)){ if(note){ note.textContent = t("link.codeLabel") || ""; note.style.color = "#DC2626"; } return; }
+      btn.disabled = true;
+      fetch("/api/profile?action=link-telegram-finish", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ code: code, telegramInitData: telegramInitData })
+      }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+        .then(function(res){
+          btn.disabled = false;
+          if(!res.ok){
+            if(note){ note.textContent = res.body.error || "Xato yuz berdi"; note.style.color = "#DC2626"; }
+            return;
+          }
+          if(note){ note.textContent = t("link.success") || ""; note.style.color = "#16A34A"; }
+          if(input) input.value = "";
+          updateAccountLinkRows();
+        }).catch(function(){
+          btn.disabled = false;
+          if(note){ note.textContent = "Yuborilmadi, qayta urinib ko'ring."; note.style.color = "#DC2626"; }
+        });
+    });
+  }
+
+  /**
+   * Shows exactly the one linking row that's actionable for this visitor:
+   * "Telegram bilan bog'lash" only for a Google-signed-in visitor in a
+   * normal browser tab (step 1 needs a real Google session, which Telegram's
+   * in-app browser can never have); "Google akkauntga bog'lash" only inside
+   * the Telegram Mini App itself (step 2 needs telegramInitData).
+   */
+  function updateAccountLinkRows(){
+    var rowTg = document.getElementById("rowLinkTelegram");
+    var rowGoogle = document.getElementById("rowLinkGoogle");
+    if(rowTg) rowTg.hidden = !(googleIdToken && !isTelegramWebApp);
+    if(rowGoogle) rowGoogle.hidden = !(telegramInitData && isTelegramWebApp);
+  }
+
   /* ---------- SettingsMenu: routes each row to its sub-page in the Sheet ---------- */
   var SETTINGS_PAGES = {
     language: function(){ return { titleKey: "settings.langPageTitle", html: renderLanguagePage() }; },
@@ -2141,7 +2286,9 @@
     feedback: function(){ return { titleKey: "settings.feedback", html: renderFeedbackPage(), onOpen: bindFeedbackPage }; },
     about: function(){ return { titleKey: "about.title", html: t("about.body") || "" }; },
     terms: function(){ return { titleKey: "terms.title", html: t("terms.body") || "" }; },
-    privacy: function(){ return { titleKey: "settings.privacy", html: t("privacy.body") || "" }; }
+    privacy: function(){ return { titleKey: "settings.privacy", html: t("privacy.body") || "" }; },
+    "link-telegram": function(){ return { titleKey: "link.startTitle", html: renderLinkTelegramPage(), onOpen: bindLinkTelegramPage }; },
+    "link-google": function(){ return { titleKey: "link.finishTitle", html: renderLinkGooglePage(), onOpen: bindLinkGooglePage }; }
   };
 
   function openSettingsPage(name){
@@ -2250,6 +2397,7 @@
 
       renderProfile();
       renderHomeMatch();
+      updateAccountLinkRows();
     }catch(e){}
     render();
   }
@@ -2257,10 +2405,86 @@
   /**
    * Google blocks sign-in inside in-app browsers (Telegram, Instagram, and
    * friends) outright — there is no code-side fix, only a way to tell the
-   * user to open the link in Safari/Chrome instead.
+   * user to open the link in Safari/Chrome instead. Telegram itself is
+   * still listed here on purpose (a stray t.me link opened without the
+   * Mini App context still has no initData, so Google is still blocked and
+   * this hint is still the right fallback) — initGoogleSignIn() below just
+   * skips showing it when initTelegramWebApp() already logged the user in.
    */
   function isInAppBrowser(){
     return /Telegram|Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|Snapchat/i.test(navigator.userAgent || "");
+  }
+
+  /* ============================================================
+     Telegram Web App (Mini App) sign-in — automatic when Yolda is opened
+     from inside Telegram (bot menu button / t.me deep link). Mirrors the
+     Google section above on purpose: initData is re-sent, and re-verified
+     server-side, on every relevant request instead of Google's idToken —
+     same stateless shape, no separate session/cookie subsystem bolted on
+     just for this. `Telegram.WebApp.initDataUnsafe` is display-only here;
+     the raw signed `initData` string is what the server actually checks
+     (see lib/telegramAuth.js) — nothing about who the user is comes from
+     trusting the client.
+     ============================================================ */
+  var telegramInitData = null;
+  var telegramUser = null;    // display-only: id/name/username/photo per the SDK — never proof of identity
+  var isTelegramWebApp = false;
+  var TELEGRAM_BOT_USERNAME = "";
+
+  /** True once signed in by either method — the one check every gate below uses. */
+  function isSignedIn(){ return !!googleIdToken || !!telegramInitData; }
+
+  function onTelegramSignIn(){
+    var label = (telegramUser && (telegramUser.firstName || telegramUser.username)) || "Telegram";
+
+    var gate = document.getElementById("googleGate");
+    if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(label)+' (Telegram) orqali kirdingiz</span>';
+
+    // Same "round avatar becomes the profile shortcut" treatment as Google.
+    var gateHome = document.getElementById("googleGateHome");
+    if(gateHome){
+      var initial = escapeHtml((label || "?").charAt(0).toUpperCase());
+      var avatar = (telegramUser && telegramUser.photoUrl)
+        ? '<img src="'+escapeHtml(telegramUser.photoUrl)+'" alt="" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;display:block;">'
+        : '<span style="width:32px;height:32px;border-radius:50%;background:var(--stamp);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">'+initial+'</span>';
+      gateHome.innerHTML = '<button type="button" id="navProfileBtn" aria-label="Profil" style="border:none;background:none;padding:0;cursor:pointer;line-height:0;">'+avatar+'</button>';
+      var navBtn = document.getElementById("navProfileBtn");
+      if(navBtn) navBtn.addEventListener("click", function(){ switchTab("profile"); });
+    }
+
+    if(!state.name && telegramUser){
+      state.name = [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ");
+    }
+
+    var row = document.getElementById("telegramLoginRow");
+    if(row) row.style.display = "none";
+
+    renderProfile();
+    renderHomeMatch();
+    updateAccountLinkRows();
+    render();
+  }
+
+  /**
+   * Runs once on load. A no-op outside Telegram (window.Telegram.WebApp
+   * simply won't exist there — the script tag in <head> loads fine
+   * everywhere but only Telegram's own in-app browser populates it).
+   */
+  function initTelegramWebApp(){
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if(!tg || !tg.initData) return;
+
+    isTelegramWebApp = true;
+    try{ tg.ready(); }catch(e){}
+    try{ tg.expand(); }catch(e){}
+
+    telegramInitData = tg.initData;
+    var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if(u){
+      telegramUser = { id: u.id, firstName: u.first_name || "", lastName: u.last_name || "", username: u.username || "", photoUrl: u.photo_url || "" };
+    }
+
+    onTelegramSignIn();
   }
 
   function showAppBrowserHint(){
@@ -2280,9 +2504,22 @@
       }
     });
 
-    if(isInAppBrowser()) showAppBrowserHint();
+    // initTelegramWebApp() already ran (see the init calls at the bottom of
+    // this file) and logged the user in if we're actually inside Telegram —
+    // in that case the "open Safari/Chrome" hint would just be confusing.
+    if(isInAppBrowser() && !isTelegramWebApp) showAppBrowserHint();
 
     fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
+      TELEGRAM_BOT_USERNAME = cfg.telegramBotUsername || "";
+      var tgRow = document.getElementById("telegramLoginRow");
+      var tgBtn = document.getElementById("telegramLoginBtn");
+      // Only worth offering from a normal browser tab, to a signed-out
+      // visitor — inside Telegram itself, auto sign-in already handled it.
+      if(tgRow && tgBtn && TELEGRAM_BOT_USERNAME && !isTelegramWebApp && !isSignedIn()){
+        tgBtn.href = "https://t.me/" + TELEGRAM_BOT_USERNAME + "?startapp=login";
+        tgRow.style.display = "block";
+      }
+
       if(!cfg.googleClientId || !window.google || !google.accounts) return;
       google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn });
       var gate = document.getElementById("googleGate");
@@ -2294,9 +2531,10 @@
       if(gateHome) google.accounts.id.renderButton(gateHome, { theme:"filled_blue", size:"medium", shape:"circle", type:"icon" });
 
       // Belt and braces: if the button never actually renders (some in-app
-      // browsers we didn't think to name above), show the hint anyway.
+      // browsers we didn't think to name above), show the hint anyway —
+      // unless Telegram's own login already covered this visitor.
       setTimeout(function(){
-        if(gate && !gate.querySelector("iframe")) showAppBrowserHint();
+        if(gate && !gate.querySelector("iframe") && !isTelegramWebApp) showAppBrowserHint();
       }, 2500);
     }).catch(function(){});
   }
@@ -2322,9 +2560,9 @@
     var card = document.getElementById("profileCard");
     if(!card) return;
 
-    if(!googleIdToken){
+    if(!isSignedIn()){
       card.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
-        + 'Profilni ko‘rish uchun avval yuqoridagi (yoki "Yuk joylash" bo‘limidagi) tugma orqali Google bilan kiring.</p>';
+        + 'Profilni ko‘rish uchun avval yuqoridagi (yoki "Yuk joylash" bo‘limidagi) tugma orqali Google yoki Telegram bilan kiring.</p>';
       return;
     }
 
@@ -2333,7 +2571,7 @@
     fetch("/api/profile", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken })
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
     }).then(function(r){ return r.json(); }).then(function(data){
       renderProfileForm(data.profile || {});
     }).catch(function(){
@@ -2344,9 +2582,9 @@
   function renderChatTab(){
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
-    if(!googleIdToken){
+    if(!isSignedIn()){
       chatCard.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
-        + 'Xabarlashuv uchun avval "Yuk joylash" bo‘limidagi tugma orqali Google bilan kiring.</p>';
+        + 'Xabarlashuv uchun avval "Yuk joylash" bo‘limidagi tugma orqali Google yoki Telegram bilan kiring.</p>';
       stopChatPoll();
       return;
     }
@@ -2357,8 +2595,9 @@
     var card = document.getElementById("profileCard");
     if(!card) return;
     var pct = profileCompletion(p);
-    var displayName = googleProfile ? googleProfile.name : "";
-    var avatarUrl = googleProfile ? googleProfile.picture : "";
+    var displayName = googleProfile ? googleProfile.name
+      : (telegramUser ? ([telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ") || telegramUser.username) : "");
+    var avatarUrl = googleProfile ? googleProfile.picture : (telegramUser ? telegramUser.photoUrl : "");
 
     card.innerHTML =
       '<div style="display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s5);">'
@@ -2407,7 +2646,9 @@
       +   '<div class="field"><label for="fPlateNumber">Davlat raqami (ixtiyoriy)</label>'
       +     '<input type="text" id="fPlateNumber" maxlength="12" placeholder="01 A 123 BB" value="'+escapeHtml(p.plateNumber || "")+'"></div>'
       +   '<div class="field"><label for="fTelegramUsername">Telegram username (ixtiyoriy)</label>'
-      +     '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'+escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : "")+'"></div>'
+      +     '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'
+      +       escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : (telegramUser && telegramUser.username ? "@"+telegramUser.username : ""))
+      +     '"></div>'
       +   '<p class="note" style="margin-top:-6px;">Guruhda yukni olganda "✓ Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
       + '</div>'
 
@@ -2434,6 +2675,7 @@
     var telegramUsername = document.getElementById("fTelegramUsername");
     var payload = {
       googleIdToken: googleIdToken,
+      telegramInitData: telegramInitData,
       username: document.getElementById("fUsername").value.trim(),
       role: document.getElementById("fRole").value,
       city: document.getElementById("fProfileCity").value,
@@ -2525,7 +2767,7 @@
   }
 
   function runChatSearch(q){
-    fetch("/api/chat?action=search&q=" + encodeURIComponent(q) + "&googleIdToken=" + encodeURIComponent(googleIdToken))
+    fetch("/api/chat?action=search&q=" + encodeURIComponent(q) + "&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
       .then(function(r){ return r.json(); })
       .then(function(data){
         var results = document.getElementById("chatSearchResults");
@@ -2553,7 +2795,7 @@
     var list = document.getElementById("chatInboxList");
     if(!list) return;
     list.innerHTML = '<div class="skeleton sk-line" style="width:80%;"></div>';
-    fetch("/api/chat?action=inbox&googleIdToken=" + encodeURIComponent(googleIdToken))
+    fetch("/api/chat?action=inbox&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
       .then(function(r){ return r.json(); })
       .then(function(data){
         var conversations = data.conversations || [];
@@ -2670,7 +2912,7 @@
     if(!chatWithUsername) return;
     var body = document.getElementById("chatThreadBody");
     if(!body) return;
-    var url = "/api/chat?action=thread&googleIdToken=" + encodeURIComponent(googleIdToken)
+    var url = "/api/chat?action=thread&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||"")
       + (chatWithEmail ? "&withEmail=" + encodeURIComponent(chatWithEmail) : "&withUsername=" + encodeURIComponent(chatWithUsername));
     fetch(url).then(function(r){ return r.json(); }).then(function(data){
       if(!chatWithUsername) return; // user navigated away while this was in flight
@@ -2711,7 +2953,7 @@
     fetch("/api/chat?action=delete", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken, id: id })
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id })
     }).then(function(r){
       return r.json().then(function(b){ return {ok: r.ok, body: b}; });
     }).then(function(res){
@@ -2724,7 +2966,7 @@
     fetch("/api/chat?action=react", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken, id: id, emoji: emoji })
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id, emoji: emoji })
     }).then(function(r){ return r.json(); }).then(function(){ loadChatThread(false); }).catch(function(){});
   }
 
@@ -2742,8 +2984,8 @@
     var isEdit = !!chatEditingId;
     var url = isEdit ? "/api/chat?action=edit" : "/api/chat?action=send";
     var payload = isEdit
-      ? { googleIdToken: googleIdToken, id: chatEditingId, text: text }
-      : { googleIdToken: googleIdToken, toUsername: chatWithUsername, text: text };
+      ? { googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: chatEditingId, text: text }
+      : { googleIdToken: googleIdToken, telegramInitData: telegramInitData, toUsername: chatWithUsername, text: text };
 
     fetch(url, {
       method: "POST",
@@ -2793,10 +3035,10 @@
   var driverMatchProfile = null;
 
   function loadDriverMatchProfile(cb){
-    if(!googleIdToken){ driverMatchProfile = null; cb(); return; }
+    if(!isSignedIn()){ driverMatchProfile = null; cb(); return; }
     fetch("/api/profile", {
       method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken })
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
     }).then(function(r){ return r.json(); }).then(function(data){
       var p = data.profile || {};
       driverMatchProfile = (p.city || p.vehicleType) ? { city: p.city || "", vehicleType: p.vehicleType || "" } : null;
@@ -2974,8 +3216,8 @@
   function loadBackhaul(){
     var banner = document.getElementById("backhaulBanner");
     if(!banner) return;
-    if(!googleIdToken){ banner.hidden = true; return; }
-    fetch("/api/order?action=backhaul&googleIdToken=" + encodeURIComponent(googleIdToken))
+    if(!isSignedIn()){ banner.hidden = true; return; }
+    fetch("/api/order?action=backhaul&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(!data.lastRoute || !data.loads || !data.loads.length){ banner.hidden = true; return; }
@@ -3098,7 +3340,7 @@
     var wrap = document.getElementById("homeMatchWrap");
     var list = document.getElementById("homeMatchList");
     if(!wrap || !list) return;
-    if(!googleIdToken){ wrap.hidden = true; return; }
+    if(!isSignedIn()){ wrap.hidden = true; return; }
 
     loadDriverMatchProfile(function(){
       if(!driverMatchProfile){ wrap.hidden = true; return; }
@@ -3245,7 +3487,7 @@
 
   function goToChatWith(username, prefill){
     if(!username) return;
-    if(!googleIdToken){ toast("Avval Google orqali kiring", "", "info"); return; }
+    if(!isSignedIn()){ toast("Avval Google yoki Telegram orqali kiring", "", "info"); return; }
     switchTab("chat");
     openChatThread(null, username);
     if(prefill){
@@ -3259,8 +3501,8 @@
     var btn = document.getElementById("btnSendReport");
     if(!note || !btn) return;
 
-    if(!googleIdToken){
-      note.textContent = "Shikoyat yuborish uchun Google orqali kiring.";
+    if(!isSignedIn()){
+      note.textContent = "Shikoyat yuborish uchun Google yoki Telegram orqali kiring.";
       note.style.color = "#DC2626";
       return;
     }
@@ -3279,6 +3521,7 @@
 
     var payload = {
       googleIdToken: googleIdToken,
+      telegramInitData: telegramInitData,
       reason: reason,
       targetContact: document.getElementById("fReportTarget").value.trim(),
       description: description
@@ -3441,7 +3684,7 @@
     var price = calcPrice(distance, state.weight, cargo.mult);
     var sameCity = state.from === state.to;
     var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
-    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken && cargoReady;
+    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn() && cargoReady;
 
     return '<div class="card">'
       + '<h3 class="card-title">'+icon("iconClipboard")+' Yuk ma\'lumotlari</h3>'
@@ -3506,8 +3749,8 @@
       + '</div>'
 
       + (sameCity ? '<p class="note">Qayerdan va qayerga turli shaharlarni tanlang.</p>' : '')
-      + (!sameCity && !ready && !googleIdToken ? '<p class="note">Yuborish uchun avval yuqorida Google orqali kiring.</p>' : '')
-      + (!sameCity && !ready && googleIdToken ? '<p class="note">Yuborish uchun ism va telefon raqamini to\'ldiring.</p>' : '')
+      + (!sameCity && !ready && !isSignedIn() ? '<p class="note">Yuborish uchun avval yuqorida Google yoki Telegram orqali kiring.</p>' : '')
+      + (!sameCity && !ready && isSignedIn() ? '<p class="note">Yuborish uchun ism va telefon raqamini to\'ldiring.</p>' : '')
 
       + '<button class="btn" id="btnSend"'+(ready && !state.submitting ? '' : ' disabled')+'>'
       +   (state.submitting ? 'Yuborilmoqda…' : 'Haydovchilarga yuborish ' + icon("iconArrowRight"))
@@ -3663,7 +3906,7 @@
       if(!btn) return;
       var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
       var ready = state.from !== state.to && state.weight > 0
-        && state.name.trim().length >= 2 && isValidPhone(state.phone) && !!googleIdToken && cargoReady;
+        && state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn() && cargoReady;
       btn.disabled = !ready || state.submitting;
     };
 
@@ -3713,7 +3956,7 @@
 
   async function submitOrder(){
     if(state.submitting) return;
-    if(!googleIdToken){ toast("Avval Google orqali kiring", "Yuqoridagi tugma orqali hisobingizga kiring.", "info"); return; }
+    if(!isSignedIn()){ toast("Avval Google yoki Telegram orqali kiring", "Yuqoridagi tugma orqali hisobingizga kiring.", "info"); return; }
     state.submitting = true;
     render();
 
@@ -3733,6 +3976,7 @@
           phone: normalisePhone(state.phone),
           note: state.note.trim(),
           googleIdToken: googleIdToken,
+          telegramInitData: telegramInitData,
           proposedAmount: state.customPrice ? parseInt(state.customPrice, 10) : null
         })
       });
@@ -3894,6 +4138,10 @@
   render();
   renderLiveWidget();
   setInterval(renderLiveWidget, 3400);
+  // Telegram first: it's synchronous (no network round trip) and sets
+  // isTelegramWebApp, which initGoogleSignIn() reads to decide whether to
+  // show the "open in Safari/Chrome" in-app-browser hint.
+  initTelegramWebApp();
   initGoogleSignIn();
 
   /* ============================================================

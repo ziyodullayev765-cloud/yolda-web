@@ -6,27 +6,28 @@
  * cap — see api/admin-data.js for the same reasoning. Dispatch is by
  * `?action=`:
  *
- *   GET  /api/chat?action=search&q=<text>&googleIdToken=...
- *   GET  /api/chat?action=inbox&googleIdToken=...
- *   GET  /api/chat?action=thread&googleIdToken=...&withEmail=...   (or &withUsername=...)
- *   POST /api/chat?action=send    { googleIdToken, toUsername, text }
- *   POST /api/chat?action=edit    { googleIdToken, id, text }
- *   POST /api/chat?action=delete  { googleIdToken, id }
- *   POST /api/chat?action=react   { googleIdToken, id, emoji }
+ *   GET  /api/chat?action=search&q=<text>&googleIdToken=...|&telegramInitData=...
+ *   GET  /api/chat?action=inbox&googleIdToken=...|&telegramInitData=...
+ *   GET  /api/chat?action=thread&googleIdToken=...|&telegramInitData=...&withEmail=...   (or &withUsername=...)
+ *   POST /api/chat?action=send    { googleIdToken|telegramInitData, toUsername, text }
+ *   POST /api/chat?action=edit    { googleIdToken|telegramInitData, id, text }
+ *   POST /api/chat?action=delete  { googleIdToken|telegramInitData, id }
+ *   POST /api/chat?action=react   { googleIdToken|telegramInitData, id, emoji }
  *
  * Each message is its own key (`msg:<id>`), not just an entry appended to a
  * list — that's what makes editing/deleting/reacting to one specific
  * message possible later without having to rewrite the whole conversation.
  * `convo:<pairKey>` is only the ordering: a list of message ids, keyed by
- * the two participants' emails sorted alphabetically so both sides read/
- * write the same key.
+ * the two participants' identities sorted alphabetically so both sides
+ * read/write the same key. An identity is either a real email (Google) or
+ * "tg:<id>" (Telegram-only) — see lib/identity.js.
  *
- * Google ID tokens ride in the query string for GETs, the same tradeoff
+ * The credential rides in the query string for GETs, the same tradeoff
  * /api/order already makes for phone numbers — acceptable at this app's
  * scale, and verified server-side on every call regardless.
  */
 import { kvGet, kvSet, kvPush, kvRange, kvSadd, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
-import { verifyGoogleEmail } from '../lib/google.js';
+import { resolveEmail } from '../lib/identity.js';
 
 const MAX_TEXT = 1000;
 const MAX_SEARCH_RESULTS = 20;
@@ -68,8 +69,8 @@ const isThrottled = (key) => {
 };
 
 const searchUsers = async (req, res) => {
-  const email = await verifyGoogleEmail(req.query.googleIdToken);
-  if (!email) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const q = String(req.query.q || '').trim().toLowerCase();
   if (q.length < 2) return res.status(200).json({ users: [] });
@@ -95,8 +96,8 @@ const searchUsers = async (req, res) => {
 };
 
 const getInbox = async (req, res) => {
-  const myEmail = await verifyGoogleEmail(req.query.googleIdToken);
-  if (!myEmail) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const others = await kvSmembers(`inbox:${myEmail}`);
   const conversations = (
@@ -120,8 +121,8 @@ const getInbox = async (req, res) => {
 };
 
 const getThread = async (req, res) => {
-  const myEmail = await verifyGoogleEmail(req.query.googleIdToken);
-  if (!myEmail) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   let withEmail = String(req.query.withEmail || '').trim();
   const withUsername = String(req.query.withUsername || '').trim().toLowerCase();
@@ -153,8 +154,8 @@ const getThread = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const myEmail = await verifyGoogleEmail(body.googleIdToken);
-  if (!myEmail) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
   if (await kvSismember('banned', myEmail.toLowerCase())) {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
   }
@@ -185,9 +186,9 @@ const sendMessage = async (req, res) => {
 /** Shared guard for edit/delete/react: loads the message and checks the caller is a participant. */
 const loadOwnMessage = async (req, res, { requireSender } = {}) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const myEmail = await verifyGoogleEmail(body.googleIdToken);
+  const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
   if (!myEmail) {
-    res.status(401).json({ error: 'Avval Google orqali kiring' });
+    res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
     return null;
   }
 

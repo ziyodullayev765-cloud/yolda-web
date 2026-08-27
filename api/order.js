@@ -18,7 +18,7 @@
  */
 
 import { kvPush, kvGet, kvSet, kvSismember, kvRange } from '../lib/kv.js';
-import { verifyGoogleEmail } from '../lib/google.js';
+import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import { CARGO, buildOrderMessage, STATUS_LABELS } from '../lib/orderMessage.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -186,11 +186,12 @@ const createOrder = async (req, res) => {
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
-  const googleEmail = await verifyGoogleEmail(body.googleIdToken);
-  if (!googleEmail) {
-    return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const identityResult = await resolveIdentity({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  if (!identityResult) {
+    return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
   }
-  if (await kvSismember('banned', googleEmail.toLowerCase())) {
+  const { identity: ownerIdentity, method: ownerMethod, telegramUser: ownerTelegramUser } = identityResult;
+  if (await kvSismember('banned', ownerIdentity.toLowerCase())) {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
   }
 
@@ -212,8 +213,16 @@ const createOrder = async (req, res) => {
   const amount = isProposed ? value.proposedAmount : estimatedAmount;
   // status/driver/rating are the fields /api/telegram updates as the order
   // moves through its lifecycle — see lib/orderMessage.js for the states.
+  // ownerIdentity is always populated (real email or "tg:<id>") and is what
+  // getLoadDetail/getBackhaul use to look the owner's profile back up;
+  // googleEmail/telegramOwner are kept as separate, display-only fields so
+  // buildOrderHeader can keep showing the exact "✅ Google: x@y.com" line it
+  // always has for Google owners, without ever printing a synthetic tg:<id>.
   const order = {
-    ...value, code, distanceKm, amount, estimatedAmount, isProposed, googleEmail,
+    ...value, code, distanceKm, amount, estimatedAmount, isProposed,
+    ownerIdentity,
+    googleEmail: ownerMethod === 'google' ? ownerIdentity : null,
+    telegramOwner: ownerMethod === 'telegram' ? (ownerTelegramUser.username || null) : null,
     status: 'NEW', driver: null, rating: null,
   };
 
@@ -372,10 +381,13 @@ const getLoadDetail = async (req, res) => {
 
   // The chat "Taklif yuborish" / "Xabar yozish" buttons need a username to
   // address — only resolvable if the owner registered one in their profile.
+  // ownerIdentity covers both Google and Telegram owners; older orders
+  // (posted before ownerIdentity existed) fall back to googleEmail.
   let ownerUsername = null;
-  if (order.googleEmail) {
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  if (ownerKey) {
     try {
-      const praw = await kvGet(`profile:${order.googleEmail}`);
+      const praw = await kvGet(`profile:${ownerKey}`);
       if (praw) {
         const profile = JSON.parse(praw);
         ownerUsername = (profile && profile.username) || null;
@@ -415,8 +427,8 @@ const getLoadDetail = async (req, res) => {
  * connecting "who claimed this in the group" to a registered account.
  */
 const getBackhaul = async (req, res) => {
-  const myEmail = await verifyGoogleEmail(req.query.googleIdToken);
-  if (!myEmail) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const praw = await kvGet(`profile:${myEmail}`);
   let profile = {};
