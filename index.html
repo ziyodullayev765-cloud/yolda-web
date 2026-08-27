@@ -625,23 +625,28 @@
   }
   .chip.active{border-color:var(--route);color:var(--route);background:rgba(23,53,104,0.08);}
   .load-card{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);
     padding:var(--s5);margin-bottom:var(--s3);box-shadow:var(--sh-1);cursor:pointer;
     transition:transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
   }
   .load-card:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(23,53,104,0.25);}
-  .load-card .lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s3);margin-bottom:var(--s3);}
-  .load-card .lc-route{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16.5px;color:var(--ink);letter-spacing:-0.01em;}
-  .load-card .lc-route .arrow{color:var(--stamp);margin:0 4px;}
-  .load-card .lc-price{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--route);
-    white-space:nowrap;
+  .load-card:active{transform:translateY(-1px);}
+  .load-card .lc-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--s3);padding-right:var(--s6);}
+  .load-card .lc-route{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;color:var(--ink);
+    letter-spacing:-0.015em;line-height:1.3;
   }
+  .load-card .lc-route .arrow{color:var(--stamp);margin:0 6px;font-weight:400;}
+  .load-card .lc-price{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--route);
+    letter-spacing:-0.01em;margin:4px 0 var(--s3);
+  }
+  .load-card .lc-price span{font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
   .load-card .lc-meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);font-size:12.5px;color:var(--ink-soft);}
   .load-card .lc-meta span{display:flex;align-items:center;gap:4px;}
   .load-card .lc-badge{
     display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
-    padding:3px 9px;border-radius:var(--r-pill);margin-top:var(--s3);
+    padding:3px 9px;border-radius:var(--r-pill);
   }
   .load-card .lc-badge.fresh{background:rgba(22,163,74,0.1);color:var(--accepted);}
   .load-card .lc-badge.backhaul{background:rgba(245,158,11,0.12);color:var(--warn);}
@@ -681,6 +686,124 @@
   .load-card .lc-fav{
     position:absolute;top:var(--s4);right:var(--s4);background:none;border:none;font-size:20px;
     cursor:pointer;line-height:1;color:var(--muted);
+  }
+
+  /* ============================================================
+     MARKETPLACE REDESIGN — home search bar, route-search sheet,
+     wizard steps (Yuk joylash), and the docked map/list browsing
+     experience. Everything here is presentational: it reuses the
+     existing data (loadsState, fetchLoads, computeMatchScore, the
+     order-form `state` object) — no backend or business-logic changes.
+     ============================================================ */
+
+  /* ---------- Home: greeting + prominent route search ---------- */
+  .home-greeting{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;
+    letter-spacing:-0.01em;margin:0 0 var(--s4);color:var(--ink);
+  }
+  .home-search-bar{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s4) var(--s5);box-shadow:var(--sh-2);cursor:pointer;
+    font-family:'Inter',sans-serif;
+    transition:transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
+  }
+  .home-search-bar:hover{transform:translateY(-2px);box-shadow:var(--sh-3);border-color:rgba(23,53,104,0.3);}
+  .home-search-bar:active{transform:translateY(0);}
+  .home-search-bar .hsb-icon{
+    width:42px;height:42px;border-radius:50%;background:rgba(23,53,104,0.08);color:var(--route);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:19px;
+  }
+  .home-search-bar .hsb-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:3px;}
+  .home-search-bar .hsb-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16.5px;color:var(--ink);letter-spacing:-0.01em;}
+  .home-search-bar .hsb-value .arrow{color:var(--stamp);margin:0 6px;}
+  .home-quick-row{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s4);}
+  .home-quick-row .chip-row{margin:0;flex:1;}
+  .home-post-fab{
+    flex-shrink:0;width:48px;height:48px;border-radius:50%;
+    background:linear-gradient(135deg, var(--route), var(--route-dark));color:#fff;
+    display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-brand);
+    transition:transform 0.2s var(--ease);
+  }
+  .home-post-fab:hover{transform:translateY(-2px) scale(1.04);}
+
+  /* ---------- Route search sheet: recent + popular routes ---------- */
+  .route-search-fields{display:flex;flex-direction:column;gap:var(--s3);margin-bottom:var(--s5);}
+  .route-search-heading{
+    font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:0.06em;margin:var(--s4) 0 var(--s1);
+  }
+  .route-search-heading:first-of-type{margin-top:0;}
+  .route-pill-list{display:flex;flex-direction:column;}
+  .route-pill{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    padding:11px 4px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;
+    font-size:14px;font-weight:500;color:var(--ink);transition:background 0.15s var(--ease);
+  }
+  .route-pill:hover{background:var(--paper-dark);}
+  .route-pill .ic-svg{color:var(--muted);flex-shrink:0;font-size:16px;}
+  .route-pill .arrow{color:var(--stamp);margin:0 4px;}
+
+  /* ---------- Yuk joylash: 5-step wizard ---------- */
+  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:var(--s6);}
+  .wizard-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:30px;}
+  .wizard-step .ws-dot{
+    width:30px;height:30px;border-radius:50%;background:var(--paper-dark);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+    border:2px solid var(--border);transition:all 0.25s var(--ease);flex-shrink:0;
+  }
+  .wizard-step .ws-label{font-size:9.5px;color:var(--muted);font-weight:600;text-align:center;white-space:nowrap;}
+  .wizard-step.done .ws-dot{background:var(--accepted);border-color:var(--accepted);color:#fff;}
+  .wizard-step.active .ws-dot{background:var(--route);border-color:var(--route);color:#fff;box-shadow:0 0 0 4px rgba(23,53,104,0.14);}
+  .wizard-step.active .ws-label{color:var(--route);}
+  .wizard-line{flex:1;height:2px;background:var(--border);margin-top:15px;transition:background 0.25s var(--ease);}
+  .wizard-line.done{background:var(--accepted);}
+  .wizard-panel{animation:wizardIn 0.28s var(--ease);}
+  @keyframes wizardIn{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:none;}}
+  .wizard-actions{display:flex;gap:var(--s3);margin-top:var(--s6);}
+  .wizard-actions > *{flex:1;}
+  .wizard-review-row{
+    display:flex;justify-content:space-between;gap:var(--s3);padding:10px 0;
+    border-bottom:1px solid var(--border);font-size:13.5px;
+  }
+  .wizard-review-row:last-child{border-bottom:none;}
+  .wizard-review-row .wr-k{color:var(--ink-soft);}
+  .wizard-review-row .wr-v{color:var(--ink);font-weight:600;text-align:right;}
+
+  /* ---------- Loads: docked map + draggable card sheet (mobile) ---------- */
+  .map-dock-shell{
+    position:relative;height:min(60vh,520px);min-height:340px;
+    border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);margin-bottom:var(--s4);
+  }
+  .map-dock-shell .loads-map{position:absolute;inset:0;height:auto;border:none;border-radius:0;margin:0;}
+  .map-card-dock{
+    position:absolute;left:0;right:0;bottom:0;z-index:2;
+    background:var(--card);border-radius:var(--r-xl) var(--r-xl) 0 0;
+    box-shadow:0 -10px 28px rgba(15,23,42,0.14);
+    max-height:88%;display:flex;flex-direction:column;
+    transform:translateY(calc(100% - 96px));transition:transform 0.32s var(--ease);
+  }
+  .map-card-dock.expanded{transform:translateY(0);}
+  .map-card-dock .mcd-handle{width:36px;height:4px;background:var(--border);border-radius:var(--r-pill);margin:9px auto 2px;flex-shrink:0;cursor:grab;}
+  .map-card-dock .mcd-head{
+    padding:2px var(--s4) var(--s3);font-size:13px;font-weight:700;color:var(--ink);
+    flex-shrink:0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  }
+  .map-card-dock .mcd-body{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 var(--s4) var(--s4);}
+  /* Base width for the Yuklar tab's section — fine for every other tab,
+     and for Yuklar itself on mobile (single column). The desktop media
+     query below widens it, once there's a second column (the map) to
+     fill; this base rule has to come first in source order for that
+     override to actually win at the breakpoint. */
+  #loadsSection{max-width:680px;}
+  @media(min-width:1024px){
+    /* Desktop: list and map sit side by side, always both visible — no
+       toggle needed, matching a sidebar-style marketplace layout. */
+    #loadsSection{max-width:1180px;}
+    .loads-desktop-grid{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:var(--s5);align-items:start;}
+    .loads-desktop-grid .map-dock-shell{height:calc(100vh - 200px);min-height:480px;position:sticky;top:88px;margin-bottom:0;}
+    .loads-desktop-grid .map-card-dock{display:none;}
+    #loadsViewToggle{display:none;}
   }
   .load-card .lc-fav.on{color:#EF4444;}
 
@@ -1106,6 +1229,42 @@
 <main>
 
 <section class="tabview" id="tab-home" data-tab="home">
+  <!-- Practical stuff first, so the answer to "where's a load?" is visible
+       within seconds — the brand/marketing hero moves below, as a secondary
+       "about Yolda" section rather than the first thing anyone sees. -->
+  <div class="section" style="padding-top:var(--s6);padding-bottom:var(--s2);max-width:640px;">
+    <p class="home-greeting reveal" id="homeGreeting" data-i18n="home.greeting">Assalomu alaykum 👋</p>
+
+    <button type="button" class="home-search-bar reveal" id="homeSearchBar">
+      <span class="hsb-icon">🔎</span>
+      <span style="flex:1;">
+        <span class="hsb-label" data-i18n="home.searchLabel">Yo'nalish</span><br>
+        <span class="hsb-value" id="homeSearchValue"><span data-i18n="home.searchPlaceholder">Qayerdan → Qayerga?</span></span>
+      </span>
+      <svg class="ic-svg" aria-hidden="true" style="color:var(--muted);font-size:18px;"><use href="#iconChevronRight"/></svg>
+    </button>
+
+    <div class="home-quick-row reveal">
+      <div class="chip-row" id="homeQuickFilters">
+        <button type="button" class="chip" data-quick="today" data-i18n="loads.qToday">Bugun</button>
+        <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
+        <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
+        <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
+      </div>
+      <a class="home-post-fab" href="#" data-tab-link="order" aria-label="Yuk joylash" title="Yuk joylash">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="section" id="homeMatchWrap" style="padding-top:var(--s5);padding-bottom:var(--s2);max-width:640px;" hidden>
+    <div class="section-head reveal" style="margin-bottom:var(--s4);text-align:left;">
+      <div class="section-eyebrow" data-i18n="home.matchEyebrow">Siz uchun</div>
+      <h2 class="section-title" style="font-size:clamp(20px,4vw,26px);">🔥 <span class="accent" data-i18n="home.matchTitle">Sizga mos yuklar</span></h2>
+    </div>
+    <div id="homeMatchList"></div>
+  </div>
+
   <header class="hero-wrap">
     <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
     <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.eyebrow">Yuk bozori · O'zbekiston</span></p>
@@ -1126,14 +1285,6 @@
     <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k" data-i18n="home.stat1k">Shahar</div><div class="kk" data-i18n="home.stat1kk">Butun O'zbekiston bo'ylab</div></div>
     <div class="stat-cell reveal"><div class="v">24/7</div><div class="k" data-i18n="home.stat2k">Ish vaqti</div><div class="kk" data-i18n="home.stat2kk">Istalgan vaqtda buyurtma bering</div></div>
     <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k" data-i18n="home.stat3k">Ro'yxatdan o'tish narxi</div><div class="kk" data-i18n="home.stat3kk">Komissiya ham yo'q</div></div>
-  </div>
-
-  <div class="section" id="homeMatchWrap" style="padding-top:var(--s7);padding-bottom:var(--s2);" hidden>
-    <div class="section-head reveal" style="margin-bottom:var(--s4);">
-      <div class="section-eyebrow" data-i18n="home.matchEyebrow">Siz uchun</div>
-      <h2 class="section-title">🔥 <span class="accent" data-i18n="home.matchTitle">Sizga mos yuklar</span></h2>
-    </div>
-    <div id="homeMatchList"></div>
   </div>
 </section>
 
@@ -1188,7 +1339,7 @@
 </section>
 
 <section class="tabview" id="tab-loads" data-tab="loads" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:680px;">
+  <div class="section" id="loadsSection" style="padding-top:var(--s7);padding-bottom:var(--s8);">
     <div class="section-head reveal">
       <div class="section-eyebrow" data-i18n="loads.eyebrow">Yuklar</div>
       <h2 class="section-title"><span data-i18n="loads.titleA">O'zingizga mos</span> <span class="accent" data-i18n="loads.titleB">yukni toping</span></h2>
@@ -1210,14 +1361,35 @@
         <button type="button" class="chip" id="chipMatchOnly" hidden data-i18n="loads.matchOnly">🔥 Faqat mos yuklar</button>
       </div>
       <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
-      <div id="loadsMoreFiltersBox" hidden style="margin-top:var(--s3);">
+      <!-- Lives here (not inline) so its <select>/<input> elements and their
+           listeners are only ever wired up once by initLoadsFilters() — the
+           filter Sheet just relocates this whole node into itself while
+           open (see openLoadsFilterSheet) and moves it back on close. -->
+      <div id="loadsMoreFiltersBox" hidden>
         <div class="row2">
           <div class="field"><label for="fLoadsCargo" data-i18n="loads.cargoType">Yuk turi</label>
             <select id="fLoadsCargo"><option value="" data-i18n="loads.anyType">Barchasi</option></select></div>
           <div class="field"><label for="fLoadsTruck" data-i18n="loads.truckType">Mashina turi</label>
             <select id="fLoadsTruck"><option value="" data-i18n="loads.anyType">Barchasi</option></select></div>
         </div>
-        <p class="note" style="margin-top:0;"><button type="button" class="link-btn" id="btnLoadsClearFilters" data-i18n="loads.clearFilters">Filtrlarni tozalash</button></p>
+        <div class="row2">
+          <div class="field"><label for="fLoadsMinWeight" data-i18n="loads.minWeight">Og'irlik, min (kg)</label>
+            <input type="number" id="fLoadsMinWeight" min="0" step="100" placeholder="0"></div>
+          <div class="field"><label for="fLoadsMaxWeight" data-i18n="loads.maxWeight">Og'irlik, max (kg)</label>
+            <input type="number" id="fLoadsMaxWeight" min="0" step="100" placeholder="50 000"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fLoadsMinPrice" data-i18n="loads.minPrice">Narx, min (so'm)</label>
+            <input type="number" id="fLoadsMinPrice" min="0" step="10000" placeholder="0"></div>
+          <div class="field"><label for="fLoadsMaxPrice" data-i18n="loads.maxPrice">Narx, max (so'm)</label>
+            <input type="number" id="fLoadsMaxPrice" min="0" step="10000" placeholder="—"></div>
+        </div>
+        <div class="field"><label for="fLoadsDate" data-i18n="loads.exactDate">Sana</label>
+          <input type="date" id="fLoadsDate"></div>
+        <div class="wizard-actions" style="margin-top:var(--s5);">
+          <button type="button" class="btn ghost" id="btnLoadsClearFilters" data-i18n="loads.clearFilters">Filtrlarni tozalash</button>
+          <button type="button" class="btn" id="btnLoadsApplyFilters" data-i18n="loads.showResults">Natijalarni ko'rsatish</button>
+        </div>
       </div>
     </div>
 
@@ -1229,8 +1401,26 @@
     </div>
 
     <p class="note" id="loadsCount" style="margin:var(--s3) 0 var(--s3);"></p>
-    <div id="loadsList"></div>
-    <div id="loadsMap" class="loads-map" hidden></div>
+
+    <!-- On mobile, "Xarita" moves #loadsList into #mcdBody — a draggable
+         sheet docked over the map, not a separate page (see MapDock and
+         setLoadsView). On desktop (≥1024px) both stay visible side by
+         side and this docking never happens — see .loads-desktop-grid. -->
+    <div class="loads-desktop-grid" id="loadsDesktopGrid">
+      <div id="loadsListWrap"><div id="loadsList"></div></div>
+
+      <div class="map-dock-shell" id="mapDockShell" hidden>
+        <div id="loadsMap" class="loads-map"></div>
+        <div class="map-card-dock" id="mapCardDock">
+          <div class="mcd-handle" id="mcdHandle" aria-hidden="true"></div>
+          <div class="mcd-head" id="mcdHead" role="button" tabindex="0" aria-label="Ro'yxatni kengaytirish">
+            <span id="mcdCount"></span>
+            <span aria-hidden="true">⌃</span>
+          </div>
+          <div class="mcd-body" id="mcdBody"></div>
+        </div>
+      </div>
+    </div>
 
     <div id="loadDetailView" hidden></div>
 
@@ -1438,6 +1628,10 @@
   </div>
 </div>
 
+<!-- Shared city autocomplete list — populated once from CITIES; any
+     <input list="cityDatalist"> gets native, no-JS-framework typeahead. -->
+<datalist id="cityDatalist"></datalist>
+
 <script>
 (function(){
   "use strict";
@@ -1453,6 +1647,10 @@
       "nav.home": "Bosh sahifa", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
+      "home.greeting": "Assalomu alaykum 👋",
+      "home.searchLabel": "Yo'nalish", "home.searchPlaceholder": "Qayerdan → Qayerga?",
+      "search.title": "Yo'nalish qidirish", "search.recent": "Yaqinda qidirilganlar",
+      "search.popular": "Mashhur yo'nalishlar", "search.go": "Qidirish",
       "home.eyebrow": "Yuk bozori · O'zbekiston",
       "home.tagline": "Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.",
       "home.ctaSend": "Yuk joylash", "home.ctaGet": "Yuk topish", "home.liveLabel": "Jonli faoliyat",
@@ -1463,10 +1661,13 @@
       "loads.qToday": "Bugun", "loads.qTomorrow": "Ertaga", "loads.qFura": "Fura", "loads.qHeavy": "10+ tonna",
       "loads.moreFilters": "Ko'proq filtr", "loads.cargoType": "Yuk turi", "loads.truckType": "Mashina turi",
       "loads.anyType": "Barchasi", "loads.clearFilters": "Filtrlarni tozalash",
+      "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
+      "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
+      "loads.exactDate": "Sana", "loads.showResults": "Natijalarni ko'rsatish",
       "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
       "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
       "loads.groupJoin": "Guruhga qo'shilish",
-      "loads.freshBadge": "Yangi",
+      "loads.freshBadge": "Yangi", "loads.matchShort": "mos", "loads.sum": "so'm",
       "loads.emptyTitle": "Mos yuk topilmadi.",
       "loads.emptySub": "Yo'nalishingiz yoki filtrlaringizni o'zgartirib ko'ring.",
       "loads.emptyBtn": "Filtrlarni o'zgartirish",
@@ -1491,6 +1692,18 @@
       "order.how4": "Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Aloqa</button> bo'limidan yozing.",
       "order.trackTitle": "Buyurtmani kuzatish", "order.trackNote": "Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.",
       "order.trackCodeLabel": "Buyurtma kodi", "order.trackPhoneLabel": "Telefon", "order.trackBtn": "Holatni tekshirish",
+      "wizard.route": "Yo'nalish", "wizard.cargo": "Yuk", "wizard.truck": "Mashina", "wizard.price": "Narx", "wizard.publish": "Yuborish",
+      "wizard.routeTitle": "Qayerdan qayerga?", "wizard.sameCity": "Qayerdan va qayerga turli shaharlarni tanlang.",
+      "wizard.cargoTitle": "Yukingiz haqida", "wizard.truckTitle": "Mashina va sana", "wizard.priceTitle": "Narx va aloqa",
+      "wizard.distance": "Masofa", "wizard.needSignIn": "Yuborish uchun avval yuqorida Google yoki Telegram orqali kiring.",
+      "wizard.publishTitle": "Tekshirib chiqing", "wizard.reviewRoute": "Yo'nalish", "wizard.reviewPrice": "Narx", "wizard.reviewContact": "Aloqa",
+      "wizard.reviewIncomplete": "Avvalgi bosqichlarni to'ldirib chiqing.", "wizard.sending": "Yuborilmoqda…",
+      "wizard.sendBtn": "Haydovchilarga yuborish", "wizard.back": "Orqaga", "wizard.next": "Davom etish",
+      "order.weightLabel": "Yuk og'irligi (kg)", "order.cargoTypeLabel": "Yuk turi",
+      "order.cargoCustomLabel": "Yuk turini o'zingiz yozing", "order.noteLabel": "Izoh (ixtiyoriy)",
+      "order.truckTypeLabel": "Mashina turi (ixtiyoriy)", "order.anyTruck": "Farqi yo'q",
+      "order.pickupDateLabel": "Yuklash sanasi (ixtiyoriy)", "order.customPriceLabel": "O'z narxingizni taklif qilasizmi? (ixtiyoriy)",
+      "order.nameLabel": "Ismingiz", "order.phoneLabel": "Telefon",
 
       "profile.eyebrow": "Profil", "profile.titleA": "Sizning", "profile.titleB": "profilingiz",
       "profile.sub": "Google yoki Telegram hisobingizga bog'liq, boshqa hech kim ololmaydigan username tanlang.",
@@ -1579,6 +1792,10 @@
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
+      "home.greeting": "Assalomu alaykum 👋",
+      "home.searchLabel": "Направление", "home.searchPlaceholder": "Откуда → Куда?",
+      "search.title": "Поиск направления", "search.recent": "Недавние поиски",
+      "search.popular": "Популярные направления", "search.go": "Искать",
       "home.eyebrow": "Рынок грузоперевозок · Узбекистан",
       "home.tagline": "Платформа, объединяющая отправителей и водителей в пути. Разместите заказ или найдите подходящий груз.",
       "home.ctaSend": "Разместить груз", "home.ctaGet": "Найти груз", "home.liveLabel": "Live-активность",
@@ -1589,10 +1806,13 @@
       "loads.qToday": "Сегодня", "loads.qTomorrow": "Завтра", "loads.qFura": "Фура", "loads.qHeavy": "10+ тонн",
       "loads.moreFilters": "Больше фильтров", "loads.cargoType": "Тип груза", "loads.truckType": "Тип машины",
       "loads.anyType": "Любой", "loads.clearFilters": "Сбросить фильтры",
+      "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
+      "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
+      "loads.exactDate": "Дата", "loads.showResults": "Показать результаты",
       "loads.groupTitle": "Хотите видеть новые грузы первыми?",
       "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
       "loads.groupJoin": "Присоединиться к группе",
-      "loads.freshBadge": "Новое",
+      "loads.freshBadge": "Новое", "loads.matchShort": "подх.", "loads.sum": "сум",
       "loads.emptyTitle": "Подходящих грузов не найдено.",
       "loads.emptySub": "Попробуйте изменить направление или фильтры.",
       "loads.emptyBtn": "Изменить фильтры",
@@ -1617,6 +1837,18 @@
       "order.how4": "Если возникла проблема (водитель не приехал, не сошлись в цене) — напишите нам в разделе <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Контакты</button>.",
       "order.trackTitle": "Отследить заказ", "order.trackNote": "Проверьте статус по коду заказа и номеру телефона.",
       "order.trackCodeLabel": "Код заказа", "order.trackPhoneLabel": "Телефон", "order.trackBtn": "Проверить статус",
+      "wizard.route": "Маршрут", "wizard.cargo": "Груз", "wizard.truck": "Машина", "wizard.price": "Цена", "wizard.publish": "Отправить",
+      "wizard.routeTitle": "Откуда куда?", "wizard.sameCity": "Выберите разные города отправления и назначения.",
+      "wizard.cargoTitle": "О вашем грузе", "wizard.truckTitle": "Машина и дата", "wizard.priceTitle": "Цена и контакты",
+      "wizard.distance": "Расстояние", "wizard.needSignIn": "Чтобы отправить, сначала войдите через Google или Telegram выше.",
+      "wizard.publishTitle": "Проверьте данные", "wizard.reviewRoute": "Маршрут", "wizard.reviewPrice": "Цена", "wizard.reviewContact": "Контакт",
+      "wizard.reviewIncomplete": "Заполните предыдущие шаги.", "wizard.sending": "Отправляется…",
+      "wizard.sendBtn": "Отправить водителям", "wizard.back": "Назад", "wizard.next": "Далее",
+      "order.weightLabel": "Вес груза (кг)", "order.cargoTypeLabel": "Тип груза",
+      "order.cargoCustomLabel": "Впишите тип груза сами", "order.noteLabel": "Комментарий (необязательно)",
+      "order.truckTypeLabel": "Тип машины (необязательно)", "order.anyTruck": "Не важно",
+      "order.pickupDateLabel": "Дата погрузки (необязательно)", "order.customPriceLabel": "Хотите предложить свою цену? (необязательно)",
+      "order.nameLabel": "Ваше имя", "order.phoneLabel": "Телефон",
 
       "profile.eyebrow": "Профиль", "profile.titleA": "Ваш", "profile.titleB": "профиль",
       "profile.sub": "Привязан к вашему аккаунту Google или Telegram — выберите username, который никто больше не сможет занять.",
@@ -1705,6 +1937,10 @@
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
+      "home.greeting": "Assalomu alaykum 👋",
+      "home.searchLabel": "Route", "home.searchPlaceholder": "From → To?",
+      "search.title": "Search a route", "search.recent": "Recent searches",
+      "search.popular": "Popular routes", "search.go": "Search",
       "home.eyebrow": "Freight marketplace · Uzbekistan",
       "home.tagline": "The platform that brings shippers and drivers together on the road. Post a load or find one to carry.",
       "home.ctaSend": "Post a load", "home.ctaGet": "Find a load", "home.liveLabel": "Live activity",
@@ -1715,10 +1951,13 @@
       "loads.qToday": "Today", "loads.qTomorrow": "Tomorrow", "loads.qFura": "Semi-trailer", "loads.qHeavy": "10+ tons",
       "loads.moreFilters": "More filters", "loads.cargoType": "Cargo type", "loads.truckType": "Truck type",
       "loads.anyType": "Any", "loads.clearFilters": "Clear filters",
+      "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
+      "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
+      "loads.exactDate": "Date", "loads.showResults": "Show results",
       "loads.groupTitle": "Want to see new loads first?",
       "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
       "loads.groupJoin": "Join the group",
-      "loads.freshBadge": "New",
+      "loads.freshBadge": "New", "loads.matchShort": "match", "loads.sum": "UZS",
       "loads.emptyTitle": "No matching loads found.",
       "loads.emptySub": "Try changing your route or filters.",
       "loads.emptyBtn": "Change filters",
@@ -1743,6 +1982,18 @@
       "order.how4": "If something goes wrong (driver didn't show, couldn't agree on price) — let us know in the <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Contact</button> section.",
       "order.trackTitle": "Track your order", "order.trackNote": "Check the status with your order code and phone number.",
       "order.trackCodeLabel": "Order code", "order.trackPhoneLabel": "Phone", "order.trackBtn": "Check status",
+      "wizard.route": "Route", "wizard.cargo": "Cargo", "wizard.truck": "Truck", "wizard.price": "Price", "wizard.publish": "Publish",
+      "wizard.routeTitle": "From where to where?", "wizard.sameCity": "Choose different departure and destination cities.",
+      "wizard.cargoTitle": "About your cargo", "wizard.truckTitle": "Truck and date", "wizard.priceTitle": "Price and contact",
+      "wizard.distance": "Distance", "wizard.needSignIn": "Sign in with Google or Telegram above before sending.",
+      "wizard.publishTitle": "Review before sending", "wizard.reviewRoute": "Route", "wizard.reviewPrice": "Price", "wizard.reviewContact": "Contact",
+      "wizard.reviewIncomplete": "Fill in the earlier steps first.", "wizard.sending": "Sending…",
+      "wizard.sendBtn": "Send to drivers", "wizard.back": "Back", "wizard.next": "Continue",
+      "order.weightLabel": "Cargo weight (kg)", "order.cargoTypeLabel": "Cargo type",
+      "order.cargoCustomLabel": "Describe the cargo type", "order.noteLabel": "Note (optional)",
+      "order.truckTypeLabel": "Truck type (optional)", "order.anyTruck": "No preference",
+      "order.pickupDateLabel": "Pickup date (optional)", "order.customPriceLabel": "Want to propose your own price? (optional)",
+      "order.nameLabel": "Your name", "order.phoneLabel": "Phone",
 
       "profile.eyebrow": "Profile", "profile.titleA": "Your", "profile.titleB": "profile",
       "profile.sub": "Tied to your Google or Telegram account — pick a username no one else can take.",
@@ -2018,6 +2269,7 @@
     var root = null, panel = null, titleEl = null, bodyEl = null;
     var lastFocused = null;
     var dragStartY = null, dragCurrentY = null, dragging = false;
+    var currentOnClose = null;
 
     function els(){
       if(!root) root = document.getElementById("sheetRoot");
@@ -2082,6 +2334,7 @@
         el.addEventListener("touchmove", onDragMove, {passive:true});
         el.addEventListener("touchend", onDragEnd);
       });
+      currentOnClose = typeof opts.onClose === "function" ? opts.onClose : null;
       applyLang();
       if(typeof opts.onOpen === "function") opts.onOpen(bodyEl);
       setTimeout(function(){
@@ -2093,6 +2346,11 @@
     function close(){
       els();
       if(!root || root.hidden) return;
+      // Runs first, synchronously, so a page that moved live DOM nodes
+      // (with their own event listeners) into bodyEl — e.g. the Yuklar
+      // filter sheet reusing the existing filter <select>s — gets a chance
+      // to move them back out before bodyEl.innerHTML is cleared below.
+      if(currentOnClose){ currentOnClose(bodyEl); currentOnClose = null; }
       root.classList.remove("open");
       document.removeEventListener("keydown", onKeydown, true);
       document.body.style.overflow = "";
@@ -2307,6 +2565,108 @@
   }
 
   /* ============================================================
+     MARKETPLACE: Home search bar + Route Search sheet (recent/popular
+     routes, native <datalist> autocomplete). Everything here reads and
+     writes the same `loadsState` the Yuklar tab's own filters already
+     use — this is a second entry point into it, not a parallel one.
+     ============================================================ */
+  var POPULAR_ROUTES = [["Toshkent","Buxoro"], ["Toshkent","Samarqand"], ["Toshkent","Farg'ona"], ["Samarqand","Buxoro"]];
+  var RECENT_ROUTES_KEY = "yolda_recent_routes";
+
+  function populateCityDatalist(){
+    var dl = document.getElementById("cityDatalist");
+    if(!dl || dl.children.length) return;
+    dl.innerHTML = CITIES.map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join("");
+  }
+
+  function getRecentRoutes(){
+    try{ return JSON.parse(localStorage.getItem(RECENT_ROUTES_KEY) || "[]"); }catch(e){ return []; }
+  }
+  function addRecentRoute(from, to){
+    if(!from && !to) return;
+    var routes = getRecentRoutes().filter(function(r){ return !(r[0] === from && r[1] === to); });
+    routes.unshift([from, to]);
+    try{ localStorage.setItem(RECENT_ROUTES_KEY, JSON.stringify(routes.slice(0, 5))); }catch(e){}
+  }
+
+  function updateHomeSearchDisplay(from, to){
+    var el = document.getElementById("homeSearchValue");
+    if(!el || (!from && !to)) return; // no route chosen yet — leave the data-i18n placeholder alone
+    el.innerHTML = escapeHtml(from || "…") + '<span class="arrow">→</span>' + escapeHtml(to || "…");
+  }
+
+  function goToLoadsWithQuick(quick){
+    loadsState.quick = (loadsState.quick === quick) ? "" : quick;
+    switchTab("loads");
+    document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(c){
+      c.classList.toggle("active", c.getAttribute("data-quick") === loadsState.quick);
+    });
+  }
+
+  function applyRouteAndGoToLoads(from, to){
+    loadsState.fromCity = from || "";
+    loadsState.toCity = to || "";
+    addRecentRoute(loadsState.fromCity, loadsState.toCity);
+    updateHomeSearchDisplay(loadsState.fromCity, loadsState.toCity);
+    Sheet.close();
+    switchTab("loads");
+    var fromSel = document.getElementById("fLoadsFrom");
+    var toSel = document.getElementById("fLoadsTo");
+    if(fromSel) fromSel.value = loadsState.fromCity;
+    if(toSel) toSel.value = loadsState.toCity;
+  }
+
+  function routePillHtml(from, to){
+    return '<button type="button" class="route-pill" data-route-from="'+escapeHtml(from||"")+'" data-route-to="'+escapeHtml(to||"")+'">'
+      + icon("iconRoute")
+      + '<span>'+escapeHtml(from || "—")+'<span class="arrow">→</span>'+escapeHtml(to || "—")+'</span>'
+      + '</button>';
+  }
+
+  function renderRouteSearchPage(){
+    var recent = getRecentRoutes();
+    var recentHtml = recent.length
+      ? '<div class="route-search-heading" data-i18n="search.recent">Yaqinda qidirilganlar</div><div class="route-pill-list">'
+        + recent.map(function(r){ return routePillHtml(r[0], r[1]); }).join("") + '</div>'
+      : '';
+    var popularHtml = '<div class="route-search-heading" data-i18n="search.popular">Mashhur yo\'nalishlar</div><div class="route-pill-list">'
+      + POPULAR_ROUTES.map(function(r){ return routePillHtml(r[0], r[1]); }).join("") + '</div>';
+
+    return '<div class="route-search-fields">'
+      + '<div class="field"><label for="fSearchFrom" data-i18n="loads.from">Qayerdan</label>'
+      +   '<input type="text" id="fSearchFrom" list="cityDatalist" placeholder="Shahar tanlang" autocomplete="off" data-autofocus></div>'
+      + '<div class="field" style="margin-bottom:0;"><label for="fSearchTo" data-i18n="loads.to">Qayerga</label>'
+      +   '<input type="text" id="fSearchTo" list="cityDatalist" placeholder="Shahar tanlang" autocomplete="off"></div>'
+      + '<button type="button" class="btn" id="btnRouteSearchGo" data-i18n="search.go" style="margin-top:var(--s2);">Qidirish</button>'
+      + '</div>'
+      + recentHtml + popularHtml;
+  }
+
+  function bindRouteSearchPage(container){
+    var fromInput = container.querySelector("#fSearchFrom");
+    var toInput = container.querySelector("#fSearchTo");
+    var goBtn = container.querySelector("#btnRouteSearchGo");
+    if(goBtn) goBtn.addEventListener("click", function(){
+      var from = fromInput && CITIES.indexOf(fromInput.value) !== -1 ? fromInput.value : "";
+      var to = toInput && CITIES.indexOf(toInput.value) !== -1 ? toInput.value : "";
+      applyRouteAndGoToLoads(from, to);
+    });
+    container.querySelectorAll("[data-route-from]").forEach(function(pill){
+      pill.addEventListener("click", function(){
+        applyRouteAndGoToLoads(pill.getAttribute("data-route-from"), pill.getAttribute("data-route-to"));
+      });
+    });
+  }
+
+  function openRouteSearch(){
+    Sheet.open({
+      title: t("search.title") || "Yo'nalish qidirish",
+      html: renderRouteSearchPage(),
+      onOpen: function(container){ bindRouteSearchPage(container); applyLang(); }
+    });
+  }
+
+  /* ============================================================
      Config
      ============================================================ */
   // Serverless endpoint that forwards the order to Telegram.
@@ -2362,8 +2722,16 @@
     from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL", customCargoLabel: "",
     truckType: "", pickupDate: "",
     name: "", phone: "", note: "", customPrice: "",
-    submitting: false, sent: null
+    submitting: false, sent: null,
+    step: 1 // 1 Yo'nalish, 2 Yuk, 3 Mashina, 4 Narx, 5 Yuborish — see WIZARD_STEPS
   };
+  var WIZARD_STEPS = [
+    { key: "route", labelKey: "wizard.route", label: "Yo'nalish" },
+    { key: "cargo", labelKey: "wizard.cargo", label: "Yuk" },
+    { key: "truck", labelKey: "wizard.truck", label: "Mashina" },
+    { key: "price", labelKey: "wizard.price", label: "Narx" },
+    { key: "publish", labelKey: "wizard.publish", label: "Yuborish" }
+  ];
 
   /* ============================================================
      Google Sign-In — required before an order can be submitted.
@@ -3014,7 +3382,10 @@
      browse — only the phone number is withheld, same rule as everywhere
      else (a driver only sees it once they claim the load in Telegram).
      ============================================================ */
-  var loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: false };
+  var loadsState = {
+    fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: false,
+    minWeight: null, maxWeight: null, minPrice: null, maxPrice: null, exactDate: ""
+  };
   var loadsInitialized = false;
   var lastLoadsResult = [];
   var loadsMapInstance = null;
@@ -3072,6 +3443,33 @@
     return idx === -1;
   }
 
+  /**
+   * Opens the filter Sheet by physically relocating the (already wired up,
+   * once, by initLoadsFilters) #loadsMoreFiltersBox node into the sheet
+   * body, and moving it back to its original spot in the Yuklar search
+   * card when the sheet closes — see Sheet's onClose above. This way every
+   * field inside it keeps working exactly as before; nothing gets rebound.
+   */
+  function openLoadsFilterSheet(){
+    var box = document.getElementById("loadsMoreFiltersBox");
+    if(!box) return;
+    var originalParent = box.parentNode;
+    var originalNext = box.nextSibling;
+    Sheet.open({
+      title: t("loads.moreFilters") || "Ko'proq filtr",
+      html: '<div id="filterSheetMount"></div>',
+      onOpen: function(container){
+        var mount = container.querySelector("#filterSheetMount");
+        if(mount){ mount.appendChild(box); box.hidden = false; }
+      },
+      onClose: function(){
+        box.hidden = true;
+        if(originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(box, originalNext);
+        else originalParent.appendChild(box);
+      }
+    });
+  }
+
   function initLoadsFilters(){
     if(loadsInitialized) return;
     loadsInitialized = true;
@@ -3080,6 +3478,11 @@
     var toSel = document.getElementById("fLoadsTo");
     var cargoSel = document.getElementById("fLoadsCargo");
     var truckSel = document.getElementById("fLoadsTruck");
+    var minWeightInput = document.getElementById("fLoadsMinWeight");
+    var maxWeightInput = document.getElementById("fLoadsMaxWeight");
+    var minPriceInput = document.getElementById("fLoadsMinPrice");
+    var maxPriceInput = document.getElementById("fLoadsMaxPrice");
+    var dateInput = document.getElementById("fLoadsDate");
 
     CITIES.forEach(function(c){
       fromSel.insertAdjacentHTML("beforeend", '<option value="'+c+'">'+c+'</option>');
@@ -3093,10 +3496,10 @@
       truckSel.insertAdjacentHTML("beforeend", '<option value="'+k+'">'+VEHICLE_LABELS[k]+'</option>');
     });
 
+    // Route stays immediate-apply, same as before — it's on the always-
+    // visible search card, not inside the filter sheet.
     fromSel.addEventListener("change", function(){ loadsState.fromCity = fromSel.value; fetchLoads(); });
     toSel.addEventListener("change", function(){ loadsState.toCity = toSel.value; fetchLoads(); });
-    cargoSel.addEventListener("change", function(){ loadsState.cargoType = cargoSel.value; fetchLoads(); });
-    truckSel.addEventListener("change", function(){ loadsState.truckType = truckSel.value; fetchLoads(); });
 
     document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(chip){
       chip.addEventListener("click", function(){
@@ -3110,16 +3513,35 @@
     });
 
     var moreBtn = document.getElementById("btnLoadsMoreFilters");
-    if(moreBtn) moreBtn.addEventListener("click", function(){
-      var box = document.getElementById("loadsMoreFiltersBox");
-      if(box) box.hidden = !box.hidden;
+    if(moreBtn) moreBtn.addEventListener("click", openLoadsFilterSheet);
+
+    // Everything inside the sheet (cargo, truck, weight/price range, date)
+    // applies together, on "Natijalarni ko'rsatish" — a bottom-sheet filter
+    // reads as a form you submit, not a set of fields that fetch on every
+    // keystroke.
+    var applyBtn = document.getElementById("btnLoadsApplyFilters");
+    if(applyBtn) applyBtn.addEventListener("click", function(){
+      loadsState.cargoType = cargoSel.value;
+      loadsState.truckType = truckSel.value;
+      loadsState.minWeight = minWeightInput.value ? Math.max(0, parseInt(minWeightInput.value, 10)) : null;
+      loadsState.maxWeight = maxWeightInput.value ? Math.max(0, parseInt(maxWeightInput.value, 10)) : null;
+      loadsState.minPrice = minPriceInput.value ? Math.max(0, parseInt(minPriceInput.value, 10)) : null;
+      loadsState.maxPrice = maxPriceInput.value ? Math.max(0, parseInt(maxPriceInput.value, 10)) : null;
+      loadsState.exactDate = dateInput.value || "";
+      Sheet.close();
+      fetchLoads();
     });
 
     var clearBtn = document.getElementById("btnLoadsClearFilters");
     if(clearBtn) clearBtn.addEventListener("click", function(){
-      loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: loadsState.matchOnly };
+      loadsState = {
+        fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: loadsState.matchOnly,
+        minWeight: null, maxWeight: null, minPrice: null, maxPrice: null, exactDate: ""
+      };
       fromSel.value = ""; toSel.value = ""; cargoSel.value = ""; truckSel.value = "";
+      minWeightInput.value = ""; maxWeightInput.value = ""; minPriceInput.value = ""; maxPriceInput.value = ""; dateInput.value = "";
       document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(c){ c.classList.remove("active"); });
+      Sheet.close();
       fetchLoads();
     });
 
@@ -3135,21 +3557,113 @@
     });
   }
 
+  var currentLoadsView = "list";
+  function isDesktopLoadsLayout(){ return window.innerWidth >= 1024; }
+
   function setLoadsView(view){
+    currentLoadsView = view;
+    var listWrap = document.getElementById("loadsListWrap");
+    var mapShell = document.getElementById("mapDockShell");
     var list = document.getElementById("loadsList");
-    var map = document.getElementById("loadsMap");
+    var mcdBody = document.getElementById("mcdBody");
     document.querySelectorAll("#loadsViewToggle .vt-btn").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-view") === view);
     });
+
+    if(isDesktopLoadsLayout()){
+      // Sidebar-style: list and map are both always visible, side by side —
+      // the mobile map/list toggle simply doesn't apply at this width.
+      if(list && listWrap && list.parentNode !== listWrap) listWrap.appendChild(list);
+      if(listWrap) listWrap.hidden = false;
+      if(mapShell) mapShell.hidden = false;
+      renderLoadsMap(lastLoadsResult);
+      return;
+    }
+
     if(view === "map"){
-      if(list) list.hidden = true;
-      if(map) map.hidden = false;
+      if(listWrap) listWrap.hidden = true;
+      if(mapShell) mapShell.hidden = false;
+      if(list && mcdBody && list.parentNode !== mcdBody) mcdBody.appendChild(list);
       renderLoadsMap(lastLoadsResult);
     } else {
-      if(list) list.hidden = false;
-      if(map) map.hidden = true;
+      if(list && listWrap && list.parentNode !== listWrap) listWrap.appendChild(list);
+      if(listWrap) listWrap.hidden = false;
+      if(mapShell) mapShell.hidden = true;
     }
   }
+
+  // Crossing the 1024px breakpoint (rotating a tablet, resizing a window)
+  // should re-decide the layout, not leave it stuck in whichever mode it
+  // started in.
+  var loadsViewResizeTimer = null;
+  window.addEventListener("resize", function(){
+    clearTimeout(loadsViewResizeTimer);
+    loadsViewResizeTimer = setTimeout(function(){
+      var tab = document.getElementById("tab-loads");
+      if(tab && !tab.hidden) setLoadsView(currentLoadsView);
+    }, 200);
+  });
+
+  /**
+   * The docked card sheet over the map (mobile only) — a peek/expanded
+   * two-state panel, both tappable and draggable via its handle/header.
+   * Not a modal: no backdrop, nothing else on screen is blocked while it's
+   * in its default "peek" state, so the map stays part of the same browsing
+   * flow instead of feeling like a separate page.
+   */
+  var MapDock = (function(){
+    var dock = null, startY = null, currentY = null, dragging = false, startExpanded = false, touchHandled = false;
+
+    function els(){ if(!dock) dock = document.getElementById("mapCardDock"); }
+    function toggle(){ els(); if(dock) dock.classList.toggle("expanded"); }
+
+    function onStart(e){
+      els(); if(!dock) return;
+      dragging = true;
+      startY = (e.touches ? e.touches[0].clientY : e.clientY);
+      currentY = startY;
+      startExpanded = dock.classList.contains("expanded");
+      dock.style.transition = "none";
+    }
+    function onMove(e){
+      if(!dragging || !dock) return;
+      currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+      var delta = currentY - startY; // negative = dragging upward (toward expanded)
+      var peekOffset = Math.max(0, dock.offsetHeight - 96);
+      var base = startExpanded ? 0 : peekOffset;
+      var next = Math.max(0, Math.min(peekOffset, base + delta));
+      dock.style.transform = "translateY(" + next + "px)";
+    }
+    function onEnd(){
+      if(!dragging || !dock) return;
+      dragging = false;
+      dock.style.transition = "";
+      dock.style.transform = "";
+      var delta = currentY - startY;
+      if(startExpanded){
+        if(delta > 70) dock.classList.remove("expanded");
+      } else if(delta < -70){
+        dock.classList.add("expanded");
+      }
+      touchHandled = true;
+      setTimeout(function(){ touchHandled = false; }, 400);
+    }
+
+    function init(){
+      els(); if(!dock) return;
+      [document.getElementById("mcdHandle"), document.getElementById("mcdHead")].forEach(function(el){
+        if(!el) return;
+        el.addEventListener("touchstart", onStart, {passive:true});
+        el.addEventListener("touchmove", onMove, {passive:true});
+        el.addEventListener("touchend", onEnd);
+        el.addEventListener("click", function(){ if(!touchHandled) toggle(); });
+        el.addEventListener("keydown", function(e){
+          if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
+        });
+      });
+    }
+    return { init: init };
+  })();
 
   function ensureLoadsMap(){
     if(loadsMapInstance) return;
@@ -3204,7 +3718,10 @@
   }
 
   function renderLoadsTab(){
+    var firstInit = !loadsInitialized;
     initLoadsFilters();
+    if(firstInit) MapDock.init();
+    setLoadsView(currentLoadsView);
     loadDriverMatchProfile(function(){
       var chip = document.getElementById("chipMatchOnly");
       if(chip) chip.hidden = !driverMatchProfile;
@@ -3260,23 +3777,23 @@
     var dateLabel = o.pickupDate ? formatLoadDate(o.pickupDate) : "";
     var isFresh = o.createdAt && (Date.now() - o.createdAt) < 2 * 3600 * 1000;
     var fav = isFavorite(o.code);
-    var matchHtml = (o._match != null) ? '<span class="match-badge">🔥 '+o._match+'% mos</span>' : '';
+    var hasBadgeRow = (o._match != null) || isFresh;
 
     return '<div class="load-card" data-code="'+escapeHtml(o.code)+'">'
+      + (hasBadgeRow
+          ? '<div class="lc-badges">'
+            + (o._match != null ? '<span class="match-badge">🔥 '+o._match+'% <span data-i18n="loads.matchShort">mos</span></span>' : '')
+            + (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
+            + '</div>'
+          : '')
       + '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+(fav?'♥':'♡')+'</button>'
-      + '<div class="lc-top">'
-      +   '<div class="lc-route">'+escapeHtml(o.fromCity)+'<span class="arrow">→</span>'+escapeHtml(o.toCity)+'</div>'
-      +   '<div class="lc-price">'+formatNum(o.amount)+' so\'m</div>'
-      + '</div>'
+      + '<div class="lc-route">'+escapeHtml(o.fromCity)+'<span class="arrow">→</span>'+escapeHtml(o.toCity)+'</div>'
+      + '<div class="lc-price">'+formatNum(o.amount)+' <span data-i18n="loads.sum">so\'m</span></div>'
       + '<div class="lc-meta">'
       +   '<span>'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</span>'
       +   '<span>'+icon("iconWeight")+' '+formatNum(o.weightKg)+' kg</span>'
       +   (o.truckType ? '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType)+'</span>' : '')
       +   (dateLabel ? '<span>'+icon("iconRoute")+' '+escapeHtml(dateLabel)+'</span>' : '')
-      + '</div>'
-      + '<div style="display:flex;gap:6px;margin-top:var(--s3);flex-wrap:wrap;">'
-      +   (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
-      +   matchHtml
       + '</div>'
       + '</div>';
   }
@@ -3307,11 +3824,21 @@
     if(loadsState.quick === "tomorrow") params.push("when=tomorrow");
     if(loadsState.quick === "fura") params.push("truckType=YARIM_TREYLER");
     if(loadsState.quick === "heavy") params.push("minWeight=10000");
+    // "10+ tonna" is a shortcut for the same minWeight the filter sheet
+    // exposes directly — the larger of the two (if both are set) wins.
+    if(loadsState.minWeight) params.push("minWeight=" + Math.max(loadsState.minWeight, loadsState.quick === "heavy" ? 10000 : 0));
+    if(loadsState.maxWeight) params.push("maxWeight=" + loadsState.maxWeight);
 
     fetch("/api/order?action=list" + (params.length ? "&" + params.join("&") : ""))
       .then(function(r){ return r.json(); })
       .then(function(data){
         var loads = data.loads || [];
+        // Price range and an exact pickup date aren't query params the API
+        // supports server-side — filtered here instead, over the same
+        // already-fetched list, so no backend change was needed for them.
+        if(loadsState.minPrice) loads = loads.filter(function(o){ return o.amount >= loadsState.minPrice; });
+        if(loadsState.maxPrice) loads = loads.filter(function(o){ return o.amount <= loadsState.maxPrice; });
+        if(loadsState.exactDate) loads = loads.filter(function(o){ return o.pickupDate === loadsState.exactDate; });
         if(driverMatchProfile){
           loads.forEach(function(o){ o._match = computeMatchScore(o); });
           if(loadsState.matchOnly) loads = loads.filter(function(o){ return o._match >= 55; });
@@ -3319,11 +3846,13 @@
         lastLoadsResult = loads;
 
         if(countEl) countEl.textContent = loads.length + " ta yuk topildi";
+        var mcdCount = document.getElementById("mcdCount");
+        if(mcdCount) mcdCount.textContent = loads.length + " ta yuk";
         list.innerHTML = loads.length ? loads.map(loadCardHtml).join("") : emptyLoadsHtml();
         applyLang();
 
         var mapBtn = document.querySelector("#loadsViewToggle .vt-btn[data-view=\"map\"].active");
-        if(mapBtn) renderLoadsMap(loads);
+        if(mapBtn || isDesktopLoadsLayout()) renderLoadsMap(loads);
 
         var resetBtn = document.getElementById("btnLoadsResetEmpty");
         if(resetBtn) resetBtn.addEventListener("click", function(){
@@ -3360,7 +3889,7 @@
   /* ---------- Load details — full view swapped into the Yuklar tab. ---------- */
   function openLoadDetail(code){
     switchTab("loads");
-    ["loadsList", "loadsMap", "loadsCount", "loadsViewToggle", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
+    ["loadsDesktopGrid", "loadsCount", "loadsViewToggle", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
       var el = document.getElementById(id);
       if(el) el.hidden = true;
     });
@@ -3678,84 +4207,141 @@
       + '</div>';
   }
 
-  function formView(){
-    var distance = distanceBetween(state.from, state.to);
-    var cargo = cargoById(state.cargo);
-    var price = calcPrice(distance, state.weight, cargo.mult);
-    var sameCity = state.from === state.to;
-    var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
-    var ready = !sameCity && state.weight > 0 && state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn() && cargoReady;
+  /* ---------- Yuk joylash: 5-step wizard (Yo'nalish → Yuk → Mashina →
+     Narx → Yuborish). Presentational only — the same `state` object, the
+     same validation, and the same submitOrder() as before; a step is just
+     which fields formView() currently shows. ---------- */
+  function wizardStepsHtml(){
+    return '<div class="wizard-steps">' + WIZARD_STEPS.map(function(s, i){
+      var n = i + 1;
+      var cls = n < state.step ? "done" : (n === state.step ? "active" : "");
+      var dot = n < state.step ? "✓" : String(n);
+      var line = i < WIZARD_STEPS.length - 1 ? '<div class="wizard-line'+(n < state.step ? ' done' : '')+'"></div>' : '';
+      return '<div class="wizard-step '+cls+'"><div class="ws-dot">'+dot+'</div><div class="ws-label" data-i18n="'+s.labelKey+'">'+s.label+'</div></div>' + line;
+    }).join("") + '</div>';
+  }
 
-    return '<div class="card">'
-      + '<h3 class="card-title">'+icon("iconClipboard")+' Yuk ma\'lumotlari</h3>'
+  function stepRouteHtml(){
+    var distance = distanceBetween(state.from, state.to);
+    var sameCity = state.from === state.to;
+    return '<div class="wizard-panel">'
+      + '<h3 class="card-title">'+icon("iconRoute")+' <span data-i18n="wizard.routeTitle">Qayerdan qayerga?</span></h3>'
       + '<div class="row2">'
-      +   '<div class="field"><label for="fFrom">Qayerdan</label><select id="fFrom">'+cityOptions(state.from)+'</select></div>'
-      +   '<div class="field"><label for="fTo">Qayerga</label><select id="fTo">'+cityOptions(state.to)+'</select></div>'
+      +   '<div class="field"><label for="fFrom" data-i18n="loads.from">Qayerdan</label><select id="fFrom">'+cityOptions(state.from)+'</select></div>'
+      +   '<div class="field"><label for="fTo" data-i18n="loads.to">Qayerga</label><select id="fTo">'+cityOptions(state.to)+'</select></div>'
       + '</div>'
-      + '<div class="field"><label for="fWeight">Yuk og\'irligi (kg)</label>'
+      + (sameCity
+          ? '<p class="note" data-i18n="wizard.sameCity">Qayerdan va qayerga turli shaharlarni tanlang.</p>'
+          : '<p class="note">'+icon("iconRoute")+' '+formatNum(distance)+' km</p>')
+      + '</div>';
+  }
+
+  function stepCargoHtml(){
+    return '<div class="wizard-panel">'
+      + '<h3 class="card-title">'+icon("iconClipboard")+' <span data-i18n="wizard.cargoTitle">Yukingiz haqida</span></h3>'
+      + '<div class="field"><label for="fWeight" data-i18n="order.weightLabel">Yuk og\'irligi (kg)</label>'
       +   '<input type="number" id="fWeight" min="1" max="50000" inputmode="numeric" value="'+state.weight+'"></div>'
-      + '<div class="field">'
-      +   '<label for="fCargo">Yuk turi</label>'
+      + '<div class="field"><label for="fCargo" data-i18n="order.cargoTypeLabel">Yuk turi</label>'
       +   '<select id="fCargo">'
       +   CARGO.map(function(c){
             return '<option value="'+c.id+'"'+(c.id===state.cargo?' selected':'')+'>'+c.label+'</option>';
           }).join("")
-      +   '</select>'
-      + '</div>'
+      +   '</select></div>'
       + (state.cargo === "OTHER"
-          ? '<div class="field"><label for="fCargoCustom">Yuk turini o\'zingiz yozing</label>'
+          ? '<div class="field"><label for="fCargoCustom" data-i18n="order.cargoCustomLabel">Yuk turini o\'zingiz yozing</label>'
             + '<input type="text" id="fCargoCustom" maxlength="60" placeholder="Masalan: haykal, mebel qismlari" value="'+escapeHtml(state.customCargoLabel)+'"></div>'
           : '')
-
-      + '<div class="row2">'
-      +   '<div class="field"><label for="fTruckType">Mashina turi (ixtiyoriy)</label>'
-      +     '<select id="fTruckType"><option value="">Farqi yo\'q</option>'
-      +     Object.keys(VEHICLE_LABELS).map(function(k){
-              return '<option value="'+k+'"'+(state.truckType===k?' selected':'')+'>'+VEHICLE_LABELS[k]+'</option>';
-            }).join("")
-      +     '</select></div>'
-      +   '<div class="field"><label for="fPickupDate">Yuklash sanasi (ixtiyoriy)</label>'
-      +     '<input type="date" id="fPickupDate" value="'+escapeHtml(state.pickupDate)+'"></div>'
-      + '</div>'
-
-      + '<div class="tear"></div>'
-
-      + '<h3 class="card-title" style="margin-top:0;">'+icon("iconInfo")+' Aloqa</h3>'
-      + '<div class="row2">'
-      +   '<div class="field"><label for="fName">Ismingiz</label>'
-      +     '<input type="text" id="fName" placeholder="Masalan: Dilshod" value="'+escapeHtml(state.name)+'"></div>'
-      +   '<div class="field"><label for="fPhone">Telefon</label>'
-      +     '<input type="tel" id="fPhone" placeholder="90 123 45 67" inputmode="tel" value="'+escapeHtml(state.phone)+'"></div>'
-      + '</div>'
-      + '<div class="field"><label for="fNote">Izoh (ixtiyoriy)</label>'
+      + '<div class="field"><label for="fNote" data-i18n="order.noteLabel">Izoh (ixtiyoriy)</label>'
       +   '<input type="text" id="fNote" maxlength="300" placeholder="Masalan: ertaga ertalab olib ketilsin" value="'+escapeHtml(state.note)+'"></div>'
+      + '</div>';
+  }
 
-      + '<div class="tear"></div>'
+  function stepTruckHtml(){
+    return '<div class="wizard-panel">'
+      + '<h3 class="card-title">'+icon("iconTruck")+' <span data-i18n="wizard.truckTitle">Mashina va sana</span></h3>'
+      + '<div class="field"><label for="fTruckType" data-i18n="order.truckTypeLabel">Mashina turi (ixtiyoriy)</label>'
+      +   '<select id="fTruckType"><option value="" data-i18n="order.anyTruck">Farqi yo\'q</option>'
+      +   Object.keys(VEHICLE_LABELS).map(function(k){
+            return '<option value="'+k+'"'+(state.truckType===k?' selected':'')+'>'+VEHICLE_LABELS[k]+'</option>';
+          }).join("")
+      +   '</select></div>'
+      + '<div class="field"><label for="fPickupDate" data-i18n="order.pickupDateLabel">Yuklash sanasi (ixtiyoriy)</label>'
+      +   '<input type="date" id="fPickupDate" value="'+escapeHtml(state.pickupDate)+'"></div>'
+      + '</div>';
+  }
 
+  function stepPriceHtml(){
+    var distance = distanceBetween(state.from, state.to);
+    var cargo = cargoById(state.cargo);
+    var price = calcPrice(distance, state.weight, cargo.mult);
+    return '<div class="wizard-panel">'
+      + '<h3 class="card-title">'+icon("iconInfo")+' <span data-i18n="wizard.priceTitle">Narx va aloqa</span></h3>'
       + '<div class="stub-route">'
-      +   '<span class="stub-city">'+state.from+'</span>'
-      +   '<span class="stub-mid">'+icon("iconRoute")+' '+(sameCity?'—':formatNum(distance)+' km')+'</span>'
-      +   '<span class="stub-city">'+state.to+'</span>'
+      +   '<span class="stub-city">'+escapeHtml(state.from)+'</span>'
+      +   '<span class="stub-mid">'+icon("iconRoute")+' '+formatNum(distance)+' km</span>'
+      +   '<span class="stub-city">'+escapeHtml(state.to)+'</span>'
       + '</div>'
       + '<div class="stub-stats">'
-      +   '<div class="stat"><div class="v">'+formatNum(distance)+' km</div><div class="k">Masofa</div></div>'
-      +   '<div class="stat"><div class="v">'+formatNum(state.weight)+' kg</div><div class="k">Og\'irlik</div></div>'
-      +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+(state.cargo==="OTHER" && state.customCargoLabel ? escapeHtml(state.customCargoLabel) : cargo.label)+'</div><div class="k">Yuk turi</div></div>'
+      +   '<div class="stat"><div class="v">'+formatNum(distance)+' km</div><div class="k" data-i18n="wizard.distance">Masofa</div></div>'
+      +   '<div class="stat"><div class="v">'+formatNum(state.weight)+' kg</div><div class="k" data-i18n="order.weightLabel">Og\'irlik</div></div>'
+      +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+(state.cargo==="OTHER" && state.customCargoLabel ? escapeHtml(state.customCargoLabel) : cargo.label)+'</div><div class="k" data-i18n="order.cargoTypeLabel">Yuk turi</div></div>'
       + '</div>'
-
       + '<div class="field" style="margin-top:var(--s3);">'
-      +   '<label for="fCustomPrice">O\'z narxingizni taklif qilasizmi? (ixtiyoriy)</label>'
+      +   '<label for="fCustomPrice" data-i18n="order.customPriceLabel">O\'z narxingizni taklif qilasizmi? (ixtiyoriy)</label>'
       +   '<input type="number" id="fCustomPrice" min="10000" max="100000000" step="1000" placeholder="'+formatNum(price)+'" value="'+escapeHtml(state.customPrice)+'">'
       + '</div>'
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fName" data-i18n="order.nameLabel">Ismingiz</label>'
+      +     '<input type="text" id="fName" placeholder="Masalan: Dilshod" value="'+escapeHtml(state.name)+'"></div>'
+      +   '<div class="field"><label for="fPhone" data-i18n="order.phoneLabel">Telefon</label>'
+      +     '<input type="tel" id="fPhone" placeholder="90 123 45 67" inputmode="tel" value="'+escapeHtml(state.phone)+'"></div>'
+      + '</div>'
+      + (!isSignedIn() ? '<p class="note" data-i18n="wizard.needSignIn">Yuborish uchun avval yuqorida Google yoki Telegram orqali kiring.</p>' : '')
+      + '</div>';
+  }
 
-      + (sameCity ? '<p class="note">Qayerdan va qayerga turli shaharlarni tanlang.</p>' : '')
-      + (!sameCity && !ready && !isSignedIn() ? '<p class="note">Yuborish uchun avval yuqorida Google yoki Telegram orqali kiring.</p>' : '')
-      + (!sameCity && !ready && isSignedIn() ? '<p class="note">Yuborish uchun ism va telefon raqamini to\'ldiring.</p>' : '')
+  function stepPublishHtml(){
+    var distance = distanceBetween(state.from, state.to);
+    var cargo = cargoById(state.cargo);
+    var cargoLabel = state.cargo === "OTHER" && state.customCargoLabel ? state.customCargoLabel : cargo.label;
+    var price = state.customPrice ? parseInt(state.customPrice, 10) : calcPrice(distance, state.weight, cargo.mult);
+    var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
+    var ready = state.from !== state.to && state.weight > 0
+      && state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn() && cargoReady;
 
-      + '<button class="btn" id="btnSend"'+(ready && !state.submitting ? '' : ' disabled')+'>'
-      +   (state.submitting ? 'Yuborilmoqda…' : 'Haydovchilarga yuborish ' + icon("iconArrowRight"))
+    return '<div class="wizard-panel">'
+      + '<h3 class="card-title">'+icon("iconCheck")+' <span data-i18n="wizard.publishTitle">Tekshirib chiqing</span></h3>'
+      + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewRoute">Yo\'nalish</span><span class="wr-v">'+escapeHtml(state.from)+' → '+escapeHtml(state.to)+'</span></div>'
+      + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.weightLabel">Og\'irlik</span><span class="wr-v">'+formatNum(state.weight)+' kg</span></div>'
+      + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.cargoTypeLabel">Yuk turi</span><span class="wr-v">'+escapeHtml(cargoLabel)+'</span></div>'
+      + (state.truckType ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.truckTypeLabel">Mashina turi</span><span class="wr-v">'+escapeHtml(VEHICLE_LABELS[state.truckType]||state.truckType)+'</span></div>' : '')
+      + (state.pickupDate ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.pickupDateLabel">Sana</span><span class="wr-v">'+escapeHtml(state.pickupDate)+'</span></div>' : '')
+      + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewPrice">Narx</span><span class="wr-v">'+formatNum(price)+' so\'m</span></div>'
+      + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewContact">Aloqa</span><span class="wr-v">'+escapeHtml(state.name)+', '+escapeHtml(state.phone)+'</span></div>'
+      + (!ready ? '<p class="note" data-i18n="wizard.reviewIncomplete" style="margin-top:var(--s3);">Avvalgi bosqichlarni to\'ldirib chiqing.</p>' : '')
+      + '<button class="btn" id="btnSend" style="margin-top:var(--s5);"'+(ready && !state.submitting ? '' : ' disabled')+'>'
+      +   (state.submitting ? '<span data-i18n="wizard.sending">Yuborilmoqda…</span>' : '<span data-i18n="wizard.sendBtn">Haydovchilarga yuborish</span> ' + icon("iconArrowRight"))
       + '</button>'
       + '</div>';
+  }
+
+  function formView(){
+    var builders = [stepRouteHtml, stepCargoHtml, stepTruckHtml, stepPriceHtml, stepPublishHtml];
+    var stepContent = builders[state.step - 1]();
+    var isLast = state.step === WIZARD_STEPS.length;
+    var navHtml = '<div class="wizard-actions">'
+      + (state.step > 1 ? '<button type="button" class="btn ghost" id="btnWizardBack" data-i18n="wizard.back">Orqaga</button>' : '')
+      + (!isLast ? '<button type="button" class="btn" id="btnWizardNext" data-i18n="wizard.next">Davom etish</button>' : '')
+      + '</div>';
+    return '<div class="card">' + wizardStepsHtml() + stepContent + navHtml + '</div>';
+  }
+
+  function canAdvanceFromStep(step){
+    var cargoReady = state.cargo !== "OTHER" || state.customCargoLabel.trim().length > 0;
+    if(step === 1) return state.from !== state.to;
+    if(step === 2) return state.weight > 0 && cargoReady;
+    if(step === 4) return state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn();
+    return true;
   }
 
   function render(){
@@ -3899,8 +4485,9 @@
   }
 
   function bindForm(){
-    // Re-rendering on every keystroke would steal focus, so text inputs only
-    // update state; the button's disabled flag is refreshed separately.
+    // Each render() only shows one wizard step's fields, so every lookup
+    // below has to be null-guarded — unlike the old single-page form,
+    // most of these ids simply aren't in the DOM on any given step.
     var refreshButton = function(){
       var btn = document.getElementById("btnSend");
       if(!btn) return;
@@ -3910,48 +4497,58 @@
       btn.disabled = !ready || state.submitting;
     };
 
-    document.getElementById("fFrom").addEventListener("change", function(e){
-      state.from = e.target.value; render();
-    });
-    document.getElementById("fTo").addEventListener("change", function(e){
-      state.to = e.target.value; render();
-    });
-    document.getElementById("fWeight").addEventListener("input", function(e){
+    var fFrom = document.getElementById("fFrom");
+    if(fFrom) fFrom.addEventListener("change", function(e){ state.from = e.target.value; render(); });
+    var fTo = document.getElementById("fTo");
+    if(fTo) fTo.addEventListener("change", function(e){ state.to = e.target.value; render(); });
+
+    var fWeight = document.getElementById("fWeight");
+    if(fWeight) fWeight.addEventListener("input", function(e){
       state.weight = Math.max(0, parseInt(e.target.value || "0", 10));
-      var w = document.querySelectorAll(".stub-stats .stat .v")[1];
-      if(w) w.textContent = formatNum(state.weight) + " kg";
       refreshButton();
     });
 
-    document.getElementById("fCargo").addEventListener("change", function(e){
-      state.cargo = e.target.value; render();
-    });
+    var fCargo = document.getElementById("fCargo");
+    if(fCargo) fCargo.addEventListener("change", function(e){ state.cargo = e.target.value; render(); });
     var cargoCustom = document.getElementById("fCargoCustom");
     if(cargoCustom) cargoCustom.addEventListener("input", function(e){
       state.customCargoLabel = e.target.value; refreshButton();
     });
+    var fNote = document.getElementById("fNote");
+    if(fNote) fNote.addEventListener("input", function(e){ state.note = e.target.value; });
 
-    document.getElementById("fTruckType").addEventListener("change", function(e){
-      state.truckType = e.target.value;
-    });
-    document.getElementById("fPickupDate").addEventListener("change", function(e){
-      state.pickupDate = e.target.value;
+    var fTruckType = document.getElementById("fTruckType");
+    if(fTruckType) fTruckType.addEventListener("change", function(e){ state.truckType = e.target.value; });
+    var fPickupDate = document.getElementById("fPickupDate");
+    if(fPickupDate) fPickupDate.addEventListener("change", function(e){ state.pickupDate = e.target.value; });
+
+    var fCustomPrice = document.getElementById("fCustomPrice");
+    if(fCustomPrice) fCustomPrice.addEventListener("input", function(e){ state.customPrice = e.target.value; });
+    var fName = document.getElementById("fName");
+    if(fName) fName.addEventListener("input", function(e){ state.name = e.target.value; refreshButton(); });
+    var fPhone = document.getElementById("fPhone");
+    if(fPhone) fPhone.addEventListener("input", function(e){ state.phone = e.target.value; refreshButton(); });
+
+    var backBtn = document.getElementById("btnWizardBack");
+    if(backBtn) backBtn.addEventListener("click", function(){
+      state.step = Math.max(1, state.step - 1);
+      render();
     });
 
-    document.getElementById("fName").addEventListener("input", function(e){
-      state.name = e.target.value; refreshButton();
-    });
-    document.getElementById("fPhone").addEventListener("input", function(e){
-      state.phone = e.target.value; refreshButton();
-    });
-    document.getElementById("fNote").addEventListener("input", function(e){
-      state.note = e.target.value;
-    });
-    document.getElementById("fCustomPrice").addEventListener("input", function(e){
-      state.customPrice = e.target.value;
+    var nextBtn = document.getElementById("btnWizardNext");
+    if(nextBtn) nextBtn.addEventListener("click", function(){
+      if(!canAdvanceFromStep(state.step)){
+        if(state.step === 1) toast("Yo'nalishni tanlang", "Qayerdan va qayerga turli shaharlar bo'lsin", "info");
+        else if(state.step === 2) toast("Yuk ma'lumotini to'ldiring", "Og'irlik va yuk turini tekshiring", "info");
+        else if(state.step === 4) toast("Ma'lumotni to'ldiring", "Ism, telefon va kirishni tekshiring", "info");
+        return;
+      }
+      state.step = Math.min(WIZARD_STEPS.length, state.step + 1);
+      render();
     });
 
-    document.getElementById("btnSend").addEventListener("click", submitOrder);
+    var sendBtn = document.getElementById("btnSend");
+    if(sendBtn) sendBtn.addEventListener("click", submitOrder);
   }
 
   async function submitOrder(){
@@ -3995,7 +4592,7 @@
       };
       toast("Buyurtma yuborildi", "№ " + json.code + " — haydovchilar ko'rmoqda", "success");
       state.name = ""; state.phone = ""; state.note = ""; state.customPrice = ""; state.customCargoLabel = "";
-      state.truckType = ""; state.pickupDate = "";
+      state.truckType = ""; state.pickupDate = ""; state.step = 1;
     }catch(err){
       toast("Yuborilmadi", err.message || "Internetni tekshirib qayta urinib ko'ring.", "info");
     }finally{
@@ -4134,6 +4731,13 @@
   applyLang();
   applyThemeButtons();
   applyMotionPref();
+  populateCityDatalist();
+
+  var homeSearchBar = document.getElementById("homeSearchBar");
+  if(homeSearchBar) homeSearchBar.addEventListener("click", openRouteSearch);
+  document.querySelectorAll("#homeQuickFilters .chip").forEach(function(chip){
+    chip.addEventListener("click", function(){ goToLoadsWithQuick(chip.getAttribute("data-quick")); });
+  });
 
   render();
   renderLiveWidget();
