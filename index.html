@@ -24,18 +24,24 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
-    --paper:#F9FAFB;
-    --paper-dark:#EEF2F7;
+    /* YO'LDA design system — professional logistics palette: deep navy
+       primary, teal-cyan secondary accent, green success, amber warning.
+       Every color used anywhere in this file routes through one of these
+       tokens, so this block (plus its dark-mode override below) is the
+       single source of truth for re-skinning the whole app. */
+    --paper:#F8F9FB;
+    --paper-dark:#EEF1F6;
     --card:#FFFFFF;
-    --ink:#0F172A;
-    --ink-soft:#475569;
-    --muted:#94A3B8;
-    --route:#1D4ED8;
-    --route-dark:#1E40AF;
-    --stamp:#06B6D4;
-    --stamp-dark:#0891B2;
-    --accepted:#22C55E;
-    --border:#E2E8F0;
+    --ink:#0B1526;
+    --ink-soft:#48566E;
+    --muted:#93A0B8;
+    --route:#173568;
+    --route-dark:#0F2347;
+    --stamp:#0EA5B7;
+    --stamp-dark:#0B8494;
+    --accepted:#16A34A;
+    --warn:#F59E0B;
+    --border:#E3E7EF;
     --skeleton-mid:#F8FAFC;
 
     /* spacing scale (8pt grid) */
@@ -50,7 +56,7 @@
     --sh-2:0 2px 4px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.06);
     --sh-3:0 4px 8px rgba(15,23,42,0.04), 0 12px 28px rgba(15,23,42,0.09);
     --sh-4:0 8px 16px rgba(15,23,42,0.05), 0 24px 48px rgba(15,23,42,0.12);
-    --sh-brand:0 10px 24px rgba(29,78,216,0.24);
+    --sh-brand:0 10px 24px rgba(23,53,104,0.24);
 
     /* glass */
     --glass:rgba(255,255,255,0.72);
@@ -74,6 +80,7 @@
     --stamp:#22D3EE;
     --stamp-dark:#0891B2;
     --accepted:#34D399;
+    --warn:#FBBF24;
     --border:rgba(255,255,255,0.09);
     --skeleton-mid:#1C2847;
     --glass:rgba(20,31,59,0.72);
@@ -100,7 +107,7 @@
   /* accessibility: consistent, visible focus */
   :focus{outline:none;}
   :focus-visible{
-    outline:3px solid rgba(29,78,216,0.55);
+    outline:3px solid rgba(23,53,104,0.55);
     outline-offset:3px;border-radius:6px;
   }
   .skip-link{
@@ -197,7 +204,7 @@
     letter-spacing:0;padding:8px 12px;border-radius:var(--r-sm);
     transition:color 0.2s var(--ease), background 0.2s var(--ease);
   }
-  .nav-links a:hover{color:var(--route);background:rgba(29,78,216,0.07);}
+  .nav-links a:hover{color:var(--route);background:rgba(23,53,104,0.07);}
   .nav-cta{
     font-family:'Inter',sans-serif;font-size:13.5px;letter-spacing:0;
     font-weight:600;text-decoration:none;white-space:nowrap;
@@ -230,6 +237,19 @@
   .bn-item .ic-svg{font-size:21px;}
   .bn-item.active{color:var(--route);}
   .bn-item:hover{color:var(--route-dark);}
+  /* "Yuk joylash" is the app's main action — a raised, filled circular
+     icon in the middle of the bar, like a marketplace app's primary FAB. */
+  .bn-item--primary{color:var(--route);}
+  .bn-item--primary .bn-fab{
+    display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;border-radius:50%;margin-top:-22px;
+    background:linear-gradient(135deg, var(--route), var(--route-dark));
+    box-shadow:var(--sh-brand);
+    transition:transform 0.2s var(--ease);
+  }
+  .bn-item--primary .bn-fab .ic-svg{font-size:20px;color:#fff;}
+  .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
+  .bn-item--primary.active{color:var(--route);}
   body{padding-bottom:66px;}
 
   @media(max-width:760px){
@@ -243,8 +263,8 @@
     font-family:'Inter',sans-serif;
     font-size:12.5px;letter-spacing:0.08em;color:var(--route-dark);
     font-weight:600;display:inline-flex;align-items:center;gap:var(--s2);
-    border:1px solid rgba(29,78,216,0.22);
-    background:rgba(29,78,216,0.06);
+    border:1px solid rgba(23,53,104,0.22);
+    background:rgba(23,53,104,0.06);
     border-radius:var(--r-pill);padding:7px 16px;margin-bottom:var(--s5);
     text-transform:uppercase;
   }
@@ -280,7 +300,7 @@
     background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.32) 50%, transparent 70%);
     transform:translateX(-120%);transition:transform 0.7s var(--ease);
   }
-  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(29,78,216,0.34);}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(23,53,104,0.34);}
   .btn-primary:hover::after{transform:translateX(120%);}
   .btn-primary:active{transform:translateY(-1px);}
   .btn-secondary{
@@ -313,9 +333,9 @@
     animation:livePulse 1.7s infinite;
   }
   @keyframes livePulse{
-    0%{box-shadow:0 0 0 0 rgba(6,182,212,0.45);}
-    70%{box-shadow:0 0 0 8px rgba(6,182,212,0);}
-    100%{box-shadow:0 0 0 0 rgba(6,182,212,0);}
+    0%{box-shadow:0 0 0 0 rgba(14,165,183,0.45);}
+    70%{box-shadow:0 0 0 8px rgba(14,165,183,0);}
+    100%{box-shadow:0 0 0 0 rgba(14,165,183,0);}
   }
   .hero-widget-body{min-height:50px;}
   .hero-widget-route{
@@ -343,7 +363,7 @@
     box-shadow:var(--sh-1);
     transition:transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
   }
-  .stat-cell:hover{transform:translateY(-4px);box-shadow:var(--sh-3);border-color:rgba(29,78,216,0.3);}
+  .stat-cell:hover{transform:translateY(-4px);box-shadow:var(--sh-3);border-color:rgba(23,53,104,0.3);}
   .stat-cell .v{
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(24px,4vw,32px);
     letter-spacing:-0.03em;line-height:1.1;
@@ -364,7 +384,7 @@
     font-family:'Inter',sans-serif;font-size:12.5px;letter-spacing:0.1em;
     color:var(--route);font-weight:600;text-transform:uppercase;
   }
-  .hero-logo{width:72px;height:72px;display:block;margin:0 auto var(--s5);filter:drop-shadow(0 8px 20px rgba(29,78,216,0.28));}
+  .hero-logo{width:72px;height:72px;display:block;margin:0 auto var(--s5);filter:drop-shadow(0 8px 20px rgba(23,53,104,0.28));}
   .accent{color:var(--stamp);}
   .accent.alt{color:var(--route);}
   .section-title{
@@ -390,7 +410,7 @@
     transition:transform 0.45s var(--ease);
   }
   .step:hover::before{transform:scaleX(1);}
-  .step:hover{transform:translateY(-8px);box-shadow:var(--sh-4);border-color:rgba(29,78,216,0.28);}
+  .step:hover{transform:translateY(-8px);box-shadow:var(--sh-4);border-color:rgba(23,53,104,0.28);}
   .step .num{
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
     color:#fff;background:linear-gradient(135deg, var(--route), var(--route-dark));
@@ -410,11 +430,11 @@
     box-shadow:var(--sh-1);
     transition:transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
   }
-  .feature:hover{transform:translateY(-6px);box-shadow:var(--sh-4);border-color:rgba(29,78,216,0.28);}
+  .feature:hover{transform:translateY(-6px);box-shadow:var(--sh-4);border-color:rgba(23,53,104,0.28);}
   .feature .ic{
     font-size:22px;flex-shrink:0;color:var(--route);line-height:1;
     width:46px;height:46px;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(135deg, rgba(29,78,216,0.1), rgba(6,182,212,0.1));
+    background:linear-gradient(135deg, rgba(23,53,104,0.1), rgba(14,165,183,0.1));
     border-radius:var(--r-sm);
     transition:transform 0.35s var(--ease);
   }
@@ -426,7 +446,7 @@
   /* ---------- APP SECTION ---------- */
   #tab-order{
     background:
-      radial-gradient(circle at 50% 0%, rgba(29,78,216,0.05), transparent 55%),
+      radial-gradient(circle at 50% 0%, rgba(23,53,104,0.05), transparent 55%),
       var(--paper-dark);
   }
   .app-shell{max-width:660px;margin:0 auto;padding:var(--s9) var(--s5) var(--s9);}
@@ -450,7 +470,7 @@
     background:linear-gradient(135deg, var(--route), var(--route-dark));
     color:#fff;box-shadow:var(--sh-brand);
   }
-  .tab:not(.active):hover{background:rgba(29,78,216,0.08);color:var(--route-dark);}
+  .tab:not(.active):hover{background:rgba(23,53,104,0.08);color:var(--route-dark);}
 
   .card{
     background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
@@ -460,7 +480,7 @@
   .card:hover{
     transform:translateY(-4px);
     box-shadow:var(--sh-4);
-    border-color:rgba(29,78,216,0.28);
+    border-color:rgba(23,53,104,0.28);
   }
   .card-title{
     font-family:'Space Grotesk',sans-serif;font-size:18px;letter-spacing:-0.02em;
@@ -474,6 +494,38 @@
     background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;
     color:var(--route);text-decoration:underline;cursor:pointer;
   }
+  .loads-search-card{margin-bottom:0;}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin:var(--s2) 0 var(--s4);}
+  .chip{
+    padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--border);
+    background:var(--card);color:var(--ink-soft);font-size:12.5px;font-weight:600;cursor:pointer;
+    transition:border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .chip.active{border-color:var(--route);color:var(--route);background:rgba(23,53,104,0.08);}
+  .load-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s5);margin-bottom:var(--s3);box-shadow:var(--sh-1);cursor:pointer;
+    transition:transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
+  }
+  .load-card:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(23,53,104,0.25);}
+  .load-card .lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s3);margin-bottom:var(--s3);}
+  .load-card .lc-route{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16.5px;color:var(--ink);letter-spacing:-0.01em;}
+  .load-card .lc-route .arrow{color:var(--stamp);margin:0 4px;}
+  .load-card .lc-price{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--route);
+    white-space:nowrap;
+  }
+  .load-card .lc-meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);font-size:12.5px;color:var(--ink-soft);}
+  .load-card .lc-meta span{display:flex;align-items:center;gap:4px;}
+  .load-card .lc-badge{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:var(--r-pill);margin-top:var(--s3);
+  }
+  .load-card .lc-badge.fresh{background:rgba(22,163,74,0.1);color:var(--accepted);}
+  .load-card .lc-badge.backhaul{background:rgba(245,158,11,0.12);color:var(--warn);}
+  .empty-state{text-align:center;padding:var(--s7) var(--s4);color:var(--ink-soft);}
+  .empty-state .ic-svg{font-size:40px;color:var(--muted);margin-bottom:var(--s3);}
+  .empty-state p{margin:0 0 var(--s4);font-size:14px;line-height:1.6;}
   .lang-switch,.theme-switch{display:flex;gap:8px;flex-wrap:wrap;}
   .lang-btn,.theme-btn{
     flex:1;min-width:88px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
@@ -481,7 +533,7 @@
     transition:border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
   }
   .lang-btn.active,.theme-btn.active{
-    border-color:var(--route);color:var(--route);background:rgba(29,78,216,0.08);
+    border-color:var(--route);color:var(--route);background:rgba(23,53,104,0.08);
   }
   #privacyPolicyBox{
     margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--border);
@@ -571,8 +623,8 @@
     box-shadow:var(--sh-1);
     transition:border-color 0.22s var(--ease), box-shadow 0.22s var(--ease);
   }
-  select:hover,input[type=number]:hover,input[type=text]:hover{border-color:rgba(29,78,216,0.45);}
-  select:focus,input:focus{border-color:var(--route);box-shadow:0 0 0 4px rgba(29,78,216,0.14);}
+  select:hover,input[type=number]:hover,input[type=text]:hover{border-color:rgba(23,53,104,0.45);}
+  select:focus,input:focus{border-color:var(--route);box-shadow:0 0 0 4px rgba(23,53,104,0.14);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
 
   .cargo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);}
@@ -582,11 +634,11 @@
     box-shadow:var(--sh-1);
     transition:transform 0.24s var(--ease), box-shadow 0.24s var(--ease), border-color 0.24s var(--ease), background 0.24s var(--ease);
   }
-  .cargo-opt:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(29,78,216,0.45);}
+  .cargo-opt:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(23,53,104,0.45);}
   .cargo-opt.sel{
     border-color:var(--route);
-    background:linear-gradient(135deg, rgba(29,78,216,0.08), rgba(6,182,212,0.08));
-    box-shadow:0 0 0 3px rgba(29,78,216,0.16), var(--sh-2);
+    background:linear-gradient(135deg, rgba(23,53,104,0.08), rgba(14,165,183,0.08));
+    box-shadow:0 0 0 3px rgba(23,53,104,0.16), var(--sh-2);
   }
   .cargo-opt .ic{font-size:20px;color:var(--route);line-height:1;display:block;}
   .cargo-opt .lbl{display:block;font-size:13px;font-weight:600;margin-top:var(--s2);color:var(--ink);line-height:1.3;}
@@ -633,7 +685,7 @@
     background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
     transform:translateX(-120%);transition:transform 0.7s var(--ease);
   }
-  .btn:hover{transform:translateY(-3px);box-shadow:0 16px 32px rgba(29,78,216,0.32);}
+  .btn:hover{transform:translateY(-3px);box-shadow:0 16px 32px rgba(23,53,104,0.32);}
   .btn:hover::after{transform:translateX(120%);}
   .btn:active{transform:translateY(-1px);}
   .btn:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;transform:none;}
@@ -642,15 +694,15 @@
     background:var(--card);color:var(--route-dark);border:1px solid var(--border);
     box-shadow:var(--sh-1);
   }
-  .btn.ghost:hover{background:rgba(29,78,216,0.05);border-color:var(--route);transform:translateY(-3px);box-shadow:var(--sh-3);}
+  .btn.ghost:hover{background:rgba(23,53,104,0.05);border-color:var(--route);transform:translateY(-3px);box-shadow:var(--sh-3);}
   .btn.small{width:auto;min-height:40px;padding:9px 18px;font-size:13px;margin-top:0;}
 
   .stamp-badge{
     display:inline-flex;align-items:center;gap:var(--s1);
     font-family:'Inter',sans-serif;font-weight:600;font-size:12px;
     letter-spacing:0.02em;
-    border:1px solid rgba(34,197,94,0.35);color:#15803D;
-    background:rgba(34,197,94,0.1);
+    border:1px solid rgba(22,163,74,0.35);color:#15803D;
+    background:rgba(22,163,74,0.1);
     border-radius:var(--r-pill);padding:6px 12px;
   }
   .app-browser-hint{
@@ -675,7 +727,7 @@
   .empty .big{
     font-size:30px;margin:0 auto var(--s4);color:var(--route);line-height:1;
     width:72px;height:72px;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(135deg, rgba(29,78,216,0.1), rgba(6,182,212,0.1));
+    background:linear-gradient(135deg, rgba(23,53,104,0.1), rgba(14,165,183,0.1));
     border-radius:var(--r-pill);
   }
   .empty h4{font-family:'Space Grotesk',sans-serif;font-size:18px;letter-spacing:-0.02em;color:var(--ink);margin:0 0 var(--s2);}
@@ -683,8 +735,8 @@
   .empty .btn{max-width:260px;margin:var(--s5) auto 0;}
 
   .success-banner{
-    background:linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06));
-    border:1px solid rgba(34,197,94,0.3);border-radius:var(--r-lg);
+    background:linear-gradient(135deg, rgba(22,163,74,0.08), rgba(14,165,183,0.06));
+    border:1px solid rgba(22,163,74,0.3);border-radius:var(--r-lg);
     padding:var(--s5);margin-bottom:var(--s4);text-align:center;
     box-shadow:var(--sh-2);
     animation:bannerIn 0.5s var(--ease);
@@ -700,7 +752,7 @@
   }
   .section-label span:last-child{
     font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--route);
-    background:rgba(29,78,216,0.09);padding:3px 10px;border-radius:var(--r-pill);
+    background:rgba(23,53,104,0.09);padding:3px 10px;border-radius:var(--r-pill);
   }
 
   /* ---------- SKELETON LOADERS ---------- */
@@ -857,6 +909,10 @@
     <symbol id="iconCheck" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.4 10.9 15.2 16 9.6"/></symbol>
     <symbol id="iconInfo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11V16.4M12 7.8H12.01"/></symbol>
     <symbol id="iconArrowRight" viewBox="0 0 24 24"><path d="M4 12H20M14 6 20 12 14 18"/></symbol>
+    <symbol id="iconSearch" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7"/><path d="M20 20 15.5 15.5"/></symbol>
+    <symbol id="iconChat" viewBox="0 0 24 24"><path d="M4 5H20V16H9L4 20V16H4V5Z"/><path d="M8 9.5H16M8 13H13"/></symbol>
+    <symbol id="iconSliders" viewBox="0 0 24 24"><path d="M4 7H14M18 7H20M4 17H10M14 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="12" cy="17" r="2.3"/></symbol>
+    <symbol id="iconBadge" viewBox="0 0 24 24"><path d="M12 2 21.5 6V13C21.5 18 17.5 21 12 22.5C6.5 21 2.5 18 2.5 13V6Z"/><path d="M8.5 12 11 14.5 15.7 9.5"/></symbol>
   </g>
 </svg>
 
@@ -877,8 +933,8 @@
     <h1 class="brand hero-seq">YO'LDA</h1>
     <p class="tagline hero-seq" data-i18n="home.tagline">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
     <div class="hero-ctas hero-seq">
-      <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk berish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
-      <a class="btn-secondary" href="#" data-tab-link="drivers"><span data-i18n="home.ctaGet">Yuk olish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg></a>
+      <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk joylash</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
+      <a class="btn-secondary" href="#" data-tab-link="loads"><span data-i18n="home.ctaGet">Yuk topish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg></a>
     </div>
     <div class="hero-widget hero-seq" id="liveWidget">
       <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.liveLabel">Jonli faoliyat</span></p>
@@ -935,6 +991,63 @@
   </div>
 </section>
 
+<section class="tabview" id="tab-loads" data-tab="loads" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:680px;">
+    <div class="section-head reveal">
+      <div class="section-eyebrow" data-i18n="loads.eyebrow">Yuklar</div>
+      <h2 class="section-title"><span data-i18n="loads.titleA">O'zingizga mos</span> <span class="accent" data-i18n="loads.titleB">yukni toping</span></h2>
+      <p class="section-sub" data-i18n="loads.sub">Ochiq buyurtmalarni ko'ring, filtrlang va telegram guruhida oling.</p>
+    </div>
+
+    <div class="card reveal loads-search-card">
+      <div class="row2">
+        <div class="field"><label for="fLoadsFrom" data-i18n="loads.from">Qayerdan</label>
+          <select id="fLoadsFrom"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
+        <div class="field"><label for="fLoadsTo" data-i18n="loads.to">Qayerga</label>
+          <select id="fLoadsTo"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
+      </div>
+      <div class="chip-row" id="loadsQuickFilters">
+        <button type="button" class="chip" data-quick="today" data-i18n="loads.qToday">Bugun</button>
+        <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
+        <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
+        <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
+      </div>
+      <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
+      <div id="loadsMoreFiltersBox" hidden style="margin-top:var(--s3);">
+        <div class="row2">
+          <div class="field"><label for="fLoadsCargo" data-i18n="loads.cargoType">Yuk turi</label>
+            <select id="fLoadsCargo"><option value="" data-i18n="loads.anyType">Barchasi</option></select></div>
+          <div class="field"><label for="fLoadsTruck" data-i18n="loads.truckType">Mashina turi</label>
+            <select id="fLoadsTruck"><option value="" data-i18n="loads.anyType">Barchasi</option></select></div>
+        </div>
+        <p class="note" style="margin-top:0;"><button type="button" class="link-btn" id="btnLoadsClearFilters" data-i18n="loads.clearFilters">Filtrlarni tozalash</button></p>
+      </div>
+    </div>
+
+    <p class="note" id="loadsCount" style="margin:var(--s4) 0 var(--s3);"></p>
+    <div id="loadsList"></div>
+
+    <div class="card reveal driver-invite" style="margin-top:var(--s5);">
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> <span data-i18n="loads.groupTitle">Yangi yuklarni birinchi bo'lib ko'rasizmi?</span></h3>
+      <p class="note" style="margin-top:0;" data-i18n="loads.groupSub">Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.</p>
+      <a class="btn ghost" id="driverGroupLink" href="#" target="_blank" rel="noopener">
+        <span data-i18n="loads.groupJoin">Guruhga qo'shilish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="tabview" id="tab-chat" data-tab="chat" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:520px;">
+    <div class="section-head reveal">
+      <div class="section-eyebrow" data-i18n="chatTab.eyebrow">Xabarlar</div>
+      <h2 class="section-title"><span data-i18n="chatTab.titleA">To'g'ridan-to'g'ri</span> <span class="accent" data-i18n="chatTab.titleB">yozishing</span></h2>
+      <p class="section-sub" data-i18n="chatTab.sub">Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.</p>
+    </div>
+    <div class="card reveal" id="chatCard"></div>
+  </div>
+</section>
+
 <section class="tabview" id="tab-profile" data-tab="profile" hidden>
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:440px;">
     <div class="section-head reveal">
@@ -943,23 +1056,9 @@
       <p class="section-sub" data-i18n="profile.sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
     </div>
     <div class="card reveal" id="profileCard"></div>
-    <div class="card reveal" id="chatCard" style="margin-top:var(--s4);" hidden></div>
-  </div>
-</section>
-
-<section class="tabview" id="tab-drivers" data-tab="drivers" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:600px;">
-    <div class="section-head reveal">
-      <div class="section-eyebrow" data-i18n="drivers.eyebrow">Haydovchilar</div>
-      <h2 class="section-title"><span data-i18n="drivers.titleA">Yuk</span> <span class="accent" data-i18n="drivers.titleB">toping</span></h2>
-      <p class="section-sub" data-i18n="drivers.sub">Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.</p>
-    </div>
-    <div class="card driver-invite">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> Haydovchilar guruhi</h3>
-      <a class="btn ghost" id="driverGroupLink" href="#" target="_blank" rel="noopener">
-        Guruhga qo'shilish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg>
-      </a>
-    </div>
+    <p class="note" style="text-align:center;margin-top:var(--s4);">
+      <button type="button" class="link-btn" data-tab-link="contact" data-i18n="profile.helpLink">Yordam, savollar va sozlamalar</button>
+    </p>
   </div>
 </section>
 
@@ -1072,10 +1171,10 @@
 
 <nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
-  <button type="button" class="bn-item" data-tab-link="order"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span data-i18n="nav.order">Yuk berish</span></button>
+  <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
+  <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
+  <button type="button" class="bn-item" data-tab-link="chat"><svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg><span data-i18n="nav.chat">Xabarlar</span></button>
   <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
-  <button type="button" class="bn-item" data-tab-link="drivers"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span data-i18n="nav.drivers">Haydovchilar</span></button>
-  <button type="button" class="bn-item" data-tab-link="contact"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg><span data-i18n="nav.contact">Aloqa</span></button>
 </nav>
 
 <script>
@@ -1090,12 +1189,30 @@
      ============================================================ */
   var STRINGS = {
     uz: {
-      "nav.home": "Bosh sahifa", "nav.order": "Yuk berish", "nav.profile": "Profil",
+      "nav.home": "Bosh sahifa", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
       "home.eyebrow": "Yuk bozori · O'zbekiston",
       "home.tagline": "Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.",
-      "home.ctaSend": "Yuk berish", "home.ctaGet": "Yuk olish", "home.liveLabel": "Jonli faoliyat",
+      "home.ctaSend": "Yuk joylash", "home.ctaGet": "Yuk topish", "home.liveLabel": "Jonli faoliyat",
+
+      "loads.eyebrow": "Yuklar", "loads.titleA": "O'zingizga mos", "loads.titleB": "yukni toping",
+      "loads.sub": "Ochiq buyurtmalarni ko'ring, filtrlang va telegram guruhida oling.",
+      "loads.from": "Qayerdan", "loads.to": "Qayerga", "loads.anyCity": "Barchasi",
+      "loads.qToday": "Bugun", "loads.qTomorrow": "Ertaga", "loads.qFura": "Fura", "loads.qHeavy": "10+ tonna",
+      "loads.moreFilters": "Ko'proq filtr", "loads.cargoType": "Yuk turi", "loads.truckType": "Mashina turi",
+      "loads.anyType": "Barchasi", "loads.clearFilters": "Filtrlarni tozalash",
+      "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
+      "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
+      "loads.groupJoin": "Guruhga qo'shilish",
+      "loads.freshBadge": "Yangi",
+      "loads.emptyTitle": "Mos yuk topilmadi.",
+      "loads.emptySub": "Yo'nalishingiz yoki filtrlaringizni o'zgartirib ko'ring.",
+      "loads.emptyBtn": "Filtrlarni o'zgartirish",
+
+      "chatTab.eyebrow": "Xabarlar", "chatTab.titleA": "To'g'ridan-to'g'ri", "chatTab.titleB": "yozishing",
+      "chatTab.sub": "Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.",
+      "profile.helpLink": "Yordam, savollar va sozlamalar",
       "home.stat1k": "Shahar", "home.stat1kk": "Butun O'zbekiston bo'ylab",
       "home.stat2k": "Ish vaqti", "home.stat2kk": "Istalgan vaqtda buyurtma bering",
       "home.stat3k": "Ro'yxatdan o'tish narxi", "home.stat3kk": "Komissiya ham yo'q",
@@ -1158,12 +1275,30 @@
         + "<h4>7. Aloqa</h4><p>Savollaringiz bo'lsa: +998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>",
     },
     ru: {
-      "nav.home": "Главная", "nav.order": "Отправить груз", "nav.profile": "Профиль",
+      "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
       "home.eyebrow": "Рынок грузоперевозок · Узбекистан",
       "home.tagline": "Платформа, объединяющая отправителей и водителей в пути. Разместите заказ или найдите подходящий груз.",
-      "home.ctaSend": "Отправить груз", "home.ctaGet": "Найти груз", "home.liveLabel": "Live-активность",
+      "home.ctaSend": "Разместить груз", "home.ctaGet": "Найти груз", "home.liveLabel": "Live-активность",
+
+      "loads.eyebrow": "Грузы", "loads.titleA": "Найдите подходящий", "loads.titleB": "для вас груз",
+      "loads.sub": "Смотрите открытые заказы, фильтруйте и берите в группе Telegram.",
+      "loads.from": "Откуда", "loads.to": "Куда", "loads.anyCity": "Любой",
+      "loads.qToday": "Сегодня", "loads.qTomorrow": "Завтра", "loads.qFura": "Фура", "loads.qHeavy": "10+ тонн",
+      "loads.moreFilters": "Больше фильтров", "loads.cargoType": "Тип груза", "loads.truckType": "Тип машины",
+      "loads.anyType": "Любой", "loads.clearFilters": "Сбросить фильтры",
+      "loads.groupTitle": "Хотите видеть новые грузы первыми?",
+      "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
+      "loads.groupJoin": "Присоединиться к группе",
+      "loads.freshBadge": "Новое",
+      "loads.emptyTitle": "Подходящих грузов не найдено.",
+      "loads.emptySub": "Попробуйте изменить направление или фильтры.",
+      "loads.emptyBtn": "Изменить фильтры",
+
+      "chatTab.eyebrow": "Сообщения", "chatTab.titleA": "Пишите", "chatTab.titleB": "напрямую",
+      "chatTab.sub": "Найдите пользователя по username и свяжитесь с ним.",
+      "profile.helpLink": "Помощь, вопросы и настройки",
       "home.stat1k": "Городов", "home.stat1kk": "По всему Узбекистану",
       "home.stat2k": "Режим работы", "home.stat2kk": "Оформляйте заказ в любое время",
       "home.stat3k": "Стоимость регистрации", "home.stat3kk": "Без комиссии",
@@ -1226,12 +1361,30 @@
         + "<h4>7. Контакты</h4><p>По вопросам: +998 94 440 20 90 или @ziyodullayv (Telegram).</p>",
     },
     en: {
-      "nav.home": "Home", "nav.order": "Ship cargo", "nav.profile": "Profile",
+      "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
       "home.eyebrow": "Freight marketplace · Uzbekistan",
       "home.tagline": "The platform that brings shippers and drivers together on the road. Post a load or find one to carry.",
-      "home.ctaSend": "Ship cargo", "home.ctaGet": "Find cargo", "home.liveLabel": "Live activity",
+      "home.ctaSend": "Post a load", "home.ctaGet": "Find a load", "home.liveLabel": "Live activity",
+
+      "loads.eyebrow": "Loads", "loads.titleA": "Find the load", "loads.titleB": "that fits you",
+      "loads.sub": "Browse open orders, filter them, and take one in the Telegram group.",
+      "loads.from": "From", "loads.to": "To", "loads.anyCity": "Any",
+      "loads.qToday": "Today", "loads.qTomorrow": "Tomorrow", "loads.qFura": "Semi-trailer", "loads.qHeavy": "10+ tons",
+      "loads.moreFilters": "More filters", "loads.cargoType": "Cargo type", "loads.truckType": "Truck type",
+      "loads.anyType": "Any", "loads.clearFilters": "Clear filters",
+      "loads.groupTitle": "Want to see new loads first?",
+      "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
+      "loads.groupJoin": "Join the group",
+      "loads.freshBadge": "New",
+      "loads.emptyTitle": "No matching loads found.",
+      "loads.emptySub": "Try changing your route or filters.",
+      "loads.emptyBtn": "Change filters",
+
+      "chatTab.eyebrow": "Messages", "chatTab.titleA": "Message people", "chatTab.titleB": "directly",
+      "chatTab.sub": "Search by username and get in touch with anyone.",
+      "profile.helpLink": "Help, questions and settings",
       "home.stat1k": "Cities", "home.stat1kk": "Across all of Uzbekistan",
       "home.stat2k": "Hours", "home.stat2kk": "Post an order any time",
       "home.stat3k": "Sign-up cost", "home.stat3kk": "No commission either",
@@ -1397,6 +1550,7 @@
 
   var state = {
     from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL", customCargoLabel: "",
+    truckType: "", pickupDate: "",
     name: "", phone: "", note: "", customPrice: "",
     submitting: false, sent: null
   };
@@ -1502,13 +1656,11 @@
 
   function renderProfile(){
     var card = document.getElementById("profileCard");
-    var chatCard = document.getElementById("chatCard");
     if(!card) return;
 
     if(!googleIdToken){
       card.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
-        + 'Profilni ko‘rish uchun avval yuqoridagi (yoki "Yuk berish" bo‘limidagi) tugma orqali Google bilan kiring.</p>';
-      if(chatCard){ chatCard.hidden = true; stopChatPoll(); }
+        + 'Profilni ko‘rish uchun avval yuqoridagi (yoki "Yuk joylash" bo‘limidagi) tugma orqali Google bilan kiring.</p>';
       return;
     }
 
@@ -1523,11 +1675,18 @@
     }).catch(function(){
       card.innerHTML = '<p class="note">Yuklab bo‘lmadi, qayta urinib ko‘ring.</p>';
     });
+  }
 
-    if(chatCard){
-      chatCard.hidden = false;
-      renderChatShell();
+  function renderChatTab(){
+    var chatCard = document.getElementById("chatCard");
+    if(!chatCard) return;
+    if(!googleIdToken){
+      chatCard.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
+        + 'Xabarlashuv uchun avval "Yuk joylash" bo‘limidagi tugma orqali Google bilan kiring.</p>';
+      stopChatPoll();
+      return;
     }
+    renderChatShell();
   }
 
   function renderProfileForm(p){
@@ -1544,7 +1703,7 @@
             : '')
       +   '<div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:16px;">'+escapeHtml(displayName)+'</div>'
       +   (p.username ? '<div style="font-size:13px;color:var(--route-dark);">@'+escapeHtml(p.username)+'</div>' : '')
-      +   (p.verified ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:#16A34A;background:rgba(34,197,94,0.12);padding:2px 8px;border-radius:999px;margin-top:4px;">✓ Tasdiqlangan haydovchi</div>' : '')
+      +   (p.verified ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:#16A34A;background:rgba(22,163,74,0.12);padding:2px 8px;border-radius:999px;margin-top:4px;">✓ Tasdiqlangan haydovchi</div>' : '')
       +   (p.ratingCount ? '<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">★ '+(p.ratingSum/p.ratingCount).toFixed(1)+' ('+p.ratingCount+' baho)</div>' : '')
       + '</div></div>'
 
@@ -1934,6 +2093,154 @@
     });
   }
 
+  /* ============================================================
+     Loads — "Yuklar" tab: browse open orders by route/cargo/truck type.
+     Public endpoint (/api/order?action=list), no sign-in required to
+     browse — only the phone number is withheld, same rule as everywhere
+     else (a driver only sees it once they claim the load in Telegram).
+     ============================================================ */
+  var loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "" };
+  var loadsInitialized = false;
+
+  function initLoadsFilters(){
+    if(loadsInitialized) return;
+    loadsInitialized = true;
+
+    var fromSel = document.getElementById("fLoadsFrom");
+    var toSel = document.getElementById("fLoadsTo");
+    var cargoSel = document.getElementById("fLoadsCargo");
+    var truckSel = document.getElementById("fLoadsTruck");
+
+    CITIES.forEach(function(c){
+      fromSel.insertAdjacentHTML("beforeend", '<option value="'+c+'">'+c+'</option>');
+      toSel.insertAdjacentHTML("beforeend", '<option value="'+c+'">'+c+'</option>');
+    });
+    CARGO.forEach(function(c){
+      if(c.id === "OTHER") return;
+      cargoSel.insertAdjacentHTML("beforeend", '<option value="'+c.id+'">'+c.label+'</option>');
+    });
+    Object.keys(VEHICLE_LABELS).forEach(function(k){
+      truckSel.insertAdjacentHTML("beforeend", '<option value="'+k+'">'+VEHICLE_LABELS[k]+'</option>');
+    });
+
+    fromSel.addEventListener("change", function(){ loadsState.fromCity = fromSel.value; fetchLoads(); });
+    toSel.addEventListener("change", function(){ loadsState.toCity = toSel.value; fetchLoads(); });
+    cargoSel.addEventListener("change", function(){ loadsState.cargoType = cargoSel.value; fetchLoads(); });
+    truckSel.addEventListener("change", function(){ loadsState.truckType = truckSel.value; fetchLoads(); });
+
+    document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        var q = chip.getAttribute("data-quick");
+        loadsState.quick = (loadsState.quick === q) ? "" : q;
+        document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(c){
+          c.classList.toggle("active", c.getAttribute("data-quick") === loadsState.quick);
+        });
+        fetchLoads();
+      });
+    });
+
+    var moreBtn = document.getElementById("btnLoadsMoreFilters");
+    if(moreBtn) moreBtn.addEventListener("click", function(){
+      var box = document.getElementById("loadsMoreFiltersBox");
+      if(box) box.hidden = !box.hidden;
+    });
+
+    var clearBtn = document.getElementById("btnLoadsClearFilters");
+    if(clearBtn) clearBtn.addEventListener("click", function(){
+      loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "" };
+      fromSel.value = ""; toSel.value = ""; cargoSel.value = ""; truckSel.value = "";
+      document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(c){ c.classList.remove("active"); });
+      fetchLoads();
+    });
+  }
+
+  function renderLoadsTab(){
+    initLoadsFilters();
+    fetchLoads();
+  }
+
+  function skeletonLoadCards(n){
+    var card = '<div class="load-card">'
+      + '<div class="skeleton sk-line" style="width:55%;"></div>'
+      + '<div class="skeleton sk-line" style="width:75%;margin-top:10px;"></div>'
+      + '<div class="skeleton sk-line" style="width:40%;margin-top:10px;"></div>'
+      + '</div>';
+    return Array(n).fill(card).join("");
+  }
+
+  function formatLoadDate(iso){
+    var d = new Date(iso + "T00:00:00");
+    if(isNaN(d.getTime())) return "";
+    var months = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
+    return d.getDate() + "-" + months[d.getMonth()];
+  }
+
+  function loadCardHtml(o){
+    var cargo = cargoById(o.cargoType);
+    var cargoLabel = (o.cargoType === "OTHER" && o.customCargoLabel) ? o.customCargoLabel : (cargo ? cargo.label : o.cargoType);
+    var dateLabel = o.pickupDate ? formatLoadDate(o.pickupDate) : "";
+    var isFresh = o.createdAt && (Date.now() - o.createdAt) < 2 * 3600 * 1000;
+
+    return '<div class="load-card" data-code="'+escapeHtml(o.code)+'">'
+      + '<div class="lc-top">'
+      +   '<div class="lc-route">'+escapeHtml(o.fromCity)+'<span class="arrow">→</span>'+escapeHtml(o.toCity)+'</div>'
+      +   '<div class="lc-price">'+formatNum(o.amount)+' so\'m</div>'
+      + '</div>'
+      + '<div class="lc-meta">'
+      +   '<span>'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</span>'
+      +   '<span>'+icon("iconWeight")+' '+formatNum(o.weightKg)+' kg</span>'
+      +   (o.truckType ? '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType)+'</span>' : '')
+      +   (dateLabel ? '<span>'+icon("iconRoute")+' '+escapeHtml(dateLabel)+'</span>' : '')
+      + '</div>'
+      + (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
+      + '</div>';
+  }
+
+  function emptyLoadsHtml(){
+    return '<div class="empty-state">'
+      + icon("iconInboxEmpty")
+      + '<p data-i18n="loads.emptyTitle">Mos yuk topilmadi.</p>'
+      + '<p data-i18n="loads.emptySub" style="margin-top:-8px;">Yo\'nalishingiz yoki filtrlaringizni o\'zgartirib ko\'ring.</p>'
+      + '<button type="button" class="btn ghost small" id="btnLoadsResetEmpty" data-i18n="loads.emptyBtn" style="max-width:240px;margin:0 auto;">Filtrlarni o\'zgartirish</button>'
+      + '</div>';
+  }
+
+  function fetchLoads(){
+    var list = document.getElementById("loadsList");
+    var countEl = document.getElementById("loadsCount");
+    if(!list) return;
+
+    list.innerHTML = skeletonLoadCards(4);
+    if(countEl) countEl.textContent = "";
+
+    var params = [];
+    if(loadsState.fromCity) params.push("fromCity=" + encodeURIComponent(loadsState.fromCity));
+    if(loadsState.toCity) params.push("toCity=" + encodeURIComponent(loadsState.toCity));
+    if(loadsState.cargoType) params.push("cargoType=" + encodeURIComponent(loadsState.cargoType));
+    if(loadsState.truckType) params.push("truckType=" + encodeURIComponent(loadsState.truckType));
+    if(loadsState.quick === "today") params.push("when=today");
+    if(loadsState.quick === "tomorrow") params.push("when=tomorrow");
+    if(loadsState.quick === "fura") params.push("truckType=YARIM_TREYLER");
+    if(loadsState.quick === "heavy") params.push("minWeight=10000");
+
+    fetch("/api/order?action=list" + (params.length ? "&" + params.join("&") : ""))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var loads = data.loads || [];
+        if(countEl) countEl.textContent = loads.length + " ta yuk topildi";
+        list.innerHTML = loads.length ? loads.map(loadCardHtml).join("") : emptyLoadsHtml();
+        applyLang();
+
+        var resetBtn = document.getElementById("btnLoadsResetEmpty");
+        if(resetBtn) resetBtn.addEventListener("click", function(){
+          var clearBtn = document.getElementById("btnLoadsClearFilters");
+          if(clearBtn) clearBtn.click();
+        });
+      }).catch(function(){
+        list.innerHTML = '<p class="note">Yuklab bo\'lmadi, qayta urinib ko\'ring.</p>';
+      });
+  }
+
   function submitReport(){
     var note = document.getElementById("reportNote");
     var btn = document.getElementById("btnSendReport");
@@ -2143,6 +2450,17 @@
           ? '<div class="field"><label for="fCargoCustom">Yuk turini o\'zingiz yozing</label>'
             + '<input type="text" id="fCargoCustom" maxlength="60" placeholder="Masalan: haykal, mebel qismlari" value="'+escapeHtml(state.customCargoLabel)+'"></div>'
           : '')
+
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fTruckType">Mashina turi (ixtiyoriy)</label>'
+      +     '<select id="fTruckType"><option value="">Farqi yo\'q</option>'
+      +     Object.keys(VEHICLE_LABELS).map(function(k){
+              return '<option value="'+k+'"'+(state.truckType===k?' selected':'')+'>'+VEHICLE_LABELS[k]+'</option>';
+            }).join("")
+      +     '</select></div>'
+      +   '<div class="field"><label for="fPickupDate">Yuklash sanasi (ixtiyoriy)</label>'
+      +     '<input type="date" id="fPickupDate" value="'+escapeHtml(state.pickupDate)+'"></div>'
+      + '</div>'
 
       + '<div class="tear"></div>'
 
@@ -2357,6 +2675,13 @@
       state.customCargoLabel = e.target.value; refreshButton();
     });
 
+    document.getElementById("fTruckType").addEventListener("change", function(e){
+      state.truckType = e.target.value;
+    });
+    document.getElementById("fPickupDate").addEventListener("change", function(e){
+      state.pickupDate = e.target.value;
+    });
+
     document.getElementById("fName").addEventListener("input", function(e){
       state.name = e.target.value; refreshButton();
     });
@@ -2389,6 +2714,8 @@
           weightKg: state.weight,
           cargoType: state.cargo,
           customCargoLabel: state.customCargoLabel.trim(),
+          truckType: state.truckType,
+          pickupDate: state.pickupDate,
           name: state.name.trim(),
           phone: normalisePhone(state.phone),
           note: state.note.trim(),
@@ -2411,6 +2738,7 @@
       };
       toast("Buyurtma yuborildi", "№ " + json.code + " — haydovchilar ko'rmoqda", "success");
       state.name = ""; state.phone = ""; state.note = ""; state.customPrice = ""; state.customCargoLabel = "";
+      state.truckType = ""; state.pickupDate = "";
     }catch(err){
       toast("Yuborilmadi", err.message || "Internetni tekshirib qayta urinib ko'ring.", "info");
     }finally{
@@ -2461,7 +2789,7 @@
      Tab navigation — the whole app is 5 screens (bottom nav),
      switched here instead of scrolling through one long page.
      ============================================================ */
-  var TABS = ["home", "order", "profile", "drivers", "contact"];
+  var TABS = ["home", "order", "loads", "chat", "profile", "contact"];
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
     TABS.forEach(function(t){
@@ -2478,7 +2806,9 @@
       active.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
     }
     if(name === "profile") renderProfile();
-    else stopChatPoll();
+    if(name === "loads") renderLoadsTab();
+    if(name === "chat") renderChatTab();
+    if(name !== "chat") stopChatPoll();
     window.scrollTo(0, 0);
   }
   // Delegated (not bound per-element) so it still works after applyLang()
