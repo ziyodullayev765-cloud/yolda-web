@@ -87,7 +87,12 @@ const searchUsers = async (req, res) => {
         const ownerEmail = await kvGet(`username:${uname}`);
         if (!ownerEmail || ownerEmail === email) return null;
         const profile = parseProfile(await kvGet(`profile:${ownerEmail}`));
-        return { username: profile.username || uname, role: profile.role || null, city: profile.city || null };
+        return {
+          username: profile.username || uname,
+          role: profile.role || null,
+          city: profile.city || null,
+          verified: Boolean(profile.verified),
+        };
       }),
     )
   ).filter(Boolean);
@@ -109,6 +114,7 @@ const getInbox = async (req, res) => {
         return {
           email: otherEmail,
           username: profile.username || otherEmail,
+          verified: Boolean(profile.verified),
           lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : lastMsg.text) : '',
           lastAt: lastMsg ? lastMsg.at : 0,
           lastFromMe: lastMsg ? lastMsg.from === myEmail : false,
@@ -149,7 +155,12 @@ const getThread = async (req, res) => {
     }));
 
   const profile = parseProfile(await kvGet(`profile:${withEmail}`));
-  return res.status(200).json({ messages, withEmail, withUsername: profile.username || withUsername });
+  return res.status(200).json({
+    messages,
+    withEmail,
+    withUsername: profile.username || withUsername,
+    withVerified: Boolean(profile.verified),
+  });
 };
 
 const sendMessage = async (req, res) => {
