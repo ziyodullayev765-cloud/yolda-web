@@ -1243,16 +1243,16 @@
 </section>
 
 <section class="tabview" id="tab-profile" data-tab="profile" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:440px;">
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:440px;position:relative;">
+    <button type="button" class="sheet-close" id="btnProfileMore" data-tab-link="contact"
+      aria-label="Yordam, savollar va sozlamalar" data-i18n-aria="profile.helpLink"
+      style="position:absolute;top:var(--s3);right:var(--s5);font-size:20px;font-weight:700;line-height:1;">⋯</button>
     <div class="section-head reveal">
       <div class="section-eyebrow" data-i18n="profile.eyebrow">Profil</div>
       <h2 class="section-title"><span data-i18n="profile.titleA">Sizning</span> <span class="accent alt" data-i18n="profile.titleB">profilingiz</span></h2>
       <p class="section-sub" data-i18n="profile.sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
     </div>
     <div class="card reveal" id="profileCard"></div>
-    <p class="note" style="text-align:center;margin-top:var(--s4);">
-      <button type="button" class="link-btn" data-tab-link="contact" data-i18n="profile.helpLink">Yordam, savollar va sozlamalar</button>
-    </p>
   </div>
 </section>
 
@@ -1845,6 +1845,12 @@
     document.querySelectorAll("[data-i18n]").forEach(function(el){
       var val = t(el.getAttribute("data-i18n"));
       if(val !== null) el.innerHTML = val;
+    });
+    // Same idea as data-i18n, but for an aria-label/title instead of visible
+    // text — e.g. an icon-only button like the profile "⋯" menu trigger.
+    document.querySelectorAll("[data-i18n-aria]").forEach(function(el){
+      var val = t(el.getAttribute("data-i18n-aria"));
+      if(val !== null){ el.setAttribute("aria-label", val); el.setAttribute("title", val); }
     });
     document.documentElement.setAttribute("lang", currentLang === "uz-cyrl" ? "uz" : currentLang);
     document.querySelectorAll(".lang-btn").forEach(function(b){
