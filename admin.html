@@ -143,6 +143,60 @@
     .admin-main{padding:18px;}
     .table-scroll{max-height:none;}
   }
+
+  /* ---------- User edit modal — full admin override of any profile field ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;z-index:100;background:rgba(3,7,18,0.6);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-backdrop[hidden]{display:none;}
+  .modal{
+    width:100%;max-width:560px;max-height:88vh;overflow-y:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);
+  }
+  .modal-head h2{margin:0;font-size:17px;letter-spacing:-0.01em;}
+  .modal-close{
+    width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--card2);
+    color:var(--text-soft);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;
+  }
+  .modal-close:hover{color:#fff;border-color:var(--accent);}
+  .modal-body{padding:20px 22px;}
+  .modal-footer{
+    display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line);
+    position:sticky;bottom:0;background:var(--panel);
+  }
+  .modal-footer button{flex:1;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--text-soft);font-weight:600;margin-bottom:6px;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
+    background:var(--card2);color:var(--text);font-size:14px;font-family:inherit;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+  .field textarea{resize:vertical;min-height:60px;}
+  .field-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field-check{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text);cursor:pointer;margin-bottom:10px;}
+  .field-check input{width:auto;margin:0;}
+  .field-hint{font-size:11.5px;color:var(--text-soft);margin-top:-8px;margin-bottom:14px;}
+  .btn-primary,.btn-ghost{
+    padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .btn-primary{border:none;background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-primary:disabled{opacity:0.55;cursor:not-allowed;}
+  .btn-ghost{border:1px solid var(--line);background:var(--card2);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--accent);color:#fff;}
+  .modal-err{color:#FCA5A5;font-size:13px;margin-top:2px;min-height:18px;}
+  .edit-row-btn{margin-right:6px;}
+  .banned-tag{
+    display:inline-block;font-size:10.5px;font-weight:700;color:#FCA5A5;
+    background:rgba(239,68,68,0.16);padding:2px 7px;border-radius:999px;margin-left:6px;
+  }
 </style>
 </head>
 <body>
@@ -213,7 +267,7 @@
         <table>
           <thead>
             <tr>
-              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Mashina</th><th>Raqami</th><th>Tasdiq</th><th>Baho</th><th>Bio</th>
+              <th>Username</th><th>Email</th><th>Rol</th><th>Shahar</th><th>Telefon</th><th>Mashina</th><th>Raqami</th><th>Tasdiq</th><th>Baho</th><th>Bio</th><th>Amal</th>
             </tr>
           </thead>
           <tbody id="usersRows"></tbody>
@@ -269,11 +323,85 @@
   </main>
 </div>
 
+<!-- Full admin override of any field on any chosen user's profile —
+     opened by the "Tahrirlash" button on each row in Foydalanuvchilar. -->
+<div class="modal-backdrop" id="userModalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="userModalTitle">
+    <div class="modal-head">
+      <h2 id="userModalTitle">Foydalanuvchini tahrirlash</h2>
+      <button type="button" class="modal-close" id="userModalClose" aria-label="Yopish">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Email (o'zgarmas identifikator)</label>
+        <input type="text" id="umEmail" disabled></div>
+
+      <div class="field-row2">
+        <div class="field"><label for="umUsername">Username</label>
+          <input type="text" id="umUsername" maxlength="20"></div>
+        <div class="field"><label for="umDisplayName">Ism</label>
+          <input type="text" id="umDisplayName" maxlength="60"></div>
+      </div>
+
+      <div class="field-row2">
+        <div class="field"><label for="umRole">Rol</label>
+          <select id="umRole">
+            <option value="">Tanlanmagan</option>
+            <option value="DRIVER">Haydovchiman</option>
+            <option value="OWNER">Yuk beruvchiman</option>
+            <option value="BOTH">Ikkalasi ham</option>
+          </select></div>
+        <div class="field"><label for="umCity">Shahar</label>
+          <select id="umCity"><option value="">Tanlanmagan</option></select></div>
+      </div>
+
+      <div class="field-row2">
+        <div class="field"><label for="umPhone">Telefon</label>
+          <input type="text" id="umPhone" placeholder="+998901234567"></div>
+        <div class="field"><label for="umTelegram">Telegram username</label>
+          <input type="text" id="umTelegram" placeholder="username"></div>
+      </div>
+
+      <div class="field-row2">
+        <div class="field"><label for="umVehicleType">Mashina turi</label>
+          <select id="umVehicleType">
+            <option value="">Tanlanmagan</option>
+            <option value="ISUZU">Isuzu</option><option value="GAZEL">Gazel</option>
+            <option value="FURGON">Furgon</option><option value="YARIM_TREYLER">Yarim treyler</option>
+            <option value="SAMOSVAL">Samosval</option><option value="BOSHQA">Boshqa</option>
+          </select></div>
+        <div class="field"><label for="umPlateNumber">Davlat raqami</label>
+          <input type="text" id="umPlateNumber" maxlength="12"></div>
+      </div>
+
+      <div class="field"><label for="umBio">Bio</label>
+        <textarea id="umBio" maxlength="200"></textarea></div>
+
+      <div class="field-row2">
+        <div class="field"><label for="umRatingCount">Baholar soni</label>
+          <input type="number" id="umRatingCount" min="0" step="1"></div>
+        <div class="field"><label for="umRatingSum">Baholar yig'indisi</label>
+          <input type="number" id="umRatingSum" min="0" step="1"></div>
+      </div>
+      <p class="field-hint" id="umRatingAvgHint">O'rtacha: —</p>
+
+      <label class="field-check"><input type="checkbox" id="umVerified"> ✓ Tasdiqlangan haydovchi</label>
+      <label class="field-check"><input type="checkbox" id="umBanned"> 🚫 Bloklangan (saytdan foydalana olmaydi)</label>
+
+      <p class="modal-err" id="userModalErr"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" id="userModalCancel">Bekor qilish</button>
+      <button type="button" class="btn-primary" id="userModalSave">Saqlash</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
 
   var ROLE_LABELS = { DRIVER: "Haydovchi", OWNER: "Yuk beruvchi", BOTH: "Ikkalasi ham" };
+  var CITIES = ["Toshkent","Samarqand","Buxoro","Andijon","Namangan","Nukus","Qarshi","Urganch","Farg'ona","Jizzax","Navoiy","Guliston","Termiz"];
   var VEHICLE_LABELS = {
     ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon", YARIM_TREYLER: "Yarim treyler",
     SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
@@ -402,7 +530,7 @@
   var allUsers = [];
   function userRowHtml(u){
     return "<tr>"
-      + "<td>" + (u.username ? "@" + esc(u.username) : "") + "</td>"
+      + "<td>" + (u.username ? "@" + esc(u.username) : "") + (u.banned ? "<span class=\"banned-tag\">Bloklangan</span>" : "") + "</td>"
       + "<td>" + esc(u.email) + "</td>"
       + "<td>" + esc(ROLE_LABELS[u.role] || "") + "</td>"
       + "<td>" + esc(u.city) + "</td>"
@@ -414,16 +542,24 @@
             : "") + "</td>"
       + "<td>" + (u.ratingCount ? "★ " + (u.ratingSum / u.ratingCount).toFixed(1) + " (" + u.ratingCount + ")" : "") + "</td>"
       + "<td class=\"muted-cell\">" + esc(u.bio) + "</td>"
+      + "<td><button type=\"button\" class=\"icon-btn edit-user-btn\" data-email=\"" + esc(u.email) + "\" style=\"padding:6px 10px;font-size:12px;\">Tahrirlash</button></td>"
       + "</tr>";
   }
   function renderUsers(list){
     document.getElementById("usersCount").textContent =
       list.length + " / " + allUsers.length + " ta foydalanuvchi ko'rsatilmoqda";
     document.getElementById("usersRows").innerHTML =
-      list.map(userRowHtml).join("") || "<tr><td colspan=\"10\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+      list.map(userRowHtml).join("") || "<tr><td colspan=\"11\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
     document.querySelectorAll(".verify-btn").forEach(function(btn){
       btn.addEventListener("click", function(){
         setDriverVerified(btn.getAttribute("data-email"), btn.getAttribute("data-verified") !== "1");
+      });
+    });
+    document.querySelectorAll(".edit-user-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var email = btn.getAttribute("data-email");
+        var u = allUsers.filter(function(x){ return x.email === email; })[0];
+        if(u) openUserModal(u);
       });
     });
   }
@@ -449,6 +585,107 @@
       alert("Yangilab bo'lmadi, qayta urinib ko'ring.");
     });
   }
+
+  /* ---------- User edit modal — full override of any field ---------- */
+  var umCitySelect = document.getElementById("umCity");
+  CITIES.forEach(function(c){
+    umCitySelect.insertAdjacentHTML("beforeend", "<option value=\"" + esc(c) + "\">" + esc(c) + "</option>");
+  });
+
+  var userModalBackdrop = document.getElementById("userModalBackdrop");
+  var userModalEmail = null;
+
+  function updateRatingAvgHint(){
+    var count = parseInt(document.getElementById("umRatingCount").value, 10) || 0;
+    var sum = parseInt(document.getElementById("umRatingSum").value, 10) || 0;
+    document.getElementById("umRatingAvgHint").textContent =
+      "O'rtacha: " + (count > 0 ? "★ " + (sum / count).toFixed(1) : "—");
+  }
+  document.getElementById("umRatingCount").addEventListener("input", updateRatingAvgHint);
+  document.getElementById("umRatingSum").addEventListener("input", updateRatingAvgHint);
+
+  function openUserModal(u){
+    userModalEmail = u.email;
+    document.getElementById("userModalTitle").textContent =
+      "Tahrirlash: " + (u.username ? "@" + u.username : u.email);
+    document.getElementById("umEmail").value = u.email || "";
+    document.getElementById("umUsername").value = u.username || "";
+    document.getElementById("umDisplayName").value = u.displayName || "";
+    document.getElementById("umRole").value = u.role || "";
+    document.getElementById("umCity").value = u.city || "";
+    document.getElementById("umPhone").value = u.phone || "";
+    document.getElementById("umTelegram").value = u.telegramUsername || "";
+    document.getElementById("umVehicleType").value = u.vehicleType || "";
+    document.getElementById("umPlateNumber").value = u.plateNumber || "";
+    document.getElementById("umBio").value = u.bio || "";
+    document.getElementById("umRatingCount").value = u.ratingCount || 0;
+    document.getElementById("umRatingSum").value = u.ratingSum || 0;
+    document.getElementById("umVerified").checked = Boolean(u.verified);
+    document.getElementById("umBanned").checked = Boolean(u.banned);
+    document.getElementById("userModalErr").textContent = "";
+    updateRatingAvgHint();
+    userModalBackdrop.hidden = false;
+  }
+  function closeUserModal(){
+    userModalBackdrop.hidden = true;
+    userModalEmail = null;
+  }
+  document.getElementById("userModalClose").addEventListener("click", closeUserModal);
+  document.getElementById("userModalCancel").addEventListener("click", closeUserModal);
+  userModalBackdrop.addEventListener("click", function(e){
+    if(e.target === userModalBackdrop) closeUserModal();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && !userModalBackdrop.hidden) closeUserModal();
+  });
+
+  function saveUserEdit(){
+    if(!userModalEmail) return;
+    var saveBtn = document.getElementById("userModalSave");
+    var errEl = document.getElementById("userModalErr");
+    var ratingCount = parseInt(document.getElementById("umRatingCount").value, 10);
+    var ratingSum = parseInt(document.getElementById("umRatingSum").value, 10);
+
+    var payload = {
+      email: userModalEmail,
+      username: document.getElementById("umUsername").value.trim(),
+      displayName: document.getElementById("umDisplayName").value.trim(),
+      role: document.getElementById("umRole").value,
+      city: document.getElementById("umCity").value,
+      phone: document.getElementById("umPhone").value.trim(),
+      telegramUsername: document.getElementById("umTelegram").value.trim(),
+      vehicleType: document.getElementById("umVehicleType").value,
+      plateNumber: document.getElementById("umPlateNumber").value.trim(),
+      bio: document.getElementById("umBio").value.trim(),
+      ratingCount: isNaN(ratingCount) ? 0 : ratingCount,
+      ratingSum: isNaN(ratingSum) ? 0 : ratingSum,
+      verified: document.getElementById("umVerified").checked,
+      banned: document.getElementById("umBanned").checked
+    };
+
+    saveBtn.disabled = true;
+    errEl.textContent = "";
+
+    fetch("/api/admin-data?action=update-user", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      saveBtn.disabled = false;
+      if(!res.ok){
+        errEl.textContent = res.body.error || "Xato yuz berdi";
+        return;
+      }
+      closeUserModal();
+      loadUsers();
+    }).catch(function(){
+      saveBtn.disabled = false;
+      errEl.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko'ring.";
+    });
+  }
+  document.getElementById("userModalSave").addEventListener("click", saveUserEdit);
   document.getElementById("usersSearch").addEventListener("input", filterUsers);
   document.getElementById("usersRefresh").addEventListener("click", function(){ loadUsers(true); });
 
