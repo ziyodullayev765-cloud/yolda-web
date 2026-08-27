@@ -6,12 +6,15 @@
  *
  *   GET  /api/trucks?action=list                                     → every active listing
  *   GET  /api/trucks?action=mine&googleIdToken=...|&telegramInitData=... → the caller's own listings
- *   POST /api/trucks?action=create  { googleIdToken|telegramInitData, vehicleType, brand, year, mileageKm, price, city, phone, description }
+ *   POST /api/trucks?action=create  { googleIdToken|telegramInitData, vehicleType, brand, year, mileageKm, price, city, phone, description, photos }
  *   POST /api/trucks?action=delete  { googleIdToken|telegramInitData, id }
  *
- * No photos — this app has no file/blob storage (see api/profile.js's
- * avatar comment for the same constraint), so a listing is text-only,
- * same as how the load marketplace already works.
+ * `photos` is up to 5 data: URLs — this app has no blob/file storage (see
+ * api/profile.js's avatar comment for the same constraint), so each photo
+ * is just a small resized JPEG stored inline as a string, same trick as
+ * the profile avatar. The client (fileToPhotoDataUrl in index.html)
+ * already keeps these small; the size caps below are the server-side
+ * backstop against a client that skips that.
  *
  * Storage: `truck:<id>` is the listing JSON; `truck_ids` is a *set* (not
  * a list) of every active id — sets support real removal (SREM) when a
@@ -29,6 +32,12 @@ const CITIES = [
 ];
 const MAX_LISTINGS_RETURNED = 300;
 const CURRENT_YEAR = new Date().getFullYear();
+const PHOTO_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/;
+const MAX_PHOTOS = 5;
+const MAX_PHOTO_BYTES = 250 * 1024;
+
+/** Decoded byte length from a base64 string's own length — no need to decode just to size-check it. */
+const decodedBase64Length = (b64) => Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
 
 const generateId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -116,6 +125,20 @@ const create = async (req, res) => {
 
   const description = String(body.description || '').trim().slice(0, 500);
 
+  const rawPhotos = Array.isArray(body.photos) ? body.photos : [];
+  if (rawPhotos.length > MAX_PHOTOS) {
+    return res.status(400).json({ error: `Ko‘pi bilan ${MAX_PHOTOS} ta rasm yuklash mumkin` });
+  }
+  const photos = [];
+  for (const raw of rawPhotos) {
+    const match = PHOTO_DATA_URL_RE.exec(String(raw));
+    if (!match) return res.status(400).json({ error: 'Rasm formati noto‘g‘ri' });
+    if (decodedBase64Length(match[2]) > MAX_PHOTO_BYTES) {
+      return res.status(400).json({ error: 'Rasm hajmi katta, boshqasini tanlang' });
+    }
+    photos.push(String(raw));
+  }
+
   const id = generateId();
   const truck = {
     id,
@@ -129,6 +152,7 @@ const create = async (req, res) => {
     price,
     city,
     description,
+    photos,
     createdAt: Date.now(),
   };
 

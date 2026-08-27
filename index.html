@@ -1351,6 +1351,68 @@
     display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
   }
   .avatar-edit-btn .ic-svg{font-size:14px;}
+
+  /* ---------- Trucks marketplace: OLX-style photo grid ---------- */
+  .truck-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s3);
+  }
+  @media(min-width:640px){ .truck-grid{grid-template-columns:repeat(3,1fr);} }
+  @media(min-width:960px){ .truck-grid{grid-template-columns:repeat(4,1fr);} }
+  .truck-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    overflow:hidden;cursor:pointer;box-shadow:var(--sh-1);
+    transition:transform 0.2s var(--ease), box-shadow 0.2s var(--ease), border-color 0.2s var(--ease);
+    display:flex;flex-direction:column;
+  }
+  .truck-card:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(23,53,104,0.25);}
+  .truck-card:active{transform:translateY(-1px);}
+  .truck-card .tc-photo{
+    width:100%;aspect-ratio:4/3;background:var(--paper-dark);
+    display:flex;align-items:center;justify-content:center;color:var(--muted);
+    overflow:hidden;flex-shrink:0;
+  }
+  .truck-card .tc-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .truck-card .tc-photo .ic-svg{font-size:30px;}
+  .truck-card .tc-body{padding:var(--s3) var(--s3) var(--s4);}
+  .truck-card .tc-price{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--route);
+    letter-spacing:-0.01em;
+  }
+  .truck-card .tc-price span{font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
+  .truck-card .tc-title{font-size:13px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1.3;}
+  .truck-card .tc-meta{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px;}
+
+  /* Detail sheet gallery — plain CSS scroll-snap, no JS carousel needed. */
+  .truck-gallery{
+    display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;
+    border-radius:var(--r-lg);margin-bottom:var(--s4);-webkit-overflow-scrolling:touch;
+    background:var(--paper-dark);aspect-ratio:4/3;
+  }
+  .truck-gallery img{
+    width:100%;height:100%;object-fit:cover;flex:0 0 100%;scroll-snap-align:start;display:block;
+  }
+  .truck-gallery.empty{align-items:center;justify-content:center;color:var(--muted);}
+  .truck-gallery.empty .ic-svg{font-size:44px;}
+
+  /* Sell-sheet photo picker: reuses the same "small circular add button"
+     language as the avatar picker, just as a horizontal row of thumbnails. */
+  .photo-picker-row{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s4);}
+  .photo-picker-thumb{
+    position:relative;width:72px;height:72px;border-radius:var(--r-md);overflow:hidden;
+    background:var(--paper-dark);flex-shrink:0;
+  }
+  .photo-picker-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-picker-thumb .pp-remove{
+    position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;
+    background:rgba(11,21,38,0.65);color:#fff;border:none;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;font-size:11px;line-height:1;padding:0;
+  }
+  .photo-picker-add{
+    width:72px;height:72px;border-radius:var(--r-md);border:1.5px dashed var(--border);
+    background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;
+  }
+  .photo-picker-add .ic-svg{font-size:22px;}
 </style>
 </head>
 <body>
@@ -1634,7 +1696,7 @@
     </div>
 
     <p class="note" id="trucksCount" style="margin:var(--s4) 0 var(--s3);"></p>
-    <div id="trucksList"></div>
+    <div id="trucksList" class="truck-grid"></div>
   </div>
 </section>
 
@@ -1862,6 +1924,7 @@
       "trucks.deleteBtn": "E'lonni o'chirish", "trucks.deleteConfirm": "E'lonni o'chirasizmi?",
       "trucks.published": "E'lon joylandi", "trucks.needSignIn": "Avval Google yoki Telegram orqali kiring",
       "trucks.emptyTitle": "Mos e'lon topilmadi.", "trucks.emptyMine": "Sizda hali e'lon yo'q.",
+      "trucks.photosLabel": "Rasmlar (ixtiyoriy, 5 tagacha)", "trucks.detailTitle": "Mashina haqida",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2061,6 +2124,7 @@
       "trucks.deleteBtn": "Удалить объявление", "trucks.deleteConfirm": "Удалить объявление?",
       "trucks.published": "Объявление размещено", "trucks.needSignIn": "Сначала войдите через Google или Telegram",
       "trucks.emptyTitle": "Подходящих объявлений не найдено.", "trucks.emptyMine": "У вас пока нет объявлений.",
+      "trucks.photosLabel": "Фото (необязательно, до 5 шт.)", "trucks.detailTitle": "О машине",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2260,6 +2324,7 @@
       "trucks.deleteBtn": "Delete listing", "trucks.deleteConfirm": "Delete this listing?",
       "trucks.published": "Listing posted", "trucks.needSignIn": "Sign in with Google or Telegram first",
       "trucks.emptyTitle": "No matching listings.", "trucks.emptyMine": "You don't have any listings yet.",
+      "trucks.photosLabel": "Photos (optional, up to 5)", "trucks.detailTitle": "About this vehicle",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -3578,6 +3643,34 @@
     reader.readAsDataURL(file);
   }
 
+  /**
+   * Same idea as fileToAvatarDataUrl but keeps the original aspect ratio
+   * (just caps the longest side) instead of a square center-crop — used for
+   * truck-listing photos, which shouldn't get chopped into a square. Same
+   * "no blob storage, so keep it small" reasoning applies.
+   */
+  function fileToPhotoDataUrl(file, callback){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var maxSide = 640;
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, maxSide / Math.max(w, h));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(w * scale);
+        canvas.height = Math.round(h * scale);
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL("image/jpeg", 0.72));
+      };
+      img.onerror = function(){ callback(null); };
+      img.src = reader.result;
+    };
+    reader.onerror = function(){ callback(null); };
+    reader.readAsDataURL(file);
+  }
+
   function infoRow(labelKey, labelFallback, value, emptyKey, emptyFallback){
     return value
       ? '<div class="info-row"><span class="ir-k" data-i18n="'+labelKey+'">'+labelFallback+'</span><span class="ir-v">'+escapeHtml(value)+'</span></div>'
@@ -3908,27 +4001,34 @@
     }
   }
 
+  // OLX-style compact tile: photo, price, title, one meta line. Everything
+  // else (description, seller, contact, delete) lives in the detail sheet
+  // a tap opens — keeps every card in the grid the exact same shape.
   function truckCardHtml(tk){
-    return '<div class="load-card" data-truck-id="'+escapeHtml(tk.id)+'">'
-      + '<div class="lc-route">'+escapeHtml(tk.brand)+'</div>'
-      + '<div class="lc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
-      + '<div class="lc-meta">'
-      +   '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[tk.vehicleType] || tk.vehicleType)+'</span>'
-      +   '<span>'+icon("iconRoute")+' '+escapeHtml(String(tk.year))+'</span>'
-      +   (tk.mileageKm != null ? '<span>'+icon("iconWeight")+' '+formatNum(tk.mileageKm)+' km</span>' : '')
-      +   '<span>'+icon("iconMap")+' '+escapeHtml(tk.city)+'</span>'
+    var photo = tk.photos && tk.photos[0];
+    return '<div class="truck-card" data-truck-id="'+escapeHtml(tk.id)+'">'
+      + '<div class="tc-photo">'+(photo ? '<img src="'+photo+'" alt="">' : icon("iconTruck"))+'</div>'
+      + '<div class="tc-body">'
+      +   '<div class="tc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
+      +   '<div class="tc-title">'+escapeHtml(tk.brand)+'</div>'
+      +   '<div class="tc-meta">'+escapeHtml(String(tk.year))+' · '+escapeHtml(tk.city)+'</div>'
       + '</div>'
-      + (tk.description ? '<p class="note" style="margin:var(--s2) 0 0;">'+escapeHtml(tk.description)+'</p>' : '')
-      + '<div class="lc-meta" style="margin-top:var(--s3);">'
-      +   '<span>'+icon("iconUser")+' '+escapeHtml(tk.sellerName)+'</span>'
-      +   '<a href="tel:'+escapeHtml(tk.phone)+'" class="link-btn" onclick="event.stopPropagation();">'+icon("iconPhone")+' '+escapeHtml(tk.phone)+'</a>'
-      + '</div>'
-      + (trucksState.mineOnly ? '<button type="button" class="btn ghost small" data-delete-truck="'+escapeHtml(tk.id)+'" style="margin-top:var(--s3);" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>' : '')
       + '</div>';
   }
 
+  function skeletonTruckCards(n){
+    var card = '<div class="truck-card" style="cursor:default;">'
+      + '<div class="tc-photo skeleton" style="aspect-ratio:4/3;"></div>'
+      + '<div class="tc-body">'
+      +   '<div class="skeleton sk-line" style="width:70%;"></div>'
+      +   '<div class="skeleton sk-line" style="width:90%;margin-top:8px;"></div>'
+      +   '<div class="skeleton sk-line" style="width:50%;margin-top:8px;"></div>'
+      + '</div></div>';
+    return Array(n).fill(card).join("");
+  }
+
   function emptyTrucksHtml(){
-    return '<div class="empty-state">'
+    return '<div class="empty-state" style="grid-column:1/-1;">'
       + icon("iconInboxEmpty")
       + '<p data-i18n="'+(trucksState.mineOnly ? "trucks.emptyMine" : "trucks.emptyTitle")+'">'
       +   (trucksState.mineOnly ? "Sizda hali e'lon yo'q." : "Mos e'lon topilmadi.")
@@ -3942,7 +4042,7 @@
     if(!list) return;
     populateTrucksFilters();
 
-    list.innerHTML = skeletonLoadCards(3);
+    list.innerHTML = skeletonTruckCards(4);
     if(countEl) countEl.textContent = "";
 
     var mineBtn = document.getElementById("btnTrucksMine");
@@ -3985,12 +4085,42 @@
     applyLang();
   }
 
+  // Reset on every open — the sheet's own HTML doesn't persist picked
+  // photos between opens, so neither should this.
+  var sellTruckPhotos = [];
+
+  function renderTruckPhotoRow(){
+    var row = document.getElementById("truckPhotoRow");
+    if(!row) return;
+    row.innerHTML = sellTruckPhotos.map(function(p, i){
+        return '<div class="photo-picker-thumb"><img src="'+p+'" alt=""><button type="button" class="pp-remove" data-remove-photo="'+i+'" aria-label="O\'chirish">✕</button></div>';
+      }).join("")
+      + (sellTruckPhotos.length < 5
+          ? '<button type="button" class="photo-picker-add" id="btnAddTruckPhoto" aria-label="Rasm qo\'shish"><span style="font-size:26px;line-height:1;">+</span></button>'
+          : '');
+    var addBtn = document.getElementById("btnAddTruckPhoto");
+    if(addBtn) addBtn.addEventListener("click", function(){
+      var fileInput = document.getElementById("fTruckPhotoFile");
+      if(fileInput) fileInput.click();
+    });
+    row.querySelectorAll("[data-remove-photo]").forEach(function(b){
+      b.addEventListener("click", function(){
+        sellTruckPhotos.splice(parseInt(b.getAttribute("data-remove-photo"), 10), 1);
+        renderTruckPhotoRow();
+      });
+    });
+  }
+
   function openSellTruckSheet(){
     if(!isSignedIn()){
       toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
       return;
     }
+    sellTruckPhotos = [];
     var html = ''
+      + '<div class="edit-section-heading" data-i18n="trucks.photosLabel">Rasmlar (ixtiyoriy, 5 tagacha)</div>'
+      + '<div class="photo-picker-row" id="truckPhotoRow"></div>'
+      + '<input type="file" accept="image/*" id="fTruckPhotoFile" hidden>'
       + '<div class="field"><label for="fTruckSellerName" data-i18n="order.nameLabel">Ismingiz</label>'
       +   '<input type="text" id="fTruckSellerName" maxlength="60" placeholder="Ismingiz" data-autofocus></div>'
       + '<div class="field"><label for="fTruckPhone" data-i18n="order.phoneLabel">Telefon</label>'
@@ -4021,6 +4151,18 @@
       footerHtml: '<button class="btn" id="btnSubmitTruck" data-i18n="trucks.publishBtn">Joylash</button>',
       onOpen: function(){
         applyLang();
+        renderTruckPhotoRow();
+        var fileInput = document.getElementById("fTruckPhotoFile");
+        if(fileInput) fileInput.addEventListener("change", function(){
+          var file = fileInput.files && fileInput.files[0];
+          fileInput.value = ""; // lets the same file be picked again later
+          if(!file || sellTruckPhotos.length >= 5) return;
+          fileToPhotoDataUrl(file, function(dataUrl){
+            if(!dataUrl) return;
+            sellTruckPhotos.push(dataUrl);
+            renderTruckPhotoRow();
+          });
+        });
         var btn = document.getElementById("btnSubmitTruck");
         if(btn) btn.addEventListener("click", function(){ submitTruckListing(btn); });
       }
@@ -4041,7 +4183,8 @@
       mileageKm: get("fTruckMileage"),
       price: get("fTruckPrice"),
       city: get("fTruckCityInput"),
-      description: get("fTruckDesc").trim()
+      description: get("fTruckDesc").trim(),
+      photos: sellTruckPhotos
     };
     btn.disabled = true;
     if(note) note.textContent = "";
@@ -4058,11 +4201,47 @@
         return;
       }
       toast(t("trucks.published") || "E'lon joylandi", "", "success");
+      sellTruckPhotos = [];
       Sheet.close();
       fetchTrucks();
     }).catch(function(){
       btn.disabled = false;
       if(note){ note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko'ring."; note.style.color = "#DC2626"; }
+    });
+  }
+
+  function openTruckDetailSheet(tk){
+    var photos = tk.photos || [];
+    var gallery = photos.length
+      ? '<div class="truck-gallery">'+photos.map(function(p){ return '<img src="'+p+'" alt="">'; }).join("")+'</div>'
+      : '<div class="truck-gallery empty">'+icon("iconTruck")+'</div>';
+
+    var html = gallery
+      + '<h3 class="card-title" style="margin-top:0;">'+escapeHtml(tk.brand)+'</h3>'
+      + '<div class="lc-price" style="margin:0 0 var(--s3);">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
+      + '<div class="lc-meta" style="margin-bottom:var(--s4);">'
+      +   '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[tk.vehicleType] || tk.vehicleType)+'</span>'
+      +   '<span>'+icon("iconRoute")+' '+escapeHtml(String(tk.year))+'</span>'
+      +   (tk.mileageKm != null ? '<span>'+icon("iconWeight")+' '+formatNum(tk.mileageKm)+' km</span>' : '')
+      +   '<span>'+icon("iconMap")+' '+escapeHtml(tk.city)+'</span>'
+      + '</div>'
+      + (tk.description ? '<p class="note" style="margin:0 0 var(--s4);">'+escapeHtml(tk.description)+'</p>' : '')
+      + '<div class="lc-meta"><span>'+icon("iconUser")+' '+escapeHtml(tk.sellerName)+'</span></div>'
+      + '<a href="tel:'+escapeHtml(tk.phone)+'" class="btn" style="margin-top:var(--s4);display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">'
+      +   icon("iconPhone")+' '+escapeHtml(tk.phone)
+      + '</a>'
+      + (trucksState.mineOnly
+          ? '<button type="button" class="btn ghost" id="btnDeleteTruckDetail" style="margin-top:var(--s3);" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>'
+          : '');
+
+    Sheet.open({
+      title: t("trucks.detailTitle") || "Mashina haqida",
+      html: html,
+      onOpen: function(container){
+        applyLang();
+        var delBtn = container.querySelector("#btnDeleteTruckDetail");
+        if(delBtn) delBtn.addEventListener("click", function(){ Sheet.close(); deleteTruckListing(tk.id); });
+      }
     });
   }
 
@@ -5716,10 +5895,13 @@
   });
   // Truck cards are rebuilt on every fetchTrucks() re-render, so per-element
   // binding would go stale immediately — same reasoning as the load-card
-  // favorite-button delegation.
+  // favorite-button delegation. A tap opens the detail sheet; delete lives
+  // there now, not on the card itself.
   document.addEventListener("click", function(e){
-    var delBtn = e.target.closest("[data-delete-truck]");
-    if(delBtn){ e.stopPropagation(); deleteTruckListing(delBtn.getAttribute("data-delete-truck")); }
+    var card = e.target.closest("[data-truck-id]");
+    if(!card) return;
+    var tk = lastTrucksResult.filter(function(t){ return t.id === card.getAttribute("data-truck-id"); })[0];
+    if(tk) openTruckDetailSheet(tk);
   });
 
   // Lang/theme buttons and Settings rows are (re)rendered on demand inside
