@@ -169,6 +169,10 @@ const verifyDriver = async (req, res) => {
   }
 
   profile.verified = verified;
+  // Reviewed either way — a pending self-serve request (see api/profile.js's
+  // request-verification) shouldn't keep showing as "waiting" once an admin
+  // has actually looked at it.
+  delete profile.verificationRequestedAt;
   const saved = await kvSet(`profile:${email}`, JSON.stringify(profile));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi' });
 
@@ -286,6 +290,9 @@ const updateUser = async (req, res) => {
 
   if (body.verified !== undefined) {
     next.verified = Boolean(body.verified);
+    // Same reasoning as verifyDriver above — an admin touching this field
+    // at all counts as reviewing the pending request, if there was one.
+    delete next.verificationRequestedAt;
   }
 
   if (body.ratingCount !== undefined || body.ratingSum !== undefined) {

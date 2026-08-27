@@ -10,6 +10,9 @@
  *   - ?action=link-telegram-start,  { googleIdToken }               → mint a 6-digit code
  *   - ?action=link-telegram-finish, { telegramInitData, code }      → redeem it, completing the link
  *
+ * Plus the self-serve "get verified" request from the Profile page:
+ *   - ?action=request-verification, { googleIdToken | telegramInitData } → flags the profile as pending review
+ *
  * Auth accepts either credential — see lib/identity.js. A caller identified
  * only through Telegram (no linked Google account) is keyed by "tg:<id>"
  * instead of an email; every key below already treats that as an opaque
@@ -64,6 +67,41 @@ const linkTelegramFinish = async (req, res) => {
   const result = await redeemTelegramLinkCode({ code: body.code, telegramInitData: body.telegramInitData });
   if (result.error) return res.status(400).json({ error: result.error });
   return res.status(200).json({ ok: true });
+};
+
+// A user can only ask again after this many ms — stops someone hammering
+// the button once a request is already sitting in the admin queue.
+const VERIFICATION_REQUEST_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * POST ?action=request-verification — the self-serve "get the blue badge"
+ * request from the Profile page. No document upload here (this app has no
+ * file storage at all yet) — this just timestamps the profile so it shows
+ * up as pending in the admin panel; an admin collects the actual passport
+ * photos out of band (Telegram) and flips `verified` from there, the same
+ * as verifyDriver/updateUser already did before this existed.
+ */
+const requestVerification = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const profileKey = `profile:${email}`;
+  const existing = parseProfile(await kvGet(profileKey));
+  if (existing.verified) {
+    return res.status(400).json({ error: 'Profilingiz allaqachon tasdiqlangan' });
+  }
+  if (existing.verificationRequestedAt && Date.now() - existing.verificationRequestedAt < VERIFICATION_REQUEST_COOLDOWN_MS) {
+    // Not an error — the user just re-opened the page mid-review. Report
+    // the same pending state they'd already see instead of double-queuing.
+    return res.status(200).json({ ok: true, profile: existing });
+  }
+
+  const next = { ...existing, verificationRequestedAt: Date.now() };
+  const saved = await kvSet(profileKey, JSON.stringify(next));
+  if (!saved) return res.status(502).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
+  await kvSadd('profile_emails', email);
+  return res.status(200).json({ ok: true, profile: next });
 };
 
 const handleProfile = async (req, res) => {
@@ -181,5 +219,6 @@ export default async function handler(req, res) {
   const action = String(req.query.action || '');
   if (action === 'link-telegram-start') return linkTelegramStart(req, res);
   if (action === 'link-telegram-finish') return linkTelegramFinish(req, res);
+  if (action === 'request-verification') return requestVerification(req, res);
   return handleProfile(req, res);
 }

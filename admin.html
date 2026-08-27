@@ -197,6 +197,10 @@
     display:inline-block;font-size:10.5px;font-weight:700;color:#FCA5A5;
     background:rgba(239,68,68,0.16);padding:2px 7px;border-radius:999px;margin-left:6px;
   }
+  .pending-tag{
+    display:inline-block;font-size:10.5px;font-weight:700;color:#93C5FD;
+    background:rgba(59,130,246,0.16);padding:2px 7px;border-radius:999px;margin-left:6px;
+  }
 </style>
 </head>
 <body>
@@ -530,7 +534,8 @@
   var allUsers = [];
   function userRowHtml(u){
     return "<tr>"
-      + "<td>" + (u.username ? "@" + esc(u.username) : "") + (u.banned ? "<span class=\"banned-tag\">Bloklangan</span>" : "") + "</td>"
+      + "<td>" + (u.username ? "@" + esc(u.username) : "") + (u.banned ? "<span class=\"banned-tag\">Bloklangan</span>" : "")
+            + (!u.verified && u.verificationRequestedAt ? "<span class=\"pending-tag\" title=\"" + esc(new Date(u.verificationRequestedAt).toLocaleString("uz-UZ")) + "\">Tasdiqlash so'ralgan</span>" : "") + "</td>"
       + "<td>" + esc(u.email) + "</td>"
       + "<td>" + esc(ROLE_LABELS[u.role] || "") + "</td>"
       + "<td>" + esc(u.city) + "</td>"
