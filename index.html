@@ -1610,6 +1610,34 @@
   </div>
 </section>
 
+<section class="tabview" id="tab-trucks" data-tab="trucks" hidden>
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:800px;">
+    <div class="section-head reveal">
+      <div class="section-eyebrow" data-i18n="trucks.eyebrow">Mashinalar</div>
+      <h2 class="section-title"><span data-i18n="trucks.titleA">Yuk mashinasi</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
+      <p class="section-sub" data-i18n="trucks.sub">Ishlatilgan yuk mashinalari e'lonlari — o'zingiz ham e'lon joylashtiring.</p>
+    </div>
+
+    <div class="card reveal loads-search-card">
+      <div class="row2">
+        <div class="field"><label for="fTrucksCity" data-i18n="profile.cityLabel">Shahar</label>
+          <select id="fTrucksCity"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
+        <div class="field"><label for="fTrucksType" data-i18n="order.truckTypeLabel">Mashina turi</label>
+          <select id="fTrucksType"><option value="" data-i18n="order.anyTruck">Farqi yo'q</option></select></div>
+      </div>
+      <div class="home-quick-row" style="margin-top:0;">
+        <div class="chip-row">
+          <button type="button" class="chip" id="btnTrucksMine" data-i18n="trucks.mine">Mening e'lonlarim</button>
+        </div>
+        <button type="button" class="btn" id="btnSellTruck" style="width:auto;padding:0 var(--s5);"><span data-i18n="trucks.sellBtn">+ Sotish</span></button>
+      </div>
+    </div>
+
+    <p class="note" id="trucksCount" style="margin:var(--s4) 0 var(--s3);"></p>
+    <div id="trucksList"></div>
+  </div>
+</section>
+
 <section class="tabview" id="tab-chat" data-tab="chat" hidden>
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:520px;">
     <div class="section-head reveal">
@@ -1779,7 +1807,7 @@
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
-  <button type="button" class="bn-item" data-tab-link="chat"><svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg><span data-i18n="nav.chat">Xabarlar</span></button>
+  <button type="button" class="bn-item" data-tab-link="trucks"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span data-i18n="nav.trucks">Mashinalar</span></button>
   <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
 </nav>
 
@@ -1822,7 +1850,18 @@
   var STRINGS = {
     uz: {
       "nav.home": "Asosiy", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
-      "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)",
+      "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)", "nav.trucks": "Mashinalar",
+
+      "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
+      "trucks.sub": "Ishlatilgan yuk mashinalari e'lonlari — o'zingiz ham e'lon joylashtiring.",
+      "trucks.mine": "Mening e'lonlarim", "trucks.sellBtn": "+ Sotish", "trucks.sellBtnTitle": "Mashina e'lonini joylash",
+      "trucks.publishBtn": "Joylash",
+      "trucks.brandLabel": "Marka va model", "trucks.yearLabel": "Ishlab chiqarilgan yili",
+      "trucks.mileageLabel": "Probeg (km, ixtiyoriy)", "trucks.priceLabel": "Narx (so'm)",
+      "trucks.descLabel": "Qisqa tavsif (ixtiyoriy)",
+      "trucks.deleteBtn": "E'lonni o'chirish", "trucks.deleteConfirm": "E'lonni o'chirasizmi?",
+      "trucks.published": "E'lon joylandi", "trucks.needSignIn": "Avval Google yoki Telegram orqali kiring",
+      "trucks.emptyTitle": "Mos e'lon topilmadi.", "trucks.emptyMine": "Sizda hali e'lon yo'q.",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2010,7 +2049,18 @@
     },
     ru: {
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
-      "nav.telegramGroupAria": "Группа водителей (Telegram)",
+      "nav.telegramGroupAria": "Группа водителей (Telegram)", "nav.trucks": "Машины",
+
+      "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовую машину", "trucks.titleB": "продайте или купите",
+      "trucks.sub": "Объявления о подержанных грузовых машинах — разместите и своё объявление.",
+      "trucks.mine": "Мои объявления", "trucks.sellBtn": "+ Продать", "trucks.sellBtnTitle": "Разместить объявление о машине",
+      "trucks.publishBtn": "Разместить",
+      "trucks.brandLabel": "Марка и модель", "trucks.yearLabel": "Год выпуска",
+      "trucks.mileageLabel": "Пробег (км, необязательно)", "trucks.priceLabel": "Цена (сум)",
+      "trucks.descLabel": "Краткое описание (необязательно)",
+      "trucks.deleteBtn": "Удалить объявление", "trucks.deleteConfirm": "Удалить объявление?",
+      "trucks.published": "Объявление размещено", "trucks.needSignIn": "Сначала войдите через Google или Telegram",
+      "trucks.emptyTitle": "Подходящих объявлений не найдено.", "trucks.emptyMine": "У вас пока нет объявлений.",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2198,7 +2248,18 @@
     },
     en: {
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
-      "nav.telegramGroupAria": "Drivers group (Telegram)",
+      "nav.telegramGroupAria": "Drivers group (Telegram)", "nav.trucks": "Vehicles",
+
+      "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a cargo truck",
+      "trucks.sub": "Used cargo vehicle listings — post your own too.",
+      "trucks.mine": "My listings", "trucks.sellBtn": "+ Sell", "trucks.sellBtnTitle": "Post a vehicle listing",
+      "trucks.publishBtn": "Post",
+      "trucks.brandLabel": "Make and model", "trucks.yearLabel": "Year",
+      "trucks.mileageLabel": "Mileage (km, optional)", "trucks.priceLabel": "Price (so'm)",
+      "trucks.descLabel": "Short description (optional)",
+      "trucks.deleteBtn": "Delete listing", "trucks.deleteConfirm": "Delete this listing?",
+      "trucks.published": "Listing posted", "trucks.needSignIn": "Sign in with Google or Telegram first",
+      "trucks.emptyTitle": "No matching listings.", "trucks.emptyMine": "You don't have any listings yet.",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -3006,6 +3067,9 @@
     );
 
     return verifyGroup
+      + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
+      +   '<li><button type="button" class="settings-row" data-tab-link="chat">'+icon("iconChat")+'<span data-i18n="nav.chat">Xabarlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      + '</ul></div>'
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
       +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       +   '<li><button type="button" class="settings-row" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
@@ -3825,9 +3889,202 @@
   }
 
   /* ============================================================
-     Chat — search a username, message them directly. Lives inside the
-     Profile tab (behind the same Google sign-in gate) rather than adding a
-     6th bottom-nav button.
+     Trucks marketplace — buy/sell listings for cargo vehicles, separate
+     from the load marketplace. Text-only (no photos — this app has no
+     file storage; see api/profile.js's avatar comment for the same
+     constraint), same "post a form, browse a list" shape as Loads/Order.
+     ============================================================ */
+  var trucksState = { city: "", vehicleType: "", mineOnly: false };
+  var lastTrucksResult = [];
+
+  function populateTrucksFilters(){
+    var citySel = document.getElementById("fTrucksCity");
+    if(citySel && citySel.children.length <= 1) citySel.insertAdjacentHTML("beforeend", cityOptions(""));
+    var typeSel = document.getElementById("fTrucksType");
+    if(typeSel && typeSel.children.length <= 1){
+      typeSel.insertAdjacentHTML("beforeend", Object.keys(VEHICLE_LABELS).map(function(k){
+        return '<option value="'+k+'">'+VEHICLE_LABELS[k]+'</option>';
+      }).join(""));
+    }
+  }
+
+  function truckCardHtml(tk){
+    return '<div class="load-card" data-truck-id="'+escapeHtml(tk.id)+'">'
+      + '<div class="lc-route">'+escapeHtml(tk.brand)+'</div>'
+      + '<div class="lc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
+      + '<div class="lc-meta">'
+      +   '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[tk.vehicleType] || tk.vehicleType)+'</span>'
+      +   '<span>'+icon("iconRoute")+' '+escapeHtml(String(tk.year))+'</span>'
+      +   (tk.mileageKm != null ? '<span>'+icon("iconWeight")+' '+formatNum(tk.mileageKm)+' km</span>' : '')
+      +   '<span>'+icon("iconMap")+' '+escapeHtml(tk.city)+'</span>'
+      + '</div>'
+      + (tk.description ? '<p class="note" style="margin:var(--s2) 0 0;">'+escapeHtml(tk.description)+'</p>' : '')
+      + '<div class="lc-meta" style="margin-top:var(--s3);">'
+      +   '<span>'+icon("iconUser")+' '+escapeHtml(tk.sellerName)+'</span>'
+      +   '<a href="tel:'+escapeHtml(tk.phone)+'" class="link-btn" onclick="event.stopPropagation();">'+icon("iconPhone")+' '+escapeHtml(tk.phone)+'</a>'
+      + '</div>'
+      + (trucksState.mineOnly ? '<button type="button" class="btn ghost small" data-delete-truck="'+escapeHtml(tk.id)+'" style="margin-top:var(--s3);" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>' : '')
+      + '</div>';
+  }
+
+  function emptyTrucksHtml(){
+    return '<div class="empty-state">'
+      + icon("iconInboxEmpty")
+      + '<p data-i18n="'+(trucksState.mineOnly ? "trucks.emptyMine" : "trucks.emptyTitle")+'">'
+      +   (trucksState.mineOnly ? "Sizda hali e'lon yo'q." : "Mos e'lon topilmadi.")
+      + '</p>'
+      + '</div>';
+  }
+
+  function fetchTrucks(){
+    var list = document.getElementById("trucksList");
+    var countEl = document.getElementById("trucksCount");
+    if(!list) return;
+    populateTrucksFilters();
+
+    list.innerHTML = skeletonLoadCards(3);
+    if(countEl) countEl.textContent = "";
+
+    var mineBtn = document.getElementById("btnTrucksMine");
+    if(mineBtn) mineBtn.classList.toggle("active", trucksState.mineOnly);
+
+    if(trucksState.mineOnly){
+      if(!isSignedIn()){
+        list.innerHTML = '';
+        if(countEl) countEl.textContent = "";
+        toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+        trucksState.mineOnly = false;
+        if(mineBtn) mineBtn.classList.remove("active");
+        return;
+      }
+      fetch("/api/trucks?action=mine&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
+        .then(function(r){ return r.json(); })
+        .then(function(data){ renderTrucksList(data.trucks || []); })
+        .catch(function(){ list.innerHTML = ""; });
+      return;
+    }
+
+    fetch("/api/trucks?action=list")
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var trucks = data.trucks || [];
+        if(trucksState.city) trucks = trucks.filter(function(t){ return t.city === trucksState.city; });
+        if(trucksState.vehicleType) trucks = trucks.filter(function(t){ return t.vehicleType === trucksState.vehicleType; });
+        renderTrucksList(trucks);
+      })
+      .catch(function(){ list.innerHTML = ""; });
+  }
+
+  function renderTrucksList(trucks){
+    var list = document.getElementById("trucksList");
+    var countEl = document.getElementById("trucksCount");
+    if(!list) return;
+    lastTrucksResult = trucks;
+    if(countEl) countEl.textContent = trucks.length + " ta e'lon";
+    list.innerHTML = trucks.length ? trucks.map(truckCardHtml).join("") : emptyTrucksHtml();
+    applyLang();
+  }
+
+  function openSellTruckSheet(){
+    if(!isSignedIn()){
+      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      return;
+    }
+    var html = ''
+      + '<div class="field"><label for="fTruckSellerName" data-i18n="order.nameLabel">Ismingiz</label>'
+      +   '<input type="text" id="fTruckSellerName" maxlength="60" placeholder="Ismingiz" data-autofocus></div>'
+      + '<div class="field"><label for="fTruckPhone" data-i18n="order.phoneLabel">Telefon</label>'
+      +   '<input type="tel" id="fTruckPhone" inputmode="tel" placeholder="90 123 45 67"></div>'
+      + '<div class="field"><label for="fTruckVehicleType" data-i18n="order.truckTypeLabel">Mashina turi</label>'
+      +   '<select id="fTruckVehicleType"><option value="" data-i18n="profile.roleUnset">Tanlanmagan</option>'
+      +   Object.keys(VEHICLE_LABELS).map(function(k){ return '<option value="'+k+'">'+VEHICLE_LABELS[k]+'</option>'; }).join("")
+      +   '</select></div>'
+      + '<div class="field"><label for="fTruckBrand" data-i18n="trucks.brandLabel">Marka va model</label>'
+      +   '<input type="text" id="fTruckBrand" maxlength="60" placeholder="masalan: Isuzu NPR"></div>'
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fTruckYear" data-i18n="trucks.yearLabel">Ishlab chiqarilgan yili</label>'
+      +     '<input type="number" id="fTruckYear" min="1970" max="'+(new Date().getFullYear()+1)+'" placeholder="2015"></div>'
+      +   '<div class="field"><label for="fTruckMileage" data-i18n="trucks.mileageLabel">Probeg (km, ixtiyoriy)</label>'
+      +     '<input type="number" id="fTruckMileage" min="0" placeholder="120000"></div>'
+      + '</div>'
+      + '<div class="field"><label for="fTruckPrice" data-i18n="trucks.priceLabel">Narx (so\'m)</label>'
+      +   '<input type="number" id="fTruckPrice" min="0" step="1000" placeholder="150000000"></div>'
+      + '<div class="field"><label for="fTruckCityInput" data-i18n="profile.cityLabel">Shahar</label>'
+      +   '<select id="fTruckCityInput"><option value="" data-i18n="profile.roleUnset">Tanlanmagan</option>'+cityOptions("")+'</select></div>'
+      + '<div class="field" style="margin-bottom:0;"><label for="fTruckDesc" data-i18n="trucks.descLabel">Qisqa tavsif (ixtiyoriy)</label>'
+      +   '<input type="text" id="fTruckDesc" maxlength="500" placeholder="masalan: yaxshi holatda, bitta egasida"></div>'
+      + '<p class="note" id="sellTruckNote"></p>';
+
+    Sheet.open({
+      title: t("trucks.sellBtnTitle") || "Mashina e'lonini joylash",
+      html: html,
+      footerHtml: '<button class="btn" id="btnSubmitTruck" data-i18n="trucks.publishBtn">Joylash</button>',
+      onOpen: function(){
+        applyLang();
+        var btn = document.getElementById("btnSubmitTruck");
+        if(btn) btn.addEventListener("click", function(){ submitTruckListing(btn); });
+      }
+    });
+  }
+
+  function submitTruckListing(btn){
+    var note = document.getElementById("sellTruckNote");
+    var get = function(id){ var el = document.getElementById(id); return el ? el.value : ""; };
+    var payload = {
+      googleIdToken: googleIdToken,
+      telegramInitData: telegramInitData,
+      sellerName: get("fTruckSellerName").trim(),
+      phone: get("fTruckPhone").trim(),
+      vehicleType: get("fTruckVehicleType"),
+      brand: get("fTruckBrand").trim(),
+      year: get("fTruckYear"),
+      mileageKm: get("fTruckMileage"),
+      price: get("fTruckPrice"),
+      city: get("fTruckCityInput"),
+      description: get("fTruckDesc").trim()
+    };
+    btn.disabled = true;
+    if(note) note.textContent = "";
+    fetch("/api/trucks?action=create", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      btn.disabled = false;
+      if(!res.ok){
+        if(note){ note.textContent = res.body.error || "Xato yuz berdi"; note.style.color = "#DC2626"; }
+        return;
+      }
+      toast(t("trucks.published") || "E'lon joylandi", "", "success");
+      Sheet.close();
+      fetchTrucks();
+    }).catch(function(){
+      btn.disabled = false;
+      if(note){ note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko'ring."; note.style.color = "#DC2626"; }
+    });
+  }
+
+  function deleteTruckListing(id){
+    if(!confirm(t("trucks.deleteConfirm") || "E'lonni o'chirasizmi?")) return;
+    fetch("/api/trucks?action=delete", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id })
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      if(!res.ok){ toast(res.body.error || "O'chirilmadi", "", "info"); return; }
+      fetchTrucks();
+    }).catch(function(){});
+  }
+
+  /* ============================================================
+     Chat — search a username, message them directly. Its own tab
+     (data-tab="chat"), reached from the Profile header's Menu icon →
+     Sozlamalar → Xabarlar, rather than a bottom-nav slot — that slot now
+     goes to the Mashinalar (vehicle marketplace) tab instead.
      ============================================================ */
   var chatWithEmail = null;
   var chatWithUsername = null;
@@ -5367,7 +5624,7 @@
      Tab navigation — the whole app is 5 screens (bottom nav),
      switched here instead of scrolling through one long page.
      ============================================================ */
-  var TABS = ["home", "order", "loads", "chat", "profile", "contact"];
+  var TABS = ["home", "order", "loads", "trucks", "chat", "profile", "contact"];
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
     TABS.forEach(function(t){
@@ -5386,8 +5643,13 @@
     if(name === "profile") renderProfile();
     if(name === "loads") renderLoadsTab();
     if(name === "chat") renderChatTab();
+    if(name === "trucks") fetchTrucks();
     if(name === "home") renderHomeMatch();
     if(name !== "chat") stopChatPoll();
+    // A tab switch triggered from inside a sheet (e.g. Settings → Xabarlar)
+    // should actually land the visitor on that tab, not leave the sheet
+    // floating on top of it.
+    Sheet.close();
     window.scrollTo(0, 0);
   }
   // Delegated (not bound per-element) so it still works after applyLang()
@@ -5435,11 +5697,47 @@
     });
   });
 
+  var btnSellTruck = document.getElementById("btnSellTruck");
+  if(btnSellTruck) btnSellTruck.addEventListener("click", openSellTruckSheet);
+  var btnTrucksMine = document.getElementById("btnTrucksMine");
+  if(btnTrucksMine) btnTrucksMine.addEventListener("click", function(){
+    trucksState.mineOnly = !trucksState.mineOnly;
+    fetchTrucks();
+  });
+  var fTrucksCity = document.getElementById("fTrucksCity");
+  if(fTrucksCity) fTrucksCity.addEventListener("change", function(){
+    trucksState.city = fTrucksCity.value;
+    fetchTrucks();
+  });
+  var fTrucksType = document.getElementById("fTrucksType");
+  if(fTrucksType) fTrucksType.addEventListener("change", function(){
+    trucksState.vehicleType = fTrucksType.value;
+    fetchTrucks();
+  });
+  // Truck cards are rebuilt on every fetchTrucks() re-render, so per-element
+  // binding would go stale immediately — same reasoning as the load-card
+  // favorite-button delegation.
+  document.addEventListener("click", function(e){
+    var delBtn = e.target.closest("[data-delete-truck]");
+    if(delBtn){ e.stopPropagation(); deleteTruckListing(delBtn.getAttribute("data-delete-truck")); }
+  });
+
   // Lang/theme buttons and Settings rows are (re)rendered on demand inside
   // the Sheet, so they're bound once here by delegation rather than at
   // element-creation time — same reasoning as the tab-link/load-card
   // delegation above.
   document.addEventListener("click", function(e){
+    // Inside the Telegram Mini App, a plain <a target="_blank"> to a t.me
+    // link is unreliable — Telegram's WebView doesn't reliably hand it off
+    // to the app/deep-link the way a normal mobile browser would. The
+    // Bot API's own openTelegramLink() is what's meant for this exact case.
+    var tgLink = e.target.closest('a[href^="https://t.me/"]');
+    if(tgLink && isTelegramWebApp && window.Telegram && window.Telegram.WebApp
+       && typeof window.Telegram.WebApp.openTelegramLink === "function"){
+      e.preventDefault();
+      window.Telegram.WebApp.openTelegramLink(tgLink.href);
+      return;
+    }
     var settingsRow = e.target.closest("[data-settings-page]");
     if(settingsRow){
       // Clicked while a sheet is already open (i.e. from inside
