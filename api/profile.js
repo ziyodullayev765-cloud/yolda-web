@@ -21,7 +21,7 @@
  * A username can belong to only one account at a time. Two keys in Redis
  * track that both ways:
  *   username:<lowercased>  -> owner's identity   (who currently holds it)
- *   profile:<identity>     -> JSON blob { username, displayName, role, city, bio, phone, ... }
+ *   profile:<identity>     -> JSON blob { username, displayName, role, city, bio, phone, avatarUrl, ... }
  */
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSismember } from '../lib/kv.js';
@@ -33,6 +33,12 @@ const CITIES = [
   'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
 const VEHICLE_TYPES = ['ISUZU', 'GAZEL', 'FURGON', 'YARIM_TREYLER', 'SAMOSVAL', 'BOSHQA'];
+// This app has no blob/file storage, so a picked avatar is just stored as a
+// data: URL string inline in the profile JSON — the client (fileToAvatarDataUrl
+// in index.html) already resizes it to a small square JPEG before sending it,
+// this cap is just the server-side backstop against a client that skips that.
+const AVATAR_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/;
+const MAX_AVATAR_BYTES = 400 * 1024;
 
 /** profile:<email> used to just be the plain username string — read old and new shapes. */
 const parseProfile = (raw) => {
@@ -116,7 +122,7 @@ const handleProfile = async (req, res) => {
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
 
-  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername']
+  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername', 'avatarDataUrl']
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
     return res.status(200).json({ ok: true, profile: existing });
@@ -190,6 +196,19 @@ const handleProfile = async (req, res) => {
 
   if (body.plateNumber !== undefined && body.plateNumber !== null && body.plateNumber !== '') {
     next.plateNumber = String(body.plateNumber).trim().toUpperCase().slice(0, 12);
+  }
+
+  if (body.avatarDataUrl !== undefined && body.avatarDataUrl !== null && body.avatarDataUrl !== '') {
+    const match = AVATAR_DATA_URL_RE.exec(String(body.avatarDataUrl));
+    if (!match) return res.status(400).json({ error: 'Rasm formati noto‘g‘ri' });
+    // Decoded byte length from the base64 payload, padding-adjusted — no
+    // need to actually decode it just to size-check it.
+    const b64 = match[2];
+    const decodedBytes = Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
+    if (decodedBytes > MAX_AVATAR_BYTES) {
+      return res.status(400).json({ error: 'Rasm hajmi katta, boshqasini tanlang' });
+    }
+    next.avatarUrl = String(body.avatarDataUrl);
   }
 
   // Links this account to a Telegram @username so /api/telegram can show a

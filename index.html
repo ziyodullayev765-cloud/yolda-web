@@ -37,7 +37,7 @@
        Every color used anywhere in this file routes through one of these
        tokens, so this block (plus its dark-mode override below) is the
        single source of truth for re-skinning the whole app. */
-    --paper:#F8F9FB;
+    --paper:#FFFFFF;
     --paper-dark:#EEF1F6;
     --card:#FFFFFF;
     --ink:#0B1526;
@@ -77,7 +77,7 @@
      script in <head>). Every color elsewhere in this file is one of the
      tokens above, so overriding them here is enough to re-skin the whole app. */
   :root[data-theme="dark"]{
-    --paper:#0B1220;
+    --paper:#000000;
     --paper-dark:#111B31;
     --card:#141F3B;
     --ink:#E7ECF7;
@@ -98,10 +98,7 @@
   html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
   html,body{margin:0;padding:0;}
   body{
-    background:
-      radial-gradient(var(--border) 1px, transparent 1px) 0 0/26px 26px,
-      repeating-linear-gradient(135deg, rgba(15,23,42,0.035) 0px, rgba(15,23,42,0.035) 1.5px, transparent 1.5px, transparent 30px),
-      var(--paper);
+    background:var(--paper);
     color:var(--ink);
     font-family:'Inter',sans-serif;
     font-feature-settings:'cv02','cv03','cv04','ss01';
@@ -166,8 +163,9 @@
   .hero-seq:nth-child(7){animation-delay:0.58s;}
   @keyframes heroIn{to{opacity:1;transform:none;filter:blur(0);}}
 
-  /* The wordmark's gradient drifts slowly — noticeable only if you look. */
-  .brand{background-size:200% 100%;animation:brandShift 9s ease-in-out infinite alternate;}
+  /* The wordmark's gradient drifts slowly — noticeable only if you look.
+     (Combined into the main .brand rule below, alongside its reveal
+     animation — see the comment there for why they can't stay separate.) */
   @keyframes brandShift{to{background-position:100% 0;}}
 
   .bg-truck{transition:transform 0.1s linear;}
@@ -214,13 +212,14 @@
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .nav-logo .dot{color:var(--stamp);}
-  .nav-theme-btn{
+  .nav-icon-btn{
     width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;
-    flex-shrink:0;margin-left:auto;position:relative;z-index:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--route);
+    flex-shrink:0;margin-left:auto;position:relative;z-index:1;text-decoration:none;
     transition:transform 0.2s var(--ease), border-color 0.2s var(--ease);
   }
-  .nav-theme-btn:hover{transform:translateY(-1px);border-color:var(--route);}
+  .nav-icon-btn:hover{transform:translateY(-1px);border-color:var(--route);}
+  .nav-icon-btn .ic-svg{font-size:17px;}
   .nav-links{display:flex;gap:var(--s1);list-style:none;margin:0;padding:0;}
   .nav-links a{
     display:block;font-size:13.5px;font-weight:500;text-decoration:none;color:var(--ink-soft);
@@ -313,14 +312,20 @@
     display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
     padding:var(--s3) var(--s4);border-bottom:1px solid var(--border);flex-shrink:0;
   }
-  .sheet-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.01em;margin:0;}
-  .sheet-close{
+  .sheet-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.01em;margin:0;flex:1;min-width:0;}
+  .sheet-close, .sheet-back{
     width:44px;height:44px;border-radius:50%;border:1px solid var(--border);
     background:var(--card);display:flex;align-items:center;justify-content:center;
     cursor:pointer;color:var(--ink-soft);flex-shrink:0;
     transition:background 0.2s var(--ease),color 0.2s var(--ease);
   }
-  .sheet-close:hover{background:var(--paper-dark);color:var(--ink);}
+  .sheet-close:hover, .sheet-back:hover{background:var(--paper-dark);color:var(--ink);}
+  .sheet-back .ic-svg{transform:scaleX(-1);}
+  /* The display:flex above (an author-stylesheet rule) otherwise beats the
+     browser's own [hidden]{display:none} default outright, regardless of
+     specificity — author styles always win over UA styles unless this is
+     spelled out explicitly. */
+  .sheet-close[hidden], .sheet-back[hidden]{display:none;}
   .sheet-body{padding:var(--s4);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1;min-height:0;}
   .sheet-footer{flex-shrink:0;padding:var(--s3) var(--s4);border-top:1px solid var(--border);}
   .sheet-footer .btn{width:100%;}
@@ -375,7 +380,7 @@
      most (icon buttons, language/theme pickers) get a 44px floor per
      WCAG 2.5.5 — desktop's tighter, mouse-driven sizing is untouched. */
   @media(pointer:coarse), (max-width:760px){
-    .nav-theme-btn{width:44px;height:44px;}
+    .nav-icon-btn{width:44px;height:44px;}
     .dt-icon-btn{width:44px;height:44px;}
     .lang-btn,.theme-btn{padding:13px 12px;}
     select,input[type=number],input[type=text],input[type=tel],input[type=date]{font-size:16px;}
@@ -397,8 +402,16 @@
     font-size:clamp(52px,10vw,96px);line-height:0.92;margin:0 0 var(--s4);
     letter-spacing:-0.035em;text-transform:uppercase;font-weight:700;
     background:linear-gradient(100deg, var(--route) 10%, var(--stamp) 90%);
+    background-size:200% 100%;
     -webkit-background-clip:text;background-clip:text;color:transparent;
     display:inline-block;
+    /* .hero-seq below also sets `animation` (its fade/slide-in) on this same
+       element — one shorthand declaration always fully replaces the other
+       rather than merging, so without combining both here the wordmark's
+       reveal animation silently loses to this gradient-drift one and the
+       text just never leaves opacity:0. Both listed together, comma
+       separated, is the one way to run them at once. */
+    animation: heroIn 1s var(--ease) 0.15s forwards, brandShift 9s ease-in-out infinite alternate;
   }
   .tagline{
     margin:0 auto var(--s6);color:var(--ink-soft);
@@ -476,8 +489,8 @@
 
   /* ---------- STATS ---------- */
   .stats-bar{
-    max-width:1000px;margin:0 auto;padding:var(--s2) var(--s5) 0;
-    display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3);
+    max-width:700px;margin:0 auto;padding:var(--s2) var(--s5) 0;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s3);
   }
   .stat-cell{
     padding:var(--s5) var(--s3);text-align:center;
@@ -1214,14 +1227,9 @@
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;
     letter-spacing:-0.015em;color:var(--ink);margin:0;
   }
+  .profile-name-badge{width:19px;height:19px;vertical-align:-3px;margin-right:1px;flex-shrink:0;}
   .profile-username{font-size:14px;color:var(--stamp-dark);font-weight:600;margin-top:3px;}
   .profile-username.muted{color:var(--muted);font-weight:500;}
-  .profile-verified-badge{
-    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
-    color:var(--stamp-dark);background:rgba(42,166,240,0.12);
-    padding:4px 12px;border-radius:var(--r-pill);margin-top:var(--s3);
-  }
-  .profile-verified-badge .ic-svg{width:14px;height:14px;}
   .profile-role-chip{
     display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:var(--ink-soft);
     background:var(--paper-dark);padding:4px 12px;border-radius:var(--r-pill);margin-top:var(--s2);
@@ -1315,6 +1323,34 @@
     letter-spacing:0.06em;margin:var(--s5) 0 var(--s2);
   }
   .edit-section-heading:first-child{margin-top:0;}
+
+  .how-it-works-trigger{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;margin-top:var(--s4);padding:var(--s3);background:none;border:none;
+    color:var(--ink-soft);font-size:13.5px;font-weight:600;cursor:pointer;
+    border-radius:var(--r-md);transition:background 0.15s var(--ease), color 0.15s var(--ease);
+  }
+  .how-it-works-trigger:hover{background:var(--paper-dark);color:var(--ink);}
+  .hiw-q{
+    width:20px;height:20px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--route);color:#fff;font-size:12px;font-weight:700;font-family:'Space Grotesk',sans-serif;
+  }
+
+  .avatar-edit-wrap{position:relative;width:88px;height:88px;margin:0 auto var(--s6);}
+  .avatar-edit-preview{
+    width:88px;height:88px;border-radius:50%;overflow:hidden;
+    background:linear-gradient(135deg, var(--route), var(--stamp));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;
+  }
+  .avatar-edit-preview img{width:100%;height:100%;object-fit:cover;display:block;}
+  .avatar-edit-btn{
+    position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;
+    background:var(--route);color:#fff;border:2px solid var(--card);padding:0;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+  }
+  .avatar-edit-btn .ic-svg{font-size:14px;}
 </style>
 </head>
 <body>
@@ -1383,27 +1419,29 @@
 <nav class="nav" aria-label="Asosiy navigatsiya" style="position:relative;">
   <div id="googleGateHome"></div>
   <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);"><span class="word">YO'LDA</span></a>
-  <button type="button" class="nav-theme-btn" id="btnQuickTheme" aria-label="Tungi/kunduzgi rejim" title="Tungi/kunduzgi rejim">☀️</button>
+  <a class="nav-icon-btn" href="https://t.me/yoldaku" target="_blank" rel="noopener" aria-label="Haydovchilar guruhi (Telegram)" data-i18n-aria="nav.telegramGroupAria" title="Haydovchilar guruhi">
+    <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+  </a>
 </nav>
 
 <main>
 
 <section class="tabview" id="tab-home" data-tab="home">
-  <!-- Practical stuff first, so the answer to "where's a load?" is visible
-       within seconds — the brand/marketing hero moves below, as a secondary
-       "about Yolda" section rather than the first thing anyone sees. -->
-  <div class="section" style="padding-top:var(--s6);padding-bottom:var(--s2);max-width:640px;">
-    <p class="home-greeting reveal" id="homeGreeting" data-i18n="home.greeting">Assalomu alaykum 👋</p>
+  <!-- Brand hero first — logo, tagline, the two main CTAs. Quick filters/
+       FAB and the personalized "Sizga mos yuklar" list follow right after. -->
+  <header class="hero-wrap">
+    <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
+    <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.eyebrow">Yuk bozori · O'zbekiston</span></p>
+    <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
+    <h1 class="brand hero-seq">YO'LDA</h1>
+    <p class="tagline hero-seq" data-i18n="home.tagline">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
+    <div class="hero-ctas hero-seq">
+      <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk joylash</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
+      <a class="btn-secondary" href="#" data-tab-link="loads"><span data-i18n="home.ctaGet">Yuk topish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg></a>
+    </div>
+  </header>
 
-    <button type="button" class="home-search-bar reveal" id="homeSearchBar">
-      <span class="hsb-icon">🔎</span>
-      <span style="flex:1;">
-        <span class="hsb-label" data-i18n="home.searchLabel">Yo'nalish</span><br>
-        <span class="hsb-value" id="homeSearchValue"><span data-i18n="home.searchPlaceholder">Qayerdan → Qayerga?</span></span>
-      </span>
-      <svg class="ic-svg" aria-hidden="true" style="color:var(--muted);font-size:18px;"><use href="#iconChevronRight"/></svg>
-    </button>
-
+  <div class="section" style="padding-top:var(--s5);padding-bottom:var(--s2);max-width:640px;">
     <div class="home-quick-row reveal">
       <div class="chip-row" id="homeQuickFilters">
         <button type="button" class="chip" data-quick="today" data-i18n="loads.qToday">Bugun</button>
@@ -1425,26 +1463,9 @@
     <div id="homeMatchList"></div>
   </div>
 
-  <header class="hero-wrap">
-    <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
-    <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.eyebrow">Yuk bozori · O'zbekiston</span></p>
-    <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
-    <h1 class="brand hero-seq">YO'LDA</h1>
-    <p class="tagline hero-seq" data-i18n="home.tagline">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
-    <div class="hero-ctas hero-seq">
-      <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk joylash</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
-      <a class="btn-secondary" href="#" data-tab-link="loads"><span data-i18n="home.ctaGet">Yuk topish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg></a>
-    </div>
-    <div class="hero-widget hero-seq" id="liveWidget">
-      <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.liveLabel">Jonli faoliyat</span></p>
-      <div class="hero-widget-body" id="liveWidgetBody"></div>
-    </div>
-  </header>
-
   <div class="stats-bar">
     <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k" data-i18n="home.stat1k">Shahar</div><div class="kk" data-i18n="home.stat1kk">Butun O'zbekiston bo'ylab</div></div>
     <div class="stat-cell reveal"><div class="v">24/7</div><div class="k" data-i18n="home.stat2k">Ish vaqti</div><div class="kk" data-i18n="home.stat2kk">Istalgan vaqtda buyurtma bering</div></div>
-    <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k" data-i18n="home.stat3k">Ro'yxatdan o'tish narxi</div><div class="kk" data-i18n="home.stat3kk">Komissiya ham yo'q</div></div>
   </div>
 </section>
 
@@ -1455,16 +1476,6 @@
       <div class="section-eyebrow" data-i18n="order.eyebrow">Buyurtma</div>
       <h2 class="section-title"><span data-i18n="order.titleA">Hisoblang va</span> <span class="accent" data-i18n="order.titleB">yuboring</span></h2>
       <p class="section-sub" data-i18n="order.sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
-    </div>
-
-    <div class="card reveal" style="margin-bottom:var(--s4);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> <span data-i18n="order.howTitle">Qanday ishlaydi?</span></h3>
-      <ol class="how-steps">
-        <li data-i18n="order.how1">Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>
-        <li data-i18n="order.how2">Birinchi bo'lib <strong>"✅ Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>
-        <li data-i18n="order.how3">Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>
-        <li data-i18n="order.how4">Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo'limidan yozing.</li>
-      </ol>
     </div>
 
     <div id="appBrowserHint" class="app-browser-hint" style="display:none;">
@@ -1495,6 +1506,11 @@
       <button class="btn ghost" id="btnTrack" data-i18n="order.trackBtn">Holatni tekshirish</button>
       <div id="trackResult"></div>
     </div>
+
+    <button type="button" class="how-it-works-trigger reveal" id="btnHowItWorks">
+      <span class="hiw-q" aria-hidden="true">?</span>
+      <span data-i18n="order.howTitle">Qanday ishlaydi?</span>
+    </button>
   </div>
 </section>
 
@@ -1776,6 +1792,9 @@
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheetPanel">
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
+      <button type="button" class="sheet-back" id="sheetBackBtn" aria-label="Orqaga" data-i18n-aria="common.back" hidden>
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+      </button>
       <h3 class="sheet-title" id="sheetTitle"></h3>
       <button type="button" class="sheet-close" id="sheetCloseBtn" aria-label="Yopish">
         <svg class="ic-svg" aria-hidden="true"><use href="#iconClose"/></svg>
@@ -1802,7 +1821,8 @@
      ============================================================ */
   var STRINGS = {
     uz: {
-      "nav.home": "Bosh sahifa", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
+      "nav.home": "Asosiy", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
+      "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -1885,7 +1905,8 @@
       "profile.signedOutTitle": "Chiqdingiz", "profile.signedOutTelegramNote": "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.",
       "profile.shareAria": "Profilni ulashish", "profile.menuAria": "Sozlamalar",
       "profile.shareText": "Mening YO'LDA profilim", "profile.shareTextNoUsername": "Men YO'LDA'da — yuk va haydovchilarni osongina topish mumkin!",
-      "profile.shareCopied": "Nusxalandi",
+      "profile.shareCopied": "Nusxalandi", "profile.changePhotoAria": "Rasmni o'zgartirish",
+      "profile.avatarTooLarge": "Rasm hajmi katta, boshqasini tanlang",
 
       "drivers.eyebrow": "Haydovchilar", "drivers.titleA": "Yuk", "drivers.titleB": "toping",
       "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
@@ -1919,6 +1940,7 @@
       "contact.supportNameLabel": "Ismingiz", "contact.supportContactLabel": "Telefon yoki Telegram (ixtiyoriy)",
       "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
 
+      "common.back": "Orqaga",
       "settings.title": "Sozlamalar", "settings.lang": "Til", "settings.theme": "Ko'rinish",
       "settings.light": "Kunduzgi", "settings.dark": "Tungi", "settings.auto": "Tizim",
       "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
@@ -1988,6 +2010,7 @@
     },
     ru: {
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
+      "nav.telegramGroupAria": "Группа водителей (Telegram)",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2070,7 +2093,8 @@
       "profile.signedOutTitle": "Вы вышли", "profile.signedOutTelegramNote": "При повторном открытии в Telegram вход произойдёт автоматически.",
       "profile.shareAria": "Поделиться профилем", "profile.menuAria": "Настройки",
       "profile.shareText": "Мой профиль на YO'LDA", "profile.shareTextNoUsername": "Я на YO'LDA — легко находить грузы и водителей!",
-      "profile.shareCopied": "Скопировано",
+      "profile.shareCopied": "Скопировано", "profile.changePhotoAria": "Изменить фото",
+      "profile.avatarTooLarge": "Изображение слишком большое, выберите другое",
 
       "drivers.eyebrow": "Водители", "drivers.titleA": "Найдите", "drivers.titleB": "груз",
       "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
@@ -2104,6 +2128,7 @@
       "contact.supportNameLabel": "Ваше имя", "contact.supportContactLabel": "Телефон или Telegram (необязательно)",
       "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
 
+      "common.back": "Назад",
       "settings.title": "Настройки", "settings.lang": "Язык", "settings.theme": "Оформление",
       "settings.light": "Дневной", "settings.dark": "Ночной", "settings.auto": "Системный",
       "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
@@ -2173,6 +2198,7 @@
     },
     en: {
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
+      "nav.telegramGroupAria": "Drivers group (Telegram)",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2255,7 +2281,8 @@
       "profile.signedOutTitle": "Signed out", "profile.signedOutTelegramNote": "Opening this again inside Telegram will sign you back in automatically.",
       "profile.shareAria": "Share profile", "profile.menuAria": "Settings",
       "profile.shareText": "My profile on YO'LDA", "profile.shareTextNoUsername": "I'm on YO'LDA — easy to find loads and drivers!",
-      "profile.shareCopied": "Copied",
+      "profile.shareCopied": "Copied", "profile.changePhotoAria": "Change photo",
+      "profile.avatarTooLarge": "Image is too large, pick a smaller one",
 
       "drivers.eyebrow": "Drivers", "drivers.titleA": "Find", "drivers.titleB": "cargo",
       "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
@@ -2289,6 +2316,7 @@
       "contact.supportNameLabel": "Your name", "contact.supportContactLabel": "Phone or Telegram (optional)",
       "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
 
+      "common.back": "Back",
       "settings.title": "Settings", "settings.lang": "Language", "settings.theme": "Appearance",
       "settings.light": "Light", "settings.dark": "Dark", "settings.auto": "System",
       "settings.support": "Help", "settings.privacy": "Privacy policy",
@@ -2468,10 +2496,6 @@
       var choice = b.getAttribute("data-theme-choice");
       b.classList.toggle("active", choice === "auto" ? isAuto : (!isAuto && choice === theme));
     });
-    // The full toggle lives in Sozlamalar (Profil → Yordam), but that's a
-    // couple of taps away — this one in the top bar is always reachable.
-    var quick = document.getElementById("btnQuickTheme");
-    if(quick) quick.textContent = theme === "dark" ? "🌙" : "☀️";
   }
 
   function setTheme(theme){
@@ -2545,9 +2569,10 @@
   /* ---------- Sheet: shared bottom-sheet / popover dialog shell ---------- */
   var Sheet = (function(){
     var root = null, panel = null, titleEl = null, bodyEl = null, footerEl = null;
+    var backBtn = null, closeBtn = null;
     var lastFocused = null;
     var dragStartY = null, dragCurrentY = null, dragging = false;
-    var currentOnClose = null;
+    var currentOnClose = null, currentOnBack = null;
 
     function els(){
       if(!root) root = document.getElementById("sheetRoot");
@@ -2555,6 +2580,8 @@
       if(!titleEl) titleEl = document.getElementById("sheetTitle");
       if(!bodyEl) bodyEl = document.getElementById("sheetBody");
       if(!footerEl) footerEl = document.getElementById("sheetFooter");
+      if(!backBtn) backBtn = document.getElementById("sheetBackBtn");
+      if(!closeBtn) closeBtn = document.getElementById("sheetCloseBtn");
     }
 
     function focusableEls(){
@@ -2621,6 +2648,13 @@
         el.addEventListener("touchend", onDragEnd);
       });
       currentOnClose = typeof opts.onClose === "function" ? opts.onClose : null;
+      // A page can offer "go back one panel" instead of "close entirely" —
+      // e.g. a Settings sub-page returning to the Settings list. Only one
+      // of the two buttons ever shows: back replaces close, it doesn't add
+      // to it, since the sheet still only has a single visible header action.
+      currentOnBack = typeof opts.onBack === "function" ? opts.onBack : null;
+      if(backBtn) backBtn.hidden = !currentOnBack;
+      if(closeBtn) closeBtn.hidden = Boolean(currentOnBack);
       applyLang();
       if(typeof opts.onOpen === "function") opts.onOpen(bodyEl);
       setTimeout(function(){
@@ -2637,6 +2671,7 @@
       // filter sheet reusing the existing filter <select>s — gets a chance
       // to move them back out before bodyEl.innerHTML is cleared below.
       if(currentOnClose){ currentOnClose(bodyEl); currentOnClose = null; }
+      currentOnBack = null;
       root.classList.remove("open");
       document.removeEventListener("keydown", onKeydown, true);
       document.body.style.overflow = "";
@@ -2649,7 +2684,16 @@
       if(toRestore && typeof toRestore.focus === "function") toRestore.focus();
     }
 
-    return { open: open, close: close };
+    // The header's back arrow: go up one panel (whatever the opener said
+    // that means — usually re-opening a parent sheet) instead of dismissing
+    // the whole sheet. Falls back to a normal close if nothing was wired,
+    // so calling this is always safe even when back mode isn't active.
+    function back(){
+      if(currentOnBack) currentOnBack();
+      else close();
+    }
+
+    return { open: open, close: close, back: back };
   })();
 
   /* ---------- LanguageSelector ---------- */
@@ -2840,13 +2884,14 @@
     verify: function(){ return { titleKey: "verify.pageTitle", html: renderVerifyPage(), onOpen: bindVerifyPage }; }
   };
 
-  function openSettingsPage(name){
+  function openSettingsPage(name, onBack){
     var factory = SETTINGS_PAGES[name];
     if(!factory) return;
     var page = factory();
     Sheet.open({
       title: t(page.titleKey) || "",
       html: page.html,
+      onBack: onBack || null,
       onOpen: function(container){
         if(page.onOpen) page.onOpen(container);
         applyLang();
@@ -2928,7 +2973,7 @@
         toast(t("verify.pendingTitle") || "So'rovingiz qabul qilindi", "", "success");
         // Re-render this same sheet in its new (pending) state rather than
         // closing it — the person should immediately see their request landed.
-        openSettingsPage("verify");
+        openSettingsPage("verify", openAccountSettingsSheet);
       }).catch(function(){
         btn.disabled = false;
         if(note){ note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko'ring."; note.style.color = "#DC2626"; }
@@ -2983,6 +3028,10 @@
     Sheet.open({
       title: t("settings.title") || "Sozlamalar",
       html: renderAccountSettingsPage(),
+      // No X here either — a back arrow that just closes the sheet (there's
+      // nowhere "further back" to go than Profile), so the whole Settings
+      // flow reads consistently as "back", never "X out of it".
+      onBack: function(){ Sheet.close(); },
       onOpen: function(container){
         applyLang();
         var signOutBtn = container.querySelector("#btnSignOut");
@@ -3428,10 +3477,41 @@
     if(telegramUser) return [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ") || telegramUser.username || "";
     return "";
   }
-  function profileAvatarUrl(){
+  function profileAvatarUrl(p){
+    // A photo picked in the Edit sheet (stored inline as a small data: URL —
+    // see fileToAvatarDataUrl) always wins over whatever Google/Telegram
+    // reported, same priority displayName already gives a custom name.
+    if(p && p.avatarUrl) return p.avatarUrl;
     if(googleProfile && googleProfile.picture) return googleProfile.picture;
     if(telegramUser && telegramUser.photoUrl) return telegramUser.photoUrl;
     return "";
+  }
+
+  /**
+   * Resizes/center-crops a picked image file down to a small square JPEG
+   * data: URL. This app has no blob/file storage, so the avatar is just
+   * stored as a string field inline in the profile JSON like everything
+   * else — keeping it small (a few dozen KB) is what makes that workable.
+   */
+  function fileToAvatarDataUrl(file, callback){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var size = 256;
+        var canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        var side = Math.min(img.naturalWidth, img.naturalHeight);
+        var sx = (img.naturalWidth - side) / 2, sy = (img.naturalHeight - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        callback(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = function(){ callback(null); };
+      img.src = reader.result;
+    };
+    reader.onerror = function(){ callback(null); };
+    reader.readAsDataURL(file);
   }
 
   function infoRow(labelKey, labelFallback, value, emptyKey, emptyFallback){
@@ -3442,7 +3522,7 @@
 
   function renderProfileHeader(p){
     var name = profileDisplayName(p) || "Foydalanuvchi";
-    var avatarUrl = profileAvatarUrl();
+    var avatarUrl = profileAvatarUrl(p);
     var initial = escapeHtml((name || "?").charAt(0).toUpperCase());
 
     return '<div class="profile-header">'
@@ -3456,11 +3536,10 @@
             ? '<img class="profile-avatar" src="'+escapeHtml(avatarUrl)+'" alt="" referrerpolicy="no-referrer">'
             : '<div class="profile-avatar-fallback">'+initial+'</div>')
       + '</div>'
-      + '<h2 class="profile-name">'+escapeHtml(name)+'</h2>'
+      + '<h2 class="profile-name">'+(p.verified ? verifyBadgeSvg("profile-name-badge")+' ' : '')+escapeHtml(name)+'</h2>'
       + (p.username
           ? '<div class="profile-username">@'+escapeHtml(p.username)+'</div>'
           : '<div class="profile-username muted" data-i18n="profile.noUsername">Username tanlanmagan</div>')
-      + (p.verified ? '<div class="profile-verified-badge">'+verifyBadgeSvg("")+' <span data-i18n="profile.verifiedBadge">Tasdiqlangan profil</span></div>' : '')
       + (p.role ? '<div class="profile-role-chip">'+escapeHtml(ROLE_LABELS[p.role] || p.role)+'</div>' : '')
       + '</div>';
   }
@@ -3584,7 +3663,17 @@
      editable — grouped into the same sections the read-only cards above
      summarize, with a sticky Saqlash in the sheet's footer. ---------- */
   function openProfileEditSheet(p){
+    var avatarUrl = profileAvatarUrl(p);
+    var initial = escapeHtml((profileDisplayName(p) || "?").charAt(0).toUpperCase());
     var html = ''
+      + '<div class="avatar-edit-wrap">'
+      +   '<div class="avatar-edit-preview" id="avatarEditPreview">'
+      +     (avatarUrl ? '<img src="'+escapeHtml(avatarUrl)+'" alt="">' : '<span>'+initial+'</span>')
+      +   '</div>'
+      +   '<button type="button" class="avatar-edit-btn" id="btnChangeAvatar" aria-label="Rasmni o\'zgartirish" data-i18n-aria="profile.changePhotoAria">'+icon("iconEdit")+'</button>'
+      +   '<input type="file" accept="image/*" id="fAvatarFile" hidden>'
+      +   '<input type="hidden" id="fAvatarDataUrl" value="">'
+      + '</div>'
       + '<div class="edit-section-heading" data-i18n="profile.editMainGroup">Asosiy ma\'lumotlar</div>'
       + '<div class="field"><label for="fDisplayName" data-i18n="order.nameLabel">Ism</label>'
       +   '<input type="text" id="fDisplayName" maxlength="60" placeholder="Ismingiz" value="'+escapeHtml(p.displayName || "")+'" data-autofocus></div>'
@@ -3633,6 +3722,21 @@
         applyLang();
         var saveBtn = document.getElementById("btnSaveProfile");
         if(saveBtn) saveBtn.addEventListener("click", function(){ saveProfileFromEditSheet(saveBtn); });
+
+        var avatarBtn = document.getElementById("btnChangeAvatar");
+        var avatarFile = document.getElementById("fAvatarFile");
+        var avatarPreview = document.getElementById("avatarEditPreview");
+        var avatarDataUrlInput = document.getElementById("fAvatarDataUrl");
+        if(avatarBtn && avatarFile) avatarBtn.addEventListener("click", function(){ avatarFile.click(); });
+        if(avatarFile) avatarFile.addEventListener("change", function(){
+          var file = avatarFile.files && avatarFile.files[0];
+          if(!file) return;
+          fileToAvatarDataUrl(file, function(dataUrl){
+            if(!dataUrl) return;
+            if(avatarDataUrlInput) avatarDataUrlInput.value = dataUrl;
+            if(avatarPreview) avatarPreview.innerHTML = '<img src="'+dataUrl+'" alt="">';
+          });
+        });
       }
     });
   }
@@ -3651,7 +3755,8 @@
       telegramUsername: get("fTelegramUsername").trim().replace(/^@/, ""),
       vehicleType: get("fVehicleType"),
       plateNumber: get("fPlateNumber").trim(),
-      bio: get("fBio").trim()
+      bio: get("fBio").trim(),
+      avatarDataUrl: get("fAvatarDataUrl")
     };
 
     btn.disabled = true;
@@ -4927,11 +5032,10 @@
       + '<h3 class="card-title">'+icon("iconInfo")+' <span data-i18n="wizard.priceTitle">Narx va aloqa</span></h3>'
       + '<div class="stub-route">'
       +   '<span class="stub-city">'+escapeHtml(state.from)+'</span>'
-      +   '<span class="stub-mid">'+icon("iconRoute")+' '+formatNum(distance)+' km</span>'
+      +   '<span class="stub-mid">'+icon("iconRoute")+'</span>'
       +   '<span class="stub-city">'+escapeHtml(state.to)+'</span>'
       + '</div>'
       + '<div class="stub-stats">'
-      +   '<div class="stat"><div class="v">'+formatNum(distance)+' km</div><div class="k" data-i18n="wizard.distance">Masofa</div></div>'
       +   '<div class="stat"><div class="v">'+formatNum(state.weight)+' kg</div><div class="k" data-i18n="order.weightLabel">Og\'irlik</div></div>'
       +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+(state.cargo==="OTHER" && state.customCargoLabel ? escapeHtml(state.customCargoLabel) : cargo.label)+'</div><div class="k" data-i18n="order.cargoTypeLabel">Yuk turi</div></div>'
       + '</div>'
@@ -5250,35 +5354,6 @@
     }
   }
 
-  /* ============================================================
-     Hero live widget
-     ============================================================ */
-  var LIVE_SAMPLES = [
-    {from:"Toshkent", to:"Samarqand", weight:320,  cargo:"GENERAL"},
-    {from:"Buxoro",   to:"Nukus",     weight:800,  cargo:"PERISHABLE"},
-    {from:"Andijon",  to:"Namangan",  weight:150,  cargo:"FRAGILE"},
-    {from:"Qarshi",   to:"Urganch",   weight:1200, cargo:"HEAVY"},
-    {from:"Samarqand",to:"Toshkent",  weight:500,  cargo:"GENERAL"},
-    {from:"Toshkent", to:"Qarshi",    weight:650,  cargo:"PERISHABLE"}
-  ];
-  var liveIdx = 0;
-  function renderLiveWidget(){
-    var body = document.getElementById("liveWidgetBody");
-    if(!body) return;
-    var s = LIVE_SAMPLES[liveIdx % LIVE_SAMPLES.length];
-    var dist = distanceBetween(s.from, s.to);
-    var cargo = cargoById(s.cargo);
-    var price = calcPrice(dist, s.weight, cargo.mult);
-    // Swap content directly — no opacity fade. A background/foreground tab
-    // switch can let several delayed timeouts fire in a burst, and with the
-    // old fade-through approach that briefly painted two samples on top of
-    // each other (the "text over text" glitch). A plain swap can't do that.
-    body.innerHTML = '<div class="hero-widget-route"><span>'+s.from+'</span>'
-      + '<span class="arrow">→</span><span>'+s.to+'</span></div>'
-      + '<div class="hero-widget-meta"><span>'+icon(cargo.icon)+' '+formatNum(s.weight)+' kg · '
-      + formatNum(dist)+' km</span><span class="hero-widget-price">'+formatNum(price)+' so\'m</span></div>';
-    liveIdx++;
-  }
 
   /* ============================================================
      Page chrome
@@ -5346,11 +5421,18 @@
   if(btnSendReport) btnSendReport.addEventListener("click", submitReport);
   var btnTrack = document.getElementById("btnTrack");
   if(btnTrack) btnTrack.addEventListener("click", function(){ submitTrack(); });
-
-  var btnQuickTheme = document.getElementById("btnQuickTheme");
-  if(btnQuickTheme) btnQuickTheme.addEventListener("click", function(){
-    var cur = document.documentElement.getAttribute("data-theme") || "light";
-    setTheme(cur === "dark" ? "light" : "dark");
+  var btnHowItWorks = document.getElementById("btnHowItWorks");
+  if(btnHowItWorks) btnHowItWorks.addEventListener("click", function(){
+    Sheet.open({
+      title: t("order.howTitle") || "Qanday ishlaydi?",
+      html: '<ol class="how-steps">'
+        + '<li data-i18n="order.how1">Formani to\'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>'
+        + '<li data-i18n="order.how2">Birinchi bo\'lib <strong>"✅ Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>'
+        + '<li data-i18n="order.how3">Haydovchi sizga qo\'ng\'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>'
+        + '<li data-i18n="order.how4">Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo\'limidan yozing.</li>'
+        + '</ol>',
+      onOpen: function(){ applyLang(); }
+    });
   });
 
   // Lang/theme buttons and Settings rows are (re)rendered on demand inside
@@ -5359,11 +5441,23 @@
   // delegation above.
   document.addEventListener("click", function(e){
     var settingsRow = e.target.closest("[data-settings-page]");
-    if(settingsRow){ openSettingsPage(settingsRow.getAttribute("data-settings-page")); return; }
+    if(settingsRow){
+      // Clicked while a sheet is already open (i.e. from inside
+      // openAccountSettingsSheet) → the sub-page gets a back arrow that
+      // returns to that same Settings list, instead of just closing.
+      // Clicked from a plain tab (Contact tab's own settings rows, no
+      // sheet open yet) → closing already lands back on that tab, so no
+      // back arrow is needed there.
+      var sheetRootEl = document.getElementById("sheetRoot");
+      var cameFromSheet = sheetRootEl && !sheetRootEl.hidden;
+      openSettingsPage(settingsRow.getAttribute("data-settings-page"), cameFromSheet ? openAccountSettingsSheet : null);
+      return;
+    }
     var langBtn = e.target.closest(".lang-btn");
     if(langBtn){ setLang(langBtn.getAttribute("data-lang")); return; }
     var themeBtn = e.target.closest(".theme-btn");
     if(themeBtn){ setTheme(themeBtn.getAttribute("data-theme-choice")); return; }
+    if(e.target.closest("#sheetBackBtn")){ Sheet.back(); return; }
     if(e.target.closest("#sheetCloseBtn") || e.target.id === "sheetBackdrop") Sheet.close();
   });
 
@@ -5389,8 +5483,6 @@
   });
 
   render();
-  renderLiveWidget();
-  setInterval(renderLiveWidget, 3400);
   // Telegram first: it's synchronous (no network round trip) and sets
   // isTelegramWebApp, which initGoogleSignIn() reads to decide whether to
   // show the "open in Safari/Chrome" in-app-browser hint.
@@ -5404,9 +5496,13 @@
   var nav = document.querySelector(".nav");
   var progress = document.getElementById("scrollProgress");
   var trucks = Array.prototype.slice.call(document.querySelectorAll(".bg-truck"));
-  var truckBase = trucks.map(function(el){
-    return getComputedStyle(el).transform === "none" ? "" : getComputedStyle(el).transform;
-  });
+  // Each truck's CSS-authored transform (e.g. .bg-truck--app's centering
+  // translateX(-50%)), captured lazily on its first real (visible) scroll
+  // update rather than eagerly here — most of these live inside a `hidden`
+  // tab at page load, and getComputedStyle() resolves a hidden element's
+  // percentage-based transform to "none", which would permanently lose
+  // that translateX the moment its tab becomes visible.
+  var truckBase = trucks.map(function(){ return null; });
   var scrollTicking = false;
 
   function onScrollFrame(){
@@ -5424,6 +5520,11 @@
       trucks.forEach(function(el, i){
         var rect = el.getBoundingClientRect();
         if(rect.bottom < -200 || rect.top > window.innerHeight + 200) return;
+        if((rect.width === 0 && rect.height === 0) || el.offsetParent === null) return; // still hidden (its tab isn't active)
+        if(truckBase[i] === null){
+          var computed = getComputedStyle(el).transform;
+          truckBase[i] = computed === "none" ? "" : computed;
+        }
         var offset = (rect.top + rect.height / 2 - window.innerHeight / 2) * -0.06;
         el.style.transform = truckBase[i] + " translateY(" + offset.toFixed(1) + "px)";
       });
