@@ -2,6 +2,19 @@
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Applied synchronously, before the stylesheet paints, so a returning
+  // dark-mode visitor never sees a flash of the light theme first.
+  (function(){
+    try{
+      var theme = localStorage.getItem("yolda_theme");
+      if(!theme){
+        theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){}
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YO'LDA — Yuk tashish bozori</title>
 <meta name="description" content="Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi O'zbekiston yuk tashish bozori. Narxni hisoblang, buyurtma joylashtiring.">
@@ -23,6 +36,7 @@
     --stamp-dark:#0891B2;
     --accepted:#22C55E;
     --border:#E2E8F0;
+    --skeleton-mid:#F8FAFC;
 
     /* spacing scale (8pt grid) */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
@@ -43,6 +57,27 @@
     --glass-brd:rgba(255,255,255,0.6);
 
     --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  /* Tungi rejim — a real toggle (see #btnThemeToggle), not prefers-color-scheme,
+     though that's what picks the default the first time (see the bootstrap
+     script in <head>). Every color elsewhere in this file is one of the
+     tokens above, so overriding them here is enough to re-skin the whole app. */
+  :root[data-theme="dark"]{
+    --paper:#0B1220;
+    --paper-dark:#111B31;
+    --card:#141F3B;
+    --ink:#E7ECF7;
+    --ink-soft:#A9B4CC;
+    --muted:#7C88A6;
+    --route:#4F8CFF;
+    --route-dark:#3D6FE0;
+    --stamp:#22D3EE;
+    --stamp-dark:#0891B2;
+    --accepted:#34D399;
+    --border:rgba(255,255,255,0.09);
+    --skeleton-mid:#1C2847;
+    --glass:rgba(20,31,59,0.72);
+    --glass-brd:rgba(255,255,255,0.12);
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
@@ -439,6 +474,21 @@
     background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;
     color:var(--route);text-decoration:underline;cursor:pointer;
   }
+  .lang-switch,.theme-switch{display:flex;gap:8px;flex-wrap:wrap;}
+  .lang-btn,.theme-btn{
+    flex:1;min-width:88px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
+    background:var(--card);color:var(--ink-soft);font-size:13.5px;font-weight:600;cursor:pointer;
+    transition:border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .lang-btn.active,.theme-btn.active{
+    border-color:var(--route);color:var(--route);background:rgba(29,78,216,0.08);
+  }
+  #privacyPolicyBox{
+    margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--border);
+    font-size:13.5px;color:var(--ink-soft);line-height:1.7;max-height:340px;overflow-y:auto;
+  }
+  #privacyPolicyBox h4{font-size:14px;color:var(--ink);margin:var(--s4) 0 var(--s2);}
+  #privacyPolicyBox h4:first-child{margin-top:0;}
   .faq-item{
     border-bottom:1px solid var(--border);padding:var(--s3) 0;
   }
@@ -516,7 +566,7 @@
   }
   select,input[type=number],input[type=text]{
     width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--border);
-    border-radius:var(--r-sm);background:#fff;color:var(--ink);
+    border-radius:var(--r-sm);background:var(--card);color:var(--ink);
     font-family:'Inter',sans-serif;font-size:15px;
     box-shadow:var(--sh-1);
     transition:border-color 0.22s var(--ease), box-shadow 0.22s var(--ease);
@@ -528,7 +578,7 @@
   .cargo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);}
   .cargo-opt{
     border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--s3);cursor:pointer;
-    background:#fff;text-align:left;min-height:76px;
+    background:var(--card);text-align:left;min-height:76px;
     box-shadow:var(--sh-1);
     transition:transform 0.24s var(--ease), box-shadow 0.24s var(--ease), border-color 0.24s var(--ease), background 0.24s var(--ease);
   }
@@ -589,7 +639,7 @@
   .btn:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;transform:none;}
   .btn:disabled:hover{transform:none;box-shadow:none;}
   .btn.ghost{
-    background:#fff;color:var(--route-dark);border:1px solid var(--border);
+    background:var(--card);color:var(--route-dark);border:1px solid var(--border);
     box-shadow:var(--sh-1);
   }
   .btn.ghost:hover{background:rgba(29,78,216,0.05);border-color:var(--route);transform:translateY(-3px);box-shadow:var(--sh-3);}
@@ -655,7 +705,7 @@
 
   /* ---------- SKELETON LOADERS ---------- */
   .skeleton{
-    background:linear-gradient(90deg, var(--paper-dark) 25%, #F8FAFC 37%, var(--paper-dark) 63%);
+    background:linear-gradient(90deg, var(--paper-dark) 25%, var(--skeleton-mid) 37%, var(--paper-dark) 63%);
     background-size:400% 100%;
     animation:shimmer 1.4s ease-in-out infinite;
     border-radius:6px;
@@ -822,24 +872,24 @@
 <section class="tabview" id="tab-home" data-tab="home">
   <header class="hero-wrap">
     <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
-    <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> Yuk bozori · O'zbekiston</p>
+    <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.eyebrow">Yuk bozori · O'zbekiston</span></p>
     <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
     <h1 class="brand hero-seq">YO'LDA</h1>
-    <p class="tagline hero-seq">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
+    <p class="tagline hero-seq" data-i18n="home.tagline">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
     <div class="hero-ctas hero-seq">
-      <a class="btn-primary" href="#" data-tab-link="order">Yuk berish <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
-      <a class="btn-secondary" href="#" data-tab-link="drivers">Yuk olish <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg></a>
+      <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk berish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
+      <a class="btn-secondary" href="#" data-tab-link="drivers"><span data-i18n="home.ctaGet">Yuk olish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg></a>
     </div>
     <div class="hero-widget hero-seq" id="liveWidget">
-      <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> Jonli faoliyat</p>
+      <p class="hero-widget-head"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.liveLabel">Jonli faoliyat</span></p>
       <div class="hero-widget-body" id="liveWidgetBody"></div>
     </div>
   </header>
 
   <div class="stats-bar">
-    <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k">Shahar</div><div class="kk">Butun O'zbekiston bo'ylab</div></div>
-    <div class="stat-cell reveal"><div class="v">24/7</div><div class="k">Ish vaqti</div><div class="kk">Istalgan vaqtda buyurtma bering</div></div>
-    <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k">Ro'yxatdan o'tish narxi</div><div class="kk">Komissiya ham yo'q</div></div>
+    <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k" data-i18n="home.stat1k">Shahar</div><div class="kk" data-i18n="home.stat1kk">Butun O'zbekiston bo'ylab</div></div>
+    <div class="stat-cell reveal"><div class="v">24/7</div><div class="k" data-i18n="home.stat2k">Ish vaqti</div><div class="kk" data-i18n="home.stat2kk">Istalgan vaqtda buyurtma bering</div></div>
+    <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k" data-i18n="home.stat3k">Ro'yxatdan o'tish narxi</div><div class="kk" data-i18n="home.stat3kk">Komissiya ham yo'q</div></div>
   </div>
 </section>
 
@@ -847,18 +897,18 @@
   <div class="app-shell">
     <svg class="bg-truck bg-truck--app" aria-hidden="true"><use href="#truckIcon"/></svg>
     <div class="section-head reveal" style="margin-bottom:var(--s5);">
-      <div class="section-eyebrow">Buyurtma</div>
-      <h2 class="section-title">Hisoblang va <span class="accent">yuboring</span></h2>
-      <p class="section-sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
+      <div class="section-eyebrow" data-i18n="order.eyebrow">Buyurtma</div>
+      <h2 class="section-title"><span data-i18n="order.titleA">Hisoblang va</span> <span class="accent" data-i18n="order.titleB">yuboring</span></h2>
+      <p class="section-sub" data-i18n="order.sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
     </div>
 
     <div class="card reveal" style="margin-bottom:var(--s4);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> Qanday ishlaydi?</h3>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> <span data-i18n="order.howTitle">Qanday ishlaydi?</span></h3>
       <ol class="how-steps">
-        <li>Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>
-        <li>Birinchi bo'lib <strong>"✅ Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>
-        <li>Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>
-        <li>Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo'limidan yozing.</li>
+        <li data-i18n="order.how1">Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>
+        <li data-i18n="order.how2">Birinchi bo'lib <strong>"✅ Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>
+        <li data-i18n="order.how3">Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>
+        <li data-i18n="order.how4">Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo'limidan yozing.</li>
       </ol>
     </div>
 
@@ -870,16 +920,16 @@
     <div id="content" aria-live="polite"></div>
 
     <div class="card reveal" style="margin-top:var(--s4);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg> Buyurtmani kuzatish</h3>
-      <p class="note" style="margin-top:0;margin-bottom:var(--s4);">Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.</p>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg> <span data-i18n="order.trackTitle">Buyurtmani kuzatish</span></h3>
+      <p class="note" style="margin-top:0;margin-bottom:var(--s4);" data-i18n="order.trackNote">Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.</p>
       <div class="row2">
-        <div class="field"><label for="fTrackCode">Buyurtma kodi</label>
+        <div class="field"><label for="fTrackCode" data-i18n="order.trackCodeLabel">Buyurtma kodi</label>
           <input type="text" id="fTrackCode" placeholder="YL-XXXXX"></div>
-        <div class="field"><label for="fTrackPhone">Telefon</label>
+        <div class="field"><label for="fTrackPhone" data-i18n="order.trackPhoneLabel">Telefon</label>
           <input type="tel" id="fTrackPhone" placeholder="90 123 45 67"></div>
       </div>
       <p class="note" id="trackNote"></p>
-      <button class="btn ghost" id="btnTrack">Holatni tekshirish</button>
+      <button class="btn ghost" id="btnTrack" data-i18n="order.trackBtn">Holatni tekshirish</button>
       <div id="trackResult"></div>
     </div>
   </div>
@@ -888,9 +938,9 @@
 <section class="tabview" id="tab-profile" data-tab="profile" hidden>
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:440px;">
     <div class="section-head reveal">
-      <div class="section-eyebrow">Profil</div>
-      <h2 class="section-title">Sizning <span class="accent alt">profilingiz</span></h2>
-      <p class="section-sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
+      <div class="section-eyebrow" data-i18n="profile.eyebrow">Profil</div>
+      <h2 class="section-title"><span data-i18n="profile.titleA">Sizning</span> <span class="accent alt" data-i18n="profile.titleB">profilingiz</span></h2>
+      <p class="section-sub" data-i18n="profile.sub">Google hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
     </div>
     <div class="card reveal" id="profileCard"></div>
     <div class="card reveal" id="chatCard" style="margin-top:var(--s4);" hidden></div>
@@ -900,9 +950,9 @@
 <section class="tabview" id="tab-drivers" data-tab="drivers" hidden>
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:600px;">
     <div class="section-head reveal">
-      <div class="section-eyebrow">Haydovchilar</div>
-      <h2 class="section-title">Yuk <span class="accent">toping</span></h2>
-      <p class="section-sub">Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.</p>
+      <div class="section-eyebrow" data-i18n="drivers.eyebrow">Haydovchilar</div>
+      <h2 class="section-title"><span data-i18n="drivers.titleA">Yuk</span> <span class="accent" data-i18n="drivers.titleB">toping</span></h2>
+      <p class="section-sub" data-i18n="drivers.sub">Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.</p>
     </div>
     <div class="card driver-invite">
       <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> Haydovchilar guruhi</h3>
@@ -916,7 +966,7 @@
 <section class="tabview" id="tab-contact" data-tab="contact" hidden>
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);text-align:center;max-width:600px;">
     <div class="foot-brand" style="justify-content:center;"><svg class="mark" aria-hidden="true"><use href="#logoMark"/></svg>YO'LDA<span aria-hidden="true">.</span></div>
-    <p class="section-sub reveal" style="margin:var(--s3) auto var(--s6);">Savol yoki yordam kerakmi? Biz bilan bog'laning.</p>
+    <p class="section-sub reveal" style="margin:var(--s3) auto var(--s6);" data-i18n="contact.sub">Savol yoki yordam kerakmi? Biz bilan bog'laning.</p>
 
     <div class="card reveal" style="margin:0 auto var(--s4);text-align:left;">
       <a class="btn ghost" href="tel:+998944402090" style="justify-content:flex-start;gap:12px;">
@@ -930,65 +980,88 @@
     </div>
 
     <div class="card reveal" style="text-align:left;margin-bottom:var(--s4);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> Ko'p so'raladigan savollar</h3>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> <span data-i18n="contact.faqTitle">Ko'p so'raladigan savollar</span></h3>
       <details class="faq-item">
-        <summary>Xizmat pullikmi?</summary>
-        <p>Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.</p>
+        <summary data-i18n="contact.faq1q">Xizmat pullikmi?</summary>
+        <p data-i18n="contact.faq1a">Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.</p>
       </details>
       <details class="faq-item">
-        <summary>Buyurtmam qanday tasdiqlanadi?</summary>
-        <p>Guruhda birinchi bo'lib <strong>«✅ Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.</p>
+        <summary data-i18n="contact.faq2q">Buyurtmam qanday tasdiqlanadi?</summary>
+        <p data-i18n="contact.faq2a">Guruhda birinchi bo'lib <strong>«✅ Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.</p>
       </details>
       <details class="faq-item">
-        <summary>Narx qanday kelishiladi?</summary>
-        <p>Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.</p>
+        <summary data-i18n="contact.faq3q">Narx qanday kelishiladi?</summary>
+        <p data-i18n="contact.faq3a">Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.</p>
       </details>
       <details class="faq-item">
-        <summary>Haydovchi kelmasa yoki javob bermasa nima qilaman?</summary>
-        <p>Saytga qaytib, yangi buyurtma joylashtiring — u yana barcha haydovchilarga ko'rinadi. Takrorlanadigan bo'lsa, pastdagi forma orqali bizga xabar bering.</p>
+        <summary data-i18n="contact.faq4q">Haydovchi kelmasa yoki javob bermasa nima qilaman?</summary>
+        <p data-i18n="contact.faq4a">Saytga qaytib, yangi buyurtma joylashtiring — u yana barcha haydovchilarga ko'rinadi. Takrorlanadigan bo'lsa, pastdagi forma orqali bizga xabar bering.</p>
       </details>
       <details class="faq-item">
-        <summary>Buyurtmani bekor qila olamanmi?</summary>
-        <p>Ha. Agar hali hech kim olmagan bo'lsa, guruhda yozib qo'ying yoki pastdagi forma orqali bizga ayting — biz yordam beramiz.</p>
+        <summary data-i18n="contact.faq5q">Buyurtmani bekor qila olamanmi?</summary>
+        <p data-i18n="contact.faq5a">Ha. Agar hali hech kim olmagan bo'lsa, guruhda yozib qo'ying yoki pastdagi forma orqali bizga ayting — biz yordam beramiz.</p>
       </details>
       <details class="faq-item">
-        <summary>Telefon raqamim kimga ko'rinadi?</summary>
-        <p>Faqat yukingizni «olgan» haydovchiga — u ham buyurtmani qabul qilgandan keyingina. Boshqa hech kimga oshkor qilinmaydi.</p>
+        <summary data-i18n="contact.faq6q">Telefon raqamim kimga ko'rinadi?</summary>
+        <p data-i18n="contact.faq6a">Faqat yukingizni «olgan» haydovchiga — u ham buyurtmani qabul qilgandan keyingina. Boshqa hech kimga oshkor qilinmaydi.</p>
       </details>
     </div>
 
     <div class="card reveal" style="text-align:left;margin-bottom:var(--s4);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Shikoyat qilish</h3>
-      <p class="note" style="margin-top:0;margin-bottom:var(--s4);">Firibgarlik, soxta e'lon, soxta haydovchi yoki boshqa jiddiy muammoga duch kelsangiz — shu yerdan xabar bering, biz tekshiramiz.</p>
-      <div class="field"><label for="fReportReason">Sabab</label>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> <span data-i18n="contact.reportTitle">Shikoyat qilish</span></h3>
+      <p class="note" style="margin-top:0;margin-bottom:var(--s4);" data-i18n="contact.reportDesc">Firibgarlik, soxta e'lon, soxta haydovchi yoki boshqa jiddiy muammoga duch kelsangiz — shu yerdan xabar bering, biz tekshiramiz.</p>
+      <div class="field"><label for="fReportReason" data-i18n="contact.reportReasonLabel">Sabab</label>
         <select id="fReportReason">
-          <option value="">Tanlang</option>
-          <option value="SCAM">Firibgarlik (Scam)</option>
-          <option value="FAKE_LOAD">Soxta yuk e'loni</option>
-          <option value="FAKE_DRIVER">Soxta haydovchi</option>
-          <option value="PAYMENT">To'lov muammosi</option>
-          <option value="BEHAVIOR">Yomon muomala</option>
-          <option value="DELIVERY">Yetkazib berish muammosi</option>
-          <option value="OTHER">Boshqa</option>
+          <option value="" data-i18n="contact.choose">Tanlang</option>
+          <option value="SCAM" data-i18n="contact.reasonScam">Firibgarlik (Scam)</option>
+          <option value="FAKE_LOAD" data-i18n="contact.reasonFakeLoad">Soxta yuk e'loni</option>
+          <option value="FAKE_DRIVER" data-i18n="contact.reasonFakeDriver">Soxta haydovchi</option>
+          <option value="PAYMENT" data-i18n="contact.reasonPayment">To'lov muammosi</option>
+          <option value="BEHAVIOR" data-i18n="contact.reasonBehavior">Yomon muomala</option>
+          <option value="DELIVERY" data-i18n="contact.reasonDelivery">Yetkazib berish muammosi</option>
+          <option value="OTHER" data-i18n="contact.reasonOther">Boshqa</option>
         </select></div>
-      <div class="field"><label for="fReportTarget">Kimga oid (telefon, username yoki buyurtma kodi, ixtiyoriy)</label>
+      <div class="field"><label for="fReportTarget" data-i18n="contact.reportTargetLabel">Kimga oid (telefon, username yoki buyurtma kodi, ixtiyoriy)</label>
         <input type="text" id="fReportTarget" placeholder="+998 90 123 45 67 yoki @username yoki YL-XXXXX"></div>
-      <div class="field"><label for="fReportDesc">Nima bo'lganini tasvirlab bering</label>
+      <div class="field"><label for="fReportDesc" data-i18n="contact.reportDescLabel">Nima bo'lganini tasvirlab bering</label>
         <input type="text" id="fReportDesc" maxlength="500" placeholder="Batafsil yozing"></div>
-      <p class="note" id="reportNote">Shikoyat yuborish uchun Google orqali kirgan bo'lishingiz kerak.</p>
-      <button class="btn" id="btnSendReport">Shikoyat yuborish</button>
+      <p class="note" id="reportNote" data-i18n="contact.reportNote">Shikoyat yuborish uchun Google orqali kirgan bo'lishingiz kerak.</p>
+      <button class="btn" id="btnSendReport" data-i18n="contact.reportBtn">Shikoyat yuborish</button>
     </div>
 
     <div class="card reveal" style="text-align:left;">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> Muammo bormi? Yozing</h3>
-      <div class="field"><label for="fSupportName">Ismingiz</label>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> <span data-i18n="contact.supportTitle">Muammo bormi? Yozing</span></h3>
+      <div class="field"><label for="fSupportName" data-i18n="contact.supportNameLabel">Ismingiz</label>
         <input type="text" id="fSupportName" placeholder="Ismingiz"></div>
-      <div class="field"><label for="fSupportContact">Telefon yoki Telegram (ixtiyoriy)</label>
+      <div class="field"><label for="fSupportContact" data-i18n="contact.supportContactLabel">Telefon yoki Telegram (ixtiyoriy)</label>
         <input type="text" id="fSupportContact" placeholder="90 123 45 67 yoki @username"></div>
-      <div class="field"><label for="fSupportMessage">Xabaringiz</label>
+      <div class="field"><label for="fSupportMessage" data-i18n="contact.supportMsgLabel">Xabaringiz</label>
         <input type="text" id="fSupportMessage" maxlength="500" placeholder="Nima bo'lganini yozing"></div>
       <p class="note" id="supportNote"></p>
-      <button class="btn" id="btnSendSupport">Yuborish</button>
+      <button class="btn" id="btnSendSupport" data-i18n="contact.supportBtn">Yuborish</button>
+    </div>
+
+    <div class="card reveal" id="settingsCard" style="text-align:left;margin-top:var(--s4);">
+      <h3 class="card-title">⚙️ <span data-i18n="settings.title">Sozlamalar</span></h3>
+      <div class="field"><label data-i18n="settings.lang">Til</label>
+        <div class="lang-switch">
+          <button type="button" class="lang-btn" data-lang="uz">O'zbekcha</button>
+          <button type="button" class="lang-btn" data-lang="ru">Русский</button>
+          <button type="button" class="lang-btn" data-lang="en">English</button>
+        </div>
+      </div>
+      <div class="field"><label data-i18n="settings.theme">Ko'rinish</label>
+        <div class="theme-switch">
+          <button type="button" class="theme-btn" data-theme-choice="light">☀️ <span data-i18n="settings.light">Kunduzgi</span></button>
+          <button type="button" class="theme-btn" data-theme-choice="dark">🌙 <span data-i18n="settings.dark">Tungi</span></button>
+        </div>
+      </div>
+      <p class="note" style="margin-bottom:0;">
+        <button type="button" class="link-btn" data-tab-link="contact" data-i18n="settings.support">Yordam</button>
+        &nbsp;·&nbsp;
+        <button type="button" class="link-btn" id="btnShowPrivacy" data-i18n="settings.privacy">Maxfiylik siyosati</button>
+      </p>
+      <div id="privacyPolicyBox" hidden></div>
     </div>
 
     <p style="color:var(--muted);font-size:13px;margin-top:var(--s6);">© 2026 YO'LDA</p>
@@ -998,16 +1071,277 @@
 </main>
 
 <nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
-  <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span>Bosh sahifa</span></button>
-  <button type="button" class="bn-item" data-tab-link="order"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span>Yuk berish</span></button>
-  <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span>Profil</span></button>
-  <button type="button" class="bn-item" data-tab-link="drivers"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span>Haydovchilar</span></button>
-  <button type="button" class="bn-item" data-tab-link="contact"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg><span>Aloqa</span></button>
+  <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
+  <button type="button" class="bn-item" data-tab-link="order"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span data-i18n="nav.order">Yuk berish</span></button>
+  <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
+  <button type="button" class="bn-item" data-tab-link="drivers"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span data-i18n="nav.drivers">Haydovchilar</span></button>
+  <button type="button" class="bn-item" data-tab-link="contact"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg><span data-i18n="nav.contact">Aloqa</span></button>
 </nav>
 
 <script>
 (function(){
   "use strict";
+
+  /* ============================================================
+     Language — covers the app's static chrome (nav, section headers,
+     FAQ, forms, settings). Deeply dynamic screens built from JS templates
+     (the order form, profile form, chat) stay Uzbek-only for now — see
+     applyLang() below for exactly what's covered.
+     ============================================================ */
+  var STRINGS = {
+    uz: {
+      "nav.home": "Bosh sahifa", "nav.order": "Yuk berish", "nav.profile": "Profil",
+      "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
+
+      "home.eyebrow": "Yuk bozori · O'zbekiston",
+      "home.tagline": "Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.",
+      "home.ctaSend": "Yuk berish", "home.ctaGet": "Yuk olish", "home.liveLabel": "Jonli faoliyat",
+      "home.stat1k": "Shahar", "home.stat1kk": "Butun O'zbekiston bo'ylab",
+      "home.stat2k": "Ish vaqti", "home.stat2kk": "Istalgan vaqtda buyurtma bering",
+      "home.stat3k": "Ro'yxatdan o'tish narxi", "home.stat3kk": "Komissiya ham yo'q",
+
+      "order.eyebrow": "Buyurtma", "order.titleA": "Hisoblang va", "order.titleB": "yuboring",
+      "order.sub": "Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.",
+      "order.howTitle": "Qanday ishlaydi?",
+      "order.how1": "Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.",
+      "order.how2": "Birinchi bo'lib <strong>\"✅ Men olaman\"</strong> tugmasini bosgan haydovchi buyurtmani oladi.",
+      "order.how3": "Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.",
+      "order.how4": "Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Aloqa</button> bo'limidan yozing.",
+      "order.trackTitle": "Buyurtmani kuzatish", "order.trackNote": "Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.",
+      "order.trackCodeLabel": "Buyurtma kodi", "order.trackPhoneLabel": "Telefon", "order.trackBtn": "Holatni tekshirish",
+
+      "profile.eyebrow": "Profil", "profile.titleA": "Sizning", "profile.titleB": "profilingiz",
+      "profile.sub": "Google hisobingizga bog'liq, boshqa hech kim ololmaydigan username tanlang.",
+
+      "drivers.eyebrow": "Haydovchilar", "drivers.titleA": "Yuk", "drivers.titleB": "toping",
+      "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
+
+      "contact.sub": "Savol yoki yordam kerakmi? Biz bilan bog'laning.",
+      "contact.faqTitle": "Ko'p so'raladigan savollar",
+      "contact.faq1q": "Xizmat pullikmi?",
+      "contact.faq1a": "Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.",
+      "contact.faq2q": "Buyurtmam qanday tasdiqlanadi?",
+      "contact.faq2a": "Guruhda birinchi bo'lib <strong>«✅ Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.",
+      "contact.faq3q": "Narx qanday kelishiladi?",
+      "contact.faq3a": "Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.",
+      "contact.faq4q": "Haydovchi kelmasa yoki javob bermasa nima qilaman?",
+      "contact.faq4a": "Saytga qaytib, yangi buyurtma joylashtiring — u yana barcha haydovchilarga ko'rinadi. Takrorlanadigan bo'lsa, pastdagi forma orqali bizga xabar bering.",
+      "contact.faq5q": "Buyurtmani bekor qila olamanmi?",
+      "contact.faq5a": "Ha. Agar hali hech kim olmagan bo'lsa, guruhda yozib qo'ying yoki pastdagi forma orqali bizga ayting — biz yordam beramiz.",
+      "contact.faq6q": "Telefon raqamim kimga ko'rinadi?",
+      "contact.faq6a": "Faqat yukingizni «olgan» haydovchiga — u ham buyurtmani qabul qilgandan keyingina. Boshqa hech kimga oshkor qilinmaydi.",
+      "contact.reportTitle": "Shikoyat qilish",
+      "contact.reportDesc": "Firibgarlik, soxta e'lon, soxta haydovchi yoki boshqa jiddiy muammoga duch kelsangiz — shu yerdan xabar bering, biz tekshiramiz.",
+      "contact.reportReasonLabel": "Sabab", "contact.choose": "Tanlang",
+      "contact.reasonScam": "Firibgarlik (Scam)", "contact.reasonFakeLoad": "Soxta yuk e'loni",
+      "contact.reasonFakeDriver": "Soxta haydovchi", "contact.reasonPayment": "To'lov muammosi",
+      "contact.reasonBehavior": "Yomon muomala", "contact.reasonDelivery": "Yetkazib berish muammosi",
+      "contact.reasonOther": "Boshqa",
+      "contact.reportTargetLabel": "Kimga oid (telefon, username yoki buyurtma kodi, ixtiyoriy)",
+      "contact.reportDescLabel": "Nima bo'lganini tasvirlab bering",
+      "contact.reportNote": "Shikoyat yuborish uchun Google orqali kirgan bo'lishingiz kerak.",
+      "contact.reportBtn": "Shikoyat yuborish",
+      "contact.supportTitle": "Muammo bormi? Yozing",
+      "contact.supportNameLabel": "Ismingiz", "contact.supportContactLabel": "Telefon yoki Telegram (ixtiyoriy)",
+      "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
+
+      "settings.title": "Sozlamalar", "settings.lang": "Til", "settings.theme": "Ko'rinish",
+      "settings.light": "Kunduzgi", "settings.dark": "Tungi",
+      "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
+      "privacy.body":
+        "<h4>1. Umumiy qoidalar</h4><p>Ushbu maxfiylik siyosati YO'LDA platformasidan (\"Xizmat\") foydalanganda foydalanuvchi ma'lumotlari qanday yig'ilishi, ishlatilishi va himoya qilinishini tushuntiradi. Xizmatdan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz.</p>"
+        + "<h4>2. Qanday ma'lumot yig'amiz</h4><p>Google orqali kirganda: ism, email va profil surati. Profil to'ldirganda: username, telefon, shahar, rol, mashina ma'lumotlari (ixtiyoriy). Buyurtma berganda: yuk manzillari, og'irligi, telefon raqami. Xabarlashuvda: yozgan xabarlaringiz.</p>"
+        + "<h4>3. Ma'lumotlardan qanday foydalanamiz</h4><p>Buyurtmangizni haydovchilarga yetkazish, sizni boshqa foydalanuvchilar bilan bog'lash, xizmat sifatini yaxshilash va firibgarlikning oldini olish uchun. Ma'lumotlaringiz reklama maqsadida uchinchi shaxslarga sotilmaydi.</p>"
+        + "<h4>4. Kim ko'radi</h4><p>Telefon raqamingiz faqat yukingizni \"olgan\" haydovchiga ko'rinadi. Xabarlashuvdagi yozishmalar faqat siz va suhbatdoshingizga ko'rinadi. Administratorlar shikoyat va nizolarni hal qilish uchun buyurtma/profil ma'lumotlariga kirishi mumkin.</p>"
+        + "<h4>5. Ma'lumotlarni saqlash</h4><p>Ma'lumotlar Vercel/Upstash infratuzilmasida saqlanadi. Hisobingizni o'chirishni so'rasangiz, ma'lumotlaringiz imkon qadar tezroq o'chiriladi.</p>"
+        + "<h4>6. Sizning huquqlaringiz</h4><p>Istalgan vaqtda profilingizni tahrirlashingiz yoki ma'lumotlaringizni o'chirishni so'rashingiz mumkin — shunchaki Aloqa bo'limidan yozing.</p>"
+        + "<h4>7. Aloqa</h4><p>Savollaringiz bo'lsa: +998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>",
+    },
+    ru: {
+      "nav.home": "Главная", "nav.order": "Отправить груз", "nav.profile": "Профиль",
+      "nav.drivers": "Водители", "nav.contact": "Контакты",
+
+      "home.eyebrow": "Рынок грузоперевозок · Узбекистан",
+      "home.tagline": "Платформа, объединяющая отправителей и водителей в пути. Разместите заказ или найдите подходящий груз.",
+      "home.ctaSend": "Отправить груз", "home.ctaGet": "Найти груз", "home.liveLabel": "Live-активность",
+      "home.stat1k": "Городов", "home.stat1kk": "По всему Узбекистану",
+      "home.stat2k": "Режим работы", "home.stat2kk": "Оформляйте заказ в любое время",
+      "home.stat3k": "Стоимость регистрации", "home.stat3kk": "Без комиссии",
+
+      "order.eyebrow": "Заказ", "order.titleA": "Рассчитайте и", "order.titleB": "отправьте",
+      "order.sub": "Ваш заказ сразу попадает в группу водителей. Первый ответивший водитель свяжется с вами.",
+      "order.howTitle": "Как это работает?",
+      "order.how1": "Вы заполняете форму — заказ сразу появляется в группе водителей.",
+      "order.how2": "Водитель, первым нажавший <strong>«✅ Я беру»</strong>, получает заказ.",
+      "order.how3": "Водитель звонит вам — <strong>окончательная цена и время согласовываются напрямую</strong>.",
+      "order.how4": "Если возникла проблема (водитель не приехал, не сошлись в цене) — напишите нам в разделе <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Контакты</button>.",
+      "order.trackTitle": "Отследить заказ", "order.trackNote": "Проверьте статус по коду заказа и номеру телефона.",
+      "order.trackCodeLabel": "Код заказа", "order.trackPhoneLabel": "Телефон", "order.trackBtn": "Проверить статус",
+
+      "profile.eyebrow": "Профиль", "profile.titleA": "Ваш", "profile.titleB": "профиль",
+      "profile.sub": "Привязан к вашему Google-аккаунту — выберите username, который никто больше не сможет занять.",
+
+      "drivers.eyebrow": "Водители", "drivers.titleA": "Найдите", "drivers.titleB": "груз",
+      "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
+
+      "contact.sub": "Есть вопрос или нужна помощь? Свяжитесь с нами.",
+      "contact.faqTitle": "Часто задаваемые вопросы",
+      "contact.faq1q": "Сервис платный?",
+      "contact.faq1a": "Пока полностью бесплатно — и регистрация, и размещение заказов без комиссии. Если что-то изменится, мы заранее предупредим пользователей.",
+      "contact.faq2q": "Как подтверждается мой заказ?",
+      "contact.faq2a": "Водитель, первым нажавший в группе кнопку <strong>«✅ Я беру»</strong>, получает заказ и после этого сразу звонит вам.",
+      "contact.faq3q": "Как согласовывается цена?",
+      "contact.faq3a": "Цена на сайте — примерный расчёт по расстоянию и весу. Окончательную цену вы согласовываете с водителем по телефону.",
+      "contact.faq4q": "Что делать, если водитель не приехал или не отвечает?",
+      "contact.faq4a": "Вернитесь на сайт и разместите новый заказ — он снова станет виден всем водителям. Если это повторяется, напишите нам через форму ниже.",
+      "contact.faq5q": "Могу ли я отменить заказ?",
+      "contact.faq5a": "Да. Если его ещё никто не взял, напишите об этом в группе или через форму ниже — мы поможем.",
+      "contact.faq6q": "Кому виден мой номер телефона?",
+      "contact.faq6a": "Только водителю, который «взял» ваш груз — и только после подтверждения заказа. Больше никому он не раскрывается.",
+      "contact.reportTitle": "Пожаловаться",
+      "contact.reportDesc": "Столкнулись с мошенничеством, фейковым объявлением, фейковым водителем или другой серьёзной проблемой — сообщите здесь, мы проверим.",
+      "contact.reportReasonLabel": "Причина", "contact.choose": "Выберите",
+      "contact.reasonScam": "Мошенничество (Scam)", "contact.reasonFakeLoad": "Фейковое объявление о грузе",
+      "contact.reasonFakeDriver": "Фейковый водитель", "contact.reasonPayment": "Проблема с оплатой",
+      "contact.reasonBehavior": "Плохое поведение", "contact.reasonDelivery": "Проблема с доставкой",
+      "contact.reasonOther": "Другое",
+      "contact.reportTargetLabel": "Кого касается (телефон, username или код заказа, необязательно)",
+      "contact.reportDescLabel": "Опишите, что произошло",
+      "contact.reportNote": "Для отправки жалобы нужно войти через Google.",
+      "contact.reportBtn": "Отправить жалобу",
+      "contact.supportTitle": "Есть проблема? Напишите",
+      "contact.supportNameLabel": "Ваше имя", "contact.supportContactLabel": "Телефон или Telegram (необязательно)",
+      "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
+
+      "settings.title": "Настройки", "settings.lang": "Язык", "settings.theme": "Оформление",
+      "settings.light": "Дневной", "settings.dark": "Ночной",
+      "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
+      "privacy.body":
+        "<h4>1. Общие положения</h4><p>Данная политика конфиденциальности объясняет, как собираются, используются и защищаются данные пользователей платформы YO'LDA («Сервис»). Используя Сервис, вы соглашаетесь с условиями данной политики.</p>"
+        + "<h4>2. Какие данные мы собираем</h4><p>При входе через Google: имя, email и фото профиля. При заполнении профиля: username, телефон, город, роль, данные автомобиля (по желанию). При оформлении заказа: адреса груза, вес, номер телефона. В переписке: отправленные вами сообщения.</p>"
+        + "<h4>3. Как мы используем данные</h4><p>Чтобы передать ваш заказ водителям, связать вас с другими пользователями, улучшить качество сервиса и предотвратить мошенничество. Ваши данные не продаются третьим лицам в рекламных целях.</p>"
+        + "<h4>4. Кто видит ваши данные</h4><p>Номер телефона виден только водителю, который «принял» ваш груз. Переписка видна только вам и собеседнику. Администраторы могут видеть данные заказов/профиля для рассмотрения жалоб и споров.</p>"
+        + "<h4>5. Хранение данных</h4><p>Данные хранятся на инфраструктуре Vercel/Upstash. При запросе на удаление аккаунта данные удаляются как можно быстрее.</p>"
+        + "<h4>6. Ваши права</h4><p>Вы можете в любой момент изменить свой профиль или запросить удаление данных — просто напишите нам в разделе «Контакты».</p>"
+        + "<h4>7. Контакты</h4><p>По вопросам: +998 94 440 20 90 или @ziyodullayv (Telegram).</p>",
+    },
+    en: {
+      "nav.home": "Home", "nav.order": "Ship cargo", "nav.profile": "Profile",
+      "nav.drivers": "Drivers", "nav.contact": "Contact",
+
+      "home.eyebrow": "Freight marketplace · Uzbekistan",
+      "home.tagline": "The platform that brings shippers and drivers together on the road. Post a load or find one to carry.",
+      "home.ctaSend": "Ship cargo", "home.ctaGet": "Find cargo", "home.liveLabel": "Live activity",
+      "home.stat1k": "Cities", "home.stat1kk": "Across all of Uzbekistan",
+      "home.stat2k": "Hours", "home.stat2kk": "Post an order any time",
+      "home.stat3k": "Sign-up cost", "home.stat3kk": "No commission either",
+
+      "order.eyebrow": "Order", "order.titleA": "Calculate and", "order.titleB": "send it",
+      "order.sub": "Your order goes straight to the drivers' group. Whoever responds first will contact you.",
+      "order.howTitle": "How it works",
+      "order.how1": "You fill out the form — the order appears in the drivers' group immediately.",
+      "order.how2": "The first driver to tap <strong>\"✅ I'll take it\"</strong> gets the order.",
+      "order.how3": "The driver calls you — <strong>the final price and time are agreed there</strong>.",
+      "order.how4": "If something goes wrong (driver didn't show, couldn't agree on price) — let us know in the <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Contact</button> section.",
+      "order.trackTitle": "Track your order", "order.trackNote": "Check the status with your order code and phone number.",
+      "order.trackCodeLabel": "Order code", "order.trackPhoneLabel": "Phone", "order.trackBtn": "Check status",
+
+      "profile.eyebrow": "Profile", "profile.titleA": "Your", "profile.titleB": "profile",
+      "profile.sub": "Tied to your Google account — pick a username no one else can take.",
+
+      "drivers.eyebrow": "Drivers", "drivers.titleA": "Find", "drivers.titleB": "cargo",
+      "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
+
+      "contact.sub": "Have a question or need help? Get in touch.",
+      "contact.faqTitle": "Frequently asked questions",
+      "contact.faq1q": "Is the service paid?",
+      "contact.faq1a": "It's completely free for now — sign-up and posting orders both come with no commission. If that ever changes, users will be notified in advance.",
+      "contact.faq2q": "How does my order get confirmed?",
+      "contact.faq2a": "Whichever driver taps <strong>\"✅ I'll take it\"</strong> first in the group gets the order, then calls you directly.",
+      "contact.faq3q": "How is the price agreed?",
+      "contact.faq3a": "The price shown on the site is an estimate based on distance and weight. You agree on the final price with the driver by phone.",
+      "contact.faq4q": "What if the driver doesn't show up or reply?",
+      "contact.faq4a": "Go back to the site and post a new order — it will be visible to all drivers again. If it keeps happening, let us know via the form below.",
+      "contact.faq5q": "Can I cancel an order?",
+      "contact.faq5a": "Yes. If no one has taken it yet, say so in the group or tell us via the form below — we'll help.",
+      "contact.faq6q": "Who can see my phone number?",
+      "contact.faq6a": "Only the driver who \"took\" your cargo — and only after accepting the order. It's never shown to anyone else.",
+      "contact.reportTitle": "Report a problem",
+      "contact.reportDesc": "Run into a scam, a fake listing, a fake driver, or another serious problem? Report it here and we'll look into it.",
+      "contact.reportReasonLabel": "Reason", "contact.choose": "Choose",
+      "contact.reasonScam": "Scam", "contact.reasonFakeLoad": "Fake load listing",
+      "contact.reasonFakeDriver": "Fake driver", "contact.reasonPayment": "Payment problem",
+      "contact.reasonBehavior": "Bad behavior", "contact.reasonDelivery": "Delivery problem",
+      "contact.reasonOther": "Other",
+      "contact.reportTargetLabel": "Who it's about (phone, username, or order code, optional)",
+      "contact.reportDescLabel": "Describe what happened",
+      "contact.reportNote": "You need to sign in with Google to submit a report.",
+      "contact.reportBtn": "Submit report",
+      "contact.supportTitle": "Have a problem? Write to us",
+      "contact.supportNameLabel": "Your name", "contact.supportContactLabel": "Phone or Telegram (optional)",
+      "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
+
+      "settings.title": "Settings", "settings.lang": "Language", "settings.theme": "Appearance",
+      "settings.light": "Light", "settings.dark": "Dark",
+      "settings.support": "Help", "settings.privacy": "Privacy policy",
+      "privacy.body":
+        "<h4>1. General</h4><p>This privacy policy explains how the YO'LDA platform (the \"Service\") collects, uses, and protects user data. By using the Service, you agree to the terms of this policy.</p>"
+        + "<h4>2. What data we collect</h4><p>When signing in with Google: name, email, and profile photo. When completing your profile: username, phone number, city, role, vehicle details (optional). When placing an order: cargo addresses, weight, and phone number. In messages: the messages you send.</p>"
+        + "<h4>3. How we use your data</h4><p>To deliver your order to drivers, connect you with other users, improve the service, and prevent fraud. Your data is never sold to third parties for advertising.</p>"
+        + "<h4>4. Who can see your data</h4><p>Your phone number is only shown to the driver who \"accepted\" your cargo. Messages are visible only to you and the other person in the conversation. Administrators may access order/profile data to handle reports and disputes.</p>"
+        + "<h4>5. Data storage</h4><p>Data is stored on Vercel/Upstash infrastructure. If you request account deletion, your data is removed as soon as possible.</p>"
+        + "<h4>6. Your rights</h4><p>You can edit your profile or request data deletion at any time — just message us in the Contact section.</p>"
+        + "<h4>7. Contact</h4><p>Questions: +998 94 440 20 90 or @ziyodullayv (Telegram).</p>",
+    },
+  };
+
+  var LANG_KEY = "yolda_lang";
+  var currentLang = (function(){
+    try{
+      var saved = localStorage.getItem(LANG_KEY);
+      if(saved && STRINGS[saved]) return saved;
+    }catch(e){}
+    return "uz";
+  })();
+
+  function applyLang(){
+    var dict = STRINGS[currentLang] || STRINGS.uz;
+    document.querySelectorAll("[data-i18n]").forEach(function(el){
+      var key = el.getAttribute("data-i18n");
+      if(dict[key] !== undefined) el.innerHTML = dict[key];
+    });
+    document.documentElement.setAttribute("lang", currentLang);
+    document.querySelectorAll(".lang-btn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-lang") === currentLang);
+    });
+  }
+
+  function setLang(lang){
+    if(!STRINGS[lang]) return;
+    currentLang = lang;
+    try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+    applyLang();
+  }
+
+  /* ============================================================
+     Theme — light/dark. The <head> bootstrap script already applied the
+     saved (or system) preference before first paint; this just wires the
+     toggle buttons and keeps them in sync.
+     ============================================================ */
+  var THEME_KEY = "yolda_theme";
+
+  function applyThemeButtons(){
+    var theme = document.documentElement.getAttribute("data-theme") || "light";
+    document.querySelectorAll(".theme-btn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-theme-choice") === theme);
+    });
+  }
+
+  function setTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+    applyThemeButtons();
+  }
 
   /* ============================================================
      Config
@@ -2147,11 +2481,15 @@
     else stopChatPoll();
     window.scrollTo(0, 0);
   }
-  document.querySelectorAll("[data-tab-link]").forEach(function(el){
-    el.addEventListener("click", function(e){
-      e.preventDefault();
-      switchTab(el.getAttribute("data-tab-link"));
-    });
+  // Delegated (not bound per-element) so it still works after applyLang()
+  // replaces the innerHTML of an ancestor — like the "Aloqa" link inside
+  // the order.how4 list item — which would otherwise swap in a fresh
+  // button with no listener of its own.
+  document.addEventListener("click", function(e){
+    var el = e.target.closest("[data-tab-link]");
+    if(!el) return;
+    e.preventDefault();
+    switchTab(el.getAttribute("data-tab-link"));
   });
   var btnSendSupport = document.getElementById("btnSendSupport");
   if(btnSendSupport) btnSendSupport.addEventListener("click", submitSupport);
@@ -2159,6 +2497,26 @@
   if(btnSendReport) btnSendReport.addEventListener("click", submitReport);
   var btnTrack = document.getElementById("btnTrack");
   if(btnTrack) btnTrack.addEventListener("click", function(){ submitTrack(); });
+
+  document.querySelectorAll(".lang-btn").forEach(function(b){
+    b.addEventListener("click", function(){ setLang(b.getAttribute("data-lang")); });
+  });
+  document.querySelectorAll(".theme-btn").forEach(function(b){
+    b.addEventListener("click", function(){ setTheme(b.getAttribute("data-theme-choice")); });
+  });
+  var btnShowPrivacy = document.getElementById("btnShowPrivacy");
+  if(btnShowPrivacy) btnShowPrivacy.addEventListener("click", function(){
+    var box = document.getElementById("privacyPolicyBox");
+    if(!box) return;
+    if(box.hidden){
+      box.innerHTML = (STRINGS[currentLang] || STRINGS.uz)["privacy.body"];
+      box.hidden = false;
+    } else {
+      box.hidden = true;
+    }
+  });
+  applyLang();
+  applyThemeButtons();
 
   render();
   renderLiveWidget();
