@@ -22,6 +22,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Leaflet + OpenStreetMap tiles for the "Yuklar" map view — free, no API key. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" defer></script>
 <style>
   :root{
     /* YO'LDA design system — professional logistics palette: deep navy
@@ -526,6 +529,65 @@
   .empty-state{text-align:center;padding:var(--s7) var(--s4);color:var(--ink-soft);}
   .empty-state .ic-svg{font-size:40px;color:var(--muted);margin-bottom:var(--s3);}
   .empty-state p{margin:0 0 var(--s4);font-size:14px;line-height:1.6;}
+
+  /* ---------- Yuklar: map/list toggle + Leaflet map + backhaul + match ---------- */
+  .view-toggle{display:flex;gap:6px;background:var(--paper-dark);border-radius:var(--r-pill);padding:4px;margin:var(--s4) 0;width:fit-content;}
+  .vt-btn{
+    border:none;background:none;padding:8px 16px;border-radius:var(--r-pill);
+    font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    display:flex;align-items:center;gap:6px;transition:background 0.2s var(--ease), color 0.2s var(--ease);
+  }
+  .vt-btn.active{background:var(--card);color:var(--route);box-shadow:var(--sh-1);}
+  .loads-map{
+    height:320px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);
+    margin-bottom:var(--s4);background:var(--paper-dark);
+  }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip{background:var(--card);color:var(--ink);}
+  .map-pin-badge{
+    background:var(--route);color:#fff;border-radius:999px;padding:4px 9px;font-size:11.5px;font-weight:700;
+    box-shadow:var(--sh-2);white-space:nowrap;border:2px solid var(--card);
+  }
+  .backhaul-card{
+    background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.03));
+    border:1px solid rgba(245,158,11,0.3);border-radius:var(--r-lg);padding:var(--s4) var(--s5);
+    margin-bottom:var(--s4);
+  }
+  .backhaul-card .bh-head{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--warn);margin-bottom:4px;}
+  .backhaul-card .bh-route{font-size:13.5px;color:var(--ink-soft);}
+  .match-badge{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:var(--r-pill);background:rgba(245,158,11,0.14);color:var(--warn);
+  }
+  .load-card{position:relative;}
+  .load-card .lc-fav{
+    position:absolute;top:var(--s4);right:var(--s4);background:none;border:none;font-size:20px;
+    cursor:pointer;line-height:1;color:var(--muted);
+  }
+  .load-card .lc-fav.on{color:#EF4444;}
+
+  /* ---------- Load details ---------- */
+  .detail-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s4);}
+  .detail-topbar .dt-icon-btn{
+    width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--card);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:16px;
+  }
+  .detail-topbar .dt-icon-btn.on{color:#EF4444;border-color:#EF4444;}
+  .detail-route-big{
+    display:flex;align-items:center;justify-content:center;gap:var(--s3);
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.01em;
+    margin:var(--s2) 0 var(--s5);text-align:center;
+  }
+  .detail-route-big .arrow{color:var(--stamp);}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-bottom:var(--s4);}
+  .detail-grid .dg-item{background:var(--paper-dark);border-radius:var(--r-md);padding:var(--s3) var(--s4);}
+  .detail-grid .dg-item .lbl{font-size:11px;color:var(--muted);margin-bottom:2px;}
+  .detail-grid .dg-item .val{font-size:14px;font-weight:600;color:var(--ink);}
+  .detail-price{
+    text-align:center;padding:var(--s5);border-radius:var(--r-lg);
+    background:linear-gradient(135deg, rgba(23,53,104,0.06), rgba(14,165,183,0.06));
+    margin-bottom:var(--s4);
+  }
+  .detail-price .amt{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:var(--route);}
   .lang-switch,.theme-switch{display:flex;gap:8px;flex-wrap:wrap;}
   .lang-btn,.theme-btn{
     flex:1;min-width:88px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
@@ -947,6 +1009,14 @@
     <div class="stat-cell reveal"><div class="v">24/7</div><div class="k" data-i18n="home.stat2k">Ish vaqti</div><div class="kk" data-i18n="home.stat2kk">Istalgan vaqtda buyurtma bering</div></div>
     <div class="stat-cell reveal"><div class="v" data-count="0">0</div><div class="k" data-i18n="home.stat3k">Ro'yxatdan o'tish narxi</div><div class="kk" data-i18n="home.stat3kk">Komissiya ham yo'q</div></div>
   </div>
+
+  <div class="section" id="homeMatchWrap" style="padding-top:var(--s7);padding-bottom:var(--s2);" hidden>
+    <div class="section-head reveal" style="margin-bottom:var(--s4);">
+      <div class="section-eyebrow" data-i18n="home.matchEyebrow">Siz uchun</div>
+      <h2 class="section-title">🔥 <span class="accent" data-i18n="home.matchTitle">Sizga mos yuklar</span></h2>
+    </div>
+    <div id="homeMatchList"></div>
+  </div>
 </section>
 
 <section class="tabview" id="tab-order" data-tab="order" hidden>
@@ -1011,6 +1081,7 @@
         <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
         <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
         <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
+        <button type="button" class="chip" id="chipMatchOnly" hidden data-i18n="loads.matchOnly">🔥 Faqat mos yuklar</button>
       </div>
       <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
       <div id="loadsMoreFiltersBox" hidden style="margin-top:var(--s3);">
@@ -1024,10 +1095,20 @@
       </div>
     </div>
 
-    <p class="note" id="loadsCount" style="margin:var(--s4) 0 var(--s3);"></p>
-    <div id="loadsList"></div>
+    <div id="backhaulBanner" hidden></div>
 
-    <div class="card reveal driver-invite" style="margin-top:var(--s5);">
+    <div class="view-toggle" id="loadsViewToggle">
+      <button type="button" class="vt-btn active" data-view="list">📋 <span data-i18n="loads.viewList">Ro'yxat</span></button>
+      <button type="button" class="vt-btn" data-view="map">🗺️ <span data-i18n="loads.viewMap">Xarita</span></button>
+    </div>
+
+    <p class="note" id="loadsCount" style="margin:var(--s3) 0 var(--s3);"></p>
+    <div id="loadsList"></div>
+    <div id="loadsMap" class="loads-map" hidden></div>
+
+    <div id="loadDetailView" hidden></div>
+
+    <div class="card reveal driver-invite" id="loadsGroupPromo" style="margin-top:var(--s5);">
       <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg> <span data-i18n="loads.groupTitle">Yangi yuklarni birinchi bo'lib ko'rasizmi?</span></h3>
       <p class="note" style="margin-top:0;" data-i18n="loads.groupSub">Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.</p>
       <a class="btn ghost" id="driverGroupLink" href="#" target="_blank" rel="noopener">
@@ -1209,6 +1290,10 @@
       "loads.emptyTitle": "Mos yuk topilmadi.",
       "loads.emptySub": "Yo'nalishingiz yoki filtrlaringizni o'zgartirib ko'ring.",
       "loads.emptyBtn": "Filtrlarni o'zgartirish",
+      "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "🔥 Faqat mos yuklar",
+      "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
+      "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
+      "home.matchEyebrow": "Siz uchun", "home.matchTitle": "Sizga mos yuklar",
 
       "chatTab.eyebrow": "Xabarlar", "chatTab.titleA": "To'g'ridan-to'g'ri", "chatTab.titleB": "yozishing",
       "chatTab.sub": "Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.",
@@ -1295,6 +1380,10 @@
       "loads.emptyTitle": "Подходящих грузов не найдено.",
       "loads.emptySub": "Попробуйте изменить направление или фильтры.",
       "loads.emptyBtn": "Изменить фильтры",
+      "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "🔥 Только подходящие",
+      "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
+      "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
+      "home.matchEyebrow": "Для вас", "home.matchTitle": "Подходящие вам грузы",
 
       "chatTab.eyebrow": "Сообщения", "chatTab.titleA": "Пишите", "chatTab.titleB": "напрямую",
       "chatTab.sub": "Найдите пользователя по username и свяжитесь с ним.",
@@ -1381,6 +1470,10 @@
       "loads.emptyTitle": "No matching loads found.",
       "loads.emptySub": "Try changing your route or filters.",
       "loads.emptyBtn": "Change filters",
+      "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "🔥 Matching loads only",
+      "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
+      "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
+      "home.matchEyebrow": "For you", "home.matchTitle": "Loads that fit you",
 
       "chatTab.eyebrow": "Messages", "chatTab.titleA": "Message people", "chatTab.titleB": "directly",
       "chatTab.sub": "Search by username and get in touch with anyone.",
@@ -1586,6 +1679,7 @@
       }
 
       renderProfile();
+      renderHomeMatch();
     }catch(e){}
     render();
   }
@@ -2099,8 +2193,63 @@
      browse — only the phone number is withheld, same rule as everywhere
      else (a driver only sees it once they claim the load in Telegram).
      ============================================================ */
-  var loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "" };
+  var loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: false };
   var loadsInitialized = false;
+  var lastLoadsResult = [];
+  var loadsMapInstance = null;
+  var loadsMapMarkers = [];
+
+  var CITY_COORDS = {
+    "Toshkent": [41.2995, 69.2401], "Samarqand": [39.6542, 66.9597], "Buxoro": [39.7747, 64.4286],
+    "Andijon": [40.7821, 72.3442], "Namangan": [40.9983, 71.6726], "Nukus": [42.4531, 59.6103],
+    "Qarshi": [38.8606, 65.7891], "Urganch": [41.5500, 60.6333], "Farg'ona": [40.3894, 71.7978],
+    "Jizzax": [40.1158, 67.8422], "Navoiy": [40.0844, 65.3792], "Guliston": [40.4897, 68.7842],
+    "Termiz": [37.2242, 67.2783]
+  };
+
+  /* ---------- Smart Matching — a simple, explainable heuristic, not ML.
+     Needs the signed-in driver's city + preferred vehicle type from their
+     profile; without those there's nothing to match against, so callers
+     treat a null driverMatchProfile as "matching is off". ---------- */
+  var driverMatchProfile = null;
+
+  function loadDriverMatchProfile(cb){
+    if(!googleIdToken){ driverMatchProfile = null; cb(); return; }
+    fetch("/api/profile", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken })
+    }).then(function(r){ return r.json(); }).then(function(data){
+      var p = data.profile || {};
+      driverMatchProfile = (p.city || p.vehicleType) ? { city: p.city || "", vehicleType: p.vehicleType || "" } : null;
+      cb();
+    }).catch(function(){ driverMatchProfile = null; cb(); });
+  }
+
+  function computeMatchScore(o){
+    if(!driverMatchProfile) return null;
+    var score = 20;
+    if(driverMatchProfile.city && o.fromCity === driverMatchProfile.city) score += 45;
+    if(driverMatchProfile.vehicleType){
+      if(!o.truckType) score += 20;
+      else if(o.truckType === driverMatchProfile.vehicleType) score += 35;
+    } else {
+      score += 10;
+    }
+    return Math.max(30, Math.min(97, score));
+  }
+
+  /* ---------- Favorites — per-device, localStorage only (no backend). ---------- */
+  function getFavorites(){
+    try{ return JSON.parse(localStorage.getItem("yolda_favorites") || "[]"); }catch(e){ return []; }
+  }
+  function isFavorite(code){ return getFavorites().indexOf(code) !== -1; }
+  function toggleFavorite(code){
+    var favs = getFavorites();
+    var idx = favs.indexOf(code);
+    if(idx === -1) favs.push(code); else favs.splice(idx, 1);
+    try{ localStorage.setItem("yolda_favorites", JSON.stringify(favs)); }catch(e){}
+    return idx === -1;
+  }
 
   function initLoadsFilters(){
     if(loadsInitialized) return;
@@ -2147,16 +2296,125 @@
 
     var clearBtn = document.getElementById("btnLoadsClearFilters");
     if(clearBtn) clearBtn.addEventListener("click", function(){
-      loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "" };
+      loadsState = { fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: loadsState.matchOnly };
       fromSel.value = ""; toSel.value = ""; cargoSel.value = ""; truckSel.value = "";
       document.querySelectorAll("#loadsQuickFilters .chip").forEach(function(c){ c.classList.remove("active"); });
       fetchLoads();
     });
+
+    var matchChip = document.getElementById("chipMatchOnly");
+    if(matchChip) matchChip.addEventListener("click", function(){
+      loadsState.matchOnly = !loadsState.matchOnly;
+      matchChip.classList.toggle("active", loadsState.matchOnly);
+      fetchLoads();
+    });
+
+    document.querySelectorAll("#loadsViewToggle .vt-btn").forEach(function(b){
+      b.addEventListener("click", function(){ setLoadsView(b.getAttribute("data-view")); });
+    });
+  }
+
+  function setLoadsView(view){
+    var list = document.getElementById("loadsList");
+    var map = document.getElementById("loadsMap");
+    document.querySelectorAll("#loadsViewToggle .vt-btn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-view") === view);
+    });
+    if(view === "map"){
+      if(list) list.hidden = true;
+      if(map) map.hidden = false;
+      renderLoadsMap(lastLoadsResult);
+    } else {
+      if(list) list.hidden = false;
+      if(map) map.hidden = true;
+    }
+  }
+
+  function ensureLoadsMap(){
+    if(loadsMapInstance) return;
+    if(typeof L === "undefined"){
+      // Leaflet loads via a deferred <script>, which can still be pending
+      // the very first time someone taps "Xarita" — retry once it's ready
+      // instead of leaving an empty box.
+      window.addEventListener("load", function(){
+        if(!loadsMapInstance && typeof L !== "undefined"){
+          ensureLoadsMap();
+          var mapBtn = document.querySelector("#loadsViewToggle .vt-btn[data-view=\"map\"].active");
+          if(mapBtn) renderLoadsMap(lastLoadsResult);
+        }
+      }, { once: true });
+      return;
+    }
+    var el = document.getElementById("loadsMap");
+    if(!el) return;
+    loadsMapInstance = L.map(el, { scrollWheelZoom: false }).setView([41.0, 66.5], 5.4);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap", maxZoom: 12
+    }).addTo(loadsMapInstance);
+  }
+
+  function renderLoadsMap(loads){
+    ensureLoadsMap();
+    if(!loadsMapInstance) return;
+    loadsMapMarkers.forEach(function(m){ loadsMapInstance.removeLayer(m); });
+    loadsMapMarkers = [];
+
+    var counts = {};
+    loads.forEach(function(o){ counts[o.fromCity] = (counts[o.fromCity] || 0) + 1; });
+
+    Object.keys(counts).forEach(function(city){
+      var coord = CITY_COORDS[city];
+      if(!coord) return;
+      var pinIcon = L.divIcon({
+        className: "", html: '<div class="map-pin-badge">'+escapeHtml(city)+' · '+counts[city]+'</div>', iconSize: null
+      });
+      var marker = L.marker(coord, { icon: pinIcon }).addTo(loadsMapInstance);
+      marker.on("click", function(){
+        var fromSel = document.getElementById("fLoadsFrom");
+        if(fromSel){ fromSel.value = city; }
+        loadsState.fromCity = city;
+        setLoadsView("list");
+        fetchLoads();
+      });
+      loadsMapMarkers.push(marker);
+    });
+
+    setTimeout(function(){ loadsMapInstance.invalidateSize(); }, 200);
   }
 
   function renderLoadsTab(){
     initLoadsFilters();
-    fetchLoads();
+    loadDriverMatchProfile(function(){
+      var chip = document.getElementById("chipMatchOnly");
+      if(chip) chip.hidden = !driverMatchProfile;
+      fetchLoads();
+    });
+    loadBackhaul();
+  }
+
+  function loadBackhaul(){
+    var banner = document.getElementById("backhaulBanner");
+    if(!banner) return;
+    if(!googleIdToken){ banner.hidden = true; return; }
+    fetch("/api/order?action=backhaul&googleIdToken=" + encodeURIComponent(googleIdToken))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data.lastRoute || !data.loads || !data.loads.length){ banner.hidden = true; return; }
+        banner.hidden = false;
+        banner.innerHTML = '<div class="backhaul-card" id="backhaulCard" style="cursor:pointer;">'
+          + '<div class="bh-head">'+icon("iconRefresh")+' <span data-i18n="loads.backhaulTitle">Qaytish yuklari</span></div>'
+          + '<div class="bh-route">'+escapeHtml(data.lastRoute.toCity)+' → '+escapeHtml(data.lastRoute.fromCity)+' — '
+          +   '<span data-i18n="loads.backhaulSub">safaringizga mos</span> ('+data.loads.length+')</div>'
+          + '</div>';
+        applyLang();
+        var card = document.getElementById("backhaulCard");
+        if(card) card.addEventListener("click", function(){
+          var fromSel = document.getElementById("fLoadsFrom");
+          if(fromSel) fromSel.value = data.suggestedFrom;
+          loadsState.fromCity = data.suggestedFrom;
+          fetchLoads();
+        });
+      }).catch(function(){ banner.hidden = true; });
   }
 
   function skeletonLoadCards(n){
@@ -2180,8 +2438,11 @@
     var cargoLabel = (o.cargoType === "OTHER" && o.customCargoLabel) ? o.customCargoLabel : (cargo ? cargo.label : o.cargoType);
     var dateLabel = o.pickupDate ? formatLoadDate(o.pickupDate) : "";
     var isFresh = o.createdAt && (Date.now() - o.createdAt) < 2 * 3600 * 1000;
+    var fav = isFavorite(o.code);
+    var matchHtml = (o._match != null) ? '<span class="match-badge">🔥 '+o._match+'% mos</span>' : '';
 
     return '<div class="load-card" data-code="'+escapeHtml(o.code)+'">'
+      + '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+(fav?'♥':'♡')+'</button>'
       + '<div class="lc-top">'
       +   '<div class="lc-route">'+escapeHtml(o.fromCity)+'<span class="arrow">→</span>'+escapeHtml(o.toCity)+'</div>'
       +   '<div class="lc-price">'+formatNum(o.amount)+' so\'m</div>'
@@ -2192,7 +2453,10 @@
       +   (o.truckType ? '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType)+'</span>' : '')
       +   (dateLabel ? '<span>'+icon("iconRoute")+' '+escapeHtml(dateLabel)+'</span>' : '')
       + '</div>'
-      + (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
+      + '<div style="display:flex;gap:6px;margin-top:var(--s3);flex-wrap:wrap;">'
+      +   (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
+      +   matchHtml
+      + '</div>'
       + '</div>';
   }
 
@@ -2227,9 +2491,18 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         var loads = data.loads || [];
+        if(driverMatchProfile){
+          loads.forEach(function(o){ o._match = computeMatchScore(o); });
+          if(loadsState.matchOnly) loads = loads.filter(function(o){ return o._match >= 55; });
+        }
+        lastLoadsResult = loads;
+
         if(countEl) countEl.textContent = loads.length + " ta yuk topildi";
         list.innerHTML = loads.length ? loads.map(loadCardHtml).join("") : emptyLoadsHtml();
         applyLang();
+
+        var mapBtn = document.querySelector("#loadsViewToggle .vt-btn[data-view=\"map\"].active");
+        if(mapBtn) renderLoadsMap(loads);
 
         var resetBtn = document.getElementById("btnLoadsResetEmpty");
         if(resetBtn) resetBtn.addEventListener("click", function(){
@@ -2239,6 +2512,167 @@
       }).catch(function(){
         list.innerHTML = '<p class="note">Yuklab bo\'lmadi, qayta urinib ko\'ring.</p>';
       });
+  }
+
+  /* ---------- Home tab: "🔥 Siz uchun mos yuklar" ---------- */
+  function renderHomeMatch(){
+    var wrap = document.getElementById("homeMatchWrap");
+    var list = document.getElementById("homeMatchList");
+    if(!wrap || !list) return;
+    if(!googleIdToken){ wrap.hidden = true; return; }
+
+    loadDriverMatchProfile(function(){
+      if(!driverMatchProfile){ wrap.hidden = true; return; }
+      fetch("/api/order?action=list").then(function(r){ return r.json(); }).then(function(data){
+        var loads = (data.loads || []).map(function(o){ o._match = computeMatchScore(o); return o; })
+          .filter(function(o){ return o._match >= 55; })
+          .sort(function(a, b){ return b._match - a._match; })
+          .slice(0, 3);
+        if(!loads.length){ wrap.hidden = true; return; }
+        wrap.hidden = false;
+        list.innerHTML = loads.map(loadCardHtml).join("");
+        applyLang();
+      }).catch(function(){ wrap.hidden = true; });
+    });
+  }
+
+  /* ---------- Load details — full view swapped into the Yuklar tab. ---------- */
+  function openLoadDetail(code){
+    switchTab("loads");
+    ["loadsList", "loadsMap", "loadsCount", "loadsViewToggle", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.hidden = true;
+    });
+    var searchCard = document.querySelector(".loads-search-card");
+    if(searchCard) searchCard.hidden = true;
+
+    var detailView = document.getElementById("loadDetailView");
+    if(!detailView) return;
+    detailView.hidden = false;
+    detailView.innerHTML = '<div class="skeleton sk-line" style="width:50%;"></div>'
+      + '<div class="skeleton sk-line" style="width:80%;margin-top:14px;"></div>'
+      + '<div class="skeleton sk-card" style="margin-top:14px;height:120px;"></div>';
+
+    fetch("/api/order?action=detail&code=" + encodeURIComponent(code))
+      .then(function(r){ return r.json().then(function(b){ return {ok: r.ok, body: b}; }); })
+      .then(function(res){
+        if(!res.ok){ detailView.innerHTML = '<p class="note">Topilmadi.</p>'; return; }
+        renderLoadDetail(res.body);
+      }).catch(function(){ detailView.innerHTML = '<p class="note">Yuklab bo\'lmadi.</p>'; });
+  }
+
+  function closeLoadDetail(){
+    var detailView = document.getElementById("loadDetailView");
+    if(detailView) detailView.hidden = true;
+    ["loadsCount", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.hidden = false;
+    });
+    var searchCard = document.querySelector(".loads-search-card");
+    if(searchCard) searchCard.hidden = false;
+    var viewToggle = document.getElementById("loadsViewToggle");
+    if(viewToggle) viewToggle.hidden = false;
+
+    var activeBtn = document.querySelector("#loadsViewToggle .vt-btn.active");
+    setLoadsView(activeBtn ? activeBtn.getAttribute("data-view") : "list");
+    loadBackhaul();
+  }
+
+  function renderLoadDetail(d){
+    var detailView = document.getElementById("loadDetailView");
+    if(!detailView) return;
+    var cargo = cargoById(d.cargoType);
+    var cargoLabel = (d.cargoType === "OTHER" && d.customCargoLabel) ? d.customCargoLabel : (cargo ? cargo.label : d.cargoType);
+    var fav = isFavorite(d.code);
+    var dateLabel = d.pickupDate ? formatLoadDate(d.pickupDate) : "—";
+
+    var contactBtns = "";
+    if(d.ownerUsername){
+      contactBtns = '<div class="row2" style="margin-top:var(--s4);">'
+        + '<button type="button" class="btn" id="btnDetailOffer">'+icon("iconArrowRight")+' <span data-i18n="loads.sendOffer">Taklif yuborish</span></button>'
+        + '<button type="button" class="btn ghost" id="btnDetailMessage">'+icon("iconChat")+' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
+        + '</div>';
+    }
+
+    detailView.innerHTML =
+      '<div class="detail-topbar">'
+      +   '<button type="button" class="dt-icon-btn" id="btnDetailBack" aria-label="Orqaga">&larr;</button>'
+      +   '<div style="display:flex;gap:8px;">'
+      +     '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+(fav?'♥':'♡')+'</button>'
+      +     '<button type="button" class="dt-icon-btn" id="btnDetailShare" aria-label="Ulashish">↗</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="detail-route-big">'+escapeHtml(d.fromCity)+' <span class="arrow">→</span> '+escapeHtml(d.toCity)+'</div>'
+      + (CITY_COORDS[d.fromCity] && CITY_COORDS[d.toCity] ? '<div id="detailMap" class="loads-map" style="height:200px;"></div>' : '')
+      + '<div class="detail-price"><div class="amt">'+formatNum(d.amount)+' so\'m</div>'
+      +   '<p class="note" style="margin:4px 0 0;">'+(d.isProposed ? "Yuk beruvchi taklifi" : "Taxminiy narx")+'</p></div>'
+      + '<div class="detail-grid">'
+      +   '<div class="dg-item"><div class="lbl" data-i18n="loads.cargoType">Yuk turi</div><div class="val">'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</div></div>'
+      +   '<div class="dg-item"><div class="lbl">Og\'irlik</div><div class="val">'+formatNum(d.weightKg)+' kg</div></div>'
+      +   '<div class="dg-item"><div class="lbl" data-i18n="loads.truckType">Mashina turi</div><div class="val">'+(d.truckType ? escapeHtml(VEHICLE_LABELS[d.truckType] || d.truckType) : "Farqi yo'q")+'</div></div>'
+      +   '<div class="dg-item"><div class="lbl">Masofa</div><div class="val">'+formatNum(d.distanceKm)+' km</div></div>'
+      +   '<div class="dg-item"><div class="lbl" data-i18n="order.trackCodeLabel">Buyurtma kodi</div><div class="val">'+escapeHtml(d.code)+'</div></div>'
+      +   '<div class="dg-item"><div class="lbl">Yuklash sanasi</div><div class="val">'+escapeHtml(dateLabel)+'</div></div>'
+      + '</div>'
+      + '<div class="card"><h3 class="card-title">'+icon("iconUser")+' Yuk beruvchi</h3>'
+      +   '<p class="note" style="margin:0;">'+escapeHtml(d.name || "—")+(d.ownerUsername ? " · @"+escapeHtml(d.ownerUsername) : "")+'</p></div>'
+      + contactBtns;
+
+    applyLang();
+
+    var backBtn = document.getElementById("btnDetailBack");
+    if(backBtn) backBtn.addEventListener("click", closeLoadDetail);
+
+    var favBtn = document.getElementById("btnDetailFav");
+    if(favBtn) favBtn.addEventListener("click", function(){
+      var now = toggleFavorite(d.code);
+      favBtn.classList.toggle("on", now);
+      favBtn.textContent = now ? "♥" : "♡";
+    });
+
+    var shareBtn = document.getElementById("btnDetailShare");
+    if(shareBtn) shareBtn.addEventListener("click", function(){ shareLoad(d); });
+
+    var offerBtn = document.getElementById("btnDetailOffer");
+    if(offerBtn) offerBtn.addEventListener("click", function(){
+      var msg = "Salom! " + d.code + " raqamli yukingiz (" + d.fromCity + " → " + d.toCity + ") bo'yicha taklifim bor.";
+      goToChatWith(d.ownerUsername, msg);
+    });
+    var msgBtn = document.getElementById("btnDetailMessage");
+    if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
+
+    if(CITY_COORDS[d.fromCity] && CITY_COORDS[d.toCity] && typeof L !== "undefined"){
+      var m = L.map("detailMap", { scrollWheelZoom: false, zoomControl: false })
+        .fitBounds([CITY_COORDS[d.fromCity], CITY_COORDS[d.toCity]], { padding: [30, 30] });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap", maxZoom: 12 }).addTo(m);
+      L.marker(CITY_COORDS[d.fromCity]).addTo(m);
+      L.marker(CITY_COORDS[d.toCity]).addTo(m);
+      L.polyline([CITY_COORDS[d.fromCity], CITY_COORDS[d.toCity]], { color: "#0EA5B7", weight: 3, dashArray: "6 6" }).addTo(m);
+      setTimeout(function(){ m.invalidateSize(); }, 150);
+    }
+  }
+
+  function shareLoad(d){
+    var text = d.fromCity + " → " + d.toCity + " | " + formatNum(d.amount) + " so'm | " + d.code;
+    var url = location.origin + location.pathname + "?load=" + d.code;
+    if(navigator.share){
+      navigator.share({ title: "YO'LDA", text: text, url: url }).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text + " — " + url).then(function(){ toast("Nusxalandi", "", "success"); }).catch(function(){});
+    } else {
+      window.prompt("Ulashish uchun nusxalang:", text + " — " + url);
+    }
+  }
+
+  function goToChatWith(username, prefill){
+    if(!username) return;
+    if(!googleIdToken){ toast("Avval Google orqali kiring", "", "info"); return; }
+    switchTab("chat");
+    openChatThread(null, username);
+    if(prefill){
+      var input = document.getElementById("fChatMessage");
+      if(input) input.value = prefill;
+    }
   }
 
   function submitReport(){
@@ -2808,6 +3242,7 @@
     if(name === "profile") renderProfile();
     if(name === "loads") renderLoadsTab();
     if(name === "chat") renderChatTab();
+    if(name === "home") renderHomeMatch();
     if(name !== "chat") stopChatPoll();
     window.scrollTo(0, 0);
   }
@@ -2820,6 +3255,21 @@
     if(!el) return;
     e.preventDefault();
     switchTab(el.getAttribute("data-tab-link"));
+  });
+  // Same delegation approach for load cards — they get rebuilt on every
+  // fetchLoads()/renderHomeMatch() re-render, so per-element binding would
+  // go stale immediately.
+  document.addEventListener("click", function(e){
+    var favBtn = e.target.closest("[data-fav]");
+    if(favBtn){
+      e.stopPropagation();
+      var nowFav = toggleFavorite(favBtn.getAttribute("data-fav"));
+      favBtn.classList.toggle("on", nowFav);
+      favBtn.textContent = nowFav ? "♥" : "♡";
+      return;
+    }
+    var card = e.target.closest(".load-card[data-code]");
+    if(card) openLoadDetail(card.getAttribute("data-code"));
   });
   var btnSendSupport = document.getElementById("btnSendSupport");
   if(btnSendSupport) btnSendSupport.addEventListener("click", submitSupport);
