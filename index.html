@@ -1184,9 +1184,20 @@
      reads correctly in both light and dark theme, not just dark.
      ============================================================ */
   .profile-header{
+    position:relative;
     display:flex;flex-direction:column;align-items:center;text-align:center;
     padding:var(--s5) var(--s4) var(--s6);
   }
+  .profile-top-actions{position:absolute;top:var(--s2);right:var(--s2);display:flex;gap:6px;}
+  .profile-top-actions .pta-btn{
+    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--paper-dark);border:1px solid var(--border);color:var(--ink-soft);
+    cursor:pointer;padding:0;flex-shrink:0;
+    transition:background 0.15s var(--ease), color 0.15s var(--ease), transform 0.15s var(--ease);
+  }
+  .profile-top-actions .pta-btn:hover{background:var(--card);color:var(--ink);transform:translateY(-1px);}
+  .profile-top-actions .pta-btn:active{transform:translateY(0);}
+  .profile-top-actions .pta-btn .ic-svg{font-size:16.5px;}
   .profile-avatar-wrap{margin-bottom:var(--s4);}
   .profile-avatar{
     width:88px;height:88px;border-radius:50%;object-fit:cover;display:block;
@@ -1206,15 +1217,40 @@
   .profile-username{font-size:14px;color:var(--stamp-dark);font-weight:600;margin-top:3px;}
   .profile-username.muted{color:var(--muted);font-weight:500;}
   .profile-verified-badge{
-    display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
-    color:var(--accepted);background:rgba(22,163,74,0.12);
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+    color:var(--stamp-dark);background:rgba(42,166,240,0.12);
     padding:4px 12px;border-radius:var(--r-pill);margin-top:var(--s3);
   }
+  .profile-verified-badge .ic-svg{width:14px;height:14px;}
   .profile-role-chip{
     display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:var(--ink-soft);
     background:var(--paper-dark);padding:4px 12px;border-radius:var(--r-pill);margin-top:var(--s2);
   }
   .profile-edit-btn{margin-top:var(--s4);}
+
+  /* ---------- Verify-profile sheet (self-serve "get the blue badge" request) ---------- */
+  .verify-hero{text-align:center;padding:var(--s2) 0 var(--s4);}
+  .verify-badge-lg{width:60px;height:60px;margin:0 auto var(--s4);display:block;filter:drop-shadow(0 4px 10px rgba(42,166,240,0.35));}
+  .verify-badge-lg.muted{filter:grayscale(1) opacity(0.55);}
+  .verify-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);margin:0 0 var(--s2);}
+  .verify-desc{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 var(--s5);}
+  .verify-docs-heading{font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:var(--s3);}
+  .verify-doc-row{
+    display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);
+    border:1.5px dashed var(--border);border-radius:var(--r-md);margin-bottom:var(--s3);
+  }
+  .verify-doc-row .vd-icon{
+    width:36px;height:36px;border-radius:var(--r-sm);background:var(--paper-dark);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);
+  }
+  .verify-doc-row .vd-label{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .verify-docs-note{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 var(--s5);}
+  .verify-checklist{list-style:none;margin:0 0 var(--s5);padding:0;display:flex;flex-direction:column;gap:7px;}
+  .verify-checklist li{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+  .verify-checklist li .vc-mark{flex-shrink:0;font-weight:700;}
+  .verify-checklist li.good .vc-mark{color:var(--accepted);}
+  .verify-checklist li.bad .vc-mark{color:#DC2626;}
+  .verify-review-note{font-size:12px;color:var(--muted);text-align:center;margin:0;}
 
   .profile-completion-card{
     display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
@@ -1333,6 +1369,9 @@
     <symbol id="iconSliders" viewBox="0 0 24 24"><path d="M4 7H14M18 7H20M4 17H10M14 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="12" cy="17" r="2.3"/></symbol>
     <symbol id="iconBadge" viewBox="0 0 24 24"><path d="M12 2 21.5 6V13C21.5 18 17.5 21 12 22.5C6.5 21 2.5 18 2.5 13V6Z"/><path d="M8.5 12 11 14.5 15.7 9.5"/></symbol>
     <symbol id="iconClose" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="iconShare" viewBox="0 0 24 24"><path d="M12 15V4M12 4 8 8M12 4 16 8"/><path d="M5 13V19A2 2 0 0 0 7 21H17A2 2 0 0 0 19 19V13"/></symbol>
+    <symbol id="iconMenu" viewBox="0 0 24 24"><path d="M4 6H20M4 12H20M4 18H20"/></symbol>
+    <symbol id="iconEdit" viewBox="0 0 24 24"><path d="M4 20 4.8 16.2 16.2 4.8A2 2 0 0 1 19 4.8L19.2 5A2 2 0 0 1 19.2 7.8L7.8 19.2Z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
     <symbol id="iconChevronRight" viewBox="0 0 24 24"><path d="M9 5 16 12 9 19"/></symbol>
     <symbol id="iconBell" viewBox="0 0 24 24"><path d="M6 10.5C6 6.9 8.7 4 12 4C15.3 4 18 6.9 18 10.5V14.5L20 17.5H4L6 14.5Z"/><path d="M9.5 20A2.6 2.6 0 0 0 14.5 20"/></symbol>
     <symbol id="iconLogout" viewBox="0 0 24 24"><path d="M10 4H5C3.9 4 3 4.9 3 6V18C3 19.1 3.9 20 5 20H10"/><path d="M16 16L21 12L16 8"/><path d="M21 12H9"/></symbol>
@@ -1568,12 +1607,11 @@
 
 <section class="tabview" id="tab-profile" data-tab="profile" hidden>
   <div class="section" style="padding-top:var(--s6);padding-bottom:var(--s8);max-width:440px;position:relative;">
-    <button type="button" class="sheet-close" id="btnProfileMore" data-tab-link="contact"
-      aria-label="Yordam, savollar va sozlamalar" data-i18n-aria="profile.helpLink"
-      style="position:absolute;top:var(--s3);right:var(--s5);font-size:20px;font-weight:700;line-height:1;z-index:1;">⋯</button>
     <!-- No generic page title here on purpose — the profile-header
          component renderProfileForm() builds below (avatar, name,
-         username) is the page's identity, not a form heading. -->
+         username, the share/edit/menu action row) is the page's
+         identity, not a form heading. The old "⋯" help/settings shortcut
+         that used to live here moved into that action row's Menu icon. -->
     <div class="reveal" id="profileCard"></div>
   </div>
 </section>
@@ -1845,6 +1883,9 @@
       "profile.saveBtn": "Saqlash", "profile.signOutTitle": "Chiqishni tasdiqlang",
       "profile.signOutConfirm": "Hisobingizdan chiqmoqchimisiz? Qayta kirish uchun Google yoki Telegram orqali qaytadan login qilishingiz kerak bo'ladi.",
       "profile.signedOutTitle": "Chiqdingiz", "profile.signedOutTelegramNote": "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.",
+      "profile.shareAria": "Profilni ulashish", "profile.menuAria": "Sozlamalar",
+      "profile.shareText": "Mening YO'LDA profilim", "profile.shareTextNoUsername": "Men YO'LDA'da — yuk va haydovchilarni osongina topish mumkin!",
+      "profile.shareCopied": "Nusxalandi",
 
       "drivers.eyebrow": "Haydovchilar", "drivers.titleA": "Yuk", "drivers.titleB": "toping",
       "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
@@ -1885,6 +1926,25 @@
       "settings.about": "Yolda haqida", "settings.terms": "Foydalanish shartlari",
       "settings.linkTelegram": "Telegram bilan bog'lash", "settings.linkGoogle": "Google akkauntga bog'lash",
       "settings.langPageTitle": "Tilni tanlang", "settings.themePageTitle": "Ko'rinishni tanlang",
+      "settings.verify": "Profilni tasdiqlash",
+
+      "verify.pageTitle": "Profilni tasdiqlash", "verify.title": "Profilingizni tasdiqlang",
+      "verify.desc": "Ko'k belgi — siz haqiqiy va ishonchli haydovchi yoki yuk egasi ekaningizni bildiradi. Mijozlar tasdiqlangan profilga ko'proq ishonadi va tezroq murojaat qiladi.",
+      "verify.docsHeading": "Buning uchun quyidagi hujjatlar kerak bo'ladi:",
+      "verify.doc1": "Pasport (old tomoni)", "verify.doc2": "Pasport (orqa tomoni)", "verify.doc3": "Hujjatni ushlab turgan selfie",
+      "verify.docsNote": "So'rov yuborgach, operatorimiz hujjatlarni qanday yuborish kerakligini Telegram orqali yozadi.",
+      "verify.check1": "Yorug' joyda, matn aniq ko'rinsin", "verify.check2": "Yuzingiz va hujjat birga ko'rinsin",
+      "verify.check3": "Noaniq yoki chala rasmlar rad etiladi",
+      "verify.submitBtn": "Tasdiqlashni so'rash", "verify.submitting": "Yuborilmoqda…",
+      "verify.reviewNote": "So'rovingiz odatda 1-3 kun ichida ko'rib chiqiladi.",
+      "verify.pendingTitle": "So'rovingiz qabul qilindi",
+      "verify.pendingDesc": "Hujjatlaringizni tekshirib chiqmoqdamiz. Odatda 1-3 kun ichida javob beramiz.",
+      "verify.pendingSince": "So'ralgan sana",
+      "verify.doneTitle": "Profilingiz tasdiqlangan",
+      "verify.doneDesc": "Tabriklaymiz! Ismingiz yonidagi ko'k belgi endi barcha foydalanuvchilarga ko'rinadi.",
+      "verify.error": "Yuborilmadi, qayta urinib ko'ring", "verify.alreadyVerified": "Profilingiz allaqachon tasdiqlangan",
+      "verify.pendingTag": "kutilmoqda",
+
       "link.startTitle": "Telegram bilan bog'lash",
       "link.startIntro": "Google va Telegram hisobingizni bitta profilga birlashtirish uchun quyidagi kodni Telegram botiga kiriting.",
       "link.generating": "Kod yaratilmoqda…",
@@ -2008,6 +2068,9 @@
       "profile.saveBtn": "Сохранить", "profile.signOutTitle": "Подтвердите выход",
       "profile.signOutConfirm": "Хотите выйти из аккаунта? Для повторного входа понадобится снова войти через Google или Telegram.",
       "profile.signedOutTitle": "Вы вышли", "profile.signedOutTelegramNote": "При повторном открытии в Telegram вход произойдёт автоматически.",
+      "profile.shareAria": "Поделиться профилем", "profile.menuAria": "Настройки",
+      "profile.shareText": "Мой профиль на YO'LDA", "profile.shareTextNoUsername": "Я на YO'LDA — легко находить грузы и водителей!",
+      "profile.shareCopied": "Скопировано",
 
       "drivers.eyebrow": "Водители", "drivers.titleA": "Найдите", "drivers.titleB": "груз",
       "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
@@ -2048,6 +2111,25 @@
       "settings.about": "О Yolda", "settings.terms": "Условия использования",
       "settings.linkTelegram": "Привязать Telegram", "settings.linkGoogle": "Привязать к аккаунту Google",
       "settings.langPageTitle": "Выберите язык", "settings.themePageTitle": "Выберите оформление",
+      "settings.verify": "Подтвердить профиль",
+
+      "verify.pageTitle": "Подтверждение профиля", "verify.title": "Подтвердите свой профиль",
+      "verify.desc": "Синий значок означает, что вы настоящий и надёжный водитель или владелец груза. Клиенты больше доверяют подтверждённым профилям и быстрее обращаются.",
+      "verify.docsHeading": "Для этого понадобятся следующие документы:",
+      "verify.doc1": "Паспорт (лицевая сторона)", "verify.doc2": "Паспорт (обратная сторона)", "verify.doc3": "Селфи с документом в руках",
+      "verify.docsNote": "После отправки запроса наш оператор напишет вам в Telegram, как отправить документы.",
+      "verify.check1": "Снимайте при хорошем освещении, текст должен быть чётким", "verify.check2": "Лицо и документ должны быть видны вместе",
+      "verify.check3": "Нечёткие или неполные фото отклоняются",
+      "verify.submitBtn": "Запросить подтверждение", "verify.submitting": "Отправка…",
+      "verify.reviewNote": "Обычно запрос рассматривается в течение 1–3 дней.",
+      "verify.pendingTitle": "Запрос принят",
+      "verify.pendingDesc": "Мы проверяем ваши документы. Обычно отвечаем в течение 1–3 дней.",
+      "verify.pendingSince": "Дата запроса",
+      "verify.doneTitle": "Профиль подтверждён",
+      "verify.doneDesc": "Поздравляем! Синий значок рядом с вашим именем теперь виден всем пользователям.",
+      "verify.error": "Не отправлено, попробуйте ещё раз", "verify.alreadyVerified": "Ваш профиль уже подтверждён",
+      "verify.pendingTag": "на рассмотрении",
+
       "link.startTitle": "Привязать Telegram",
       "link.startIntro": "Чтобы объединить аккаунты Google и Telegram в один профиль, введите этот код в Telegram-боте.",
       "link.generating": "Код создаётся…",
@@ -2171,6 +2253,9 @@
       "profile.saveBtn": "Save", "profile.signOutTitle": "Confirm sign out",
       "profile.signOutConfirm": "Sign out of your account? You'll need to sign in again with Google or Telegram to come back.",
       "profile.signedOutTitle": "Signed out", "profile.signedOutTelegramNote": "Opening this again inside Telegram will sign you back in automatically.",
+      "profile.shareAria": "Share profile", "profile.menuAria": "Settings",
+      "profile.shareText": "My profile on YO'LDA", "profile.shareTextNoUsername": "I'm on YO'LDA — easy to find loads and drivers!",
+      "profile.shareCopied": "Copied",
 
       "drivers.eyebrow": "Drivers", "drivers.titleA": "Find", "drivers.titleB": "cargo",
       "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
@@ -2211,6 +2296,25 @@
       "settings.about": "About Yolda", "settings.terms": "Terms of use",
       "settings.linkTelegram": "Link Telegram", "settings.linkGoogle": "Link to Google account",
       "settings.langPageTitle": "Choose language", "settings.themePageTitle": "Choose appearance",
+      "settings.verify": "Verify profile",
+
+      "verify.pageTitle": "Verify profile", "verify.title": "Verify your profile",
+      "verify.desc": "The blue badge shows you're a real, trustworthy driver or cargo owner. Customers trust verified profiles more and reach out faster.",
+      "verify.docsHeading": "You'll need these documents:",
+      "verify.doc1": "Passport (front)", "verify.doc2": "Passport (back)", "verify.doc3": "A selfie holding the document",
+      "verify.docsNote": "After you submit the request, our team will message you on Telegram with how to send the documents.",
+      "verify.check1": "Shoot it somewhere bright, with the text clearly readable", "verify.check2": "Your face and the document should both be visible",
+      "verify.check3": "Blurry or partial photos will be rejected",
+      "verify.submitBtn": "Request verification", "verify.submitting": "Sending…",
+      "verify.reviewNote": "Requests are usually reviewed within 1-3 days.",
+      "verify.pendingTitle": "Your request is in",
+      "verify.pendingDesc": "We're reviewing your documents. We usually reply within 1-3 days.",
+      "verify.pendingSince": "Requested on",
+      "verify.doneTitle": "Your profile is verified",
+      "verify.doneDesc": "Congrats! The blue badge next to your name is now visible to everyone.",
+      "verify.error": "Couldn't send, please try again", "verify.alreadyVerified": "Your profile is already verified",
+      "verify.pendingTag": "pending",
+
       "link.startTitle": "Link Telegram",
       "link.startIntro": "To merge your Google and Telegram accounts into one profile, enter this code in the Telegram bot.",
       "link.generating": "Generating code…",
@@ -2732,7 +2836,8 @@
     terms: function(){ return { titleKey: "terms.title", html: t("terms.body") || "" }; },
     privacy: function(){ return { titleKey: "settings.privacy", html: t("privacy.body") || "" }; },
     "link-telegram": function(){ return { titleKey: "link.startTitle", html: renderLinkTelegramPage(), onOpen: bindLinkTelegramPage }; },
-    "link-google": function(){ return { titleKey: "link.finishTitle", html: renderLinkGooglePage(), onOpen: bindLinkGooglePage }; }
+    "link-google": function(){ return { titleKey: "link.finishTitle", html: renderLinkGooglePage(), onOpen: bindLinkGooglePage }; },
+    verify: function(){ return { titleKey: "verify.pageTitle", html: renderVerifyPage(), onOpen: bindVerifyPage }; }
   };
 
   function openSettingsPage(name){
@@ -2748,6 +2853,160 @@
         applyThemeButtons();
       }
     });
+  }
+
+  /* ---------- Verify-profile sheet: self-serve "get the blue badge"
+     request (see api/profile.js's request-verification action). No file
+     upload — this app has no storage for that — the button just files a
+     request an admin follows up on via Telegram; see the earlier note in
+     openAccountSettingsSheet for the reasoning. ---------- */
+  function verifyBadgeSvg(extraClass){
+    return '<svg class="ic-svg '+extraClass+'" aria-hidden="true"><use href="#iconVerifiedBadge"/></svg>';
+  }
+
+  function renderVerifyPage(){
+    var p = lastLoadedProfile || {};
+
+    if(p.verified){
+      return '<div class="verify-hero">'
+        + verifyBadgeSvg("verify-badge-lg")
+        + '<h3 class="verify-title" data-i18n="verify.doneTitle">Profilingiz tasdiqlangan</h3>'
+        + '<p class="verify-desc" style="margin-bottom:0;" data-i18n="verify.doneDesc">Tabriklaymiz! Ismingiz yonidagi ko\'k belgi endi barcha foydalanuvchilarga ko\'rinadi.</p>'
+        + '</div>';
+    }
+
+    if(p.verificationRequestedAt){
+      var dateStr = new Date(p.verificationRequestedAt).toLocaleDateString();
+      return '<div class="verify-hero">'
+        + verifyBadgeSvg("verify-badge-lg muted")
+        + '<h3 class="verify-title" data-i18n="verify.pendingTitle">So\'rovingiz qabul qilindi</h3>'
+        + '<p class="verify-desc" data-i18n="verify.pendingDesc">Hujjatlaringizni tekshirib chiqmoqdamiz. Odatda 1-3 kun ichida javob beramiz.</p>'
+        + '<p class="verify-review-note"><span data-i18n="verify.pendingSince">So\'ralgan sana</span>: '+escapeHtml(dateStr)+'</p>'
+        + '</div>';
+    }
+
+    return '<div class="verify-hero">'
+      + verifyBadgeSvg("verify-badge-lg")
+      + '<h3 class="verify-title" data-i18n="verify.title">Profilingizni tasdiqlang</h3>'
+      + '<p class="verify-desc" data-i18n="verify.desc">Ko\'k belgi — siz haqiqiy va ishonchli haydovchi yoki yuk egasi ekaningizni bildiradi. Mijozlar tasdiqlangan profilga ko\'proq ishonadi va tezroq murojaat qiladi.</p>'
+      + '</div>'
+      + '<div class="verify-docs-heading" data-i18n="verify.docsHeading">Buning uchun quyidagi hujjatlar kerak bo\'ladi:</div>'
+      + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconClipboard")+'</span><span class="vd-label" data-i18n="verify.doc1">Pasport (old tomoni)</span></div>'
+      + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconClipboard")+'</span><span class="vd-label" data-i18n="verify.doc2">Pasport (orqa tomoni)</span></div>'
+      + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconUser")+'</span><span class="vd-label" data-i18n="verify.doc3">Hujjatni ushlab turgan selfie</span></div>'
+      + '<p class="verify-docs-note" data-i18n="verify.docsNote">So\'rov yuborgach, operatorimiz hujjatlarni qanday yuborish kerakligini Telegram orqali yozadi.</p>'
+      + '<ul class="verify-checklist">'
+      +   '<li class="good"><span class="vc-mark">✓</span><span data-i18n="verify.check1">Yorug\' joyda, matn aniq ko\'rinsin</span></li>'
+      +   '<li class="good"><span class="vc-mark">✓</span><span data-i18n="verify.check2">Yuzingiz va hujjat birga ko\'rinsin</span></li>'
+      +   '<li class="bad"><span class="vc-mark">✕</span><span data-i18n="verify.check3">Noaniq yoki chala rasmlar rad etiladi</span></li>'
+      + '</ul>'
+      + '<button type="button" class="btn" id="btnRequestVerification" data-i18n="verify.submitBtn">Tasdiqlashni so\'rash</button>'
+      + '<p class="verify-review-note" style="margin-top:var(--s3);" data-i18n="verify.reviewNote">So\'rovingiz odatda 1-3 kun ichida ko\'rib chiqiladi.</p>'
+      + '<p class="note" id="verifyRequestNote" style="text-align:center;"></p>';
+  }
+
+  function bindVerifyPage(container){
+    var btn = container.querySelector("#btnRequestVerification");
+    if(!btn) return;
+    btn.addEventListener("click", function(){
+      var note = document.getElementById("verifyRequestNote");
+      btn.disabled = true;
+      if(note){ note.textContent = ""; note.style.color = ""; }
+      fetch("/api/profile?action=request-verification", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
+      }).then(function(r){
+        return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+      }).then(function(res){
+        btn.disabled = false;
+        if(!res.ok){
+          if(note){ note.textContent = res.body.error || t("verify.error") || ""; note.style.color = "#DC2626"; }
+          return;
+        }
+        lastLoadedProfile = res.body.profile || lastLoadedProfile;
+        toast(t("verify.pendingTitle") || "So'rovingiz qabul qilindi", "", "success");
+        // Re-render this same sheet in its new (pending) state rather than
+        // closing it — the person should immediately see their request landed.
+        openSettingsPage("verify");
+      }).catch(function(){
+        btn.disabled = false;
+        if(note){ note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko'ring."; note.style.color = "#DC2626"; }
+      });
+    });
+  }
+
+  /* ---------- Account settings sheet: opened from the Profile header's
+     Menu icon. Consolidates the app-wide settings rows (previously only
+     reachable from the Contact tab) plus the verify-profile entry point
+     and sign-out, into one place — matching what tapping the header's
+     "..." used to open, just as its own dedicated sheet instead of a
+     Contact-tab section. The Contact tab keeps its own copy of the plain
+     settings rows too (untouched) since a few things there — FAQ, report,
+     support form — still live only there and route people here via "Yordam". ---------- */
+  function renderAccountSettingsPage(){
+    var p = lastLoadedProfile || {};
+    var showLinkTelegram = Boolean(googleIdToken && !isTelegramWebApp);
+    var showLinkGoogle = Boolean(telegramInitData && isTelegramWebApp);
+
+    var verifyGroup = p.verified ? '' : (
+      '<div class="info-card profile-settings-card"><ul class="settings-menu">'
+      + '<li><button type="button" class="settings-row" data-settings-page="verify">'
+      +   verifyBadgeSvg("")
+      +   '<span data-i18n="settings.verify">Profilni tasdiqlash</span>'
+      +   (p.verificationRequestedAt ? '<span style="font-size:11px;color:var(--muted);margin-left:auto;margin-right:6px;" data-i18n="verify.pendingTag">kutilmoqda</span>' : '')
+      +   '<svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>'
+      + '</button></li>'
+      + '</ul></div>'
+    );
+
+    return verifyGroup
+      + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
+      +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   (showLinkTelegram ? '<li><button type="button" class="settings-row" data-settings-page="link-telegram">'+icon("iconTelegram")+'<span data-i18n="settings.linkTelegram">Telegram bilan bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
+      +   (showLinkGoogle ? '<li><button type="button" class="settings-row" data-settings-page="link-google">'+icon("iconUser")+'<span data-i18n="settings.linkGoogle">Google akkauntga bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
+      + '</ul></div>'
+      + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
+      +   '<li><button type="button" class="settings-row" data-tab-link="contact">'+icon("iconChat")+'<span data-i18n="settings.support">Yordam</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="feedback">'+icon("iconAlert")+'<span data-i18n="settings.feedback">Fikr bildirish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="about">'+icon("iconInfo")+'<span data-i18n="settings.about">Yolda haqida</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="terms">'+icon("iconClipboard")+'<span data-i18n="settings.terms">Foydalanish shartlari</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="privacy">'+icon("iconReceipt")+'<span data-i18n="settings.privacy">Maxfiylik siyosati</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      + '</ul></div>'
+      + renderDangerZone()
+      + '<p style="color:var(--muted);font-size:12.5px;text-align:center;margin:var(--s5) 0 0;">© 2026 YO\'LDA</p>';
+  }
+
+  function openAccountSettingsSheet(){
+    Sheet.open({
+      title: t("settings.title") || "Sozlamalar",
+      html: renderAccountSettingsPage(),
+      onOpen: function(container){
+        applyLang();
+        var signOutBtn = container.querySelector("#btnSignOut");
+        if(signOutBtn) signOutBtn.addEventListener("click", confirmSignOut);
+      }
+    });
+  }
+
+  /* ---------- Share profile ---------- */
+  function shareProfile(p){
+    var text = p.username
+      ? (t("profile.shareText") || "Mening YO'LDA profilim") + ": @" + p.username
+      : (t("profile.shareTextNoUsername") || "Men YO'LDA'da — yuk va haydovchilarni osongina topish mumkin!");
+    var url = location.origin + location.pathname;
+    if(navigator.share){
+      navigator.share({ title: "YO'LDA", text: text, url: url }).catch(function(){});
+      return;
+    }
+    var full = text + " " + url;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(full).then(function(){
+        toast(t("profile.shareCopied") || "Nusxalandi", "", "success");
+      }).catch(function(){});
+    }
   }
 
   /* ============================================================
@@ -3100,6 +3359,10 @@
      ============================================================ */
   var PROFILE_FIELDS = ["username", "displayName", "role", "city", "bio", "phone"];
   var ROLE_LABELS = { DRIVER: "Haydovchiman", OWNER: "Yuk beruvchiman", BOTH: "Ikkalasi ham" };
+  // Snapshot of the last profile renderProfileForm() drew — read by pages
+  // opened from inside Profile (the account-settings sheet, the verify
+  // sheet) that need the caller's current state but aren't passed it directly.
+  var lastLoadedProfile = null;
   var VEHICLE_LABELS = {
     ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon", YARIM_TREYLER: "Yarim treyler",
     SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
@@ -3183,6 +3446,11 @@
     var initial = escapeHtml((name || "?").charAt(0).toUpperCase());
 
     return '<div class="profile-header">'
+      + '<div class="profile-top-actions">'
+      +   '<button type="button" class="pta-btn" id="btnShareProfile" aria-label="Profilni ulashish" data-i18n-aria="profile.shareAria">'+icon("iconShare")+'</button>'
+      +   '<button type="button" class="pta-btn" id="btnEditProfile" aria-label="Profilni tahrirlash" data-i18n-aria="profile.editBtn">'+icon("iconEdit")+'</button>'
+      +   '<button type="button" class="pta-btn" id="btnOpenAccountMenu" aria-label="Sozlamalar" data-i18n-aria="profile.menuAria">'+icon("iconMenu")+'</button>'
+      + '</div>'
       + '<div class="profile-avatar-wrap">'
       +   (avatarUrl
             ? '<img class="profile-avatar" src="'+escapeHtml(avatarUrl)+'" alt="" referrerpolicy="no-referrer">'
@@ -3192,9 +3460,8 @@
       + (p.username
           ? '<div class="profile-username">@'+escapeHtml(p.username)+'</div>'
           : '<div class="profile-username muted" data-i18n="profile.noUsername">Username tanlanmagan</div>')
-      + (p.verified ? '<div class="profile-verified-badge">'+icon("iconCheck")+' <span data-i18n="profile.verifiedBadge">Tasdiqlangan profil</span></div>' : '')
+      + (p.verified ? '<div class="profile-verified-badge">'+verifyBadgeSvg("")+' <span data-i18n="profile.verifiedBadge">Tasdiqlangan profil</span></div>' : '')
       + (p.role ? '<div class="profile-role-chip">'+escapeHtml(ROLE_LABELS[p.role] || p.role)+'</div>' : '')
-      + '<button type="button" class="btn ghost profile-edit-btn" id="btnEditProfile" data-i18n="profile.editBtn">Profilni tahrirlash</button>'
       + '</div>';
   }
 
@@ -3278,19 +3545,6 @@
       + '</div>';
   }
 
-  function renderProfileSettingsSection(){
-    return '<div class="info-card profile-settings-card">'
-      + '<div class="info-card-title" style="margin-bottom:var(--s2);">'+icon("iconBadge")+' <span data-i18n="profile.settingsTitle">Sozlamalar</span></div>'
-      + '<ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="privacy">'+icon("iconReceipt")+'<span data-i18n="settings.privacy">Maxfiylik siyosati</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-tab-link="contact">'+icon("iconChat")+'<span data-i18n="settings.support">Yordam</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="about">'+icon("iconInfo")+'<span data-i18n="settings.about">Ilova haqida</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      + '</ul>'
-      + '</div>';
-  }
-
   function renderDangerZone(){
     return '<div class="danger-zone">'
       + '<button type="button" class="danger-row" id="btnSignOut">'+icon("iconLogout")+'<span data-i18n="profile.signOut">Chiqish</span></button>'
@@ -3300,26 +3554,31 @@
   function renderProfileForm(p){
     var card = document.getElementById("profileCard");
     if(!card) return;
+    lastLoadedProfile = p;
 
+    // Settings (incl. "Profilni tasdiqlash") and sign out now live behind
+    // the header's Menu icon (openAccountSettingsSheet) instead of being
+    // inline on the page — matches the reference layout's cleaner main
+    // screen: identity + stats + info cards only.
     card.innerHTML = renderProfileHeader(p)
       + renderProfileCompletionCard(p)
       + renderProfileStats(p)
       + renderPersonalInfoCard(p)
       + renderVehicleCard(p)
       + renderContactCard(p)
-      + renderAboutCard(p)
-      + renderProfileSettingsSection()
-      + renderDangerZone();
+      + renderAboutCard(p);
 
+    var shareBtn = document.getElementById("btnShareProfile");
+    if(shareBtn) shareBtn.addEventListener("click", function(){ shareProfile(p); });
     var editBtn = document.getElementById("btnEditProfile");
     if(editBtn) editBtn.addEventListener("click", function(){ openProfileEditSheet(p); });
+    var menuBtn = document.getElementById("btnOpenAccountMenu");
+    if(menuBtn) menuBtn.addEventListener("click", openAccountSettingsSheet);
     card.querySelectorAll("[data-edit-profile]").forEach(function(b){
       b.addEventListener("click", function(){ openProfileEditSheet(p); });
     });
     var completionBtn = document.getElementById("btnProfileCompletion");
     if(completionBtn) completionBtn.addEventListener("click", function(){ openProfileEditSheet(p); });
-    var signOutBtn = document.getElementById("btnSignOut");
-    if(signOutBtn) signOutBtn.addEventListener("click", confirmSignOut);
 
     applyLang();
   }
