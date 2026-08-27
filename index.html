@@ -173,6 +173,14 @@
     .reveal{opacity:1;transform:none;filter:none;}
     .hero-seq{opacity:1;transform:none;filter:none;animation:none;}
   }
+  /* Same rules, opted into explicitly from Sozlamalar → Bildirishnomalar,
+     regardless of the OS-level preference above (see applyMotionPref()). */
+  :root[data-reduce-motion="1"] *,:root[data-reduce-motion="1"] *::before,:root[data-reduce-motion="1"] *::after{
+    animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;
+  }
+  :root[data-reduce-motion="1"]{scroll-behavior:auto;}
+  :root[data-reduce-motion="1"] .reveal{opacity:1;transform:none;filter:none;}
+  :root[data-reduce-motion="1"] .hero-seq{opacity:1;transform:none;filter:none;animation:none;}
 
   /* ---------- NAV ---------- */
   .nav{
@@ -265,6 +273,105 @@
   @media(max-width:760px){
     .nav{padding:var(--s3) var(--s4);}
     .nav-links{display:none;}
+  }
+
+  /* ---------- SETTINGS SHEET / POPOVER ----------
+     One dialog primitive, two presentations: a bottom sheet on touch/narrow
+     viewports (slide up, drag handle, swipe-to-dismiss, safe-area aware)
+     and a centered popover card on desktop (anchored dialog + backdrop).
+     Every Settings sub-page — Language, Theme, Notifications, Privacy,
+     Terms, About, Feedback — renders into this same shell via Sheet.open()
+     (see the JS "SETTINGS" section near the end of the file). */
+  .sheet-root{position:fixed;inset:0;z-index:300;}
+  .sheet-root[hidden]{display:none;}
+  .sheet-backdrop{
+    position:absolute;inset:0;background:rgba(11,21,38,0.44);
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+    opacity:0;transition:opacity 0.25s var(--ease);
+  }
+  .sheet-root.open .sheet-backdrop{opacity:1;}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;margin:0 auto;
+    max-width:480px;max-height:min(84vh,720px);
+    background:var(--card);border-radius:var(--r-xl) var(--r-xl) 0 0;
+    box-shadow:var(--sh-4);
+    display:flex;flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom,0);
+    transform:translateY(100%);transition:transform 0.32s var(--ease);
+  }
+  .sheet-root.open .sheet{transform:translateY(0);}
+  .sheet-handle{
+    width:36px;height:4px;border-radius:var(--r-pill);background:var(--border);
+    margin:10px auto 2px;flex-shrink:0;
+  }
+  .sheet-head{
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+    padding:var(--s3) var(--s4);border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .sheet-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.01em;margin:0;}
+  .sheet-close{
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--border);
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--ink-soft);flex-shrink:0;
+    transition:background 0.2s var(--ease),color 0.2s var(--ease);
+  }
+  .sheet-close:hover{background:var(--paper-dark);color:var(--ink);}
+  .sheet-body{padding:var(--s4);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .sheet-body h4{font-size:14px;margin:var(--s4) 0 var(--s1);}
+  .sheet-body h4:first-child{margin-top:0;}
+  .sheet-body p{color:var(--ink-soft);font-size:14px;line-height:1.65;margin:0 0 var(--s3);}
+
+  @media(min-width:761px){
+    .sheet-backdrop{background:rgba(11,21,38,0.32);}
+    .sheet{
+      left:50%;right:auto;bottom:auto;top:50%;
+      transform:translate(-50%,-46%) scale(0.97);opacity:0;
+      width:min(92vw,480px);max-height:min(80vh,640px);
+      border-radius:var(--r-xl);
+      transition:transform 0.22s var(--ease), opacity 0.22s var(--ease);
+    }
+    .sheet-root.open .sheet{transform:translate(-50%,-50%) scale(1);opacity:1;}
+    .sheet-handle{display:none;}
+  }
+
+  .settings-menu{list-style:none;margin:0;padding:0;}
+  .settings-row{
+    width:100%;display:flex;align-items:center;gap:var(--s3);
+    min-height:48px;padding:12px 4px;border:none;background:none;
+    border-bottom:1px solid var(--border);cursor:pointer;text-align:left;
+    color:var(--ink);font-family:'Inter',sans-serif;font-size:14.5px;font-weight:500;
+    transition:color 0.2s var(--ease);
+  }
+  .settings-menu li:last-child .settings-row{border-bottom:none;}
+  .settings-row .ic-svg{font-size:19px;color:var(--route);flex-shrink:0;}
+  .settings-row .sr-chev{margin-left:auto;color:var(--muted);font-size:16px;flex-shrink:0;}
+  .settings-row:hover{color:var(--route-dark);}
+  .settings-row:hover .sr-chev{color:var(--route-dark);}
+
+  /* Accessible on/off switch — used by the Notifications page. */
+  .pref-switch{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s2) 4px;}
+  .pref-switch .lbl{font-size:14.5px;font-weight:500;}
+  .pref-switch .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .switch-track{
+    position:relative;width:44px;height:26px;min-width:44px;border-radius:var(--r-pill);
+    background:var(--border);border:none;cursor:pointer;flex-shrink:0;
+    transition:background 0.2s var(--ease);
+  }
+  .switch-track::after{
+    content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:#fff;box-shadow:var(--sh-1);transition:transform 0.2s var(--ease);
+  }
+  .switch-track[aria-checked="true"]{background:var(--route);}
+  .switch-track[aria-checked="true"]::after{transform:translateX(18px);}
+
+  /* Touch targets: on a touch/narrow viewport, the controls people tap
+     most (icon buttons, language/theme pickers) get a 44px floor per
+     WCAG 2.5.5 — desktop's tighter, mouse-driven sizing is untouched. */
+  @media(pointer:coarse), (max-width:760px){
+    .nav-theme-btn{width:44px;height:44px;}
+    .dt-icon-btn{width:44px;height:44px;}
+    .lang-btn,.theme-btn{padding:13px 12px;}
+    select,input[type=number],input[type=text],input[type=tel],input[type=date]{font-size:16px;}
   }
 
   /* ---------- HERO ---------- */
@@ -604,12 +711,6 @@
   .lang-btn.active,.theme-btn.active{
     border-color:var(--route);color:var(--route);background:rgba(23,53,104,0.08);
   }
-  #privacyPolicyBox{
-    margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--border);
-    font-size:13.5px;color:var(--ink-soft);line-height:1.7;max-height:340px;overflow-y:auto;
-  }
-  #privacyPolicyBox h4{font-size:14px;color:var(--ink);margin:var(--s4) 0 var(--s2);}
-  #privacyPolicyBox h4:first-child{margin-top:0;}
   .faq-item{
     border-bottom:1px solid var(--border);padding:var(--s3) 0;
   }
@@ -654,6 +755,7 @@
   .chat-thread{
     display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;
     margin:var(--s3) 0;padding-right:4px;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   }
   .chat-bubble{max-width:78%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4;word-wrap:break-word;}
   .chat-bubble.mine{align-self:flex-end;background:var(--route);color:#fff;border-bottom-right-radius:4px;}
@@ -982,6 +1084,9 @@
     <symbol id="iconChat" viewBox="0 0 24 24"><path d="M4 5H20V16H9L4 20V16H4V5Z"/><path d="M8 9.5H16M8 13H13"/></symbol>
     <symbol id="iconSliders" viewBox="0 0 24 24"><path d="M4 7H14M18 7H20M4 17H10M14 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="12" cy="17" r="2.3"/></symbol>
     <symbol id="iconBadge" viewBox="0 0 24 24"><path d="M12 2 21.5 6V13C21.5 18 17.5 21 12 22.5C6.5 21 2.5 18 2.5 13V6Z"/><path d="M8.5 12 11 14.5 15.7 9.5"/></symbol>
+    <symbol id="iconClose" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="iconChevronRight" viewBox="0 0 24 24"><path d="M9 5 16 12 9 19"/></symbol>
+    <symbol id="iconBell" viewBox="0 0 24 24"><path d="M6 10.5C6 6.9 8.7 4 12 4C15.3 4 18 6.9 18 10.5V14.5L20 17.5H4L6 14.5Z"/><path d="M9.5 20A2.6 2.6 0 0 0 14.5 20"/></symbol>
   </g>
 </svg>
 
@@ -1231,26 +1336,48 @@
 
     <div class="card reveal" id="settingsCard" style="text-align:left;margin-top:var(--s4);">
       <h3 class="card-title">⚙️ <span data-i18n="settings.title">Sozlamalar</span></h3>
-      <div class="field"><label data-i18n="settings.lang">Til</label>
-        <div class="lang-switch">
-          <button type="button" class="lang-btn" data-lang="uz">O'zbekcha</button>
-          <button type="button" class="lang-btn" data-lang="uz-cyrl">Ўзбекча</button>
-          <button type="button" class="lang-btn" data-lang="ru">Русский</button>
-          <button type="button" class="lang-btn" data-lang="en">English</button>
-        </div>
-      </div>
-      <div class="field"><label data-i18n="settings.theme">Ko'rinish</label>
-        <div class="theme-switch">
-          <button type="button" class="theme-btn" data-theme-choice="light">☀️ <span data-i18n="settings.light">Kunduzgi</span></button>
-          <button type="button" class="theme-btn" data-theme-choice="dark">🌙 <span data-i18n="settings.dark">Tungi</span></button>
-        </div>
-      </div>
-      <p class="note" style="margin-bottom:0;">
-        <button type="button" class="link-btn" data-tab-link="contact" data-i18n="settings.support">Yordam</button>
-        &nbsp;·&nbsp;
-        <button type="button" class="link-btn" id="btnShowPrivacy" data-i18n="settings.privacy">Maxfiylik siyosati</button>
-      </p>
-      <div id="privacyPolicyBox" hidden></div>
+      <ul class="settings-menu" id="settingsMenu">
+        <li><button type="button" class="settings-row" data-settings-page="language">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg>
+          <span data-i18n="settings.lang">Til</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-settings-page="theme">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconBadge"/></svg>
+          <span data-i18n="settings.theme">Ko'rinish</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-settings-page="notifications">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"/></svg>
+          <span data-i18n="settings.notifications">Bildirishnomalar</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-tab-link="contact">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg>
+          <span data-i18n="settings.support">Yordam</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-settings-page="feedback">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg>
+          <span data-i18n="settings.feedback">Fikr bildirish</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-settings-page="about">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg>
+          <span data-i18n="settings.about">Yolda haqida</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-settings-page="terms">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconClipboard"/></svg>
+          <span data-i18n="settings.terms">Foydalanish shartlari</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row" data-settings-page="privacy">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconReceipt"/></svg>
+          <span data-i18n="settings.privacy">Maxfiylik siyosati</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+      </ul>
     </div>
 
     <p style="color:var(--muted);font-size:13px;margin-top:var(--s6);">© 2026 YO'LDA</p>
@@ -1266,6 +1393,24 @@
   <button type="button" class="bn-item" data-tab-link="chat"><svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg><span data-i18n="nav.chat">Xabarlar</span></button>
   <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
 </nav>
+
+<!-- Shared dialog shell for every Settings sub-page (Language, Theme,
+     Notifications, Privacy, Terms, About, Feedback) — populated by
+     Sheet.open() in the script below. Bottom sheet on mobile, centered
+     popover on desktop; see the .sheet-* rules in <style>. -->
+<div class="sheet-root" id="sheetRoot" hidden>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheetPanel">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <h3 class="sheet-title" id="sheetTitle"></h3>
+      <button type="button" class="sheet-close" id="sheetCloseBtn" aria-label="Yopish">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconClose"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -1357,8 +1502,33 @@
       "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
 
       "settings.title": "Sozlamalar", "settings.lang": "Til", "settings.theme": "Ko'rinish",
-      "settings.light": "Kunduzgi", "settings.dark": "Tungi",
+      "settings.light": "Kunduzgi", "settings.dark": "Tungi", "settings.auto": "Tizim",
       "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
+      "settings.notifications": "Bildirishnomalar", "settings.feedback": "Fikr bildirish",
+      "settings.about": "Yolda haqida", "settings.terms": "Foydalanish shartlari",
+      "settings.langPageTitle": "Tilni tanlang", "settings.themePageTitle": "Ko'rinishni tanlang",
+      "notif.soundLabel": "Yangi xabar ovozi", "notif.soundSub": "Suhbat ochiq turganda yangi xabar kelsa, qisqa signal chalinadi.",
+      "notif.motionLabel": "Animatsiyalarni kamaytirish", "notif.motionSub": "Qurilma sozlamasidan qat'i nazar, ilovadagi harakatlarni kamaytiradi.",
+      "notif.note": "Hozircha bildirishnomalar faqat ilova ochiq turgan holatda ishlaydi — push-bildirishnoma tizimi keyinroq qo'shiladi.",
+      "feedback.sub": "Yolda haqida fikringiz, taklifingiz yoki muammo bo'lsa — shu yerdan yozing.",
+      "feedback.nameLabel": "Ismingiz (ixtiyoriy)", "feedback.contactLabel": "Aloqa uchun (ixtiyoriy)",
+      "feedback.msgLabel": "Fikringiz", "feedback.btn": "Yuborish", "feedback.sent": "Rahmat! Fikringiz yuborildi.",
+      "about.title": "Yolda haqida",
+      "about.body":
+        "<h4>YO'LDA nima?</h4><p>YO'LDA — O'zbekiston bo'ylab yuk jo'natuvchi va haydovchilarni bir-biri bilan to'g'ridan-to'g'ri bog'laydigan bozor. Vositachisiz, ortiqcha to'lovlarsiz.</p>"
+        + "<h4>Qanday ishlaydi?</h4><p>Yuk beruvchi buyurtma joylashtiradi — u darhol haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi buyurtmani oladi va mijozga qo'ng'iroq qiladi. Yakuniy narx va vaqtni tomonlar telefon orqali o'zaro kelishadi.</p>"
+        + "<h4>Nega bepul?</h4><p>Hozircha ro'yxatdan o'tish ham, e'lon joylashtirish ham to'liq bepul — hech qanday komissiya yo'q.</p>"
+        + "<h4>Qamrov</h4><p>Toshkent, Samarqand, Buxoro va O'zbekistonning boshqa 10 ta yirik shahri o'rtasida.</p>"
+        + "<h4>Aloqa</h4><p>+998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>",
+      "terms.title": "Foydalanish shartlari",
+      "terms.body":
+        "<h4>1. Umumiy qoidalar</h4><p>YO'LDA — yuk beruvchi va haydovchini bog'laydigan platforma (vositachi). Xizmatdan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz.</p>"
+        + "<h4>2. Hisob</h4><p>Platformadan foydalanish uchun Google hisobingiz orqali kirasiz. Profilingizda haqiqiy va to'g'ri ma'lumot ko'rsatishingiz kerak.</p>"
+        + "<h4>3. Buyurtma va kelishuv</h4><p>Saytdagi narx — masofa va og'irlikka asoslangan taxminiy hisob. Yakuniy narx, yetkazib berish muddati va shartlar yuk beruvchi va haydovchi o'rtasida to'g'ridan-to'g'ri kelishiladi. YO'LDA pul o'tkazmalarida ishtirok etmaydi va tomonlar o'rtasidagi kelishuv uchun javobgar emas.</p>"
+        + "<h4>4. Taqiqlangan xatti-harakatlar</h4><p>Soxta e'lon joylashtirish, firibgarlik, boshqa foydalanuvchini aldash, haqorat yoki spam qilish taqiqlanadi. Bunday hollarda hisobingiz cheklanishi yoki bloklanishi mumkin.</p>"
+        + "<h4>5. Javobgarlikni cheklash</h4><p>YO'LDA yuk xavfsizligi, yetkazib berish sifati yoki tomonlar o'rtasidagi moliyaviy kelishuvlar uchun javobgar emas — bu ma'suliyat to'liq yuk beruvchi va haydovchi zimmasida.</p>"
+        + "<h4>6. Shartlarning o'zgarishi</h4><p>Ushbu shartlar vaqti-vaqti bilan yangilanishi mumkin. Muhim o'zgarishlar haqida foydalanuvchilarga oldindan xabar beriladi.</p>"
+        + "<h4>7. Aloqa</h4><p>Savollaringiz bo'lsa: +998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>",
       "privacy.body":
         "<h4>1. Umumiy qoidalar</h4><p>Ushbu maxfiylik siyosati YO'LDA platformasidan (\"Xizmat\") foydalanganda foydalanuvchi ma'lumotlari qanday yig'ilishi, ishlatilishi va himoya qilinishini tushuntiradi. Xizmatdan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz.</p>"
         + "<h4>2. Qanday ma'lumot yig'amiz</h4><p>Google orqali kirganda: ism, email va profil surati. Profil to'ldirganda: username, telefon, shahar, rol, mashina ma'lumotlari (ixtiyoriy). Buyurtma berganda: yuk manzillari, og'irligi, telefon raqami. Xabarlashuvda: yozgan xabarlaringiz.</p>"
@@ -1447,8 +1617,33 @@
       "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
 
       "settings.title": "Настройки", "settings.lang": "Язык", "settings.theme": "Оформление",
-      "settings.light": "Дневной", "settings.dark": "Ночной",
+      "settings.light": "Дневной", "settings.dark": "Ночной", "settings.auto": "Системный",
       "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
+      "settings.notifications": "Уведомления", "settings.feedback": "Оставить отзыв",
+      "settings.about": "О Yolda", "settings.terms": "Условия использования",
+      "settings.langPageTitle": "Выберите язык", "settings.themePageTitle": "Выберите оформление",
+      "notif.soundLabel": "Звук нового сообщения", "notif.soundSub": "Пока диалог открыт, новое сообщение сопровождается коротким сигналом.",
+      "notif.motionLabel": "Меньше анимации", "notif.motionSub": "Уменьшает анимацию в приложении независимо от настроек устройства.",
+      "notif.note": "Пока уведомления работают только при открытом приложении — push-уведомления появятся позже.",
+      "feedback.sub": "Есть отзыв, предложение или проблема — напишите нам здесь.",
+      "feedback.nameLabel": "Ваше имя (необязательно)", "feedback.contactLabel": "Контакт (необязательно)",
+      "feedback.msgLabel": "Ваш отзыв", "feedback.btn": "Отправить", "feedback.sent": "Спасибо! Ваш отзыв отправлен.",
+      "about.title": "О Yolda",
+      "about.body":
+        "<h4>Что такое YO'LDA?</h4><p>YO'LDA — рынок, который напрямую соединяет грузоотправителей и водителей по всему Узбекистану. Без посредников и лишних платежей.</p>"
+        + "<h4>Как это работает?</h4><p>Отправитель размещает заказ — он сразу появляется в группе водителей. Первый ответивший водитель получает заказ и звонит клиенту. Окончательная цена и время согласовываются напрямую по телефону.</p>"
+        + "<h4>Почему бесплатно?</h4><p>Пока и регистрация, и размещение заказов полностью бесплатны — без комиссии.</p>"
+        + "<h4>География</h4><p>Ташкент, Самарканд, Бухара и ещё 10 крупных городов Узбекистана.</p>"
+        + "<h4>Контакты</h4><p>+998 94 440 20 90 или @ziyodullayv (Telegram).</p>",
+      "terms.title": "Условия использования",
+      "terms.body":
+        "<h4>1. Общие положения</h4><p>YO'LDA — платформа (посредник), связывающая грузоотправителя и водителя. Используя сервис, вы соглашаетесь с настоящими условиями.</p>"
+        + "<h4>2. Аккаунт</h4><p>Для использования платформы вы входите через свой аккаунт Google. В профиле необходимо указывать достоверные данные.</p>"
+        + "<h4>3. Заказ и договорённости</h4><p>Цена на сайте — приблизительный расчёт по расстоянию и весу. Окончательная цена, сроки и условия доставки согласовываются напрямую между отправителем и водителем. YO'LDA не участвует в денежных переводах и не несёт ответственности за договорённости между сторонами.</p>"
+        + "<h4>4. Запрещённые действия</h4><p>Запрещено размещать поддельные объявления, обманывать других пользователей, оскорблять или рассылать спам. За такие действия аккаунт может быть ограничен или заблокирован.</p>"
+        + "<h4>5. Ограничение ответственности</h4><p>YO'LDA не несёт ответственности за сохранность груза, качество доставки или финансовые договорённости между сторонами — это полностью на отправителе и водителе.</p>"
+        + "<h4>6. Изменение условий</h4><p>Эти условия могут периодически обновляться. О важных изменениях пользователи будут предупреждены заранее.</p>"
+        + "<h4>7. Контакты</h4><p>Вопросы: +998 94 440 20 90 или @ziyodullayv (Telegram).</p>",
       "privacy.body":
         "<h4>1. Общие положения</h4><p>Данная политика конфиденциальности объясняет, как собираются, используются и защищаются данные пользователей платформы YO'LDA («Сервис»). Используя Сервис, вы соглашаетесь с условиями данной политики.</p>"
         + "<h4>2. Какие данные мы собираем</h4><p>При входе через Google: имя, email и фото профиля. При заполнении профиля: username, телефон, город, роль, данные автомобиля (по желанию). При оформлении заказа: адреса груза, вес, номер телефона. В переписке: отправленные вами сообщения.</p>"
@@ -1537,8 +1732,33 @@
       "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
 
       "settings.title": "Settings", "settings.lang": "Language", "settings.theme": "Appearance",
-      "settings.light": "Light", "settings.dark": "Dark",
+      "settings.light": "Light", "settings.dark": "Dark", "settings.auto": "System",
       "settings.support": "Help", "settings.privacy": "Privacy policy",
+      "settings.notifications": "Notifications", "settings.feedback": "Send feedback",
+      "settings.about": "About Yolda", "settings.terms": "Terms of use",
+      "settings.langPageTitle": "Choose language", "settings.themePageTitle": "Choose appearance",
+      "notif.soundLabel": "New message sound", "notif.soundSub": "Plays a short sound when a new message arrives while a chat is open.",
+      "notif.motionLabel": "Reduce motion", "notif.motionSub": "Reduces animation across the app regardless of your device setting.",
+      "notif.note": "Notifications currently only work while the app is open — push notifications are coming later.",
+      "feedback.sub": "Have feedback, an idea, or ran into a problem? Write to us here.",
+      "feedback.nameLabel": "Your name (optional)", "feedback.contactLabel": "Contact (optional)",
+      "feedback.msgLabel": "Your message", "feedback.btn": "Send", "feedback.sent": "Thanks! Your feedback was sent.",
+      "about.title": "About Yolda",
+      "about.body":
+        "<h4>What is YO'LDA?</h4><p>YO'LDA is a marketplace that connects cargo owners and truck drivers directly, across Uzbekistan — no middleman, no extra fees.</p>"
+        + "<h4>How it works</h4><p>A cargo owner posts an order — it appears in the drivers' group instantly. The first driver to respond takes the order and calls the customer. The final price and timing are agreed directly by phone.</p>"
+        + "<h4>Why free?</h4><p>Right now, both signing up and posting orders are completely free — no commission.</p>"
+        + "<h4>Coverage</h4><p>Tashkent, Samarkand, Bukhara, and 10 other major cities across Uzbekistan.</p>"
+        + "<h4>Contact</h4><p>+998 94 440 20 90 or @ziyodullayv (Telegram).</p>",
+      "terms.title": "Terms of use",
+      "terms.body":
+        "<h4>1. General</h4><p>YO'LDA is a platform (intermediary) that connects cargo owners and drivers. By using the Service, you agree to these terms.</p>"
+        + "<h4>2. Account</h4><p>You sign in with your Google account to use the platform. Your profile must show accurate, truthful information.</p>"
+        + "<h4>3. Orders and agreements</h4><p>The price shown on the site is an estimate based on distance and weight. The final price, timing, and delivery terms are agreed directly between the cargo owner and the driver. YO'LDA does not handle payments and is not responsible for agreements between the parties.</p>"
+        + "<h4>4. Prohibited behavior</h4><p>Posting fake listings, defrauding other users, abusive behavior, or spam are prohibited. Accounts found doing this may be restricted or banned.</p>"
+        + "<h4>5. Limitation of liability</h4><p>YO'LDA is not responsible for cargo safety, delivery quality, or financial arrangements between the parties — that responsibility rests entirely with the cargo owner and the driver.</p>"
+        + "<h4>6. Changes to these terms</h4><p>These terms may be updated from time to time. Users will be notified in advance of significant changes.</p>"
+        + "<h4>7. Contact</h4><p>Questions: +998 94 440 20 90 or @ziyodullayv (Telegram).</p>",
       "privacy.body":
         "<h4>1. General</h4><p>This privacy policy explains how the YO'LDA platform (the \"Service\") collects, uses, and protects user data. By using the Service, you agree to the terms of this policy.</p>"
         + "<h4>2. What data we collect</h4><p>When signing in with Google: name, email, and profile photo. When completing your profile: username, phone number, city, role, vehicle details (optional). When placing an order: cargo addresses, weight, and phone number. In messages: the messages you send.</p>"
@@ -1648,8 +1868,11 @@
 
   function applyThemeButtons(){
     var theme = document.documentElement.getAttribute("data-theme") || "light";
+    var isAuto = true;
+    try{ isAuto = !localStorage.getItem(THEME_KEY); }catch(e){}
     document.querySelectorAll(".theme-btn").forEach(function(b){
-      b.classList.toggle("active", b.getAttribute("data-theme-choice") === theme);
+      var choice = b.getAttribute("data-theme-choice");
+      b.classList.toggle("active", choice === "auto" ? isAuto : (!isAuto && choice === theme));
     });
     // The full toggle lives in Sozlamalar (Profil → Yordam), but that's a
     // couple of taps away — this one in the top bar is always reachable.
@@ -1658,9 +1881,276 @@
   }
 
   function setTheme(theme){
+    if(theme === "auto"){
+      try{ localStorage.removeItem(THEME_KEY); }catch(e){}
+      theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+      applyThemeButtons();
+      return;
+    }
     document.documentElement.setAttribute("data-theme", theme);
     try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
     applyThemeButtons();
+  }
+
+  /* ============================================================
+     SETTINGS: Sheet dialog primitive + SettingsMenu + sub-pages
+     (LanguageSelector, ThemeSelector, NotificationsPage, PrivacyPage,
+     TermsPage, AboutPage, FeedbackModal). One shared dialog shell
+     (#sheetRoot in the HTML) renders as a bottom sheet on mobile and a
+     centered popover on desktop — see the .sheet-* CSS. Each sub-page
+     below is a small, self-contained render()+bind() pair so the HTML
+     template and the business logic (prefs, submit handlers) stay
+     separable — useful if this ever moves into a native app shell.
+     ============================================================ */
+  var NOTIF_KEY = "yolda_notif_prefs";
+
+  function getNotifPrefs(){
+    var defaults = { sound: true, motion: false };
+    try{
+      var saved = JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}");
+      return {
+        sound: saved.sound !== undefined ? !!saved.sound : defaults.sound,
+        motion: saved.motion !== undefined ? !!saved.motion : defaults.motion
+      };
+    }catch(e){ return defaults; }
+  }
+
+  function applyMotionPref(){
+    document.documentElement.setAttribute("data-reduce-motion", getNotifPrefs().motion ? "1" : "0");
+  }
+
+  function setNotifPref(key, value){
+    var prefs = getNotifPrefs();
+    prefs[key] = value;
+    try{ localStorage.setItem(NOTIF_KEY, JSON.stringify(prefs)); }catch(e){}
+    applyMotionPref();
+    return prefs;
+  }
+
+  /** Short two-tone beep synthesized with WebAudio — no audio file to ship. */
+  function playNotifSound(){
+    if(!getNotifPrefs().sound) return;
+    try{
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      var ctx = new Ctx();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 720;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.24);
+      osc.onended = function(){ ctx.close(); };
+    }catch(e){}
+  }
+
+  /* ---------- Sheet: shared bottom-sheet / popover dialog shell ---------- */
+  var Sheet = (function(){
+    var root = null, panel = null, titleEl = null, bodyEl = null;
+    var lastFocused = null;
+    var dragStartY = null, dragCurrentY = null, dragging = false;
+
+    function els(){
+      if(!root) root = document.getElementById("sheetRoot");
+      if(!panel) panel = document.getElementById("sheetPanel");
+      if(!titleEl) titleEl = document.getElementById("sheetTitle");
+      if(!bodyEl) bodyEl = document.getElementById("sheetBody");
+    }
+
+    function focusableEls(){
+      return Array.prototype.slice.call(
+        panel.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')
+      ).filter(function(el){ return !el.disabled && el.offsetParent !== null; });
+    }
+
+    function onKeydown(e){
+      if(e.key === "Escape"){ e.preventDefault(); close(); return; }
+      if(e.key !== "Tab") return;
+      var items = focusableEls();
+      if(!items.length) return;
+      var first = items[0], last = items[items.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+
+    // Swipe-down-to-dismiss, mobile only — desktop's popover ignores drag.
+    function onDragStart(e){
+      if(window.innerWidth > 760) return;
+      dragging = true;
+      dragStartY = (e.touches ? e.touches[0].clientY : e.clientY);
+      dragCurrentY = dragStartY;
+      panel.style.transition = "none";
+    }
+    function onDragMove(e){
+      if(!dragging) return;
+      dragCurrentY = (e.touches ? e.touches[0].clientY : e.clientY);
+      var delta = Math.max(0, dragCurrentY - dragStartY);
+      panel.style.transform = "translateY(" + delta + "px)";
+    }
+    function onDragEnd(){
+      if(!dragging) return;
+      dragging = false;
+      panel.style.transition = "";
+      var delta = Math.max(0, (dragCurrentY || dragStartY) - dragStartY);
+      panel.style.transform = "";
+      if(delta > 90) close();
+    }
+
+    function open(opts){
+      els();
+      if(!root) return;
+      lastFocused = document.activeElement;
+      titleEl.textContent = opts.title || "";
+      bodyEl.innerHTML = opts.html || "";
+      root.hidden = false;
+      // rAF so "hidden -> visible" and the "open" transition don't collapse into one frame.
+      requestAnimationFrame(function(){ root.classList.add("open"); });
+      document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", onKeydown, true);
+      [document.querySelector(".sheet-handle"), panel].forEach(function(el){
+        if(!el) return;
+        el.addEventListener("touchstart", onDragStart, {passive:true});
+        el.addEventListener("touchmove", onDragMove, {passive:true});
+        el.addEventListener("touchend", onDragEnd);
+      });
+      applyLang();
+      if(typeof opts.onOpen === "function") opts.onOpen(bodyEl);
+      setTimeout(function(){
+        var focusTarget = panel.querySelector("[data-autofocus]") || focusableEls()[0];
+        if(focusTarget) focusTarget.focus();
+      }, 260);
+    }
+
+    function close(){
+      els();
+      if(!root || root.hidden) return;
+      root.classList.remove("open");
+      document.removeEventListener("keydown", onKeydown, true);
+      document.body.style.overflow = "";
+      var toRestore = lastFocused;
+      setTimeout(function(){ root.hidden = true; bodyEl.innerHTML = ""; }, 320);
+      if(toRestore && typeof toRestore.focus === "function") toRestore.focus();
+    }
+
+    return { open: open, close: close };
+  })();
+
+  /* ---------- LanguageSelector ---------- */
+  function renderLanguagePage(){
+    return '<div class="lang-switch" role="radiogroup" aria-label="'+escapeHtml(t("settings.langPageTitle") || "")+'">'
+      + '<button type="button" class="lang-btn" data-lang="uz" role="radio" data-autofocus>O\'zbekcha</button>'
+      + '<button type="button" class="lang-btn" data-lang="uz-cyrl" role="radio">Ўзбекча</button>'
+      + '<button type="button" class="lang-btn" data-lang="ru" role="radio">Русский</button>'
+      + '<button type="button" class="lang-btn" data-lang="en" role="radio">English</button>'
+      + '</div>';
+  }
+
+  /* ---------- ThemeSelector ---------- */
+  function renderThemePage(){
+    return '<div class="theme-switch" role="radiogroup" aria-label="'+escapeHtml(t("settings.themePageTitle") || "")+'">'
+      + '<button type="button" class="theme-btn" data-theme-choice="light" role="radio" data-autofocus>☀️ <span data-i18n="settings.light">Kunduzgi</span></button>'
+      + '<button type="button" class="theme-btn" data-theme-choice="dark" role="radio">🌙 <span data-i18n="settings.dark">Tungi</span></button>'
+      + '<button type="button" class="theme-btn" data-theme-choice="auto" role="radio">💻 <span data-i18n="settings.auto">Tizim</span></button>'
+      + '</div>';
+  }
+
+  /* ---------- NotificationsPage ---------- */
+  function renderNotificationsPage(){
+    var prefs = getNotifPrefs();
+    return '<div class="pref-switch">'
+      +   '<div><div class="lbl" data-i18n="notif.soundLabel">Yangi xabar ovozi</div><div class="sub" data-i18n="notif.soundSub"></div></div>'
+      +   '<button type="button" class="switch-track" id="notifSoundSwitch" role="switch" aria-checked="'+prefs.sound+'" aria-label="'+escapeHtml(t("notif.soundLabel")||"")+'" data-autofocus></button>'
+      + '</div>'
+      + '<div class="pref-switch">'
+      +   '<div><div class="lbl" data-i18n="notif.motionLabel">Animatsiyalarni kamaytirish</div><div class="sub" data-i18n="notif.motionSub"></div></div>'
+      +   '<button type="button" class="switch-track" id="notifMotionSwitch" role="switch" aria-checked="'+prefs.motion+'" aria-label="'+escapeHtml(t("notif.motionLabel")||"")+'"></button>'
+      + '</div>'
+      + '<p class="note" data-i18n="notif.note" style="margin-top:var(--s3);"></p>';
+  }
+  function bindNotificationsPage(container){
+    var soundBtn = container.querySelector("#notifSoundSwitch");
+    var motionBtn = container.querySelector("#notifMotionSwitch");
+    if(soundBtn) soundBtn.addEventListener("click", function(){
+      var next = setNotifPref("sound", soundBtn.getAttribute("aria-checked") !== "true");
+      soundBtn.setAttribute("aria-checked", String(next.sound));
+    });
+    if(motionBtn) motionBtn.addEventListener("click", function(){
+      var next = setNotifPref("motion", motionBtn.getAttribute("aria-checked") !== "true");
+      motionBtn.setAttribute("aria-checked", String(next.motion));
+    });
+  }
+
+  /* ---------- FeedbackModal ---------- */
+  function renderFeedbackPage(){
+    return '<p class="note" data-i18n="feedback.sub" style="margin-top:0;"></p>'
+      + '<div class="field"><label for="fFeedbackName" data-i18n="feedback.nameLabel">Ismingiz (ixtiyoriy)</label>'
+      +   '<input type="text" id="fFeedbackName" data-autofocus></div>'
+      + '<div class="field"><label for="fFeedbackContact" data-i18n="feedback.contactLabel">Aloqa uchun (ixtiyoriy)</label>'
+      +   '<input type="text" id="fFeedbackContact" placeholder="90 123 45 67 yoki @username"></div>'
+      + '<div class="field"><label for="fFeedbackMsg" data-i18n="feedback.msgLabel">Fikringiz</label>'
+      +   '<input type="text" id="fFeedbackMsg" maxlength="500"></div>'
+      + '<p class="note" id="feedbackNote"></p>'
+      + '<button class="btn" id="btnSendFeedback" data-i18n="feedback.btn">Yuborish</button>';
+  }
+  function bindFeedbackPage(container){
+    var btn = container.querySelector("#btnSendFeedback");
+    if(!btn) return;
+    btn.addEventListener("click", function(){
+      var name = document.getElementById("fFeedbackName");
+      var contact = document.getElementById("fFeedbackContact");
+      var msg = document.getElementById("fFeedbackMsg");
+      var note = document.getElementById("feedbackNote");
+      var text = msg ? msg.value.trim() : "";
+      if(!text){ if(note) note.textContent = "Fikringizni yozing."; return; }
+      btn.disabled = true;
+      fetch("/api/support", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          name: name ? name.value.trim() : "",
+          contact: contact ? contact.value.trim() : "",
+          message: "📝 " + text
+        })
+      }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+        .then(function(res){
+          btn.disabled = false;
+          if(!res.ok){ if(note) note.textContent = res.body.error || "Yuborilmadi."; return; }
+          if(msg) msg.value = "";
+          if(note) note.textContent = t("feedback.sent") || "Rahmat! Fikringiz yuborildi.";
+        }).catch(function(){
+          btn.disabled = false;
+          if(note) note.textContent = "Yuborilmadi, qayta urinib ko'ring.";
+        });
+    });
+  }
+
+  /* ---------- SettingsMenu: routes each row to its sub-page in the Sheet ---------- */
+  var SETTINGS_PAGES = {
+    language: function(){ return { titleKey: "settings.langPageTitle", html: renderLanguagePage() }; },
+    theme: function(){ return { titleKey: "settings.themePageTitle", html: renderThemePage() }; },
+    notifications: function(){ return { titleKey: "settings.notifications", html: renderNotificationsPage(), onOpen: bindNotificationsPage }; },
+    feedback: function(){ return { titleKey: "settings.feedback", html: renderFeedbackPage(), onOpen: bindFeedbackPage }; },
+    about: function(){ return { titleKey: "about.title", html: t("about.body") || "" }; },
+    terms: function(){ return { titleKey: "terms.title", html: t("terms.body") || "" }; },
+    privacy: function(){ return { titleKey: "settings.privacy", html: t("privacy.body") || "" }; }
+  };
+
+  function openSettingsPage(name){
+    var factory = SETTINGS_PAGES[name];
+    if(!factory) return;
+    var page = factory();
+    Sheet.open({
+      title: t(page.titleKey) || "",
+      html: page.html,
+      onOpen: function(container){
+        if(page.onOpen) page.onOpen(container);
+        applyLang();
+        applyThemeButtons();
+      }
+    });
   }
 
   /* ============================================================
@@ -1983,6 +2473,7 @@
   var chatPollTimer = null;
   var chatSearchDebounce = null;
   var chatEditingId = null;
+  var chatLastSeenId = null;
   var CHAT_EMOJIS = ["👍","❤️","😂","😮","😢","🙏"];
 
   function formatChatTime(ts){
@@ -2083,6 +2574,7 @@
     chatWithEmail = email;
     chatWithUsername = username;
     chatEditingId = null;
+    chatLastSeenId = null;
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
     stopChatPoll();
@@ -2183,6 +2675,13 @@
         : '<p class="note" style="margin:0;">Hali xabar yo\'q. Birinchi bo\'lib yozing!</p>';
       bindChatBubbleActions(body);
       if(scrollDown) body.scrollTop = body.scrollHeight;
+      if(messages.length){
+        var last = messages[messages.length - 1];
+        // Skip the sound on the initial open (chatLastSeenId is still null then)
+        // and for anything the user sent themselves.
+        if(!scrollDown && chatLastSeenId !== null && last.id !== chatLastSeenId && !last.fromMe) playNotifSound();
+        chatLastSeenId = last.id;
+      }
     }).catch(function(){});
   }
 
@@ -3291,7 +3790,7 @@
   var groupLink = document.getElementById("driverGroupLink");
   if(groupLink) groupLink.href = DRIVER_GROUP_URL;
 
-  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches || getNotifPrefs().motion;
 
   /* ============================================================
      Tab navigation — the whole app is 5 screens (bottom nav),
@@ -3352,30 +3851,39 @@
   var btnTrack = document.getElementById("btnTrack");
   if(btnTrack) btnTrack.addEventListener("click", function(){ submitTrack(); });
 
-  document.querySelectorAll(".lang-btn").forEach(function(b){
-    b.addEventListener("click", function(){ setLang(b.getAttribute("data-lang")); });
-  });
-  document.querySelectorAll(".theme-btn").forEach(function(b){
-    b.addEventListener("click", function(){ setTheme(b.getAttribute("data-theme-choice")); });
-  });
   var btnQuickTheme = document.getElementById("btnQuickTheme");
   if(btnQuickTheme) btnQuickTheme.addEventListener("click", function(){
     var cur = document.documentElement.getAttribute("data-theme") || "light";
     setTheme(cur === "dark" ? "light" : "dark");
   });
-  var btnShowPrivacy = document.getElementById("btnShowPrivacy");
-  if(btnShowPrivacy) btnShowPrivacy.addEventListener("click", function(){
-    var box = document.getElementById("privacyPolicyBox");
-    if(!box) return;
-    if(box.hidden){
-      box.innerHTML = t("privacy.body");
-      box.hidden = false;
-    } else {
-      box.hidden = true;
-    }
+
+  // Lang/theme buttons and Settings rows are (re)rendered on demand inside
+  // the Sheet, so they're bound once here by delegation rather than at
+  // element-creation time — same reasoning as the tab-link/load-card
+  // delegation above.
+  document.addEventListener("click", function(e){
+    var settingsRow = e.target.closest("[data-settings-page]");
+    if(settingsRow){ openSettingsPage(settingsRow.getAttribute("data-settings-page")); return; }
+    var langBtn = e.target.closest(".lang-btn");
+    if(langBtn){ setLang(langBtn.getAttribute("data-lang")); return; }
+    var themeBtn = e.target.closest(".theme-btn");
+    if(themeBtn){ setTheme(themeBtn.getAttribute("data-theme-choice")); return; }
+    if(e.target.closest("#sheetCloseBtn") || e.target.id === "sheetBackdrop") Sheet.close();
   });
+
+  // Mobile keyboard UX: once the on-screen keyboard finishes animating open,
+  // nudge the focused field into view so the sticky nav/keyboard never hides it.
+  document.addEventListener("focusin", function(e){
+    var el = e.target;
+    if(!el.matches || !el.matches("input,select,textarea")) return;
+    setTimeout(function(){
+      if(document.activeElement === el) el.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+    }, 320);
+  });
+
   applyLang();
   applyThemeButtons();
+  applyMotionPref();
 
   render();
   renderLiveWidget();
