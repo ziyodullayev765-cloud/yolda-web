@@ -878,6 +878,12 @@
   .chat-row:last-child{border-bottom:none;}
   .chat-row:hover{opacity:0.8;}
   .chat-row .u{font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;}
+  .chat-verified-badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:14px;height:14px;margin-left:3px;vertical-align:-2px;font-size:9px;
+    color:#fff;background:var(--accepted);border-radius:50%;flex-shrink:0;
+  }
+  .chat-verified-badge .ic-svg{stroke-width:3.5;}
   .chat-row .preview{
     font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
     white-space:nowrap;margin-left:var(--s3);flex:1;text-align:right;
@@ -3516,7 +3522,7 @@
         results.innerHTML = users.length
           ? users.map(function(u){
               return '<div class="chat-row" data-username="'+escapeHtml(u.username)+'">'
-                + '<span class="u">@'+escapeHtml(u.username)+'</span>'
+                + '<span class="u">@'+escapeHtml(u.username)+chatVerifiedBadgeHtml(u.verified)+'</span>'
                 + '<span class="preview">'+escapeHtml(ROLE_LABELS[u.role] || "")+'</span>'
                 + '</div>';
             }).join("")
@@ -3545,7 +3551,7 @@
           ? conversations.map(function(c){
               var preview = (c.lastFromMe ? "Siz: " : "") + (c.lastText || "");
               return '<div class="chat-row" data-email="'+escapeHtml(c.email)+'" data-username="'+escapeHtml(c.username)+'">'
-                + '<span class="u">@'+escapeHtml(c.username)+'</span>'
+                + '<span class="u">@'+escapeHtml(c.username)+chatVerifiedBadgeHtml(c.verified)+'</span>'
                 + '<span class="preview">'+escapeHtml(preview)+'</span>'
                 + '</div>';
             }).join("")
@@ -3569,7 +3575,7 @@
 
     chatCard.innerHTML =
       '<button type="button" class="chat-back" id="btnChatBack">&larr; Orqaga</button>'
-      + '<h3 class="card-title" style="margin-top:0;">@'+escapeHtml(username)+'</h3>'
+      + '<h3 class="card-title chat-thread-title" id="chatThreadTitle" style="margin-top:0;">@'+escapeHtml(username)+'</h3>'
       + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
       + '<div class="chat-input-row">'
@@ -3657,6 +3663,10 @@
     fetch(url).then(function(r){ return r.json(); }).then(function(data){
       if(!chatWithUsername) return; // user navigated away while this was in flight
       if(data.withEmail) chatWithEmail = data.withEmail;
+      var titleEl = document.getElementById("chatThreadTitle");
+      if(titleEl && !titleEl.querySelector(".chat-verified-badge") && data.withVerified){
+        titleEl.insertAdjacentHTML("beforeend", chatVerifiedBadgeHtml(true));
+      }
       var messages = data.messages || [];
       body.innerHTML = messages.length
         ? messages.map(chatBubbleHtml).join("")
@@ -4520,6 +4530,11 @@
   }
   function formatNum(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
   function icon(id){ return '<svg class="ic-svg" aria-hidden="true"><use href="#'+id+'"></use></svg>'; }
+  /** Small green check badge next to a verified profile's @username in chat (search/inbox/thread). */
+  function chatVerifiedBadgeHtml(verified){
+    if(!verified) return "";
+    return '<span class="chat-verified-badge" title="Tasdiqlangan profil">'+icon("iconCheck")+'</span>';
+  }
   function cargoById(id){
     for(var i=0;i<CARGO.length;i++){ if(CARGO[i].id===id) return CARGO[i]; }
     return CARGO[0];
