@@ -3556,17 +3556,14 @@
     if(!card) return;
     lastLoadedProfile = p;
 
-    // Settings (incl. "Profilni tasdiqlash") and sign out now live behind
-    // the header's Menu icon (openAccountSettingsSheet) instead of being
-    // inline on the page — matches the reference layout's cleaner main
-    // screen: identity + stats + info cards only.
+    // Settings (incl. "Profilni tasdiqlash") and sign out live behind the
+    // header's Menu icon (openAccountSettingsSheet); the Shaxsiy ma'lumotlar/
+    // Transport/Aloqa/Men haqimda info cards were removed from this page by
+    // request — that data is still editable via the header's Edit icon
+    // (openProfileEditSheet), just no longer summarized here.
     card.innerHTML = renderProfileHeader(p)
       + renderProfileCompletionCard(p)
-      + renderProfileStats(p)
-      + renderPersonalInfoCard(p)
-      + renderVehicleCard(p)
-      + renderContactCard(p)
-      + renderAboutCard(p);
+      + renderProfileStats(p);
 
     var shareBtn = document.getElementById("btnShareProfile");
     if(shareBtn) shareBtn.addEventListener("click", function(){ shareProfile(p); });
