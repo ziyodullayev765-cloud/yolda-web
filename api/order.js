@@ -9,6 +9,8 @@
  *   POST /api/order                       — create an order (unchanged body/behavior)
  *   GET  /api/order?code=&phone=          — look up an order's status by code+phone
  *   GET  /api/order?action=list&...       — browse open loads (the "Yuklar" tab)
+ *   GET  /api/order?action=detail&code=   — one load's full details page
+ *   GET  /api/order?action=backhaul&...   — return-trip load suggestions for a driver
  *   POST /api/order?action=rate           — rate the driver once DELIVERED
  *
  * The bot token never reaches the browser — that is the whole reason this
@@ -349,6 +351,122 @@ const listLoads = async (req, res) => {
 };
 
 /**
+ * GET ?action=detail&code=XXX — the full-screen load details view.
+ * Same privacy rule as listLoads: phone, note, and googleEmail stay hidden
+ * from anyone who hasn't claimed the load. The owner's name is shown
+ * because it's already broadcast to the whole driver group on Telegram —
+ * nothing new is exposed by also showing it here.
+ */
+const getLoadDetail = async (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase();
+  if (!code) return res.status(400).json({ error: 'Kod kerak' });
+
+  const raw = await kvGet(`order:${code}`);
+  if (!raw) return res.status(404).json({ error: 'Topilmadi' });
+  let order;
+  try {
+    order = JSON.parse(raw);
+  } catch {
+    return res.status(500).json({ error: 'Xato yuz berdi' });
+  }
+
+  // The chat "Taklif yuborish" / "Xabar yozish" buttons need a username to
+  // address — only resolvable if the owner registered one in their profile.
+  let ownerUsername = null;
+  if (order.googleEmail) {
+    try {
+      const praw = await kvGet(`profile:${order.googleEmail}`);
+      if (praw) {
+        const profile = JSON.parse(praw);
+        ownerUsername = (profile && profile.username) || null;
+      }
+    } catch {
+      // Non-fatal — details still render without a contact button.
+    }
+  }
+
+  return res.status(200).json({
+    ok: true,
+    code: order.code,
+    fromCity: order.fromCity,
+    toCity: order.toCity,
+    cargoType: order.cargoType,
+    customCargoLabel: order.customCargoLabel || '',
+    weightKg: order.weightKg,
+    amount: order.amount,
+    estimatedAmount: order.estimatedAmount,
+    isProposed: Boolean(order.isProposed),
+    distanceKm: order.distanceKm,
+    truckType: order.truckType || '',
+    pickupDate: order.pickupDate || '',
+    status: order.status || 'NEW',
+    createdAt: order.createdAt,
+    name: order.name,
+    ownerUsername,
+  });
+};
+
+/**
+ * GET ?action=backhaul&googleIdToken=... — "Qaytish yuklari": open loads
+ * that depart from wherever this driver's most recent DELIVERED order
+ * ended, so they don't have to drive back empty. Requires the driver to
+ * have linked a Telegram username in their profile — same requirement the
+ * verified badge and ratings already have, since that's the only thing
+ * connecting "who claimed this in the group" to a registered account.
+ */
+const getBackhaul = async (req, res) => {
+  const myEmail = await verifyGoogleEmail(req.query.googleIdToken);
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+
+  const praw = await kvGet(`profile:${myEmail}`);
+  let profile = {};
+  try {
+    profile = praw ? JSON.parse(praw) : {};
+  } catch {
+    profile = {};
+  }
+  const tgUsername = profile.telegramUsername;
+  if (!tgUsername) return res.status(200).json({ lastRoute: null, loads: [] });
+
+  const codes = await kvRange('order_codes', 0, 299);
+  const allOrders = (await Promise.all(codes.map((code) => kvGet(`order:${code}`))))
+    .map((s) => {
+      if (!s) return null;
+      try {
+        return JSON.parse(s);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  const delivered = allOrders
+    .filter((o) => o.status === 'DELIVERED' && o.driver && o.driver.telegramUsername === tgUsername)
+    .sort((a, b) => (b.deliveredAt || 0) - (a.deliveredAt || 0));
+
+  if (!delivered.length) return res.status(200).json({ lastRoute: null, loads: [] });
+
+  const last = delivered[0];
+  const returnFrom = last.toCity;
+
+  const loads = allOrders
+    .filter((o) => (o.status || 'NEW') === 'NEW' && o.fromCity === returnFrom)
+    .slice(0, 20)
+    .map((o) => ({
+      code: o.code, fromCity: o.fromCity, toCity: o.toCity, cargoType: o.cargoType,
+      customCargoLabel: o.customCargoLabel || '', weightKg: o.weightKg, amount: o.amount,
+      distanceKm: o.distanceKm, truckType: o.truckType || '', pickupDate: o.pickupDate || '',
+      createdAt: o.createdAt,
+    }));
+
+  return res.status(200).json({
+    lastRoute: { fromCity: last.fromCity, toCity: last.toCity },
+    suggestedFrom: returnFrom,
+    loads,
+  });
+};
+
+/**
  * POST ?action=rate — rate the driver once DELIVERED, using the same
  * code+phone ownership check as getOrderStatus. One rating per order — the
  * driver's aggregate is rolled up onto their profile, but only if they
@@ -405,7 +523,10 @@ const rateOrder = async (req, res) => {
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    if (String(req.query.action || '') === 'list') return listLoads(req, res);
+    const action = String(req.query.action || '');
+    if (action === 'list') return listLoads(req, res);
+    if (action === 'detail') return getLoadDetail(req, res);
+    if (action === 'backhaul') return getBackhaul(req, res);
     return getOrderStatus(req, res);
   }
   if (req.method === 'POST') {
