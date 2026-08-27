@@ -321,7 +321,9 @@
     transition:background 0.2s var(--ease),color 0.2s var(--ease);
   }
   .sheet-close:hover{background:var(--paper-dark);color:var(--ink);}
-  .sheet-body{padding:var(--s4);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .sheet-body{padding:var(--s4);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1;min-height:0;}
+  .sheet-footer{flex-shrink:0;padding:var(--s3) var(--s4);border-top:1px solid var(--border);}
+  .sheet-footer .btn{width:100%;}
   .sheet-body h4{font-size:14px;margin:var(--s4) 0 var(--s1);}
   .sheet-body h4:first-child{margin-top:0;}
   .sheet-body p{color:var(--ink-soft);font-size:14px;line-height:1.65;margin:0 0 var(--s3);}
@@ -1163,6 +1165,112 @@
     background:linear-gradient(90deg, var(--route), var(--stamp));
     z-index:60;will-change:transform;
   }
+
+  /* ============================================================
+     PROFILE PAGE — identity + overview + account management, not a
+     giant form. Built from section-based pieces (header, stats, a
+     handful of read-only info cards, Settings, danger zone) instead of
+     one bordered card; editing anything opens the grouped Edit sheet
+     (see openProfileEditSheet in the script). Every color/radius/
+     spacing value below is one of the existing design tokens, so this
+     reads correctly in both light and dark theme, not just dark.
+     ============================================================ */
+  .profile-header{
+    display:flex;flex-direction:column;align-items:center;text-align:center;
+    padding:var(--s5) var(--s4) var(--s6);
+  }
+  .profile-avatar-wrap{margin-bottom:var(--s4);}
+  .profile-avatar{
+    width:88px;height:88px;border-radius:50%;object-fit:cover;display:block;
+    box-shadow:0 0 0 3px var(--card), 0 0 0 5px var(--route), var(--sh-2);
+  }
+  .profile-avatar-fallback{
+    width:88px;height:88px;border-radius:50%;
+    background:linear-gradient(135deg, var(--route), var(--stamp));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;
+    box-shadow:0 0 0 3px var(--card), 0 0 0 5px var(--route), var(--sh-2);
+  }
+  .profile-name{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;
+    letter-spacing:-0.015em;color:var(--ink);margin:0;
+  }
+  .profile-username{font-size:14px;color:var(--stamp-dark);font-weight:600;margin-top:3px;}
+  .profile-username.muted{color:var(--muted);font-weight:500;}
+  .profile-verified-badge{
+    display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+    color:var(--accepted);background:rgba(22,163,74,0.12);
+    padding:4px 12px;border-radius:var(--r-pill);margin-top:var(--s3);
+  }
+  .profile-role-chip{
+    display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:var(--ink-soft);
+    background:var(--paper-dark);padding:4px 12px;border-radius:var(--r-pill);margin-top:var(--s2);
+  }
+  .profile-edit-btn{margin-top:var(--s4);}
+
+  .profile-completion-card{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s4);margin-bottom:var(--s4);cursor:pointer;
+    transition:border-color 0.2s var(--ease), transform 0.2s var(--ease);
+  }
+  .profile-completion-card:hover{border-color:rgba(23,53,104,0.3);transform:translateY(-2px);}
+  .profile-completion-ring{
+    --pct:0;width:44px;height:44px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(var(--route) calc(var(--pct) * 1%), var(--paper-dark) 0);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .profile-completion-ring::after{content:"";width:34px;height:34px;border-radius:50%;background:var(--card);}
+
+  .profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2);margin-bottom:var(--s4);}
+  .profile-stat{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:var(--s3) var(--s2);text-align:center;
+  }
+  .profile-stat .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--ink);}
+  .profile-stat .k{font-size:10px;color:var(--muted);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;}
+
+  .info-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s4) var(--s5);margin-bottom:var(--s4);
+  }
+  .info-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s2);gap:var(--s3);}
+  .info-card-title{
+    display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:14.5px;color:var(--ink);
+  }
+  .info-card-title .ic-svg{color:var(--route);font-size:17px;}
+  .info-edit-link{
+    background:none;border:none;color:var(--route);font-size:13px;font-weight:600;
+    cursor:pointer;padding:6px;flex-shrink:0;min-height:32px;
+  }
+  .info-row{
+    display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);
+    padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px;
+  }
+  .info-row:last-child{border-bottom:none;padding-bottom:0;}
+  .info-row:first-child{padding-top:0;}
+  .info-row .ir-k{color:var(--muted);flex-shrink:0;}
+  .info-row .ir-v{color:var(--ink);font-weight:600;text-align:right;}
+  .info-row .ir-v.empty{color:var(--muted);font-weight:500;font-style:italic;}
+  .info-empty-cta{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);font-size:13.5px;color:var(--muted);padding:4px 0;}
+  .info-empty-cta button{color:var(--route);background:none;border:none;font-weight:600;font-size:13px;cursor:pointer;min-height:32px;}
+
+  .profile-settings-card ul.settings-menu{margin-top:0;}
+
+  .danger-zone{margin:var(--s5) 0 var(--s6);}
+  .danger-row{
+    width:100%;display:flex;align-items:center;gap:var(--s3);
+    min-height:48px;padding:12px 4px;border:none;background:none;cursor:pointer;
+    color:#EF4444;font-size:14.5px;font-weight:600;text-align:left;
+  }
+  .danger-row .ic-svg{font-size:18px;}
+
+  .edit-section-heading{
+    font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:0.06em;margin:var(--s5) 0 var(--s2);
+  }
+  .edit-section-heading:first-child{margin-top:0;}
 </style>
 </head>
 <body>
@@ -1215,6 +1323,7 @@
     <symbol id="iconClose" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
     <symbol id="iconChevronRight" viewBox="0 0 24 24"><path d="M9 5 16 12 9 19"/></symbol>
     <symbol id="iconBell" viewBox="0 0 24 24"><path d="M6 10.5C6 6.9 8.7 4 12 4C15.3 4 18 6.9 18 10.5V14.5L20 17.5H4L6 14.5Z"/><path d="M9.5 20A2.6 2.6 0 0 0 14.5 20"/></symbol>
+    <symbol id="iconLogout" viewBox="0 0 24 24"><path d="M10 4H5C3.9 4 3 4.9 3 6V18C3 19.1 3.9 20 5 20H10"/><path d="M16 16L21 12L16 8"/><path d="M21 12H9"/></symbol>
   </g>
 </svg>
 
@@ -1446,16 +1555,14 @@
 </section>
 
 <section class="tabview" id="tab-profile" data-tab="profile" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:440px;position:relative;">
+  <div class="section" style="padding-top:var(--s6);padding-bottom:var(--s8);max-width:440px;position:relative;">
     <button type="button" class="sheet-close" id="btnProfileMore" data-tab-link="contact"
       aria-label="Yordam, savollar va sozlamalar" data-i18n-aria="profile.helpLink"
-      style="position:absolute;top:var(--s3);right:var(--s5);font-size:20px;font-weight:700;line-height:1;">⋯</button>
-    <div class="section-head reveal">
-      <div class="section-eyebrow" data-i18n="profile.eyebrow">Profil</div>
-      <h2 class="section-title"><span data-i18n="profile.titleA">Sizning</span> <span class="accent alt" data-i18n="profile.titleB">profilingiz</span></h2>
-      <p class="section-sub" data-i18n="profile.sub">Google yoki Telegram hisobingizga bog\'liq, boshqa hech kim ololmaydigan username tanlang.</p>
-    </div>
-    <div class="card reveal" id="profileCard"></div>
+      style="position:absolute;top:var(--s3);right:var(--s5);font-size:20px;font-weight:700;line-height:1;z-index:1;">⋯</button>
+    <!-- No generic page title here on purpose — the profile-header
+         component renderProfileForm() builds below (avatar, name,
+         username) is the page's identity, not a form heading. -->
+    <div class="reveal" id="profileCard"></div>
   </div>
 </section>
 
@@ -1625,6 +1732,7 @@
       </button>
     </div>
     <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-footer" id="sheetFooter" hidden></div>
   </div>
 </div>
 
@@ -1707,6 +1815,24 @@
 
       "profile.eyebrow": "Profil", "profile.titleA": "Sizning", "profile.titleB": "profilingiz",
       "profile.sub": "Google yoki Telegram hisobingizga bog'liq, boshqa hech kim ololmaydigan username tanlang.",
+      "profile.noUsername": "Username tanlanmagan", "profile.verifiedBadge": "Tasdiqlangan profil",
+      "profile.editBtn": "Profilni tahrirlash", "profile.completeTitle": "Profilni yakunlang", "profile.completeSub": "bajarildi",
+      "profile.statRating": "Reyting", "profile.statRatings": "Baholar", "profile.statCompletion": "To'liqlik",
+      "profile.personalTitle": "Shaxsiy ma'lumotlar", "profile.editLink": "Tahrirlash", "profile.addLink": "Qo'shish",
+      "profile.notSet": "Kiritilmagan", "profile.cityLabel": "Shahar", "profile.plateLabel": "Davlat raqami",
+      "profile.vehicleTitle": "Transport", "profile.vehicleEmpty": "Transport ma'lumotlarini to'ldiring",
+      "profile.contactTitle": "Aloqa", "profile.statusLabel": "Holat", "profile.connected": "Ulangan", "profile.notConnected": "Ulanmagan",
+      "profile.aboutTitle": "Men haqimda", "profile.bioEmpty": "Qisqa bio qo'shing", "profile.settingsTitle": "Sozlamalar",
+      "profile.signOut": "Chiqish", "profile.editTitle": "Profilni tahrirlash",
+      "profile.roleLabel": "Kimsiz?", "profile.roleUnset": "Tanlanmagan",
+      "profile.editMainGroup": "Asosiy ma'lumotlar", "profile.editContactGroup": "Aloqa",
+      "profile.editVehicleGroup": "Transport", "profile.editAboutGroup": "Qo'shimcha",
+      "profile.telegramHint": "Guruhda yukni olganda \"✓ Tasdiqlangan\" belgingiz ko'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.",
+      "profile.bioLabel": "Qisqa bio (ixtiyoriy)",
+      "profile.usernameHint": "Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo'ladi.",
+      "profile.saveBtn": "Saqlash", "profile.signOutTitle": "Chiqishni tasdiqlang",
+      "profile.signOutConfirm": "Hisobingizdan chiqmoqchimisiz? Qayta kirish uchun Google yoki Telegram orqali qaytadan login qilishingiz kerak bo'ladi.",
+      "profile.signedOutTitle": "Chiqdingiz", "profile.signedOutTelegramNote": "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.",
 
       "drivers.eyebrow": "Haydovchilar", "drivers.titleA": "Yuk", "drivers.titleB": "toping",
       "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
@@ -1852,6 +1978,24 @@
 
       "profile.eyebrow": "Профиль", "profile.titleA": "Ваш", "profile.titleB": "профиль",
       "profile.sub": "Привязан к вашему аккаунту Google или Telegram — выберите username, который никто больше не сможет занять.",
+      "profile.noUsername": "Username не выбран", "profile.verifiedBadge": "Подтверждённый профиль",
+      "profile.editBtn": "Редактировать профиль", "profile.completeTitle": "Завершите профиль", "profile.completeSub": "заполнено",
+      "profile.statRating": "Рейтинг", "profile.statRatings": "Оценки", "profile.statCompletion": "Заполненность",
+      "profile.personalTitle": "Личные данные", "profile.editLink": "Изменить", "profile.addLink": "Добавить",
+      "profile.notSet": "Не указано", "profile.cityLabel": "Город", "profile.plateLabel": "Госномер",
+      "profile.vehicleTitle": "Транспорт", "profile.vehicleEmpty": "Заполните данные транспорта",
+      "profile.contactTitle": "Контакты", "profile.statusLabel": "Статус", "profile.connected": "Подключено", "profile.notConnected": "Не подключено",
+      "profile.aboutTitle": "О себе", "profile.bioEmpty": "Добавьте короткое био", "profile.settingsTitle": "Настройки",
+      "profile.signOut": "Выйти", "profile.editTitle": "Редактировать профиль",
+      "profile.roleLabel": "Кто вы?", "profile.roleUnset": "Не выбрано",
+      "profile.editMainGroup": "Основные данные", "profile.editContactGroup": "Контакты",
+      "profile.editVehicleGroup": "Транспорт", "profile.editAboutGroup": "Дополнительно",
+      "profile.telegramHint": "Нужно, чтобы в группе появлялся значок «✓ Подтверждён» при взятии груза, а оценка после доставки попадала в этот профиль.",
+      "profile.bioLabel": "Короткое био (необязательно)",
+      "profile.usernameHint": "Username 3–20 символов, только латинские буквы/цифры/подчёркивание (_) — принадлежит только одному человеку.",
+      "profile.saveBtn": "Сохранить", "profile.signOutTitle": "Подтвердите выход",
+      "profile.signOutConfirm": "Хотите выйти из аккаунта? Для повторного входа понадобится снова войти через Google или Telegram.",
+      "profile.signedOutTitle": "Вы вышли", "profile.signedOutTelegramNote": "При повторном открытии в Telegram вход произойдёт автоматически.",
 
       "drivers.eyebrow": "Водители", "drivers.titleA": "Найдите", "drivers.titleB": "груз",
       "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
@@ -1997,6 +2141,24 @@
 
       "profile.eyebrow": "Profile", "profile.titleA": "Your", "profile.titleB": "profile",
       "profile.sub": "Tied to your Google or Telegram account — pick a username no one else can take.",
+      "profile.noUsername": "No username yet", "profile.verifiedBadge": "Verified profile",
+      "profile.editBtn": "Edit profile", "profile.completeTitle": "Finish your profile", "profile.completeSub": "complete",
+      "profile.statRating": "Rating", "profile.statRatings": "Ratings", "profile.statCompletion": "Complete",
+      "profile.personalTitle": "Personal information", "profile.editLink": "Edit", "profile.addLink": "Add",
+      "profile.notSet": "Not set", "profile.cityLabel": "City", "profile.plateLabel": "Plate number",
+      "profile.vehicleTitle": "Vehicle", "profile.vehicleEmpty": "Fill in your vehicle details",
+      "profile.contactTitle": "Contact", "profile.statusLabel": "Status", "profile.connected": "Connected", "profile.notConnected": "Not connected",
+      "profile.aboutTitle": "About me", "profile.bioEmpty": "Add a short bio", "profile.settingsTitle": "Settings",
+      "profile.signOut": "Sign out", "profile.editTitle": "Edit profile",
+      "profile.roleLabel": "Who are you?", "profile.roleUnset": "Not set",
+      "profile.editMainGroup": "Basic information", "profile.editContactGroup": "Contact",
+      "profile.editVehicleGroup": "Vehicle", "profile.editAboutGroup": "Additional",
+      "profile.telegramHint": "Needed so the \"✓ Verified\" badge shows in the group when you claim a load, and so a rating left after delivery lands on this profile.",
+      "profile.bioLabel": "Short bio (optional)",
+      "profile.usernameHint": "Username: 3-20 characters, Latin letters/digits/underscore (_) only — belongs to one person at a time.",
+      "profile.saveBtn": "Save", "profile.signOutTitle": "Confirm sign out",
+      "profile.signOutConfirm": "Sign out of your account? You'll need to sign in again with Google or Telegram to come back.",
+      "profile.signedOutTitle": "Signed out", "profile.signedOutTelegramNote": "Opening this again inside Telegram will sign you back in automatically.",
 
       "drivers.eyebrow": "Drivers", "drivers.titleA": "Find", "drivers.titleB": "cargo",
       "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
@@ -2266,7 +2428,7 @@
 
   /* ---------- Sheet: shared bottom-sheet / popover dialog shell ---------- */
   var Sheet = (function(){
-    var root = null, panel = null, titleEl = null, bodyEl = null;
+    var root = null, panel = null, titleEl = null, bodyEl = null, footerEl = null;
     var lastFocused = null;
     var dragStartY = null, dragCurrentY = null, dragging = false;
     var currentOnClose = null;
@@ -2276,6 +2438,7 @@
       if(!panel) panel = document.getElementById("sheetPanel");
       if(!titleEl) titleEl = document.getElementById("sheetTitle");
       if(!bodyEl) bodyEl = document.getElementById("sheetBody");
+      if(!footerEl) footerEl = document.getElementById("sheetFooter");
     }
 
     function focusableEls(){
@@ -2323,6 +2486,13 @@
       lastFocused = document.activeElement;
       titleEl.textContent = opts.title || "";
       bodyEl.innerHTML = opts.html || "";
+      // Optional sticky action area below the scrollable body — e.g. the
+      // profile Edit sheet's "Saqlash" button, always reachable without
+      // scrolling to the end of a long grouped form.
+      if(footerEl){
+        footerEl.innerHTML = opts.footerHtml || "";
+        footerEl.hidden = !opts.footerHtml;
+      }
       root.hidden = false;
       // rAF so "hidden -> visible" and the "open" transition don't collapse into one frame.
       requestAnimationFrame(function(){ root.classList.add("open"); });
@@ -2355,7 +2525,11 @@
       document.removeEventListener("keydown", onKeydown, true);
       document.body.style.overflow = "";
       var toRestore = lastFocused;
-      setTimeout(function(){ root.hidden = true; bodyEl.innerHTML = ""; }, 320);
+      setTimeout(function(){
+        root.hidden = true;
+        bodyEl.innerHTML = "";
+        if(footerEl){ footerEl.innerHTML = ""; footerEl.hidden = true; }
+      }, 320);
       if(toRestore && typeof toRestore.focus === "function") toRestore.focus();
     }
 
@@ -2912,7 +3086,7 @@
      all accounts (enforced server-side in /api/profile); the other fields
      are just this account's own info.
      ============================================================ */
-  var PROFILE_FIELDS = ["username", "role", "city", "bio", "phone"];
+  var PROFILE_FIELDS = ["username", "displayName", "role", "city", "bio", "phone"];
   var ROLE_LABELS = { DRIVER: "Haydovchiman", OWNER: "Yuk beruvchiman", BOTH: "Ikkalasi ham" };
   var VEHICLE_LABELS = {
     ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon", YARIM_TREYLER: "Yarim treyler",
@@ -2959,104 +3133,261 @@
     renderChatShell();
   }
 
+  /* ============================================================
+     Profile page — identity + overview + account management, not a
+     form. renderProfileForm(p) builds a read-only overview (header,
+     stats, a few info cards, Settings, sign out); "Tahrirlash" on any
+     of it opens one grouped Edit sheet (openProfileEditSheet) that
+     posts back through the same /api/profile endpoint as before.
+     ============================================================ */
+  function maskPhone(phone){
+    var d = String(phone || "").replace(/\D/g, "");
+    if(d.length !== 12 || d.indexOf("998") !== 0) return phone || "";
+    var rest = d.slice(3);
+    return "+998 " + rest.slice(0, 2) + " *** ** " + rest.slice(7, 9);
+  }
+
+  function profileDisplayName(p){
+    if(p && p.displayName) return p.displayName;
+    if(googleProfile && googleProfile.name) return googleProfile.name;
+    if(telegramUser) return [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ") || telegramUser.username || "";
+    return "";
+  }
+  function profileAvatarUrl(){
+    if(googleProfile && googleProfile.picture) return googleProfile.picture;
+    if(telegramUser && telegramUser.photoUrl) return telegramUser.photoUrl;
+    return "";
+  }
+
+  function infoRow(labelKey, labelFallback, value, emptyKey, emptyFallback){
+    return value
+      ? '<div class="info-row"><span class="ir-k" data-i18n="'+labelKey+'">'+labelFallback+'</span><span class="ir-v">'+escapeHtml(value)+'</span></div>'
+      : '<div class="info-row"><span class="ir-k" data-i18n="'+labelKey+'">'+labelFallback+'</span><span class="ir-v empty" data-i18n="'+emptyKey+'">'+emptyFallback+'</span></div>';
+  }
+
+  function renderProfileHeader(p){
+    var name = profileDisplayName(p) || "Foydalanuvchi";
+    var avatarUrl = profileAvatarUrl();
+    var initial = escapeHtml((name || "?").charAt(0).toUpperCase());
+
+    return '<div class="profile-header">'
+      + '<div class="profile-avatar-wrap">'
+      +   (avatarUrl
+            ? '<img class="profile-avatar" src="'+escapeHtml(avatarUrl)+'" alt="" referrerpolicy="no-referrer">'
+            : '<div class="profile-avatar-fallback">'+initial+'</div>')
+      + '</div>'
+      + '<h2 class="profile-name">'+escapeHtml(name)+'</h2>'
+      + (p.username
+          ? '<div class="profile-username">@'+escapeHtml(p.username)+'</div>'
+          : '<div class="profile-username muted" data-i18n="profile.noUsername">Username tanlanmagan</div>')
+      + (p.verified ? '<div class="profile-verified-badge">'+icon("iconCheck")+' <span data-i18n="profile.verifiedBadge">Tasdiqlangan profil</span></div>' : '')
+      + (p.role ? '<div class="profile-role-chip">'+escapeHtml(ROLE_LABELS[p.role] || p.role)+'</div>' : '')
+      + '<button type="button" class="btn ghost profile-edit-btn" id="btnEditProfile" data-i18n="profile.editBtn">Profilni tahrirlash</button>'
+      + '</div>';
+  }
+
+  function renderProfileCompletionCard(p){
+    var pct = profileCompletion(p);
+    if(pct >= 100) return "";
+    return '<button type="button" class="profile-completion-card" id="btnProfileCompletion" style="--pct:'+pct+';">'
+      + '<div class="profile-completion-ring"></div>'
+      + '<div style="flex:1;">'
+      +   '<div style="font-weight:700;font-size:14px;color:var(--ink);" data-i18n="profile.completeTitle">Profilni yakunlang</div>'
+      +   '<div style="font-size:12.5px;color:var(--ink-soft);">'+pct+'% <span data-i18n="profile.completeSub">bajarildi</span></div>'
+      + '</div>'
+      + '<svg class="ic-svg" aria-hidden="true" style="color:var(--muted);flex-shrink:0;"><use href="#iconChevronRight"/></svg>'
+      + '</button>';
+  }
+
+  function renderProfileStats(p){
+    var pct = profileCompletion(p);
+    var ratingLabel = p.ratingCount ? (p.ratingSum / p.ratingCount).toFixed(1) : "—";
+    return '<div class="profile-stats">'
+      + '<div class="profile-stat"><div class="v">★ '+ratingLabel+'</div><div class="k" data-i18n="profile.statRating">Reyting</div></div>'
+      + '<div class="profile-stat"><div class="v">'+(p.ratingCount || 0)+'</div><div class="k" data-i18n="profile.statRatings">Baholar</div></div>'
+      + '<div class="profile-stat"><div class="v">'+pct+'%</div><div class="k" data-i18n="profile.statCompletion">To\'liqlik</div></div>'
+      + '</div>';
+  }
+
+  function renderPersonalInfoCard(p){
+    return '<div class="info-card">'
+      + '<div class="info-card-head">'
+      +   '<div class="info-card-title">'+icon("iconUser")+' <span data-i18n="profile.personalTitle">Shaxsiy ma\'lumotlar</span></div>'
+      +   '<button type="button" class="info-edit-link" data-edit-profile data-i18n="profile.editLink">Tahrirlash</button>'
+      + '</div>'
+      + infoRow("order.nameLabel", "Ism", profileDisplayName(p), "profile.notSet", "Kiritilmagan")
+      + infoRow("profile.cityLabel", "Shahar", p.city, "profile.notSet", "Kiritilmagan")
+      + infoRow("order.phoneLabel", "Telefon", p.phone ? maskPhone(p.phone) : "", "profile.notSet", "Kiritilmagan")
+      + '</div>';
+  }
+
+  function renderVehicleCard(p){
+    if(p.role !== "DRIVER" && p.role !== "BOTH") return "";
+    var hasVehicle = Boolean(p.vehicleType || p.plateNumber);
+    return '<div class="info-card">'
+      + '<div class="info-card-head">'
+      +   '<div class="info-card-title">'+icon("iconTruck")+' <span data-i18n="profile.vehicleTitle">Transport</span></div>'
+      +   (hasVehicle ? '<button type="button" class="info-edit-link" data-edit-profile data-i18n="profile.editLink">Tahrirlash</button>' : '')
+      + '</div>'
+      + (hasVehicle
+          ? infoRow("order.truckTypeLabel", "Mashina turi", p.vehicleType ? (VEHICLE_LABELS[p.vehicleType] || p.vehicleType) : "", "profile.notSet", "Kiritilmagan")
+            + infoRow("profile.plateLabel", "Davlat raqami", p.plateNumber, "profile.notSet", "Kiritilmagan")
+          : '<div class="info-empty-cta"><span data-i18n="profile.vehicleEmpty">Transport ma\'lumotlarini to\'ldiring</span>'
+            + '<button type="button" data-edit-profile data-i18n="profile.addLink">Qo\'shish</button></div>')
+      + '</div>';
+  }
+
+  function renderContactCard(p){
+    var connected = Boolean(p.telegramUsername);
+    return '<div class="info-card">'
+      + '<div class="info-card-head">'
+      +   '<div class="info-card-title">'+icon("iconChat")+' <span data-i18n="profile.contactTitle">Aloqa</span></div>'
+      +   '<button type="button" class="info-edit-link" data-edit-profile data-i18n="profile.editLink">Tahrirlash</button>'
+      + '</div>'
+      + infoRow("order.phoneLabel", "Telefon", p.phone ? maskPhone(p.phone) : "", "profile.notSet", "Kiritilmagan")
+      + infoRow("settings.linkTelegram", "Telegram", p.telegramUsername ? "@"+p.telegramUsername : "", "profile.notSet", "Bog\'lanmagan")
+      + '<div class="info-row"><span class="ir-k" data-i18n="profile.statusLabel">Holat</span>'
+      +   '<span class="ir-v" style="color:'+(connected ? 'var(--accepted)' : 'var(--muted)')+';">'
+      +     (connected ? '✓ ' : '') + '<span data-i18n="'+(connected ? 'profile.connected' : 'profile.notConnected')+'">'+(connected ? 'Ulangan' : 'Ulanmagan')+'</span>'
+      +   '</span></div>'
+      + '</div>';
+  }
+
+  function renderAboutCard(p){
+    return '<div class="info-card">'
+      + '<div class="info-card-head">'
+      +   '<div class="info-card-title">'+icon("iconInfo")+' <span data-i18n="profile.aboutTitle">Men haqimda</span></div>'
+      +   (p.bio ? '<button type="button" class="info-edit-link" data-edit-profile data-i18n="profile.editLink">Tahrirlash</button>' : '')
+      + '</div>'
+      + (p.bio
+          ? '<p style="margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6;">'+escapeHtml(p.bio)+'</p>'
+          : '<div class="info-empty-cta"><span data-i18n="profile.bioEmpty">Qisqa bio qo\'shing</span>'
+            + '<button type="button" data-edit-profile data-i18n="profile.addLink">Qo\'shish</button></div>')
+      + '</div>';
+  }
+
+  function renderProfileSettingsSection(){
+    return '<div class="info-card profile-settings-card">'
+      + '<div class="info-card-title" style="margin-bottom:var(--s2);">'+icon("iconBadge")+' <span data-i18n="profile.settingsTitle">Sozlamalar</span></div>'
+      + '<ul class="settings-menu">'
+      +   '<li><button type="button" class="settings-row" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="privacy">'+icon("iconReceipt")+'<span data-i18n="settings.privacy">Maxfiylik siyosati</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-tab-link="contact">'+icon("iconChat")+'<span data-i18n="settings.support">Yordam</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" data-settings-page="about">'+icon("iconInfo")+'<span data-i18n="settings.about">Ilova haqida</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      + '</ul>'
+      + '</div>';
+  }
+
+  function renderDangerZone(){
+    return '<div class="danger-zone">'
+      + '<button type="button" class="danger-row" id="btnSignOut">'+icon("iconLogout")+'<span data-i18n="profile.signOut">Chiqish</span></button>'
+      + '</div>';
+  }
+
   function renderProfileForm(p){
     var card = document.getElementById("profileCard");
     if(!card) return;
-    var pct = profileCompletion(p);
-    var displayName = googleProfile ? googleProfile.name
-      : (telegramUser ? ([telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ") || telegramUser.username) : "");
-    var avatarUrl = googleProfile ? googleProfile.picture : (telegramUser ? telegramUser.photoUrl : "");
 
-    card.innerHTML =
-      '<div style="display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s5);">'
-      +   (avatarUrl
-            ? '<img src="'+escapeHtml(avatarUrl)+'" alt="" referrerpolicy="no-referrer" style="width:48px;height:48px;border-radius:50%;flex-shrink:0;">'
-            : '')
-      +   '<div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:16px;">'+escapeHtml(displayName)+'</div>'
-      +   (p.username ? '<div style="font-size:13px;color:var(--route-dark);">@'+escapeHtml(p.username)+'</div>' : '')
-      +   (p.verified ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:#16A34A;background:rgba(22,163,74,0.12);padding:2px 8px;border-radius:999px;margin-top:4px;">✓ Tasdiqlangan haydovchi</div>' : '')
-      +   (p.ratingCount ? '<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">★ '+(p.ratingSum/p.ratingCount).toFixed(1)+' ('+p.ratingCount+' baho)</div>' : '')
-      + '</div></div>'
+    card.innerHTML = renderProfileHeader(p)
+      + renderProfileCompletionCard(p)
+      + renderProfileStats(p)
+      + renderPersonalInfoCard(p)
+      + renderVehicleCard(p)
+      + renderContactCard(p)
+      + renderAboutCard(p)
+      + renderProfileSettingsSection()
+      + renderDangerZone();
 
-      + '<div style="margin-bottom:var(--s5);">'
-      +   '<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">'
-      +     '<span>Profilingiz '+pct+'% tayyor</span></div>'
-      +   '<div style="height:8px;border-radius:999px;background:var(--paper-dark);overflow:hidden;">'
-      +     '<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg, var(--route), var(--stamp));border-radius:999px;transition:width 0.4s var(--ease);"></div>'
-      +   '</div>'
-      + '</div>'
+    var editBtn = document.getElementById("btnEditProfile");
+    if(editBtn) editBtn.addEventListener("click", function(){ openProfileEditSheet(p); });
+    card.querySelectorAll("[data-edit-profile]").forEach(function(b){
+      b.addEventListener("click", function(){ openProfileEditSheet(p); });
+    });
+    var completionBtn = document.getElementById("btnProfileCompletion");
+    if(completionBtn) completionBtn.addEventListener("click", function(){ openProfileEditSheet(p); });
+    var signOutBtn = document.getElementById("btnSignOut");
+    if(signOutBtn) signOutBtn.addEventListener("click", confirmSignOut);
 
+    applyLang();
+  }
+
+  /* ---------- Edit Profile sheet: the only place any field is actually
+     editable — grouped into the same sections the read-only cards above
+     summarize, with a sticky Saqlash in the sheet's footer. ---------- */
+  function openProfileEditSheet(p){
+    var html = ''
+      + '<div class="edit-section-heading" data-i18n="profile.editMainGroup">Asosiy ma\'lumotlar</div>'
+      + '<div class="field"><label for="fDisplayName" data-i18n="order.nameLabel">Ism</label>'
+      +   '<input type="text" id="fDisplayName" maxlength="60" placeholder="Ismingiz" value="'+escapeHtml(p.displayName || "")+'" data-autofocus></div>'
       + '<div class="field"><label for="fUsername">Username</label>'
       +   '<input type="text" id="fUsername" maxlength="20" placeholder="masalan: dilshod_driver" value="'+escapeHtml(p.username || "")+'"></div>'
-
-      + '<div class="field"><label for="fRole">Kimsiz?</label>'
+      + '<div class="field"><label for="fRole" data-i18n="profile.roleLabel">Kimsiz?</label>'
       +   '<select id="fRole">'
-      +     '<option value=""'+(!p.role?' selected':'')+'>Tanlanmagan</option>'
+      +     '<option value=""'+(!p.role ? ' selected' : '')+' data-i18n="profile.roleUnset">Tanlanmagan</option>'
       +     Object.keys(ROLE_LABELS).map(function(k){
               return '<option value="'+k+'"'+(p.role===k?' selected':'')+'>'+ROLE_LABELS[k]+'</option>';
             }).join("")
       +   '</select></div>'
+      + '<div class="field"><label for="fProfileCity" data-i18n="profile.cityLabel">Shahar</label>'
+      +   '<select id="fProfileCity"><option value=""'+(!p.city ? ' selected' : '')+' data-i18n="profile.roleUnset">Tanlanmagan</option>'+cityOptions(p.city)+'</select></div>'
 
-      + '<div class="field"><label for="fProfileCity">Shahar</label>'
-      +   '<select id="fProfileCity"><option value=""'+(!p.city?' selected':'')+'>Tanlanmagan</option>'+cityOptions(p.city)+'</select></div>'
+      + '<div class="edit-section-heading" data-i18n="profile.editContactGroup">Aloqa</div>'
+      + '<div class="field"><label for="fPhoneProfile" data-i18n="order.phoneLabel">Telefon (ixtiyoriy)</label>'
+      +   '<input type="tel" id="fPhoneProfile" inputmode="tel" placeholder="90 123 45 67" value="'+escapeHtml(p.phone || "")+'"></div>'
+      + '<div class="field"><label for="fTelegramUsername" data-i18n="settings.linkTelegram">Telegram username (ixtiyoriy)</label>'
+      +   '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'
+      +     escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : (telegramUser && telegramUser.username ? "@"+telegramUser.username : ""))
+      +   '"></div>'
+      + '<p class="note" style="margin-top:-6px;" data-i18n="profile.telegramHint">Guruhda yukni olganda "✓ Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
 
-      + '<div class="field"><label for="fPhoneProfile">Telefon (ixtiyoriy)</label>'
-      +   '<input type="tel" id="fPhoneProfile" placeholder="90 123 45 67" value="'+escapeHtml(p.phone || "")+'"></div>'
+      + '<div class="edit-section-heading" data-i18n="profile.editVehicleGroup">Transport</div>'
+      + '<div class="field"><label for="fVehicleType" data-i18n="order.truckTypeLabel">Mashina turi</label>'
+      +   '<select id="fVehicleType"><option value=""'+(!p.vehicleType ? ' selected' : '')+' data-i18n="profile.roleUnset">Tanlanmagan</option>'
+      +   Object.keys(VEHICLE_LABELS).map(function(k){
+            return '<option value="'+k+'"'+(p.vehicleType===k?' selected':'')+'>'+VEHICLE_LABELS[k]+'</option>';
+          }).join("")
+      +   '</select></div>'
+      + '<div class="field"><label for="fPlateNumber" data-i18n="profile.plateLabel">Davlat raqami (ixtiyoriy)</label>'
+      +   '<input type="text" id="fPlateNumber" maxlength="12" placeholder="01 A 123 BB" value="'+escapeHtml(p.plateNumber || "")+'"></div>'
 
-      + '<div id="driverFields"'+(p.role==="DRIVER"||p.role==="BOTH" ? "" : " hidden")+'>'
-      +   '<div class="field"><label for="fVehicleType">Mashina turi</label>'
-      +     '<select id="fVehicleType">'
-      +       '<option value=""'+(!p.vehicleType?' selected':'')+'>Tanlanmagan</option>'
-      +       Object.keys(VEHICLE_LABELS).map(function(k){
-                return '<option value="'+k+'"'+(p.vehicleType===k?' selected':'')+'>'+VEHICLE_LABELS[k]+'</option>';
-              }).join("")
-      +     '</select></div>'
-      +   '<div class="field"><label for="fPlateNumber">Davlat raqami (ixtiyoriy)</label>'
-      +     '<input type="text" id="fPlateNumber" maxlength="12" placeholder="01 A 123 BB" value="'+escapeHtml(p.plateNumber || "")+'"></div>'
-      +   '<div class="field"><label for="fTelegramUsername">Telegram username (ixtiyoriy)</label>'
-      +     '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'
-      +       escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : (telegramUser && telegramUser.username ? "@"+telegramUser.username : ""))
-      +     '"></div>'
-      +   '<p class="note" style="margin-top:-6px;">Guruhda yukni olganda "✓ Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
-      + '</div>'
-
-      + '<div class="field"><label for="fBio">Qisqa bio (ixtiyoriy)</label>'
+      + '<div class="edit-section-heading" data-i18n="profile.editAboutGroup">Qo\'shimcha</div>'
+      + '<div class="field" style="margin-bottom:0;"><label for="fBio" data-i18n="profile.bioLabel">Qisqa bio (ixtiyoriy)</label>'
       +   '<input type="text" id="fBio" maxlength="200" placeholder="masalan: 5 yillik tajribaga ega yuk tashuvchi" value="'+escapeHtml(p.bio || "")+'"></div>'
 
-      + '<p class="note" id="profileNote">Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo‘ladi.</p>'
-      + '<button class="btn" id="btnSaveUsername">Saqlash</button>';
+      + '<p class="note" id="profileEditNote" data-i18n="profile.usernameHint">Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo\'ladi.</p>';
 
-    document.getElementById("btnSaveUsername").addEventListener("click", saveUsername);
-    document.getElementById("fRole").addEventListener("change", function(e){
-      var df = document.getElementById("driverFields");
-      if(df) df.hidden = !(e.target.value === "DRIVER" || e.target.value === "BOTH");
+    Sheet.open({
+      title: t("profile.editTitle") || "Profilni tahrirlash",
+      html: html,
+      footerHtml: '<button class="btn" id="btnSaveProfile" data-i18n="profile.saveBtn">Saqlash</button>',
+      onOpen: function(){
+        applyLang();
+        var saveBtn = document.getElementById("btnSaveProfile");
+        if(saveBtn) saveBtn.addEventListener("click", function(){ saveProfileFromEditSheet(saveBtn); });
+      }
     });
   }
 
-  function saveUsername(){
-    var note = document.getElementById("profileNote");
-    var btn = document.getElementById("btnSaveUsername");
-    if(!note || !btn) return;
-
-    var vehicleType = document.getElementById("fVehicleType");
-    var plateNumber = document.getElementById("fPlateNumber");
-    var telegramUsername = document.getElementById("fTelegramUsername");
+  function saveProfileFromEditSheet(btn){
+    var note = document.getElementById("profileEditNote");
+    var get = function(id){ var el = document.getElementById(id); return el ? el.value : ""; };
     var payload = {
       googleIdToken: googleIdToken,
       telegramInitData: telegramInitData,
-      username: document.getElementById("fUsername").value.trim(),
-      role: document.getElementById("fRole").value,
-      city: document.getElementById("fProfileCity").value,
-      phone: document.getElementById("fPhoneProfile").value.trim(),
-      bio: document.getElementById("fBio").value.trim(),
-      vehicleType: vehicleType ? vehicleType.value : "",
-      plateNumber: plateNumber ? plateNumber.value.trim() : "",
-      telegramUsername: telegramUsername ? telegramUsername.value.trim().replace(/^@/, "") : ""
+      displayName: get("fDisplayName").trim(),
+      username: get("fUsername").trim(),
+      role: get("fRole"),
+      city: get("fProfileCity"),
+      phone: get("fPhoneProfile").trim(),
+      telegramUsername: get("fTelegramUsername").trim().replace(/^@/, ""),
+      vehicleType: get("fVehicleType"),
+      plateNumber: get("fPlateNumber").trim(),
+      bio: get("fBio").trim()
     };
 
     btn.disabled = true;
-    note.textContent = "";
-    note.style.color = "";
+    if(note){ note.textContent = ""; note.style.color = ""; }
 
     fetch("/api/profile", {
       method: "POST",
@@ -3065,18 +3396,59 @@
     }).then(function(r){
       return r.json().then(function(body){ return {ok: r.ok, body: body}; });
     }).then(function(res){
+      btn.disabled = false;
       if(!res.ok){
-        note.textContent = res.body.error || "Xato yuz berdi";
-        note.style.color = "#DC2626";
+        if(note){ note.textContent = res.body.error || "Xato yuz berdi"; note.style.color = "#DC2626"; }
         return;
       }
       toast("Profil saqlandi", res.body.profile.username ? "@" + res.body.profile.username : "", "success");
+      Sheet.close();
       renderProfileForm(res.body.profile || {});
     }).catch(function(){
-      note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko‘ring.";
-      note.style.color = "#DC2626";
       btn.disabled = false;
+      if(note){ note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko\'ring."; note.style.color = "#DC2626"; }
     });
+  }
+
+  /* ---------- Sign out (Danger Zone) ---------- */
+  function confirmSignOut(){
+    Sheet.open({
+      title: t("profile.signOutTitle") || "Chiqishni tasdiqlang",
+      html: '<p class="note" style="margin-top:0;" data-i18n="profile.signOutConfirm">Hisobingizdan chiqmoqchimisiz? Qayta kirish uchun Google yoki Telegram orqali qaytadan login qilishingiz kerak bo\'ladi.</p>',
+      footerHtml: '<div class="wizard-actions">'
+        + '<button type="button" class="btn ghost" id="btnCancelSignOut" data-i18n="wizard.back">Bekor qilish</button>'
+        + '<button type="button" class="btn" id="btnConfirmSignOut" style="background:#EF4444;" data-i18n="profile.signOut">Chiqish</button>'
+        + '</div>',
+      onOpen: function(){
+        applyLang();
+        var cancelBtn = document.getElementById("btnCancelSignOut");
+        if(cancelBtn) cancelBtn.addEventListener("click", Sheet.close);
+        var confirmBtn = document.getElementById("btnConfirmSignOut");
+        if(confirmBtn) confirmBtn.addEventListener("click", function(){ Sheet.close(); performSignOut(); });
+      }
+    });
+  }
+
+  function performSignOut(){
+    googleIdToken = null;
+    googleProfile = null;
+    telegramInitData = null;
+    telegramUser = null;
+    try{ if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){}
+
+    var gate = document.getElementById("googleGate");
+    if(gate) gate.innerHTML = "";
+    var gateHome = document.getElementById("googleGateHome");
+    if(gateHome) gateHome.innerHTML = "";
+    updateAccountLinkRows();
+    initGoogleSignIn();
+
+    switchTab("home");
+    toast(
+      t("profile.signedOutTitle") || "Chiqdingiz",
+      isTelegramWebApp ? (t("profile.signedOutTelegramNote") || "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.") : "",
+      "info"
+    );
   }
 
   /* ============================================================

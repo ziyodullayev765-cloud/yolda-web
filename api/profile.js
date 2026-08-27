@@ -18,7 +18,7 @@
  * A username can belong to only one account at a time. Two keys in Redis
  * track that both ways:
  *   username:<lowercased>  -> owner's identity   (who currently holds it)
- *   profile:<identity>     -> JSON blob { username, role, city, bio, phone }
+ *   profile:<identity>     -> JSON blob { username, displayName, role, city, bio, phone, ... }
  */
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSismember } from '../lib/kv.js';
@@ -78,7 +78,7 @@ const handleProfile = async (req, res) => {
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
 
-  const touchesAnyField = ['username', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername']
+  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername']
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
     return res.status(200).json({ ok: true, profile: existing });
@@ -113,6 +113,13 @@ const handleProfile = async (req, res) => {
 
   // An empty field means "the user didn't touch this one" — it must never
   // wipe a value that was saved earlier. Only a non-empty value updates it.
+  // displayName overrides the name shown app-wide (profile header, chat, ...)
+  // in place of whatever Google/Telegram reported — useful for a Telegram
+  // account with no real name set, or anyone who'd rather show something else.
+  if (body.displayName !== undefined && body.displayName !== null && body.displayName !== '') {
+    next.displayName = String(body.displayName).trim().slice(0, 60);
+  }
+
   if (body.role !== undefined && body.role !== null && body.role !== '') {
     const role = String(body.role);
     if (!ROLES.includes(role)) return res.status(400).json({ error: 'Noto‘g‘ri rol' });
