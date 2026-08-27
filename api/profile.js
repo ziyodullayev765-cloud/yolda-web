@@ -2,15 +2,25 @@
  * POST /api/profile
  *
  * One endpoint doing double duty:
- *   - { googleIdToken }                        → returns the caller's saved profile
- *   - { googleIdToken, username/role/city/... } → updates whichever fields were sent
+ *   - { googleIdToken | telegramInitData }                        → returns the caller's saved profile
+ *   - { googleIdToken | telegramInitData, username/role/city/... } → updates whichever fields were sent
  *
- * A username can belong to only one Google account at a time. Two keys in
- * Redis track that both ways:
- *   username:<lowercased>  -> owner's email   (who currently holds it)
- *   profile:<email>        -> JSON blob { username, role, city, bio, phone }
+ * Plus two actions for the Google<->Telegram account-linking flow
+ * (requirement #6 — see lib/identity.js for why it's two steps):
+ *   - ?action=link-telegram-start,  { googleIdToken }               → mint a 6-digit code
+ *   - ?action=link-telegram-finish, { telegramInitData, code }      → redeem it, completing the link
+ *
+ * Auth accepts either credential — see lib/identity.js. A caller identified
+ * only through Telegram (no linked Google account) is keyed by "tg:<id>"
+ * instead of an email; every key below already treats that as an opaque
+ * string, so nothing else in this file needs to change for that case.
+ *
+ * A username can belong to only one account at a time. Two keys in Redis
+ * track that both ways:
+ *   username:<lowercased>  -> owner's identity   (who currently holds it)
+ *   profile:<identity>     -> JSON blob { username, role, city, bio, phone }
  */
-import { verifyGoogleEmail } from '../lib/google.js';
+import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSismember } from '../lib/kv.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
@@ -40,15 +50,30 @@ const normalisePhone = (v) => {
   return '';
 };
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+/** POST ?action=link-telegram-start — step 1, see the file header comment. */
+const linkTelegramStart = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const result = await createTelegramLinkCode(body.googleIdToken);
+  if (result.error) return res.status(400).json({ error: result.error });
+  return res.status(200).json({ ok: true, code: result.code, expiresInSeconds: result.expiresInSeconds });
+};
+
+/** POST ?action=link-telegram-finish — step 2, see the file header comment. */
+const linkTelegramFinish = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const result = await redeemTelegramLinkCode({ code: body.code, telegramInitData: body.telegramInitData });
+  if (result.error) return res.status(400).json({ error: result.error });
+  return res.status(200).json({ ok: true });
+};
+
+const handleProfile = async (req, res) => {
   if (!kvConfigured) {
     return res.status(500).json({ error: 'Bazacha ulanmagan (KV_REST_API_URL/TOKEN yo‘q) — administratorga xabar bering' });
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await verifyGoogleEmail(body.googleIdToken);
-  if (!email) return res.status(401).json({ error: 'Avval Google orqali kiring' });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
@@ -138,8 +163,16 @@ export default async function handler(req, res) {
   if (!saved) {
     return res.status(502).json({ error: 'Saqlab bo‘lmadi (bazachaga yozib bo‘lmadi), qayta urinib ko‘ring' });
   }
-  // Registers this email in the admin panel's user index. Safe to repeat —
-  // SADD is a no-op if it's already a member.
+  // Registers this identity in the admin panel's user index. Safe to
+  // repeat — SADD is a no-op if it's already a member.
   await kvSadd('profile_emails', email);
   return res.status(200).json({ ok: true, profile: next });
+};
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const action = String(req.query.action || '');
+  if (action === 'link-telegram-start') return linkTelegramStart(req, res);
+  if (action === 'link-telegram-finish') return linkTelegramFinish(req, res);
+  return handleProfile(req, res);
 }
