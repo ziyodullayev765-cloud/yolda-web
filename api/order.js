@@ -6,15 +6,16 @@
  * and this app had grown past that. Dispatch is by HTTP method, plus an
  * `?action=rate` query param to tell a POST apart from creating an order:
  *
- *   POST /api/order                 — create an order (unchanged body/behavior)
- *   GET  /api/order?code=&phone=    — look up an order's status by code+phone
- *   POST /api/order?action=rate     — rate the driver once DELIVERED
+ *   POST /api/order                       — create an order (unchanged body/behavior)
+ *   GET  /api/order?code=&phone=          — look up an order's status by code+phone
+ *   GET  /api/order?action=list&...       — browse open loads (the "Yuklar" tab)
+ *   POST /api/order?action=rate           — rate the driver once DELIVERED
  *
  * The bot token never reaches the browser — that is the whole reason this
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush, kvGet, kvSet, kvSismember } from '../lib/kv.js';
+import { kvPush, kvGet, kvSet, kvSismember, kvRange } from '../lib/kv.js';
 import { verifyGoogleEmail } from '../lib/google.js';
 import { CARGO, buildOrderMessage, STATUS_LABELS } from '../lib/orderMessage.js';
 
@@ -59,6 +60,11 @@ const DISTANCE = {
   'Samarqand|Termiz': 420, 'Samarqand|Toshkent': 300, 'Samarqand|Urganch': 800,
   'Termiz|Toshkent': 700, 'Termiz|Urganch': 1000, 'Toshkent|Urganch': 1050
 };
+
+// Matches the driver-profile field of the same name in api/profile.js —
+// kept as a duplicate literal rather than a shared import, same pattern
+// already used for CITIES across these serverless files.
+const VEHICLE_TYPES = ['ISUZU', 'GAZEL', 'FURGON', 'YARIM_TREYLER', 'SAMOSVAL', 'BOSHQA'];
 
 const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
@@ -122,6 +128,17 @@ const validate = (body) => {
 
   const note = String(body.note || '').trim().slice(0, 300);
 
+  // Both optional — shown on the "Yuklar" browse cards and used as filters
+  // there, but never required to post a load.
+  const truckType = String(body.truckType || '');
+  if (truckType && !VEHICLE_TYPES.includes(truckType)) errors.push('Noto‘g‘ri mashina turi');
+
+  let pickupDate = String(body.pickupDate || '');
+  if (pickupDate && !/^\d{4}-\d{2}-\d{2}$/.test(pickupDate)) {
+    errors.push('Yuklash sanasi noto‘g‘ri');
+    pickupDate = '';
+  }
+
   // Optional: the cargo owner can propose their own price instead of the
   // auto-calculated one. Empty/absent means "use the calculated price".
   let proposedAmount = null;
@@ -135,7 +152,10 @@ const validate = (body) => {
 
   return {
     errors,
-    value: { fromCity, toCity, weightKg, cargoType, customCargoLabel, name, phone, note, proposedAmount },
+    value: {
+      fromCity, toCity, weightKg, cargoType, customCargoLabel, truckType, pickupDate,
+      name, phone, note, proposedAmount,
+    },
   };
 };
 
@@ -265,6 +285,70 @@ const getOrderStatus = async (req, res) => {
 };
 
 /**
+ * GET ?action=list&fromCity=&toCity=&cargoType=&truckType=&minWeight=&
+ * maxWeight=&when=today|tomorrow — the "Yuklar" tab's browse list.
+ *
+ * Public, no sign-in required to browse (only to post or claim a load).
+ * The response deliberately omits phone, name, note and googleEmail — the
+ * same "only the driver who claims it sees the contact info" rule the FAQ
+ * already promises applies here too.
+ */
+const listLoads = async (req, res) => {
+  const q = req.query;
+  const fromCity = String(q.fromCity || '');
+  const toCity = String(q.toCity || '');
+  const cargoType = String(q.cargoType || '');
+  const truckType = String(q.truckType || '');
+  const minWeight = q.minWeight ? Number(q.minWeight) : null;
+  const maxWeight = q.maxWeight ? Number(q.maxWeight) : null;
+  const when = String(q.when || '');
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const tomorrowIso = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+
+  const codes = await kvRange('order_codes', 0, 299);
+  const raw = await Promise.all(codes.map((code) => kvGet(`order:${code}`)));
+
+  const loads = raw
+    .map((s) => {
+      if (!s) return null;
+      try {
+        return JSON.parse(s);
+      } catch {
+        return null;
+      }
+    })
+    .filter((o) => o && (o.status || 'NEW') === 'NEW')
+    .filter((o) => !fromCity || o.fromCity === fromCity)
+    .filter((o) => !toCity || o.toCity === toCity)
+    .filter((o) => !cargoType || o.cargoType === cargoType)
+    .filter((o) => !truckType || o.truckType === truckType)
+    .filter((o) => minWeight == null || o.weightKg >= minWeight)
+    .filter((o) => maxWeight == null || o.weightKg <= maxWeight)
+    .filter((o) => {
+      if (when === 'today') return !o.pickupDate || o.pickupDate === todayIso;
+      if (when === 'tomorrow') return o.pickupDate === tomorrowIso;
+      return true;
+    })
+    .slice(0, 60)
+    .map((o) => ({
+      code: o.code,
+      fromCity: o.fromCity,
+      toCity: o.toCity,
+      cargoType: o.cargoType,
+      customCargoLabel: o.customCargoLabel || '',
+      weightKg: o.weightKg,
+      amount: o.amount,
+      distanceKm: o.distanceKm,
+      truckType: o.truckType || '',
+      pickupDate: o.pickupDate || '',
+      createdAt: o.createdAt,
+    }));
+
+  return res.status(200).json({ loads });
+};
+
+/**
  * POST ?action=rate — rate the driver once DELIVERED, using the same
  * code+phone ownership check as getOrderStatus. One rating per order — the
  * driver's aggregate is rolled up onto their profile, but only if they
@@ -320,7 +404,10 @@ const rateOrder = async (req, res) => {
 };
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') return getOrderStatus(req, res);
+  if (req.method === 'GET') {
+    if (String(req.query.action || '') === 'list') return listLoads(req, res);
+    return getOrderStatus(req, res);
+  }
   if (req.method === 'POST') {
     if (String(req.query.action || '') === 'rate') return rateOrder(req, res);
     return createOrder(req, res);
