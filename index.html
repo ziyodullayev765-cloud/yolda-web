@@ -201,6 +201,13 @@
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .nav-logo .dot{color:var(--stamp);}
+  .nav-theme-btn{
+    width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;
+    flex-shrink:0;margin-left:auto;position:relative;z-index:1;
+    transition:transform 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .nav-theme-btn:hover{transform:translateY(-1px);border-color:var(--route);}
   .nav-links{display:flex;gap:var(--s1);list-style:none;margin:0;padding:0;}
   .nav-links a{
     display:block;font-size:13.5px;font-weight:500;text-decoration:none;color:var(--ink-soft);
@@ -983,6 +990,7 @@
 <nav class="nav" aria-label="Asosiy navigatsiya" style="position:relative;">
   <div id="googleGateHome"></div>
   <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);"><span class="word">YO'LDA</span></a>
+  <button type="button" class="nav-theme-btn" id="btnQuickTheme" aria-label="Tungi/kunduzgi rejim" title="Tungi/kunduzgi rejim">☀️</button>
 </nav>
 
 <main>
@@ -1226,6 +1234,7 @@
       <div class="field"><label data-i18n="settings.lang">Til</label>
         <div class="lang-switch">
           <button type="button" class="lang-btn" data-lang="uz">O'zbekcha</button>
+          <button type="button" class="lang-btn" data-lang="uz-cyrl">Ўзбекча</button>
           <button type="button" class="lang-btn" data-lang="ru">Русский</button>
           <button type="button" class="lang-btn" data-lang="en">English</button>
         </div>
@@ -1541,29 +1550,90 @@
     },
   };
 
+  var VALID_LANGS = ["uz", "uz-cyrl", "ru", "en"];
+
+  /**
+   * "uz-cyrl" isn't a fourth translated dictionary — it's the "uz" (Latin)
+   * one run through a Latin→Cyrillic transliterator at display time. Uzbek
+   * Cyrillic is a mechanical, rule-based conversion of the same text, so a
+   * separate hand-maintained dictionary would just be a second copy to keep
+   * in sync forever. HTML tags inside a string (e.g. the "Aloqa" button
+   * embedded in order.how4) are left untouched — only the text between them
+   * gets converted.
+   */
+  var UZ_CYRL_RULES = [
+    [/O['ʻʼ‘’`]/g, "Ў"], [/o['ʻʼ‘’`]/g, "ў"],
+    [/G['ʻʼ‘’`]/g, "Ғ"], [/g['ʻʼ‘’`]/g, "ғ"],
+    [/SH/g, "Ш"], [/Sh/g, "Ш"], [/sh/g, "ш"],
+    [/CH/g, "Ч"], [/Ch/g, "Ч"], [/ch/g, "ч"],
+    [/YA/g, "Я"], [/Ya/g, "Я"], [/ya/g, "я"],
+    [/YO/g, "Ё"], [/Yo/g, "Ё"], [/yo/g, "ё"],
+    [/YU/g, "Ю"], [/Yu/g, "Ю"], [/yu/g, "ю"],
+    [/YE/g, "Е"], [/Ye/g, "Е"], [/ye/g, "е"],
+    [/TS/g, "Ц"], [/Ts/g, "Ц"], [/ts/g, "ц"],
+    [/A/g, "А"], [/a/g, "а"], [/B/g, "Б"], [/b/g, "б"], [/D/g, "Д"], [/d/g, "д"],
+    [/E/g, "Е"], [/e/g, "е"], [/F/g, "Ф"], [/f/g, "ф"], [/G/g, "Г"], [/g/g, "г"],
+    [/H/g, "Ҳ"], [/h/g, "ҳ"], [/I/g, "И"], [/i/g, "и"], [/J/g, "Ж"], [/j/g, "ж"],
+    [/K/g, "К"], [/k/g, "к"], [/L/g, "Л"], [/l/g, "л"], [/M/g, "М"], [/m/g, "м"],
+    [/N/g, "Н"], [/n/g, "н"], [/O/g, "О"], [/o/g, "о"], [/P/g, "П"], [/p/g, "п"],
+    [/Q/g, "Қ"], [/q/g, "қ"], [/R/g, "Р"], [/r/g, "р"], [/S/g, "С"], [/s/g, "с"],
+    [/T/g, "Т"], [/t/g, "т"], [/U/g, "У"], [/u/g, "у"], [/V/g, "В"], [/v/g, "в"],
+    [/X/g, "Х"], [/x/g, "х"], [/Y/g, "Й"], [/y/g, "й"], [/Z/g, "З"], [/z/g, "з"],
+    [/['ʻʼ‘’`]/g, "ъ"],
+  ];
+
+  function latinToCyrillicUz(text){
+    // "Google" is a foreign trademark, not an Uzbek word — Uzbek Cyrillic
+    // text conventionally keeps trademarks like this in Latin rather than
+    // phonetically spelling them out ("YO'LDA" itself is left alone here
+    // on purpose: it's spelled the same as the real Uzbek word "yo'lda"
+    // ("on the way"), so transliterating it to "ЙЎЛДА" is correct, not a bug).
+    var GOOGLE_PLACEHOLDER = "\u0001";
+    text = text.replace(/Google/g, GOOGLE_PLACEHOLDER);
+    for(var i = 0; i < UZ_CYRL_RULES.length; i++){
+      text = text.replace(UZ_CYRL_RULES[i][0], UZ_CYRL_RULES[i][1]);
+    }
+    return text.split(GOOGLE_PLACEHOLDER).join("Google");
+  }
+
+  /** Converts everything except HTML tags themselves, so markup stays intact. */
+  function transliterateHtmlAware(html){
+    return html.split(/(<[^>]+>)/g).map(function(part){
+      return part.charAt(0) === "<" ? part : latinToCyrillicUz(part);
+    }).join("");
+  }
+
   var LANG_KEY = "yolda_lang";
   var currentLang = (function(){
     try{
       var saved = localStorage.getItem(LANG_KEY);
-      if(saved && STRINGS[saved]) return saved;
+      if(saved && VALID_LANGS.indexOf(saved) !== -1) return saved;
     }catch(e){}
     return "uz";
   })();
 
+  /** Looks up one translated string for the active language, or null. */
+  function t(key){
+    var baseLang = currentLang === "uz-cyrl" ? "uz" : currentLang;
+    var dict = STRINGS[baseLang] || STRINGS.uz;
+    var val = dict[key];
+    if(val === undefined) return null;
+    return currentLang === "uz-cyrl" ? transliterateHtmlAware(val) : val;
+  }
+
   function applyLang(){
-    var dict = STRINGS[currentLang] || STRINGS.uz;
     document.querySelectorAll("[data-i18n]").forEach(function(el){
-      var key = el.getAttribute("data-i18n");
-      if(dict[key] !== undefined) el.innerHTML = dict[key];
+      var val = t(el.getAttribute("data-i18n"));
+      if(val !== null) el.innerHTML = val;
     });
-    document.documentElement.setAttribute("lang", currentLang);
+    document.documentElement.setAttribute("lang", currentLang === "uz-cyrl" ? "uz" : currentLang);
     document.querySelectorAll(".lang-btn").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-lang") === currentLang);
     });
   }
 
   function setLang(lang){
-    if(!STRINGS[lang]) return;
+    if(VALID_LANGS.indexOf(lang) === -1) return;
     currentLang = lang;
     try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
     applyLang();
@@ -1581,6 +1651,10 @@
     document.querySelectorAll(".theme-btn").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-theme-choice") === theme);
     });
+    // The full toggle lives in Sozlamalar (Profil → Yordam), but that's a
+    // couple of taps away — this one in the top bar is always reachable.
+    var quick = document.getElementById("btnQuickTheme");
+    if(quick) quick.textContent = theme === "dark" ? "🌙" : "☀️";
   }
 
   function setTheme(theme){
@@ -3284,12 +3358,17 @@
   document.querySelectorAll(".theme-btn").forEach(function(b){
     b.addEventListener("click", function(){ setTheme(b.getAttribute("data-theme-choice")); });
   });
+  var btnQuickTheme = document.getElementById("btnQuickTheme");
+  if(btnQuickTheme) btnQuickTheme.addEventListener("click", function(){
+    var cur = document.documentElement.getAttribute("data-theme") || "light";
+    setTheme(cur === "dark" ? "light" : "dark");
+  });
   var btnShowPrivacy = document.getElementById("btnShowPrivacy");
   if(btnShowPrivacy) btnShowPrivacy.addEventListener("click", function(){
     var box = document.getElementById("privacyPolicyBox");
     if(!box) return;
     if(box.hidden){
-      box.innerHTML = (STRINGS[currentLang] || STRINGS.uz)["privacy.body"];
+      box.innerHTML = t("privacy.body");
       box.hidden = false;
     } else {
       box.hidden = true;
