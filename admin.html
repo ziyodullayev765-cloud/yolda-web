@@ -227,6 +227,7 @@
       <button type="button" class="admin-nav-item" data-panel="users">👥 Foydalanuvchilar</button>
       <button type="button" class="admin-nav-item" data-panel="messages">✉️ Xabarlar</button>
       <button type="button" class="admin-nav-item" data-panel="reports">🚨 Shikoyatlar<span class="nav-badge" id="reportsBadge" hidden></span></button>
+      <button type="button" class="admin-nav-item" data-panel="trucks">🚗 Mashinalar</button>
     </nav>
     <div class="admin-logout"><button type="button" id="logoutBtn">Chiqish</button></div>
   </aside>
@@ -321,6 +322,30 @@
             </tr>
           </thead>
           <tbody id="reportsRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-panel" id="panel-trucks" hidden>
+      <div class="admin-panel-head">
+        <div><h1>Mashinalar</h1><p class="muted" id="trucksCount">Yuklanmoqda…</p></div>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="trucksSearch" placeholder="Qidirish: marka, shahar, sotuvchi...">
+        <button type="button" class="icon-btn" id="trucksRefresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12A8 8 0 0 1 18 6.3"/><path d="M20 12A8 8 0 0 1 6 17.7"/><path d="M18 3.5V7H14.5M6 20.5V17H9.5"/></svg>
+          Yangilash
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Vaqt</th><th>Turkum</th><th>Marka</th><th>Yil</th><th>Narx</th><th>Shahar</th>
+              <th>Sotuvchi</th><th>Rasm</th><th>Ko'rildi</th><th>Holat</th><th>Tekshirilgan</th><th>TOP</th><th>Amal</th>
+            </tr>
+          </thead>
+          <tbody id="trucksRows"></tbody>
         </table>
       </div>
     </section>
@@ -451,7 +476,7 @@
   });
 
   /* ---------- Panels ---------- */
-  var PANELS = ["orders", "users", "messages", "reports"];
+  var PANELS = ["orders", "users", "messages", "reports", "trucks"];
   function switchPanel(name){
     if(PANELS.indexOf(name) === -1) return;
     PANELS.forEach(function(p){
@@ -465,6 +490,7 @@
     if(name === "users") loadUsers();
     if(name === "messages") loadMessages();
     if(name === "reports") loadReports();
+    if(name === "trucks") loadTrucks();
   }
   document.querySelectorAll(".admin-nav-item").forEach(function(b){
     b.addEventListener("click", function(){ switchPanel(b.getAttribute("data-panel")); });
@@ -843,6 +869,113 @@
     }).catch(function(){
       alert("Holatni yangilab bo'lmadi, qayta urinib ko'ring.");
       loadReports();
+    });
+  }
+
+  /* ---------- Mashinalar (vehicle marketplace listings) ----------
+     The admin owns exactly the three trust/moderation flags the seller
+     can't set on themselves (see api/trucks.js): verified, promoted and
+     status — plus outright removal. Listing content stays the seller's. */
+  var allTrucks = [];
+  var TRUCK_CAT_LABELS = {
+    YENGIL: "Yengil", YUK: "Yuk", MIKROAVTOBUS: "Mikroavtobus", FURGON: "Furgon",
+    AVTOBUS: "Avtobus", MAXSUS: "Maxsus texnika", MOTOSIKL: "Motosikl", BOSHQA: "Boshqa"
+  };
+  var TRUCK_STATUS_LABELS = { ACTIVE: "Faol", PAUSED: "To'xtatilgan", SOLD: "Sotilgan" };
+
+  function truckRowHtml(t){
+    var d = t.createdAt ? new Date(t.createdAt) : null;
+    var statusOptions = Object.keys(TRUCK_STATUS_LABELS).map(function(s){
+      return "<option value=\"" + s + "\"" + ((t.status || "ACTIVE") === s ? " selected" : "") + ">" + TRUCK_STATUS_LABELS[s] + "</option>";
+    }).join("");
+    return "<tr>"
+      + "<td>" + (d ? esc(d.toLocaleString("uz-UZ")) : "") + "</td>"
+      + "<td>" + esc(TRUCK_CAT_LABELS[t.category] || t.category) + "</td>"
+      + "<td>" + esc(t.brand) + "</td>"
+      + "<td>" + esc(t.year) + "</td>"
+      + "<td>" + fmt(t.price || 0) + " so'm</td>"
+      + "<td>" + esc(t.city) + "</td>"
+      + "<td class=\"muted-cell\">" + esc(t.sellerName) + (t.sellerUsername ? " (@" + esc(t.sellerUsername) + ")" : "") + "</td>"
+      + "<td>" + esc(t.photoCount || 0) + "</td>"
+      + "<td>" + esc(t.viewCount || 0) + "</td>"
+      + "<td><select class=\"status-select\" data-truck-status-id=\"" + esc(t.id) + "\">" + statusOptions + "</select></td>"
+      + "<td><button type=\"button\" class=\"icon-btn\" data-truck-verify=\"" + esc(t.id) + "\" data-verified=\"" + (t.verified ? "1" : "0") + "\" style=\"padding:6px 10px;font-size:12px;" + (t.verified ? "border-color:#22C55E;color:#86EFAC;" : "") + "\">" + (t.verified ? "✓ Ha" : "Yo'q") + "</button></td>"
+      + "<td><button type=\"button\" class=\"icon-btn\" data-truck-promote=\"" + esc(t.id) + "\" data-promoted=\"" + (t.promoted ? "1" : "0") + "\" style=\"padding:6px 10px;font-size:12px;" + (t.promoted ? "border-color:#F59E0B;color:#FCD34D;" : "") + "\">" + (t.promoted ? "★ TOP" : "—") + "</button></td>"
+      + "<td><button type=\"button\" class=\"icon-btn\" data-truck-remove=\"" + esc(t.id) + "\" style=\"padding:6px 10px;font-size:12px;\">O'chirish</button></td>"
+      + "</tr>";
+  }
+  function renderTrucks(list){
+    var activeCount = allTrucks.filter(function(t){ return (t.status || "ACTIVE") === "ACTIVE"; }).length;
+    var soldCount = allTrucks.filter(function(t){ return t.status === "SOLD"; }).length;
+    document.getElementById("trucksCount").textContent =
+      list.length + " / " + allTrucks.length + " ta e'lon ko'rsatilmoqda (" + activeCount + " faol, " + soldCount + " sotilgan)";
+    document.getElementById("trucksRows").innerHTML =
+      list.map(truckRowHtml).join("") || "<tr><td colspan=\"13\" class=\"muted-cell\">Hech narsa topilmadi</td></tr>";
+    document.querySelectorAll("[data-truck-status-id]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        updateTruck({ id: sel.getAttribute("data-truck-status-id"), status: sel.value });
+      });
+    });
+    document.querySelectorAll("[data-truck-verify]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        updateTruck({ id: btn.getAttribute("data-truck-verify"), verified: btn.getAttribute("data-verified") !== "1" });
+      });
+    });
+    document.querySelectorAll("[data-truck-promote]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        updateTruck({ id: btn.getAttribute("data-truck-promote"), promoted: btn.getAttribute("data-promoted") !== "1" });
+      });
+    });
+    document.querySelectorAll("[data-truck-remove]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        if(!confirm("E'lonni butunlay o'chirasizmi?")) return;
+        updateTruck({ id: btn.getAttribute("data-truck-remove"), remove: true });
+      });
+    });
+  }
+  function filterTrucks(){
+    var q = document.getElementById("trucksSearch").value.trim().toLowerCase();
+    if(!q) return renderTrucks(allTrucks);
+    renderTrucks(allTrucks.filter(function(t){
+      return [t.brand, t.city, t.sellerName, t.sellerUsername, TRUCK_CAT_LABELS[t.category], t.description]
+        .some(function(v){ return String(v || "").toLowerCase().indexOf(q) !== -1; });
+    }));
+  }
+  document.getElementById("trucksSearch").addEventListener("input", filterTrucks);
+  document.getElementById("trucksRefresh").addEventListener("click", function(){ loadTrucks(true); });
+
+  function loadTrucks(forceSpin){
+    var btn = document.getElementById("trucksRefresh");
+    if(forceSpin) btn.classList.add("spinning");
+    if(!allTrucks.length) document.getElementById("trucksRows").innerHTML = skeletonRows(13, 6);
+    fetch("/api/admin-data?resource=trucks").then(function(r){
+      if(!r.ok) throw new Error("fail");
+      return r.json();
+    }).then(function(data){
+      allTrucks = data.trucks || [];
+      filterTrucks();
+    }).catch(function(){
+      document.getElementById("trucksCount").textContent = "Yuklab bo'lmadi — qayta urinib ko'ring";
+      if(!allTrucks.length){
+        document.getElementById("trucksRows").innerHTML =
+          "<tr><td colspan=\"13\" class=\"muted-cell\">Yuklab bo'lmadi. \"Yangilash\" tugmasini bosing.</td></tr>";
+      }
+    }).finally(function(){ btn.classList.remove("spinning"); });
+  }
+
+  function updateTruck(payload){
+    fetch("/api/admin-data?action=update-truck", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      if(!r.ok) throw new Error("fail");
+      return r.json();
+    }).then(function(){
+      loadTrucks();
+    }).catch(function(){
+      alert("Saqlab bo'lmadi, qayta urinib ko'ring.");
+      loadTrucks();
     });
   }
 
