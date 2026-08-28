@@ -938,15 +938,16 @@
     display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
     margin-bottom:var(--s2);letter-spacing:0.02em;
   }
-  select,input[type=number],input[type=text]{
+  select,input[type=number],input[type=text],input[type=tel],textarea{
     width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--border);
     border-radius:var(--r-sm);background:var(--card);color:var(--ink);
     font-family:'Inter',sans-serif;font-size:15px;
     box-shadow:var(--sh-1);
     transition:border-color 0.22s var(--ease), box-shadow 0.22s var(--ease);
   }
-  select:hover,input[type=number]:hover,input[type=text]:hover{border-color:rgba(23,53,104,0.45);}
-  select:focus,input:focus{border-color:var(--route);box-shadow:0 0 0 4px rgba(23,53,104,0.14);}
+  select:hover,input[type=number]:hover,input[type=text]:hover,input[type=tel]:hover,textarea:hover{border-color:rgba(23,53,104,0.45);}
+  select:focus,input:focus,textarea:focus{border-color:var(--route);box-shadow:0 0 0 4px rgba(23,53,104,0.14);}
+  textarea{min-height:96px;resize:vertical;line-height:1.5;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
 
   .cargo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);}
@@ -1413,6 +1414,63 @@
     cursor:pointer;flex-shrink:0;
   }
   .photo-picker-add .ic-svg{font-size:22px;}
+
+  /* ---------- Trucks marketplace: categories, badges, sort, seller card ---------- */
+  .truck-category-row{
+    display:flex;gap:var(--s2);overflow-x:auto;padding-bottom:2px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .truck-category-row::-webkit-scrollbar{display:none;}
+  .truck-category-item{
+    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;
+    width:72px;padding:var(--s3) var(--s2);border-radius:var(--r-md);border:1px solid var(--border);
+    background:var(--card);cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-soft);
+    text-align:center;transition:border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
+  }
+  .truck-category-item .tci-emoji{font-size:22px;line-height:1;}
+  .truck-category-item.active{border-color:var(--route);color:var(--route);background:rgba(23,53,104,0.07);}
+  .trucks-sort-select{
+    width:auto;padding:7px 30px 7px 12px;font-size:12.5px;border-radius:var(--r-pill);
+    border:1px solid var(--border);background-color:var(--card);color:var(--ink-soft);
+  }
+  .truck-card{position:relative;}
+  .tc-badges{position:absolute;top:6px;left:6px;display:flex;flex-direction:column;gap:4px;z-index:1;}
+  .tc-badge{
+    font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill);color:#fff;
+    text-transform:uppercase;letter-spacing:0.02em;
+  }
+  .tc-badge.fresh{background:var(--accepted);}
+  .tc-badge.verified{background:var(--stamp-dark);}
+  .tc-badge.promoted{background:var(--warn);color:#5A3B00;}
+  .tc-fav{
+    position:absolute;top:6px;right:6px;z-index:1;width:28px;height:28px;border-radius:50%;
+    background:rgba(255,255,255,0.9);border:none;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:15px;color:#DC2626;box-shadow:var(--sh-1);
+  }
+  :root[data-theme="dark"] .tc-fav{background:rgba(20,31,59,0.85);}
+
+  .spec-table{width:100%;border-collapse:collapse;margin:var(--s2) 0 var(--s4);}
+  .spec-table tr{border-bottom:1px solid var(--border);}
+  .spec-table tr:last-child{border-bottom:none;}
+  .spec-table td{padding:8px 0;font-size:13px;}
+  .spec-table td:first-child{color:var(--muted);width:50%;}
+  .spec-table td:last-child{color:var(--ink);font-weight:600;text-align:right;}
+
+  .seller-card{
+    display:flex;align-items:center;gap:var(--s3);padding:var(--s3);
+    background:var(--paper-dark);border-radius:var(--r-lg);margin:var(--s4) 0;
+  }
+  .seller-card .sc-avatar{
+    width:48px;height:48px;border-radius:50%;flex-shrink:0;object-fit:cover;
+    background:linear-gradient(135deg, var(--route), var(--stamp));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+    font-family:'Space Grotesk',sans-serif;font-size:18px;
+  }
+  .seller-card .sc-name{font-weight:700;font-size:14.5px;color:var(--ink);display:flex;align-items:center;gap:4px;}
+  .seller-card .sc-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .similar-trucks-row{display:flex;gap:var(--s3);overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+  .similar-trucks-row .truck-card{flex:0 0 150px;}
 </style>
 </head>
 <body>
@@ -1673,29 +1731,38 @@
 </section>
 
 <section class="tabview" id="tab-trucks" data-tab="trucks" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:800px;">
+  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:960px;">
     <div class="section-head reveal">
       <div class="section-eyebrow" data-i18n="trucks.eyebrow">Mashinalar</div>
-      <h2 class="section-title"><span data-i18n="trucks.titleA">Yuk mashinasi</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
-      <p class="section-sub" data-i18n="trucks.sub">Ishlatilgan yuk mashinalari e'lonlari — o'zingiz ham e'lon joylashtiring.</p>
+      <h2 class="section-title"><span data-i18n="trucks.titleA">Mashina</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
+      <p class="section-sub" data-i18n="trucks.sub">Yengil, yuk va maxsus texnika e'lonlari — o'zingiz ham e'lon joylashtiring.</p>
     </div>
 
-    <div class="card reveal loads-search-card">
-      <div class="row2">
-        <div class="field"><label for="fTrucksCity" data-i18n="profile.cityLabel">Shahar</label>
-          <select id="fTrucksCity"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
-        <div class="field"><label for="fTrucksType" data-i18n="order.truckTypeLabel">Mashina turi</label>
-          <select id="fTrucksType"><option value="" data-i18n="order.anyTruck">Farqi yo'q</option></select></div>
+    <button type="button" class="home-search-bar reveal" id="trucksSearchBar" style="margin-bottom:var(--s4);">
+      <span class="hsb-icon">🔎</span>
+      <span style="flex:1;text-align:left;">
+        <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka, model yoki kalit so'z...</span></span>
+      </span>
+    </button>
+
+    <div class="section-eyebrow reveal" style="margin-bottom:var(--s2);" data-i18n="trucks.categoriesLabel">Kategoriyalar</div>
+    <div class="truck-category-row reveal" id="trucksCategoryRow"></div>
+
+    <div class="home-quick-row reveal" style="margin-top:var(--s4);">
+      <div class="chip-row">
+        <button type="button" class="chip" id="btnTrucksFilters"><span data-i18n="trucks.filtersBtn">Filtrlar</span></button>
+        <button type="button" class="chip" id="btnTrucksMine" data-i18n="trucks.mine">Mening e'lonlarim</button>
+        <button type="button" class="chip" id="btnTrucksFavs" data-i18n="trucks.favorites">Saqlanganlar</button>
       </div>
-      <div class="home-quick-row" style="margin-top:0;">
-        <div class="chip-row">
-          <button type="button" class="chip" id="btnTrucksMine" data-i18n="trucks.mine">Mening e'lonlarim</button>
-        </div>
-        <button type="button" class="btn" id="btnSellTruck" style="width:auto;padding:0 var(--s5);"><span data-i18n="trucks.sellBtn">+ Sotish</span></button>
-      </div>
+      <button type="button" class="btn" id="btnSellTruck" style="width:auto;padding:0 var(--s5);"><span data-i18n="trucks.sellBtn">+ Sotish</span></button>
     </div>
 
-    <p class="note" id="trucksCount" style="margin:var(--s4) 0 var(--s3);"></p>
+    <div class="chip-row reveal" id="trucksMineTabs" hidden style="margin:var(--s3) 0;"></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:var(--s4) 0 var(--s3);flex-wrap:wrap;">
+      <p class="note" id="trucksCount" style="margin:0;"></p>
+      <select id="fTrucksSort" class="trucks-sort-select"></select>
+    </div>
     <div id="trucksList" class="truck-grid"></div>
   </div>
 </section>
@@ -1914,17 +1981,57 @@
       "nav.home": "Asosiy", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
       "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)", "nav.trucks": "Mashinalar",
 
-      "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
-      "trucks.sub": "Ishlatilgan yuk mashinalari e'lonlari — o'zingiz ham e'lon joylashtiring.",
+      "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Mashina", "trucks.titleB": "soting yoki oling",
+      "trucks.sub": "Yengil, yuk va maxsus texnika e'lonlari — o'zingiz ham e'lon joylashtiring.",
       "trucks.mine": "Mening e'lonlarim", "trucks.sellBtn": "+ Sotish", "trucks.sellBtnTitle": "Mashina e'lonini joylash",
-      "trucks.publishBtn": "Joylash",
+      "trucks.editTitle": "E'lonni tahrirlash", "trucks.publishBtn": "Joylash", "trucks.saveBtn": "Saqlash",
       "trucks.brandLabel": "Marka va model", "trucks.yearLabel": "Ishlab chiqarilgan yili",
-      "trucks.mileageLabel": "Probeg (km, ixtiyoriy)", "trucks.priceLabel": "Narx (so'm)",
-      "trucks.descLabel": "Qisqa tavsif (ixtiyoriy)",
+      "trucks.mileageLabel": "Probeg (km)", "trucks.mileageShort": "Probeg", "trucks.priceLabel": "Narx (so'm)",
+      "trucks.descLabel": "Tavsif", "trucks.descHeading": "Tavsif",
       "trucks.deleteBtn": "E'lonni o'chirish", "trucks.deleteConfirm": "E'lonni o'chirasizmi?",
+      "trucks.editBtn": "Tahrirlash", "trucks.saved": "Saqlandi", "trucks.statusUpdated": "Holat yangilandi",
       "trucks.published": "E'lon joylandi", "trucks.needSignIn": "Avval Google yoki Telegram orqali kiring",
-      "trucks.emptyTitle": "Mos e'lon topilmadi.", "trucks.emptyMine": "Sizda hali e'lon yo'q.",
+      "trucks.emptyTitle": "Bu filtrlar bo'yicha mashina topilmadi.", "trucks.emptySub": "Filtrlarni o'zgartirib ko'ring.",
+      "trucks.emptyMine": "Sizda hali e'lonlar yo'q.", "trucks.emptyFavs": "Saqlangan mashinalar yo'q.",
       "trucks.photosLabel": "Rasmlar (ixtiyoriy, 5 tagacha)", "trucks.detailTitle": "Mashina haqida",
+      "trucks.categoriesLabel": "Kategoriyalar", "trucks.countSuffix": "ta e'lon",
+      "trucks.catYengil": "Yengil", "trucks.catYuk": "Yuk", "trucks.catMikroavtobus": "Mikroavtobus",
+      "trucks.catFurgon": "Furgon", "trucks.catAvtobus": "Avtobus", "trucks.catMaxsus": "Maxsus texnika",
+      "trucks.catMotosikl": "Motosikl", "trucks.catBoshqa": "Boshqa", "trucks.catLabel": "Turkum",
+      "trucks.searchPlaceholder": "Marka, model yoki kalit so'z...", "trucks.searchTitle": "Qidirish",
+      "trucks.recentSearches": "So'nggi qidiruvlar", "trucks.popularSearches": "Mashhur qidiruvlar",
+      "trucks.filtersBtn": "Filtrlar", "trucks.applyFilters": "Ko'rsatish", "trucks.resetFilters": "Tozalash",
+      "trucks.moreFilters": "Qo'shimcha", "trucks.favorites": "Saqlanganlar",
+      "trucks.bodyLabel": "Kuzov turi", "trucks.fuelLabel": "Yoqilg'i", "trucks.transmissionLabel": "Transmissiya",
+      "trucks.conditionLabel": "Holati", "trucks.steeringLabel": "Rul", "trucks.sellerTypeLabel": "Sotuvchi turi",
+      "trucks.docsReady": "Hujjatlari joyida", "trucks.credit": "Kredit", "trucks.exchange": "Almashtirish",
+      "trucks.refrigerated": "Ref (sovutgichli)", "trucks.hasTrailer": "Pritsep bilan",
+      "trucks.sortRecommended": "Tavsiya etilgan", "trucks.sortNewest": "Eng yangi", "trucks.sortCheapest": "Arzonidan",
+      "trucks.sortPriciest": "Qimmatidan", "trucks.sortYear": "Yili bo'yicha", "trucks.sortMileage": "Probeg bo'yicha",
+      "trucks.badgeNew": "Yangi", "trucks.badgeVerified": "Tekshirilgan", "trucks.badgeTop": "TOP",
+      "trucks.justNow": "hozirgina", "trucks.minsAgo": "daqiqa oldin", "trucks.hoursAgo": "soat oldin", "trucks.daysAgo": "kun oldin",
+      "trucks.negotiable": "Kelishiladi", "trucks.priceFixed": "Qat'iy", "trucks.views": "ko'rildi",
+      "trucks.specsHeading": "Xususiyatlari", "trucks.sellerHeading": "Sotuvchi",
+      "trucks.engineVolume": "Dvigatel hajmi", "trucks.enginePower": "Ot kuchi",
+      "trucks.capacity": "Yuk ko'tarish", "trucks.cabType": "Kabina turi", "trucks.axles": "O'qlar soni",
+      "trucks.listingsCount": "ta e'lon", "trucks.sinceYear": "-yildan beri",
+      "trucks.messageSeller": "Xabar yozish", "trucks.chatPrefill": "Salom,", "trucks.chatPrefillTail": "hali sotuvdami?",
+      "trucks.findLoads": "Bu mashina uchun mos yuklarni ko'rish",
+      "trucks.manageHeading": "E'lonni boshqarish",
+      "trucks.similarHeading": "Sizga o'xshash mashinalar",
+      "trucks.reportBtn": "Shubhali e'lon haqida xabar berish", "trucks.reportTitle": "Shikoyat qilish",
+      "trucks.reportFake": "Soxta e'lon", "trucks.reportWrongInfo": "Noto'g'ri ma'lumot / narx",
+      "trucks.reportNeedDesc": "Nima bo'lganini tasvirlab bering.", "trucks.reportSent": "Shikoyatingiz yuborildi",
+      "trucks.stepType": "Turi", "trucks.stepDetails": "Ma'lumot", "trucks.stepPrice": "Narx",
+      "trucks.stepPhotos": "Rasmlar", "trucks.stepReview": "Tekshirish",
+      "trucks.stepTypeTitle": "Qanday transport?", "trucks.stepDetailsTitle": "Mashina ma'lumotlari",
+      "trucks.stepPriceTitle": "Narx va joylashuv", "trucks.stepPhotosTitle": "Rasmlar va tavsif",
+      "trucks.stepReviewTitle": "Tekshirib chiqing",
+      "trucks.commercialHeading": "Yuk mashinasi ma'lumotlari",
+      "trucks.photosHint": "Birinchi rasm asosiy rasm bo'ladi. 5 tagacha rasm qo'shishingiz mumkin.",
+      "trucks.coverPhoto": "Asosiy", "trucks.maxPhotos": "Ko'pi bilan 5 ta rasm",
+      "trucks.badFileType": "Faqat rasm fayllari", "trucks.photoFailed": "Rasmni o'qib bo'lmadi",
+      "trucks.fillStep": "Ma'lumotlarni to'ldiring",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2042,7 +2149,7 @@
       "contact.supportNameLabel": "Ismingiz", "contact.supportContactLabel": "Telefon yoki Telegram (ixtiyoriy)",
       "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
 
-      "common.back": "Orqaga",
+      "common.back": "Orqaga", "common.min": "Eng kam", "common.max": "Eng ko'p",
       "settings.title": "Sozlamalar", "settings.lang": "Til", "settings.theme": "Ko'rinish",
       "settings.light": "Kunduzgi", "settings.dark": "Tungi", "settings.auto": "Tizim",
       "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
@@ -2114,17 +2221,57 @@
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
       "nav.telegramGroupAria": "Группа водителей (Telegram)", "nav.trucks": "Машины",
 
-      "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовую машину", "trucks.titleB": "продайте или купите",
-      "trucks.sub": "Объявления о подержанных грузовых машинах — разместите и своё объявление.",
+      "trucks.eyebrow": "Машины", "trucks.titleA": "Машину", "trucks.titleB": "продайте или купите",
+      "trucks.sub": "Объявления о легковых, грузовых машинах и спецтехнике — разместите и своё.",
       "trucks.mine": "Мои объявления", "trucks.sellBtn": "+ Продать", "trucks.sellBtnTitle": "Разместить объявление о машине",
-      "trucks.publishBtn": "Разместить",
+      "trucks.editTitle": "Редактировать объявление", "trucks.publishBtn": "Разместить", "trucks.saveBtn": "Сохранить",
       "trucks.brandLabel": "Марка и модель", "trucks.yearLabel": "Год выпуска",
-      "trucks.mileageLabel": "Пробег (км, необязательно)", "trucks.priceLabel": "Цена (сум)",
-      "trucks.descLabel": "Краткое описание (необязательно)",
+      "trucks.mileageLabel": "Пробег (км)", "trucks.mileageShort": "Пробег", "trucks.priceLabel": "Цена (сум)",
+      "trucks.descLabel": "Описание", "trucks.descHeading": "Описание",
       "trucks.deleteBtn": "Удалить объявление", "trucks.deleteConfirm": "Удалить объявление?",
+      "trucks.editBtn": "Редактировать", "trucks.saved": "Сохранено", "trucks.statusUpdated": "Статус обновлён",
       "trucks.published": "Объявление размещено", "trucks.needSignIn": "Сначала войдите через Google или Telegram",
-      "trucks.emptyTitle": "Подходящих объявлений не найдено.", "trucks.emptyMine": "У вас пока нет объявлений.",
+      "trucks.emptyTitle": "По этим фильтрам машин не найдено.", "trucks.emptySub": "Попробуйте изменить фильтры.",
+      "trucks.emptyMine": "У вас пока нет объявлений.", "trucks.emptyFavs": "Нет сохранённых машин.",
       "trucks.photosLabel": "Фото (необязательно, до 5 шт.)", "trucks.detailTitle": "О машине",
+      "trucks.categoriesLabel": "Категории", "trucks.countSuffix": "объявлений",
+      "trucks.catYengil": "Легковые", "trucks.catYuk": "Грузовые", "trucks.catMikroavtobus": "Микроавтобусы",
+      "trucks.catFurgon": "Фургоны", "trucks.catAvtobus": "Автобусы", "trucks.catMaxsus": "Спецтехника",
+      "trucks.catMotosikl": "Мотоциклы", "trucks.catBoshqa": "Другое", "trucks.catLabel": "Категория",
+      "trucks.searchPlaceholder": "Марка, модель или ключевое слово...", "trucks.searchTitle": "Поиск",
+      "trucks.recentSearches": "Недавние запросы", "trucks.popularSearches": "Популярные запросы",
+      "trucks.filtersBtn": "Фильтры", "trucks.applyFilters": "Показать", "trucks.resetFilters": "Сбросить",
+      "trucks.moreFilters": "Дополнительно", "trucks.favorites": "Сохранённые",
+      "trucks.bodyLabel": "Тип кузова", "trucks.fuelLabel": "Топливо", "trucks.transmissionLabel": "Трансмиссия",
+      "trucks.conditionLabel": "Состояние", "trucks.steeringLabel": "Руль", "trucks.sellerTypeLabel": "Тип продавца",
+      "trucks.docsReady": "Документы в порядке", "trucks.credit": "Кредит", "trucks.exchange": "Обмен",
+      "trucks.refrigerated": "Реф (с холодильником)", "trucks.hasTrailer": "С прицепом",
+      "trucks.sortRecommended": "Рекомендуемые", "trucks.sortNewest": "Новые", "trucks.sortCheapest": "Сначала дешевле",
+      "trucks.sortPriciest": "Сначала дороже", "trucks.sortYear": "По году", "trucks.sortMileage": "По пробегу",
+      "trucks.badgeNew": "Новое", "trucks.badgeVerified": "Проверено", "trucks.badgeTop": "TOP",
+      "trucks.justNow": "только что", "trucks.minsAgo": "минут назад", "trucks.hoursAgo": "часов назад", "trucks.daysAgo": "дней назад",
+      "trucks.negotiable": "Торг уместен", "trucks.priceFixed": "Фиксированная", "trucks.views": "просмотров",
+      "trucks.specsHeading": "Характеристики", "trucks.sellerHeading": "Продавец",
+      "trucks.engineVolume": "Объём двигателя", "trucks.enginePower": "Мощность",
+      "trucks.capacity": "Грузоподъёмность", "trucks.cabType": "Тип кабины", "trucks.axles": "Количество осей",
+      "trucks.listingsCount": "объявлений", "trucks.sinceYear": " года",
+      "trucks.messageSeller": "Написать сообщение", "trucks.chatPrefill": "Здравствуйте,", "trucks.chatPrefillTail": "ещё в продаже?",
+      "trucks.findLoads": "Посмотреть подходящие грузы для этой машины",
+      "trucks.manageHeading": "Управление объявлением",
+      "trucks.similarHeading": "Похожие машины",
+      "trucks.reportBtn": "Сообщить о подозрительном объявлении", "trucks.reportTitle": "Пожаловаться",
+      "trucks.reportFake": "Фейковое объявление", "trucks.reportWrongInfo": "Неверная информация / цена",
+      "trucks.reportNeedDesc": "Опишите, что произошло.", "trucks.reportSent": "Жалоба отправлена",
+      "trucks.stepType": "Тип", "trucks.stepDetails": "Данные", "trucks.stepPrice": "Цена",
+      "trucks.stepPhotos": "Фото", "trucks.stepReview": "Проверка",
+      "trucks.stepTypeTitle": "Какой транспорт?", "trucks.stepDetailsTitle": "Данные машины",
+      "trucks.stepPriceTitle": "Цена и местоположение", "trucks.stepPhotosTitle": "Фото и описание",
+      "trucks.stepReviewTitle": "Проверьте данные",
+      "trucks.commercialHeading": "Данные грузовой машины",
+      "trucks.photosHint": "Первое фото будет главным. Можно добавить до 5 фото.",
+      "trucks.coverPhoto": "Главное", "trucks.maxPhotos": "Не более 5 фото",
+      "trucks.badFileType": "Только изображения", "trucks.photoFailed": "Не удалось прочитать изображение",
+      "trucks.fillStep": "Заполните данные",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2242,7 +2389,7 @@
       "contact.supportNameLabel": "Ваше имя", "contact.supportContactLabel": "Телефон или Telegram (необязательно)",
       "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
 
-      "common.back": "Назад",
+      "common.back": "Назад", "common.min": "Мин.", "common.max": "Макс.",
       "settings.title": "Настройки", "settings.lang": "Язык", "settings.theme": "Оформление",
       "settings.light": "Дневной", "settings.dark": "Ночной", "settings.auto": "Системный",
       "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
@@ -2314,17 +2461,57 @@
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
       "nav.telegramGroupAria": "Drivers group (Telegram)", "nav.trucks": "Vehicles",
 
-      "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a cargo truck",
-      "trucks.sub": "Used cargo vehicle listings — post your own too.",
+      "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a vehicle",
+      "trucks.sub": "Listings for cars, trucks and special equipment — post your own too.",
       "trucks.mine": "My listings", "trucks.sellBtn": "+ Sell", "trucks.sellBtnTitle": "Post a vehicle listing",
-      "trucks.publishBtn": "Post",
+      "trucks.editTitle": "Edit listing", "trucks.publishBtn": "Post", "trucks.saveBtn": "Save",
       "trucks.brandLabel": "Make and model", "trucks.yearLabel": "Year",
-      "trucks.mileageLabel": "Mileage (km, optional)", "trucks.priceLabel": "Price (so'm)",
-      "trucks.descLabel": "Short description (optional)",
+      "trucks.mileageLabel": "Mileage (km)", "trucks.mileageShort": "Mileage", "trucks.priceLabel": "Price (so'm)",
+      "trucks.descLabel": "Description", "trucks.descHeading": "Description",
       "trucks.deleteBtn": "Delete listing", "trucks.deleteConfirm": "Delete this listing?",
+      "trucks.editBtn": "Edit", "trucks.saved": "Saved", "trucks.statusUpdated": "Status updated",
       "trucks.published": "Listing posted", "trucks.needSignIn": "Sign in with Google or Telegram first",
-      "trucks.emptyTitle": "No matching listings.", "trucks.emptyMine": "You don't have any listings yet.",
+      "trucks.emptyTitle": "No vehicles match these filters.", "trucks.emptySub": "Try changing your filters.",
+      "trucks.emptyMine": "You don't have any listings yet.", "trucks.emptyFavs": "No saved vehicles.",
       "trucks.photosLabel": "Photos (optional, up to 5)", "trucks.detailTitle": "About this vehicle",
+      "trucks.categoriesLabel": "Categories", "trucks.countSuffix": "listings",
+      "trucks.catYengil": "Cars", "trucks.catYuk": "Trucks", "trucks.catMikroavtobus": "Minibuses",
+      "trucks.catFurgon": "Vans", "trucks.catAvtobus": "Buses", "trucks.catMaxsus": "Special equipment",
+      "trucks.catMotosikl": "Motorcycles", "trucks.catBoshqa": "Other", "trucks.catLabel": "Category",
+      "trucks.searchPlaceholder": "Make, model or keyword...", "trucks.searchTitle": "Search",
+      "trucks.recentSearches": "Recent searches", "trucks.popularSearches": "Popular searches",
+      "trucks.filtersBtn": "Filters", "trucks.applyFilters": "Show results", "trucks.resetFilters": "Reset",
+      "trucks.moreFilters": "More", "trucks.favorites": "Saved",
+      "trucks.bodyLabel": "Body type", "trucks.fuelLabel": "Fuel", "trucks.transmissionLabel": "Transmission",
+      "trucks.conditionLabel": "Condition", "trucks.steeringLabel": "Steering", "trucks.sellerTypeLabel": "Seller type",
+      "trucks.docsReady": "Documents in order", "trucks.credit": "Credit", "trucks.exchange": "Exchange",
+      "trucks.refrigerated": "Refrigerated", "trucks.hasTrailer": "With trailer",
+      "trucks.sortRecommended": "Recommended", "trucks.sortNewest": "Newest", "trucks.sortCheapest": "Cheapest first",
+      "trucks.sortPriciest": "Priciest first", "trucks.sortYear": "By year", "trucks.sortMileage": "By mileage",
+      "trucks.badgeNew": "New", "trucks.badgeVerified": "Verified", "trucks.badgeTop": "TOP",
+      "trucks.justNow": "just now", "trucks.minsAgo": "min ago", "trucks.hoursAgo": "hours ago", "trucks.daysAgo": "days ago",
+      "trucks.negotiable": "Negotiable", "trucks.priceFixed": "Fixed", "trucks.views": "views",
+      "trucks.specsHeading": "Specifications", "trucks.sellerHeading": "Seller",
+      "trucks.engineVolume": "Engine volume", "trucks.enginePower": "Horsepower",
+      "trucks.capacity": "Payload", "trucks.cabType": "Cab type", "trucks.axles": "Axles",
+      "trucks.listingsCount": "listings", "trucks.sinceYear": " onwards",
+      "trucks.messageSeller": "Send a message", "trucks.chatPrefill": "Hi,", "trucks.chatPrefillTail": "is it still for sale?",
+      "trucks.findLoads": "Find matching loads for this vehicle",
+      "trucks.manageHeading": "Manage listing",
+      "trucks.similarHeading": "Similar vehicles",
+      "trucks.reportBtn": "Report a suspicious listing", "trucks.reportTitle": "Report",
+      "trucks.reportFake": "Fake listing", "trucks.reportWrongInfo": "Incorrect information / price",
+      "trucks.reportNeedDesc": "Describe what happened.", "trucks.reportSent": "Your report was sent",
+      "trucks.stepType": "Type", "trucks.stepDetails": "Details", "trucks.stepPrice": "Price",
+      "trucks.stepPhotos": "Photos", "trucks.stepReview": "Review",
+      "trucks.stepTypeTitle": "What kind of vehicle?", "trucks.stepDetailsTitle": "Vehicle details",
+      "trucks.stepPriceTitle": "Price and location", "trucks.stepPhotosTitle": "Photos and description",
+      "trucks.stepReviewTitle": "Check your listing",
+      "trucks.commercialHeading": "Commercial vehicle details",
+      "trucks.photosHint": "The first photo becomes the cover. You can add up to 5.",
+      "trucks.coverPhoto": "Cover", "trucks.maxPhotos": "Up to 5 photos",
+      "trucks.badFileType": "Images only", "trucks.photoFailed": "Couldn't read that image",
+      "trucks.fillStep": "Fill in the details",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
       "home.greeting": "Assalomu alaykum 👋",
@@ -2442,7 +2629,7 @@
       "contact.supportNameLabel": "Your name", "contact.supportContactLabel": "Phone or Telegram (optional)",
       "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
 
-      "common.back": "Back",
+      "common.back": "Back", "common.min": "Min", "common.max": "Max",
       "settings.title": "Settings", "settings.lang": "Language", "settings.theme": "Appearance",
       "settings.light": "Light", "settings.dark": "Dark", "settings.auto": "System",
       "settings.support": "Help", "settings.privacy": "Privacy policy",
@@ -2699,6 +2886,12 @@
     var lastFocused = null;
     var dragStartY = null, dragCurrentY = null, dragging = false;
     var currentOnClose = null, currentOnBack = null;
+    // close() defers clearing the panel until its exit transition finishes.
+    // Tracked so open() can cancel a still-pending cleanup — otherwise
+    // close-then-immediately-open (detail → edit, detail → report) would
+    // have the old sheet's cleanup fire a moment later and blank out the
+    // new sheet that had already replaced it.
+    var closeTimer = null;
 
     function els(){
       if(!root) root = document.getElementById("sheetRoot");
@@ -2752,6 +2945,9 @@
     function open(opts){
       els();
       if(!root) return;
+      // A close() that hasn't finished its exit transition yet would clear
+      // this panel out from under the sheet being opened right now.
+      if(closeTimer){ clearTimeout(closeTimer); closeTimer = null; }
       lastFocused = document.activeElement;
       titleEl.textContent = opts.title || "";
       bodyEl.innerHTML = opts.html || "";
@@ -2802,7 +2998,9 @@
       document.removeEventListener("keydown", onKeydown, true);
       document.body.style.overflow = "";
       var toRestore = lastFocused;
-      setTimeout(function(){
+      if(closeTimer) clearTimeout(closeTimer);
+      closeTimer = setTimeout(function(){
+        closeTimer = null;
         root.hidden = true;
         bodyEl.innerHTML = "";
         if(footerEl){ footerEl.innerHTML = ""; footerEl.hidden = true; }
@@ -3982,36 +4180,158 @@
   }
 
   /* ============================================================
-     Trucks marketplace — buy/sell listings for cargo vehicles, separate
-     from the load marketplace. Text-only (no photos — this app has no
-     file storage; see api/profile.js's avatar comment for the same
-     constraint), same "post a form, browse a list" shape as Loads/Order.
-     ============================================================ */
-  var trucksState = { city: "", vehicleType: "", mineOnly: false };
-  var lastTrucksResult = [];
+     MASHINALAR — the vehicle marketplace (cars, trucks, buses, vans,
+     special equipment, motorcycles), separate from the load marketplace.
 
-  function populateTrucksFilters(){
-    var citySel = document.getElementById("fTrucksCity");
-    if(citySel && citySel.children.length <= 1) citySel.insertAdjacentHTML("beforeend", cityOptions(""));
-    var typeSel = document.getElementById("fTrucksType");
-    if(typeSel && typeSel.children.length <= 1){
-      typeSel.insertAdjacentHTML("beforeend", Object.keys(VEHICLE_LABELS).map(function(k){
-        return '<option value="'+k+'">'+VEHICLE_LABELS[k]+'</option>';
-      }).join(""));
-    }
+     Architecture notes, since this app has no router and no SQL database:
+       - "Pages" (/cars/[id], /cars/seller/[id]) are Sheet dialogs, the
+         same primitive every other detail/edit view in this app uses.
+       - Filtering/sorting runs client-side over one /api/trucks?action=list
+         fetch. That's a deliberate fit for this app's scale (a few hundred
+         listings, capped server-side at MAX_LISTINGS_RETURNED) and the KV
+         store's lack of secondary indexes — there is no query engine to
+         push predicates into. If listing volume ever outgrows that, the
+         filter state object below is already shaped like query params.
+       - Favorites are server-side (truck_favs:<identity>), unlike the load
+         marketplace's per-device localStorage favorites.
+       - Photos are inline data: URLs (no blob storage) — same trick and
+         same constraint as the profile avatar.
+     ============================================================ */
+  var TRUCK_CATEGORIES = [
+    { id: "YENGIL",       emoji: "🚗", labelKey: "trucks.catYengil",       label: "Yengil" },
+    { id: "YUK",          emoji: "🚛", labelKey: "trucks.catYuk",          label: "Yuk" },
+    { id: "MIKROAVTOBUS", emoji: "🚐", labelKey: "trucks.catMikroavtobus", label: "Mikroavtobus" },
+    { id: "FURGON",       emoji: "🚚", labelKey: "trucks.catFurgon",       label: "Furgon" },
+    { id: "AVTOBUS",      emoji: "🚌", labelKey: "trucks.catAvtobus",      label: "Avtobus" },
+    { id: "MAXSUS",       emoji: "🚜", labelKey: "trucks.catMaxsus",       label: "Maxsus texnika" },
+    { id: "MOTOSIKL",     emoji: "🏍️", labelKey: "trucks.catMotosikl",     label: "Motosikl" },
+    { id: "BOSHQA",       emoji: "🚘", labelKey: "trucks.catBoshqa",       label: "Boshqa" }
+  ];
+  // Categories where commercial/truck-specific fields are the relevant ones.
+  // Drives which fields the post wizard shows and which specs the detail
+  // page lists — YO'LDA is a logistics platform first, so these lead.
+  var COMMERCIAL_CATEGORIES = ["YUK", "FURGON", "MAXSUS", "AVTOBUS"];
+  function isCommercialCategory(c){ return COMMERCIAL_CATEGORIES.indexOf(c) !== -1; }
+
+  var TRUCK_BODY_LABELS = {
+    SEDAN: "Sedan", SUV: "SUV", UNIVERSAL: "Universal", HATCHBACK: "Hatchback",
+    FURA: "Fura", BORT: "Bort", FURGON_KUZOV: "Furgon", REF: "Ref",
+    MIKROAVTOBUS_KUZOV: "Mikroavtobus", MAXSUS_KUZOV: "Maxsus texnika"
+  };
+  var TRUCK_FUEL_LABELS = { DIZEL: "Dizel", BENZIN: "Benzin", GAZ: "Gaz", GIBRID: "Gibrid", ELEKTR: "Elektr" };
+  var TRUCK_TRANSMISSION_LABELS = { MEXANIKA: "Mexanika", AVTOMAT: "Avtomat", ROBOT: "Robot", BOSHQA: "Boshqa" };
+  var TRUCK_CONDITION_LABELS = { YANGI: "Yangi", ISHLATILGAN: "Ishlatilgan" };
+  var TRUCK_STEERING_LABELS = { CHAP: "Chap", ONG: "O'ng" };
+  var TRUCK_SELLER_TYPE_LABELS = { SHAXSIY: "Shaxsiy", KOMPANIYA: "Kompaniya" };
+  var TRUCK_STATUS_LABELS = { ACTIVE: "Faol", PAUSED: "To'xtatilgan", SOLD: "Sotilgan" };
+  var TRUCK_SORTS = [
+    { id: "recommended", labelKey: "trucks.sortRecommended", label: "Tavsiya etilgan" },
+    { id: "newest",      labelKey: "trucks.sortNewest",      label: "Eng yangi" },
+    { id: "cheapest",    labelKey: "trucks.sortCheapest",    label: "Arzonidan" },
+    { id: "priciest",    labelKey: "trucks.sortPriciest",    label: "Qimmatidan" },
+    { id: "year",        labelKey: "trucks.sortYear",        label: "Yili bo'yicha" },
+    { id: "mileage",     labelKey: "trucks.sortMileage",     label: "Probeg bo'yicha" }
+  ];
+  var TRUCK_POPULAR_SEARCHES = ["DAF", "Mercedes Actros", "MAN TGX", "Isuzu", "Fura", "Ref", "Kamaz"];
+  var TRUCK_RECENT_SEARCH_KEY = "yolda_truck_recent_searches";
+
+  // view: "all" | "mine" | "favs" — which dataset the list is showing.
+  var trucksState = {
+    view: "all", mineStatus: "ACTIVE", q: "", category: "",
+    city: "", bodyType: "", fuel: "", transmission: "", condition: "", steering: "", sellerType: "",
+    minPrice: null, maxPrice: null, minYear: null, maxYear: null, minMileage: null, maxMileage: null,
+    documentsReady: false, credit: false, exchange: false, refrigerated: false,
+    sort: "recommended"
+  };
+  var lastTrucksResult = [];
+  var truckFavIds = [];       // server-side favorites, refreshed on tab open
+  var allTrucksCache = [];    // the last full ?action=list response, reused for "similar vehicles"
+
+  function truckCategoryLabel(id){
+    var c = TRUCK_CATEGORIES.filter(function(x){ return x.id === id; })[0];
+    return c ? (t(c.labelKey) || c.label) : id;
+  }
+  function truckCategoryEmoji(id){
+    var c = TRUCK_CATEGORIES.filter(function(x){ return x.id === id; })[0];
+    return c ? c.emoji : "🚘";
+  }
+  function isTruckFav(id){ return truckFavIds.indexOf(id) !== -1; }
+
+  function getTruckRecentSearches(){
+    try{ return JSON.parse(localStorage.getItem(TRUCK_RECENT_SEARCH_KEY) || "[]"); }catch(e){ return []; }
+  }
+  function addTruckRecentSearch(q){
+    if(!q) return;
+    var list = getTruckRecentSearches().filter(function(x){ return x.toLowerCase() !== q.toLowerCase(); });
+    list.unshift(q);
+    try{ localStorage.setItem(TRUCK_RECENT_SEARCH_KEY, JSON.stringify(list.slice(0, 6))); }catch(e){}
   }
 
-  // OLX-style compact tile: photo, price, title, one meta line. Everything
-  // else (description, seller, contact, delete) lives in the detail sheet
-  // a tap opens — keeps every card in the grid the exact same shape.
+  function truckRelativeTime(ts){
+    if(!ts) return "";
+    var mins = Math.floor((Date.now() - ts) / 60000);
+    if(mins < 1) return t("trucks.justNow") || "hozirgina";
+    if(mins < 60) return mins + " " + (t("trucks.minsAgo") || "daqiqa oldin");
+    var hours = Math.floor(mins / 60);
+    if(hours < 24) return hours + " " + (t("trucks.hoursAgo") || "soat oldin");
+    var days = Math.floor(hours / 24);
+    if(days < 30) return days + " " + (t("trucks.daysAgo") || "kun oldin");
+    return new Date(ts).toLocaleDateString();
+  }
+
+  function renderTrucksCategoryRow(){
+    var row = document.getElementById("trucksCategoryRow");
+    if(!row) return;
+    row.innerHTML = TRUCK_CATEGORIES.map(function(c){
+      return '<button type="button" class="truck-category-item'+(trucksState.category === c.id ? " active" : "")+'" data-truck-cat="'+c.id+'">'
+        + '<span class="tci-emoji">'+c.emoji+'</span>'
+        + '<span data-i18n="'+c.labelKey+'">'+c.label+'</span>'
+        + '</button>';
+    }).join("");
+  }
+
+  function renderTrucksSortSelect(){
+    var sel = document.getElementById("fTrucksSort");
+    if(!sel || sel.children.length) return;
+    sel.innerHTML = TRUCK_SORTS.map(function(s){
+      return '<option value="'+s.id+'" data-i18n="'+s.labelKey+'">'+s.label+'</option>';
+    }).join("");
+    sel.value = trucksState.sort;
+  }
+
+  function renderTrucksMineTabs(){
+    var wrap = document.getElementById("trucksMineTabs");
+    if(!wrap) return;
+    wrap.hidden = trucksState.view !== "mine";
+    if(trucksState.view !== "mine") return;
+    wrap.innerHTML = ["ACTIVE", "PAUSED", "SOLD"].map(function(s){
+      return '<button type="button" class="chip'+(trucksState.mineStatus === s ? " active" : "")+'" data-mine-status="'+s+'">'
+        + escapeHtml(TRUCK_STATUS_LABELS[s]) + '</button>';
+    }).join("");
+  }
+
+  /* ---------- Card ---------- */
   function truckCardHtml(tk){
     var photo = tk.photos && tk.photos[0];
+    var isFresh = tk.createdAt && (Date.now() - tk.createdAt) < 24 * 3600 * 1000;
+    var fav = isTruckFav(tk.id);
     return '<div class="truck-card" data-truck-id="'+escapeHtml(tk.id)+'">'
-      + '<div class="tc-photo">'+(photo ? '<img src="'+photo+'" alt="">' : icon("iconTruck"))+'</div>'
+      + '<div class="tc-badges">'
+      +   (tk.promoted ? '<span class="tc-badge promoted" data-i18n="trucks.badgeTop">TOP</span>' : '')
+      +   (tk.verified ? '<span class="tc-badge verified" data-i18n="trucks.badgeVerified">Tekshirilgan</span>' : '')
+      +   (isFresh ? '<span class="tc-badge fresh" data-i18n="trucks.badgeNew">Yangi</span>' : '')
+      + '</div>'
+      + '<button type="button" class="tc-fav" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+(fav ? '♥' : '♡')+'</button>'
+      + '<div class="tc-photo">'+(photo ? '<img src="'+photo+'" alt="" loading="lazy">' : icon("iconTruck"))+'</div>'
       + '<div class="tc-body">'
       +   '<div class="tc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
       +   '<div class="tc-title">'+escapeHtml(tk.brand)+'</div>'
-      +   '<div class="tc-meta">'+escapeHtml(String(tk.year))+' · '+escapeHtml(tk.city)+'</div>'
+      +   '<div class="tc-meta">'+escapeHtml(String(tk.year))
+      +     (tk.fuel ? ' · '+escapeHtml(TRUCK_FUEL_LABELS[tk.fuel] || tk.fuel) : '')
+      +     ' · '+escapeHtml(tk.city)+'</div>'
+      +   '<div class="tc-meta">'+escapeHtml(truckRelativeTime(tk.createdAt))
+      +     (trucksState.view === "mine" ? ' · '+escapeHtml(TRUCK_STATUS_LABELS[tk.status] || tk.status) : '')
+      +     '</div>'
       + '</div>'
       + '</div>';
   }
@@ -4028,49 +4348,119 @@
   }
 
   function emptyTrucksHtml(){
+    var key = trucksState.view === "mine" ? "trucks.emptyMine"
+      : trucksState.view === "favs" ? "trucks.emptyFavs" : "trucks.emptyTitle";
+    var fallback = trucksState.view === "mine" ? "Sizda hali e'lonlar yo'q."
+      : trucksState.view === "favs" ? "Saqlangan mashinalar yo'q." : "Bu filtrlar bo'yicha mashina topilmadi.";
     return '<div class="empty-state" style="grid-column:1/-1;">'
       + icon("iconInboxEmpty")
-      + '<p data-i18n="'+(trucksState.mineOnly ? "trucks.emptyMine" : "trucks.emptyTitle")+'">'
-      +   (trucksState.mineOnly ? "Sizda hali e'lon yo'q." : "Mos e'lon topilmadi.")
-      + '</p>'
+      + '<p data-i18n="'+key+'">'+fallback+'</p>'
+      + (trucksState.view === "all"
+          ? '<p data-i18n="trucks.emptySub" style="margin-top:-8px;">Filtrlarni o\'zgartirib ko\'ring.</p>'
+            + '<button type="button" class="btn ghost small" id="btnTrucksResetFilters" data-i18n="trucks.resetFilters" style="max-width:240px;margin:0 auto;">Filtrlarni tozalash</button>'
+          : '')
       + '</div>';
+  }
+
+  /* ---------- Filtering / sorting (client-side, see the block comment) ---------- */
+  function truckMatchesFilters(tk){
+    var s = trucksState;
+    if(s.q){
+      var hay = (tk.brand + " " + truckCategoryLabel(tk.category) + " "
+        + (TRUCK_BODY_LABELS[tk.bodyType] || "") + " " + (tk.description || "")).toLowerCase();
+      if(hay.indexOf(s.q.toLowerCase()) === -1) return false;
+    }
+    if(s.category && tk.category !== s.category) return false;
+    if(s.city && tk.city !== s.city) return false;
+    if(s.bodyType && tk.bodyType !== s.bodyType) return false;
+    if(s.fuel && tk.fuel !== s.fuel) return false;
+    if(s.transmission && tk.transmission !== s.transmission) return false;
+    if(s.condition && tk.condition !== s.condition) return false;
+    if(s.steering && tk.steering !== s.steering) return false;
+    if(s.sellerType && tk.sellerType !== s.sellerType) return false;
+    if(s.minPrice != null && tk.price < s.minPrice) return false;
+    if(s.maxPrice != null && tk.price > s.maxPrice) return false;
+    if(s.minYear != null && tk.year < s.minYear) return false;
+    if(s.maxYear != null && tk.year > s.maxYear) return false;
+    if(s.minMileage != null && (tk.mileageKm == null || tk.mileageKm < s.minMileage)) return false;
+    if(s.maxMileage != null && (tk.mileageKm == null || tk.mileageKm > s.maxMileage)) return false;
+    if(s.documentsReady && !tk.documentsReady) return false;
+    if(s.credit && !tk.credit) return false;
+    if(s.exchange && !tk.exchange) return false;
+    if(s.refrigerated && !tk.refrigerated) return false;
+    return true;
+  }
+
+  function sortTrucks(list){
+    var arr = list.slice();
+    switch(trucksState.sort){
+      case "newest":   return arr.sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+      case "cheapest": return arr.sort(function(a,b){ return a.price - b.price; });
+      case "priciest": return arr.sort(function(a,b){ return b.price - a.price; });
+      case "year":     return arr.sort(function(a,b){ return b.year - a.year; });
+      case "mileage":  return arr.sort(function(a,b){
+        // Listings with no mileage recorded sort last rather than as "0 km".
+        var am = a.mileageKm == null ? Infinity : a.mileageKm;
+        var bm = b.mileageKm == null ? Infinity : b.mileageKm;
+        return am - bm;
+      });
+      default:
+        // "Tavsiya etilgan": promoted first, then verified, then newest.
+        // Purely deterministic ordering of real flags — no invented scoring.
+        return arr.sort(function(a,b){
+          if(Boolean(b.promoted) !== Boolean(a.promoted)) return b.promoted ? 1 : -1;
+          if(Boolean(b.verified) !== Boolean(a.verified)) return b.verified ? 1 : -1;
+          return (b.createdAt||0) - (a.createdAt||0);
+        });
+    }
+  }
+
+  function refreshTruckFavIds(then){
+    if(!isSignedIn()){ truckFavIds = []; if(then) then(); return; }
+    fetch("/api/trucks?action=favorites&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        truckFavIds = (data.trucks || []).map(function(t){ return t.id; });
+        if(then) then();
+      })
+      .catch(function(){ if(then) then(); });
   }
 
   function fetchTrucks(){
     var list = document.getElementById("trucksList");
-    var countEl = document.getElementById("trucksCount");
     if(!list) return;
-    populateTrucksFilters();
+    renderTrucksCategoryRow();
+    renderTrucksSortSelect();
+    renderTrucksMineTabs();
+    updateTrucksChips();
 
     list.innerHTML = skeletonTruckCards(4);
+    var countEl = document.getElementById("trucksCount");
     if(countEl) countEl.textContent = "";
 
-    var mineBtn = document.getElementById("btnTrucksMine");
-    if(mineBtn) mineBtn.classList.toggle("active", trucksState.mineOnly);
-
-    if(trucksState.mineOnly){
-      if(!isSignedIn()){
-        list.innerHTML = '';
-        if(countEl) countEl.textContent = "";
-        toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
-        trucksState.mineOnly = false;
-        if(mineBtn) mineBtn.classList.remove("active");
-        return;
-      }
-      fetch("/api/trucks?action=mine&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
-        .then(function(r){ return r.json(); })
-        .then(function(data){ renderTrucksList(data.trucks || []); })
-        .catch(function(){ list.innerHTML = ""; });
+    if((trucksState.view === "mine" || trucksState.view === "favs") && !isSignedIn()){
+      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      trucksState.view = "all";
+      fetchTrucks();
       return;
     }
 
-    fetch("/api/trucks?action=list")
+    var url = trucksState.view === "mine"
+      ? "/api/trucks?action=mine&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||"")
+      : trucksState.view === "favs"
+        ? "/api/trucks?action=favorites&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||"")
+        : "/api/trucks?action=list";
+
+    fetch(url)
       .then(function(r){ return r.json(); })
       .then(function(data){
         var trucks = data.trucks || [];
-        if(trucksState.city) trucks = trucks.filter(function(t){ return t.city === trucksState.city; });
-        if(trucksState.vehicleType) trucks = trucks.filter(function(t){ return t.vehicleType === trucksState.vehicleType; });
-        renderTrucksList(trucks);
+        if(trucksState.view === "all") allTrucksCache = trucks;
+        if(trucksState.view === "mine"){
+          trucks = trucks.filter(function(tk){ return (tk.status || "ACTIVE") === trucksState.mineStatus; });
+        }
+        if(trucksState.view === "all") trucks = trucks.filter(truckMatchesFilters);
+        renderTrucksList(sortTrucks(trucks));
       })
       .catch(function(){ list.innerHTML = ""; });
   }
@@ -4080,20 +4470,489 @@
     var countEl = document.getElementById("trucksCount");
     if(!list) return;
     lastTrucksResult = trucks;
-    if(countEl) countEl.textContent = trucks.length + " ta e'lon";
+    if(countEl) countEl.textContent = trucks.length + " " + (t("trucks.countSuffix") || "ta e'lon");
     list.innerHTML = trucks.length ? trucks.map(truckCardHtml).join("") : emptyTrucksHtml();
+    var resetBtn = document.getElementById("btnTrucksResetFilters");
+    if(resetBtn) resetBtn.addEventListener("click", resetTruckFilters);
     applyLang();
   }
 
-  // Reset on every open — the sheet's own HTML doesn't persist picked
-  // photos between opens, so neither should this.
+  function updateTrucksChips(){
+    var mineBtn = document.getElementById("btnTrucksMine");
+    if(mineBtn) mineBtn.classList.toggle("active", trucksState.view === "mine");
+    var favBtn = document.getElementById("btnTrucksFavs");
+    if(favBtn) favBtn.classList.toggle("active", trucksState.view === "favs");
+    var filterBtn = document.getElementById("btnTrucksFilters");
+    if(filterBtn) filterBtn.classList.toggle("active", activeTruckFilterCount() > 0);
+    var searchVal = document.getElementById("trucksSearchValue");
+    if(searchVal){
+      searchVal.textContent = trucksState.q || (t("trucks.searchPlaceholder") || "Marka, model yoki kalit so'z...");
+    }
+  }
+
+  function activeTruckFilterCount(){
+    var s = trucksState, n = 0;
+    ["city","bodyType","fuel","transmission","condition","steering","sellerType"].forEach(function(k){ if(s[k]) n++; });
+    ["minPrice","maxPrice","minYear","maxYear","minMileage","maxMileage"].forEach(function(k){ if(s[k] != null) n++; });
+    ["documentsReady","credit","exchange","refrigerated"].forEach(function(k){ if(s[k]) n++; });
+    return n;
+  }
+
+  function resetTruckFilters(){
+    ["city","bodyType","fuel","transmission","condition","steering","sellerType"].forEach(function(k){ trucksState[k] = ""; });
+    ["minPrice","maxPrice","minYear","maxYear","minMileage","maxMileage"].forEach(function(k){ trucksState[k] = null; });
+    ["documentsReady","credit","exchange","refrigerated"].forEach(function(k){ trucksState[k] = false; });
+    trucksState.q = "";
+    trucksState.category = "";
+    fetchTrucks();
+  }
+
+  /* ---------- Search sheet (recent + popular + free text) ---------- */
+  function openTruckSearchSheet(){
+    var recent = getTruckRecentSearches();
+    var html = ''
+      + '<div class="field"><input type="text" id="fTruckSearchInput" placeholder="'
+      +   escapeHtml(t("trucks.searchPlaceholder") || "Marka, model yoki kalit so'z...")
+      +   '" value="'+escapeHtml(trucksState.q)+'" list="truckSearchSuggestions" autocomplete="off" data-autofocus></div>'
+      + '<datalist id="truckSearchSuggestions">'
+      +   TRUCK_POPULAR_SEARCHES.map(function(s){ return '<option value="'+escapeHtml(s)+'">'; }).join("")
+      + '</datalist>'
+      + (recent.length
+          ? '<div class="route-search-heading" data-i18n="trucks.recentSearches">So\'nggi qidiruvlar</div><div class="chip-row">'
+            + recent.map(function(s){ return '<button type="button" class="chip" data-truck-search="'+escapeHtml(s)+'">'+escapeHtml(s)+'</button>'; }).join("")
+            + '</div>'
+          : '')
+      + '<div class="route-search-heading" data-i18n="trucks.popularSearches">Mashhur qidiruvlar</div><div class="chip-row">'
+      +   TRUCK_POPULAR_SEARCHES.map(function(s){ return '<button type="button" class="chip" data-truck-search="'+escapeHtml(s)+'">'+escapeHtml(s)+'</button>'; }).join("")
+      + '</div>';
+
+    Sheet.open({
+      title: t("trucks.searchTitle") || "Qidirish",
+      html: html,
+      footerHtml: '<button class="btn" id="btnTruckSearchGo" data-i18n="search.go">Qidirish</button>',
+      onOpen: function(container){
+        applyLang();
+        var input = container.querySelector("#fTruckSearchInput");
+        var run = function(q){
+          trucksState.q = String(q || "").trim();
+          trucksState.view = "all";
+          addTruckRecentSearch(trucksState.q);
+          Sheet.close();
+          fetchTrucks();
+        };
+        var goBtn = document.getElementById("btnTruckSearchGo");
+        if(goBtn) goBtn.addEventListener("click", function(){ run(input ? input.value : ""); });
+        if(input) input.addEventListener("keydown", function(e){ if(e.key === "Enter") run(input.value); });
+        container.querySelectorAll("[data-truck-search]").forEach(function(b){
+          b.addEventListener("click", function(){ run(b.getAttribute("data-truck-search")); });
+        });
+      }
+    });
+  }
+
+  /* ---------- Filter sheet ---------- */
+  function truckSelectField(id, labelKey, labelText, labels, current){
+    return '<div class="field"><label for="'+id+'" data-i18n="'+labelKey+'">'+labelText+'</label>'
+      + '<select id="'+id+'"><option value="" data-i18n="loads.anyType">Barchasi</option>'
+      + Object.keys(labels).map(function(k){
+          return '<option value="'+k+'"'+(current === k ? ' selected' : '')+'>'+escapeHtml(labels[k])+'</option>';
+        }).join("")
+      + '</select></div>';
+  }
+
+  function openTruckFiltersSheet(){
+    var s = trucksState;
+    var numVal = function(v){ return v == null ? "" : String(v); };
+    var html = ''
+      + '<div class="edit-section-heading" data-i18n="trucks.priceLabel">Narx (so\'m)</div>'
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fTfMinPrice" data-i18n="common.min">Eng kam</label><input type="number" id="fTfMinPrice" min="0" step="1000000" value="'+numVal(s.minPrice)+'"></div>'
+      +   '<div class="field"><label for="fTfMaxPrice" data-i18n="common.max">Eng ko\'p</label><input type="number" id="fTfMaxPrice" min="0" step="1000000" value="'+numVal(s.maxPrice)+'"></div>'
+      + '</div>'
+      + '<div class="edit-section-heading" data-i18n="trucks.yearLabel">Ishlab chiqarilgan yili</div>'
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fTfMinYear" data-i18n="common.min">Eng kam</label><input type="number" id="fTfMinYear" min="1970" max="'+(new Date().getFullYear()+1)+'" value="'+numVal(s.minYear)+'"></div>'
+      +   '<div class="field"><label for="fTfMaxYear" data-i18n="common.max">Eng ko\'p</label><input type="number" id="fTfMaxYear" min="1970" max="'+(new Date().getFullYear()+1)+'" value="'+numVal(s.maxYear)+'"></div>'
+      + '</div>'
+      + '<div class="edit-section-heading" data-i18n="trucks.mileageLabel">Probeg (km)</div>'
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fTfMinMileage" data-i18n="common.min">Eng kam</label><input type="number" id="fTfMinMileage" min="0" step="10000" value="'+numVal(s.minMileage)+'"></div>'
+      +   '<div class="field"><label for="fTfMaxMileage" data-i18n="common.max">Eng ko\'p</label><input type="number" id="fTfMaxMileage" min="0" step="10000" value="'+numVal(s.maxMileage)+'"></div>'
+      + '</div>'
+      + '<div class="edit-section-heading" data-i18n="trucks.moreFilters">Qo\'shimcha</div>'
+      + '<div class="field"><label for="fTfCity" data-i18n="profile.cityLabel">Shahar</label>'
+      +   '<select id="fTfCity"><option value="" data-i18n="loads.anyCity">Barchasi</option>'+cityOptions(s.city)+'</select></div>'
+      + truckSelectField("fTfBody", "trucks.bodyLabel", "Kuzov turi", TRUCK_BODY_LABELS, s.bodyType)
+      + truckSelectField("fTfFuel", "trucks.fuelLabel", "Yoqilg'i", TRUCK_FUEL_LABELS, s.fuel)
+      + truckSelectField("fTfTransmission", "trucks.transmissionLabel", "Transmissiya", TRUCK_TRANSMISSION_LABELS, s.transmission)
+      + truckSelectField("fTfCondition", "trucks.conditionLabel", "Holati", TRUCK_CONDITION_LABELS, s.condition)
+      + truckSelectField("fTfSteering", "trucks.steeringLabel", "Rul", TRUCK_STEERING_LABELS, s.steering)
+      + truckSelectField("fTfSellerType", "trucks.sellerTypeLabel", "Sotuvchi turi", TRUCK_SELLER_TYPE_LABELS, s.sellerType)
+      + '<div class="chip-row" style="margin-bottom:var(--s4);">'
+      +   '<button type="button" class="chip'+(s.documentsReady?" active":"")+'" data-truck-flag="documentsReady" data-i18n="trucks.docsReady">Hujjatlari joyida</button>'
+      +   '<button type="button" class="chip'+(s.credit?" active":"")+'" data-truck-flag="credit" data-i18n="trucks.credit">Kredit</button>'
+      +   '<button type="button" class="chip'+(s.exchange?" active":"")+'" data-truck-flag="exchange" data-i18n="trucks.exchange">Almashtirish</button>'
+      +   '<button type="button" class="chip'+(s.refrigerated?" active":"")+'" data-truck-flag="refrigerated" data-i18n="trucks.refrigerated">Ref (sovutgichli)</button>'
+      + '</div>';
+
+    Sheet.open({
+      title: t("trucks.filtersBtn") || "Filtrlar",
+      html: html,
+      footerHtml: '<div style="display:flex;gap:var(--s2);">'
+        + '<button class="btn ghost" id="btnTruckFiltersReset" style="flex:1;" data-i18n="trucks.resetFilters">Tozalash</button>'
+        + '<button class="btn" id="btnTruckFiltersApply" style="flex:2;" data-i18n="trucks.applyFilters">Ko\'rsatish</button>'
+        + '</div>',
+      onOpen: function(container){
+        applyLang();
+        // Flag chips toggle in place; the dropdowns/number inputs are read
+        // on apply. Nothing here writes trucksState until "Ko'rsatish".
+        var pendingFlags = {
+          documentsReady: s.documentsReady, credit: s.credit,
+          exchange: s.exchange, refrigerated: s.refrigerated
+        };
+        container.querySelectorAll("[data-truck-flag]").forEach(function(b){
+          b.addEventListener("click", function(){
+            var k = b.getAttribute("data-truck-flag");
+            pendingFlags[k] = !pendingFlags[k];
+            b.classList.toggle("active", pendingFlags[k]);
+          });
+        });
+        var num = function(id){
+          var el = document.getElementById(id);
+          if(!el || el.value === "") return null;
+          var v = Number(el.value);
+          return Number.isFinite(v) ? v : null;
+        };
+        var val = function(id){ var el = document.getElementById(id); return el ? el.value : ""; };
+        var applyBtn = document.getElementById("btnTruckFiltersApply");
+        if(applyBtn) applyBtn.addEventListener("click", function(){
+          trucksState.minPrice = num("fTfMinPrice");
+          trucksState.maxPrice = num("fTfMaxPrice");
+          trucksState.minYear = num("fTfMinYear");
+          trucksState.maxYear = num("fTfMaxYear");
+          trucksState.minMileage = num("fTfMinMileage");
+          trucksState.maxMileage = num("fTfMaxMileage");
+          trucksState.city = val("fTfCity");
+          trucksState.bodyType = val("fTfBody");
+          trucksState.fuel = val("fTfFuel");
+          trucksState.transmission = val("fTfTransmission");
+          trucksState.condition = val("fTfCondition");
+          trucksState.steering = val("fTfSteering");
+          trucksState.sellerType = val("fTfSellerType");
+          Object.keys(pendingFlags).forEach(function(k){ trucksState[k] = pendingFlags[k]; });
+          trucksState.view = "all";
+          Sheet.close();
+          fetchTrucks();
+        });
+        var resetBtn = document.getElementById("btnTruckFiltersReset");
+        if(resetBtn) resetBtn.addEventListener("click", function(){ Sheet.close(); resetTruckFilters(); });
+      }
+    });
+  }
+
+  /* ---------- Detail sheet (the "/cars/[id]" view) ---------- */
+  function truckSpecRows(tk){
+    var rows = [];
+    var push = function(labelKey, labelText, value){
+      if(value === null || value === undefined || value === "") return;
+      rows.push('<tr><td data-i18n="'+labelKey+'">'+labelText+'</td><td>'+escapeHtml(String(value))+'</td></tr>');
+    };
+    push("trucks.catLabel", "Turkum", truckCategoryLabel(tk.category));
+    push("trucks.brandLabel", "Marka va model", tk.brand);
+    push("trucks.yearLabel", "Yil", tk.year);
+    push("trucks.bodyLabel", "Kuzov", tk.bodyType ? (TRUCK_BODY_LABELS[tk.bodyType] || tk.bodyType) : "");
+    push("trucks.fuelLabel", "Yoqilg'i", tk.fuel ? (TRUCK_FUEL_LABELS[tk.fuel] || tk.fuel) : "");
+    push("trucks.transmissionLabel", "Transmissiya", tk.transmission ? (TRUCK_TRANSMISSION_LABELS[tk.transmission] || tk.transmission) : "");
+    push("trucks.mileageShort", "Probeg", tk.mileageKm != null ? formatNum(tk.mileageKm) + " km" : "");
+    push("trucks.engineVolume", "Dvigatel hajmi", tk.engineVolumeL != null ? tk.engineVolumeL + " L" : "");
+    push("trucks.enginePower", "Ot kuchi", tk.enginePowerHp != null ? tk.enginePowerHp + " ot kuchi" : "");
+    push("trucks.capacity", "Yuk ko'tarish", tk.capacityTon != null ? tk.capacityTon + " tonna" : "");
+    push("trucks.cabType", "Kabina", tk.cabType);
+    push("trucks.axles", "O'qlar soni", tk.axles);
+    push("trucks.conditionLabel", "Holati", tk.condition ? (TRUCK_CONDITION_LABELS[tk.condition] || tk.condition) : "");
+    push("trucks.steeringLabel", "Rul", tk.steering ? (TRUCK_STEERING_LABELS[tk.steering] || tk.steering) : "");
+    push("trucks.sellerTypeLabel", "Sotuvchi turi", tk.sellerType ? (TRUCK_SELLER_TYPE_LABELS[tk.sellerType] || tk.sellerType) : "");
+    return rows.join("");
+  }
+
+  function similarTrucks(tk){
+    return allTrucksCache
+      .filter(function(x){ return x.id !== tk.id && x.category === tk.category; })
+      .map(function(x){
+        // Deterministic closeness over real fields only — no invented scores.
+        var score = 0;
+        if(x.city === tk.city) score += 2;
+        if(Math.abs(x.year - tk.year) <= 2) score += 2;
+        if(tk.price > 0 && Math.abs(x.price - tk.price) / tk.price <= 0.3) score += 2;
+        if(x.bodyType && x.bodyType === tk.bodyType) score += 1;
+        return { tk: x, score: score };
+      })
+      .sort(function(a,b){ return b.score - a.score; })
+      .slice(0, 8)
+      .map(function(x){ return x.tk; });
+  }
+
+  function openTruckDetailSheet(id){
+    Sheet.open({
+      title: t("trucks.detailTitle") || "Mashina haqida",
+      html: '<div class="truck-gallery empty skeleton" style="aspect-ratio:4/3;"></div>'
+        + '<div class="skeleton sk-line" style="width:60%;margin-top:var(--s4);"></div>'
+        + '<div class="skeleton sk-line" style="width:40%;margin-top:10px;"></div>',
+      onOpen: function(){
+        fetch("/api/trucks?action=detail&id=" + encodeURIComponent(id))
+          .then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+          .then(function(res){
+            var body = document.getElementById("sheetBody");
+            if(!body) return;
+            if(!res.ok || !res.body.truck){
+              body.innerHTML = '<p class="note">'+escapeHtml(res.body.error || "E\'lon topilmadi")+'</p>';
+              return;
+            }
+            renderTruckDetail(res.body.truck, body);
+          })
+          .catch(function(){
+            var body = document.getElementById("sheetBody");
+            if(body) body.innerHTML = '<p class="note">Yuklab bo\'lmadi, qayta urinib ko\'ring.</p>';
+          });
+      }
+    });
+  }
+
+  function renderTruckDetail(tk, body){
+    var photos = tk.photos || [];
+    var isMine = false; // set below from the seller identity comparison
+    var mySellerIdentity = googleProfile ? googleProfile.email : (telegramUser ? "tg:" + telegramUser.id : null);
+    isMine = Boolean(mySellerIdentity && tk.sellerIdentity === mySellerIdentity);
+
+    var ratingLabel = tk.sellerRatingCount ? (tk.sellerRatingSum / tk.sellerRatingCount).toFixed(1) : null;
+    var joinedYear = tk.sellerJoinedAt ? new Date(tk.sellerJoinedAt).getFullYear() : null;
+    var sellerInitial = escapeHtml((tk.sellerName || "?").charAt(0).toUpperCase());
+    var similar = similarTrucks(tk);
+    var fav = isTruckFav(tk.id);
+
+    body.innerHTML = ''
+      + (photos.length
+          ? '<div class="truck-gallery">'+photos.map(function(p){ return '<img src="'+p+'" alt="">'; }).join("")+'</div>'
+          : '<div class="truck-gallery empty">'+icon("iconTruck")+'</div>')
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);">'
+      +   '<div style="flex:1;min-width:0;">'
+      +     '<div class="lc-price" style="margin:0;">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
+      +     (tk.priceType === "NEGOTIABLE" ? '<div class="tc-meta" data-i18n="trucks.negotiable">Kelishiladi</div>' : '')
+      +     '<h3 class="card-title" style="margin:var(--s2) 0 0;">'+escapeHtml(tk.brand)+'</h3>'
+      +   '</div>'
+      +   '<button type="button" class="tc-fav" style="position:static;flex-shrink:0;" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+(fav ? '♥' : '♡')+'</button>'
+      + '</div>'
+      + '<div class="tc-meta" style="margin:var(--s2) 0 var(--s4);">'
+      +   escapeHtml(truckRelativeTime(tk.createdAt))
+      +   ' · ' + escapeHtml(String(tk.viewCount || 0)) + ' ' + escapeHtml(t("trucks.views") || "ko'rildi")
+      + '</div>'
+      + '<div class="lc-meta" style="margin-bottom:var(--s4);">'
+      +   '<span>'+truckCategoryEmoji(tk.category)+' '+escapeHtml(truckCategoryLabel(tk.category))+'</span>'
+      +   '<span>'+icon("iconMap")+' '+escapeHtml(tk.city)+'</span>'
+      + '</div>'
+
+      + (tk.description
+          ? '<div class="edit-section-heading" data-i18n="trucks.descHeading">Tavsif</div>'
+            + '<p class="note" style="margin:0 0 var(--s4);white-space:pre-wrap;">'+escapeHtml(tk.description)+'</p>'
+          : '')
+
+      + '<div class="edit-section-heading" data-i18n="trucks.specsHeading">Xususiyatlari</div>'
+      + '<table class="spec-table">'+truckSpecRows(tk)+'</table>'
+
+      + '<div class="edit-section-heading" data-i18n="trucks.sellerHeading">Sotuvchi</div>'
+      + '<div class="seller-card">'
+      +   (tk.sellerAvatarUrl
+          ? '<img class="sc-avatar" src="'+tk.sellerAvatarUrl+'" alt="">'
+          : '<div class="sc-avatar">'+sellerInitial+'</div>')
+      +   '<div style="flex:1;min-width:0;">'
+      +     '<div class="sc-name">'+escapeHtml(tk.sellerName)+(tk.sellerVerified ? verifyBadgeSvg("profile-name-badge") : '')+'</div>'
+      +     '<div class="sc-meta">'
+      +       (ratingLabel ? '★ '+ratingLabel+' · ' : '')
+      +       escapeHtml(String(tk.sellerListingCount || 0))+' '+escapeHtml(t("trucks.listingsCount") || "ta e'lon")
+      +       (joinedYear ? ' · '+escapeHtml(String(joinedYear))+(t("trucks.sinceYear") || "-yildan beri") : '')
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + (tk.sellerUsername && !isMine
+          ? '<button type="button" class="btn ghost" id="btnTruckMessageSeller" style="margin-bottom:var(--s3);">'+icon("iconChat")+' <span data-i18n="trucks.messageSeller">Xabar yozish</span></button>'
+          : '')
+      + '<a href="tel:'+escapeHtml(tk.phone)+'" class="btn" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">'
+      +   icon("iconPhone")+' '+escapeHtml(tk.phone)
+      + '</a>'
+
+      // YO'LDA-specific: from a commercial vehicle, jump straight into the
+      // load marketplace this app already has.
+      + (isCommercialCategory(tk.category)
+          ? '<button type="button" class="btn ghost" id="btnTruckFindLoads" style="margin-top:var(--s3);">'+icon("iconBox")+' <span data-i18n="trucks.findLoads">Bu mashina uchun mos yuklarni ko\'rish</span></button>'
+          : '')
+
+      + (isMine
+          ? '<div class="edit-section-heading" style="margin-top:var(--s6);" data-i18n="trucks.manageHeading">E\'lonni boshqarish</div>'
+            + '<div class="chip-row" style="margin-bottom:var(--s3);">'
+            +   ["ACTIVE","PAUSED","SOLD"].map(function(st){
+                  return '<button type="button" class="chip'+((tk.status||"ACTIVE") === st ? " active" : "")+'" data-truck-status="'+st+'">'+escapeHtml(TRUCK_STATUS_LABELS[st])+'</button>';
+                }).join("")
+            + '</div>'
+            + '<button type="button" class="btn ghost" id="btnEditTruck" style="margin-bottom:var(--s2);" data-i18n="trucks.editBtn">Tahrirlash</button>'
+            + '<button type="button" class="btn ghost" id="btnDeleteTruckDetail" style="color:#DC2626;" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>'
+          : '<button type="button" class="link-btn" id="btnReportTruck" style="display:block;margin:var(--s5) auto 0;" data-i18n="trucks.reportBtn">Shubhali e\'lon haqida xabar berish</button>')
+
+      + (similar.length
+          ? '<div class="edit-section-heading" style="margin-top:var(--s6);">'
+            +   '<span data-i18n="trucks.similarHeading">Sizga o\'xshash mashinalar</span> ('+similar.length+')'
+            + '</div>'
+            + '<div class="similar-trucks-row">'+similar.map(truckCardHtml).join("")+'</div>'
+          : '');
+
+    // Bind the detail-sheet-only actions (the card/fav delegation elsewhere
+    // covers the similar-vehicles row and the favorite button).
+    var msgBtn = body.querySelector("#btnTruckMessageSeller");
+    if(msgBtn) msgBtn.addEventListener("click", function(){
+      Sheet.close();
+      switchTab("chat");
+      // Prefill the first message with the listing, so the seller knows
+      // which vehicle the conversation is about.
+      setTimeout(function(){
+        openChatThread(null, tk.sellerUsername);
+        setTimeout(function(){
+          var input = document.getElementById("fChatMessage");
+          if(input && !input.value){
+            input.value = (t("trucks.chatPrefill") || "Salom,") + " " + tk.brand + " " + (t("trucks.chatPrefillTail") || "hali sotuvdami?");
+            input.focus();
+          }
+        }, 400);
+      }, 60);
+    });
+
+    var loadsBtn = body.querySelector("#btnTruckFindLoads");
+    if(loadsBtn) loadsBtn.addEventListener("click", function(){
+      Sheet.close();
+      loadsState.fromCity = tk.city;
+      switchTab("loads");
+      var fromSel = document.getElementById("fLoadsFrom");
+      if(fromSel) fromSel.value = tk.city;
+    });
+
+    var editBtn = body.querySelector("#btnEditTruck");
+    if(editBtn) editBtn.addEventListener("click", function(){ Sheet.close(); openSellTruckSheet(tk); });
+
+    var delBtn = body.querySelector("#btnDeleteTruckDetail");
+    if(delBtn) delBtn.addEventListener("click", function(){ Sheet.close(); deleteTruckListing(tk.id); });
+
+    var reportBtn = body.querySelector("#btnReportTruck");
+    if(reportBtn) reportBtn.addEventListener("click", function(){ Sheet.close(); openTruckReportSheet(tk); });
+
+    body.querySelectorAll("[data-truck-status]").forEach(function(b){
+      b.addEventListener("click", function(){
+        setTruckStatus(tk.id, b.getAttribute("data-truck-status"));
+      });
+    });
+
+    applyLang();
+  }
+
+  /* ---------- Report a listing (reuses the existing /api/report backend) ---------- */
+  function openTruckReportSheet(tk){
+    if(!isSignedIn()){
+      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      return;
+    }
+    // Maps onto /api/report's existing REASONS — no new backend reasons,
+    // so these land in the same admin queue as every other report.
+    var reasons = [
+      { id: "SCAM", labelKey: "contact.reasonScam", label: "Firibgarlik (Scam)" },
+      { id: "FAKE_LOAD", labelKey: "trucks.reportFake", label: "Soxta e'lon" },
+      { id: "OTHER", labelKey: "trucks.reportWrongInfo", label: "Noto'g'ri ma'lumot / narx" },
+      { id: "BEHAVIOR", labelKey: "contact.reasonBehavior", label: "Yomon muomala" }
+    ];
+    var html = ''
+      + '<div class="field"><label for="fTruckReportReason" data-i18n="contact.reportReasonLabel">Sabab</label>'
+      +   '<select id="fTruckReportReason">'
+      +   reasons.map(function(r){ return '<option value="'+r.id+'" data-i18n="'+r.labelKey+'">'+r.label+'</option>'; }).join("")
+      +   '</select></div>'
+      + '<div class="field" style="margin-bottom:0;"><label for="fTruckReportDesc" data-i18n="contact.reportDescLabel">Nima bo\'lganini tasvirlab bering</label>'
+      +   '<textarea id="fTruckReportDesc" maxlength="500" placeholder="Batafsil yozing" data-autofocus></textarea></div>'
+      + '<p class="note" id="truckReportNote"></p>';
+
+    Sheet.open({
+      title: t("trucks.reportTitle") || "Shikoyat qilish",
+      html: html,
+      footerHtml: '<button class="btn" id="btnSubmitTruckReport" data-i18n="contact.reportBtn">Shikoyat yuborish</button>',
+      onOpen: function(){
+        applyLang();
+        var btn = document.getElementById("btnSubmitTruckReport");
+        if(!btn) return;
+        btn.addEventListener("click", function(){
+          var note = document.getElementById("truckReportNote");
+          var desc = document.getElementById("fTruckReportDesc");
+          var reason = document.getElementById("fTruckReportReason");
+          var description = desc ? desc.value.trim() : "";
+          if(!description){
+            if(note){ note.textContent = t("trucks.reportNeedDesc") || "Nima bo'lganini tasvirlab bering."; note.style.color = "#DC2626"; }
+            return;
+          }
+          btn.disabled = true;
+          fetch("/api/report", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              googleIdToken: googleIdToken,
+              telegramInitData: telegramInitData,
+              reason: reason ? reason.value : "OTHER",
+              // Gives the admin enough to find the listing without a new field.
+              targetContact: "mashina:" + tk.id,
+              description: tk.brand + " — " + description
+            })
+          }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+            .then(function(res){
+              btn.disabled = false;
+              if(!res.ok){
+                if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
+                return;
+              }
+              toast(t("trucks.reportSent") || "Shikoyatingiz yuborildi", "", "success");
+              Sheet.close();
+            }).catch(function(){
+              btn.disabled = false;
+              if(note){ note.textContent = "Yuborilmadi, qayta urinib ko'ring."; note.style.color = "#DC2626"; }
+            });
+        });
+      }
+    });
+  }
+
+  /* ---------- Post / edit listing (multi-step wizard) ---------- */
   var sellTruckPhotos = [];
+  var sellTruckStep = 1;
+  var sellTruckDraft = {};
+  var sellTruckEditingId = null;
+  var SELL_TRUCK_STEPS = [
+    { key: "type",    labelKey: "trucks.stepType",    label: "Turi" },
+    { key: "details", labelKey: "trucks.stepDetails", label: "Ma'lumot" },
+    { key: "price",   labelKey: "trucks.stepPrice",   label: "Narx" },
+    { key: "photos",  labelKey: "trucks.stepPhotos",  label: "Rasmlar" },
+    { key: "review",  labelKey: "trucks.stepReview",  label: "Tekshirish" }
+  ];
+
+  function sellTruckStepsHtml(){
+    return '<div class="wizard-steps">' + SELL_TRUCK_STEPS.map(function(s, i){
+      var n = i + 1;
+      var cls = n < sellTruckStep ? "done" : (n === sellTruckStep ? "active" : "");
+      var dot = n < sellTruckStep ? "✓" : String(n);
+      var line = i < SELL_TRUCK_STEPS.length - 1 ? '<div class="wizard-line'+(n < sellTruckStep ? ' done' : '')+'"></div>' : '';
+      return '<div class="wizard-step '+cls+'"><div class="ws-dot">'+dot+'</div><div class="ws-label" data-i18n="'+s.labelKey+'">'+s.label+'</div></div>' + line;
+    }).join("") + '</div>';
+  }
 
   function renderTruckPhotoRow(){
     var row = document.getElementById("truckPhotoRow");
     if(!row) return;
     row.innerHTML = sellTruckPhotos.map(function(p, i){
-        return '<div class="photo-picker-thumb"><img src="'+p+'" alt=""><button type="button" class="pp-remove" data-remove-photo="'+i+'" aria-label="O\'chirish">✕</button></div>';
+        return '<div class="photo-picker-thumb">'
+          + '<img src="'+p+'" alt="">'
+          + '<button type="button" class="pp-remove" data-remove-photo="'+i+'" aria-label="O\'chirish">✕</button>'
+          + (i === 0 ? '<span class="tc-badge verified" style="position:absolute;bottom:2px;left:2px;font-size:8px;" data-i18n="trucks.coverPhoto">Asosiy</span>' : '')
+          + '</div>';
       }).join("")
       + (sellTruckPhotos.length < 5
           ? '<button type="button" class="photo-picker-add" id="btnAddTruckPhoto" aria-label="Rasm qo\'shish"><span style="font-size:26px;line-height:1;">+</span></button>'
@@ -4109,86 +4968,328 @@
         renderTruckPhotoRow();
       });
     });
+    applyLang();
   }
 
-  function openSellTruckSheet(){
+  function sellSelect(id, labelKey, labelText, labels, current, includeBlank){
+    return '<div class="field"><label for="'+id+'" data-i18n="'+labelKey+'">'+labelText+'</label>'
+      + '<select id="'+id+'">'
+      + (includeBlank ? '<option value="" data-i18n="profile.roleUnset">Tanlanmagan</option>' : '')
+      + Object.keys(labels).map(function(k){
+          return '<option value="'+k+'"'+(current === k ? ' selected' : '')+'>'+escapeHtml(labels[k])+'</option>';
+        }).join("")
+      + '</select></div>';
+  }
+
+  function sellTruckStepHtml(){
+    var d = sellTruckDraft;
+    var esc = function(v){ return v == null ? "" : escapeHtml(String(v)); };
+
+    if(sellTruckStep === 1){
+      return '<div class="wizard-panel">'
+        + '<h3 class="card-title" data-i18n="trucks.stepTypeTitle">Qanday transport?</h3>'
+        + '<div class="cargo-grid">'
+        + TRUCK_CATEGORIES.map(function(c){
+            return '<button type="button" class="cargo-opt'+(d.category === c.id ? " sel" : "")+'" data-sell-cat="'+c.id+'">'
+              + '<span class="ic">'+c.emoji+'</span>'
+              + '<span style="font-size:13px;font-weight:600;" data-i18n="'+c.labelKey+'">'+c.label+'</span>'
+              + '</button>';
+          }).join("")
+        + '</div>'
+        + '</div>';
+    }
+
+    if(sellTruckStep === 2){
+      var commercial = isCommercialCategory(d.category);
+      return '<div class="wizard-panel">'
+        + '<h3 class="card-title" data-i18n="trucks.stepDetailsTitle">Mashina ma\'lumotlari</h3>'
+        + '<div class="field"><label for="fTruckBrand" data-i18n="trucks.brandLabel">Marka va model</label>'
+        +   '<input type="text" id="fTruckBrand" maxlength="80" placeholder="masalan: DAF XF 480" value="'+esc(d.brand)+'" data-autofocus></div>'
+        + '<div class="row2">'
+        +   '<div class="field"><label for="fTruckYear" data-i18n="trucks.yearLabel">Yil</label>'
+        +     '<input type="number" id="fTruckYear" min="1970" max="'+(new Date().getFullYear()+1)+'" placeholder="2015" value="'+esc(d.year)+'"></div>'
+        +   '<div class="field"><label for="fTruckMileage" data-i18n="trucks.mileageLabel">Probeg (km)</label>'
+        +     '<input type="number" id="fTruckMileage" min="0" placeholder="120000" value="'+esc(d.mileageKm)+'"></div>'
+        + '</div>'
+        + sellSelect("fTruckBody", "trucks.bodyLabel", "Kuzov turi", TRUCK_BODY_LABELS, d.bodyType, true)
+        + sellSelect("fTruckFuel", "trucks.fuelLabel", "Yoqilg'i", TRUCK_FUEL_LABELS, d.fuel, true)
+        + sellSelect("fTruckTransmission", "trucks.transmissionLabel", "Transmissiya", TRUCK_TRANSMISSION_LABELS, d.transmission, true)
+        + sellSelect("fTruckCondition", "trucks.conditionLabel", "Holati", TRUCK_CONDITION_LABELS, d.condition, true)
+        + sellSelect("fTruckSteering", "trucks.steeringLabel", "Rul", TRUCK_STEERING_LABELS, d.steering, true)
+        + '<div class="row2">'
+        +   '<div class="field"><label for="fTruckEngineVol" data-i18n="trucks.engineVolume">Dvigatel hajmi (L)</label>'
+        +     '<input type="number" id="fTruckEngineVol" min="0" step="0.1" placeholder="12.9" value="'+esc(d.engineVolumeL)+'"></div>'
+        +   '<div class="field"><label for="fTruckEnginePower" data-i18n="trucks.enginePower">Ot kuchi</label>'
+        +     '<input type="number" id="fTruckEnginePower" min="0" placeholder="480" value="'+esc(d.enginePowerHp)+'"></div>'
+        + '</div>'
+        // Truck-specific fields, only for commercial categories — YO'LDA's
+        // differentiator, and pointless clutter on a sedan.
+        + (commercial
+            ? '<div class="edit-section-heading" data-i18n="trucks.commercialHeading">Yuk mashinasi ma\'lumotlari</div>'
+              + '<div class="row2">'
+              +   '<div class="field"><label for="fTruckCapacity" data-i18n="trucks.capacity">Yuk ko\'tarish (tonna)</label>'
+              +     '<input type="number" id="fTruckCapacity" min="0" step="0.5" placeholder="20" value="'+esc(d.capacityTon)+'"></div>'
+              +   '<div class="field"><label for="fTruckAxles" data-i18n="trucks.axles">O\'qlar soni</label>'
+              +     '<input type="number" id="fTruckAxles" min="1" max="12" placeholder="3" value="'+esc(d.axles)+'"></div>'
+              + '</div>'
+              + '<div class="field"><label for="fTruckCabType" data-i18n="trucks.cabType">Kabina turi</label>'
+              +   '<input type="text" id="fTruckCabType" maxlength="40" placeholder="masalan: Space Cab" value="'+esc(d.cabType)+'"></div>'
+              + '<div class="chip-row" style="margin-bottom:var(--s4);">'
+              +   '<button type="button" class="chip'+(d.hasTrailer?" active":"")+'" data-sell-flag="hasTrailer" data-i18n="trucks.hasTrailer">Pritsep bilan</button>'
+              +   '<button type="button" class="chip'+(d.refrigerated?" active":"")+'" data-sell-flag="refrigerated" data-i18n="trucks.refrigerated">Ref (sovutgichli)</button>'
+              + '</div>'
+            : '')
+        + '</div>';
+    }
+
+    if(sellTruckStep === 3){
+      return '<div class="wizard-panel">'
+        + '<h3 class="card-title" data-i18n="trucks.stepPriceTitle">Narx va joylashuv</h3>'
+        + '<div class="field"><label for="fTruckPrice" data-i18n="trucks.priceLabel">Narx (so\'m)</label>'
+        +   '<input type="number" id="fTruckPrice" min="0" step="1000" placeholder="850000000" value="'+esc(d.price)+'" data-autofocus></div>'
+        + '<div class="chip-row" style="margin-bottom:var(--s4);">'
+        +   '<button type="button" class="chip'+(d.priceType !== "NEGOTIABLE" ? " active" : "")+'" data-sell-pricetype="FIXED" data-i18n="trucks.priceFixed">Qat\'iy</button>'
+        +   '<button type="button" class="chip'+(d.priceType === "NEGOTIABLE" ? " active" : "")+'" data-sell-pricetype="NEGOTIABLE" data-i18n="trucks.negotiable">Kelishiladi</button>'
+        + '</div>'
+        + '<div class="field"><label for="fTruckCityInput" data-i18n="profile.cityLabel">Shahar</label>'
+        +   '<select id="fTruckCityInput"><option value="" data-i18n="profile.roleUnset">Tanlanmagan</option>'+cityOptions(d.city)+'</select></div>'
+        + '<div class="chip-row" style="margin-bottom:var(--s4);">'
+        +   '<button type="button" class="chip'+(d.documentsReady?" active":"")+'" data-sell-flag="documentsReady" data-i18n="trucks.docsReady">Hujjatlari joyida</button>'
+        +   '<button type="button" class="chip'+(d.credit?" active":"")+'" data-sell-flag="credit" data-i18n="trucks.credit">Kredit</button>'
+        +   '<button type="button" class="chip'+(d.exchange?" active":"")+'" data-sell-flag="exchange" data-i18n="trucks.exchange">Almashtirish</button>'
+        + '</div>'
+        + sellSelect("fTruckSellerType", "trucks.sellerTypeLabel", "Sotuvchi turi", TRUCK_SELLER_TYPE_LABELS, d.sellerType, true)
+        + '<div class="row2">'
+        +   '<div class="field"><label for="fTruckSellerName" data-i18n="order.nameLabel">Ismingiz</label>'
+        +     '<input type="text" id="fTruckSellerName" maxlength="60" placeholder="Ismingiz" value="'+esc(d.sellerName)+'"></div>'
+        +   '<div class="field"><label for="fTruckPhone" data-i18n="order.phoneLabel">Telefon</label>'
+        +     '<input type="tel" id="fTruckPhone" inputmode="tel" placeholder="90 123 45 67" value="'+esc(d.phone)+'"></div>'
+        + '</div>'
+        + '</div>';
+    }
+
+    if(sellTruckStep === 4){
+      return '<div class="wizard-panel">'
+        + '<h3 class="card-title" data-i18n="trucks.stepPhotosTitle">Rasmlar va tavsif</h3>'
+        + '<p class="note" style="margin-top:0;" data-i18n="trucks.photosHint">Birinchi rasm asosiy rasm bo\'ladi. 5 tagacha rasm qo\'shishingiz mumkin.</p>'
+        + '<div class="photo-picker-row" id="truckPhotoRow"></div>'
+        + '<input type="file" accept="image/*" id="fTruckPhotoFile" hidden>'
+        + '<div class="field" style="margin-bottom:0;"><label for="fTruckDesc" data-i18n="trucks.descLabel">Tavsif</label>'
+        +   '<textarea id="fTruckDesc" maxlength="2000" placeholder="Mashina holati, texnik xizmat tarixi, qo\'shimcha jihozlar...">'+esc(d.description)+'</textarea></div>'
+        + '</div>';
+    }
+
+    // Step 5 — review
+    var row = function(labelKey, labelText, value){
+      if(value === null || value === undefined || value === "") return "";
+      return '<div class="wizard-review-row"><span class="wr-k" data-i18n="'+labelKey+'">'+labelText+'</span><span class="wr-v">'+escapeHtml(String(value))+'</span></div>';
+    };
+    return '<div class="wizard-panel">'
+      + '<h3 class="card-title" data-i18n="trucks.stepReviewTitle">Tekshirib chiqing</h3>'
+      + (sellTruckPhotos.length
+          ? '<div class="photo-picker-row">'+sellTruckPhotos.map(function(p){ return '<div class="photo-picker-thumb"><img src="'+p+'" alt=""></div>'; }).join("")+'</div>'
+          : '')
+      + row("trucks.catLabel", "Turkum", truckCategoryLabel(d.category))
+      + row("trucks.brandLabel", "Marka va model", d.brand)
+      + row("trucks.yearLabel", "Yil", d.year)
+      + row("trucks.mileageShort", "Probeg", d.mileageKm ? formatNum(d.mileageKm) + " km" : "")
+      + row("trucks.priceLabel", "Narx", d.price ? formatNum(d.price) + " so'm" + (d.priceType === "NEGOTIABLE" ? " (" + (t("trucks.negotiable") || "kelishiladi") + ")" : "") : "")
+      + row("profile.cityLabel", "Shahar", d.city)
+      + row("order.nameLabel", "Ism", d.sellerName)
+      + row("order.phoneLabel", "Telefon", d.phone)
+      + '<p class="note" id="sellTruckNote" style="margin-top:var(--s4);"></p>'
+      + '</div>';
+  }
+
+  function sellTruckCanAdvance(){
+    var d = sellTruckDraft;
+    if(sellTruckStep === 1) return Boolean(d.category);
+    if(sellTruckStep === 2) return Boolean(d.brand && d.brand.trim() && d.year);
+    if(sellTruckStep === 3) return Boolean(d.price && d.city && d.sellerName && d.sellerName.trim() && isValidPhone(d.phone || ""));
+    return true;
+  }
+
+  function readSellTruckStep(){
+    var d = sellTruckDraft;
+    var get = function(id){ var el = document.getElementById(id); return el ? el.value : undefined; };
+    var num = function(id){
+      var v = get(id);
+      if(v === undefined || v === "") return null;
+      var n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    if(sellTruckStep === 2){
+      if(get("fTruckBrand") !== undefined) d.brand = get("fTruckBrand").trim();
+      d.year = num("fTruckYear");
+      d.mileageKm = num("fTruckMileage");
+      if(get("fTruckBody") !== undefined) d.bodyType = get("fTruckBody");
+      if(get("fTruckFuel") !== undefined) d.fuel = get("fTruckFuel");
+      if(get("fTruckTransmission") !== undefined) d.transmission = get("fTruckTransmission");
+      if(get("fTruckCondition") !== undefined) d.condition = get("fTruckCondition");
+      if(get("fTruckSteering") !== undefined) d.steering = get("fTruckSteering");
+      d.engineVolumeL = num("fTruckEngineVol");
+      d.enginePowerHp = num("fTruckEnginePower");
+      d.capacityTon = num("fTruckCapacity");
+      d.axles = num("fTruckAxles");
+      if(get("fTruckCabType") !== undefined) d.cabType = get("fTruckCabType").trim();
+    }
+    if(sellTruckStep === 3){
+      d.price = num("fTruckPrice");
+      if(get("fTruckCityInput") !== undefined) d.city = get("fTruckCityInput");
+      if(get("fTruckSellerType") !== undefined) d.sellerType = get("fTruckSellerType");
+      if(get("fTruckSellerName") !== undefined) d.sellerName = get("fTruckSellerName").trim();
+      if(get("fTruckPhone") !== undefined) d.phone = get("fTruckPhone").trim();
+    }
+    if(sellTruckStep === 4){
+      if(get("fTruckDesc") !== undefined) d.description = get("fTruckDesc").trim();
+    }
+  }
+
+  function renderSellTruckSheet(){
+    var body = document.getElementById("sheetBody");
+    var footer = document.getElementById("sheetFooter");
+    if(!body) return;
+    var isLast = sellTruckStep === SELL_TRUCK_STEPS.length;
+
+    body.innerHTML = sellTruckStepsHtml() + sellTruckStepHtml();
+    if(footer){
+      footer.innerHTML = '<div style="display:flex;gap:var(--s2);">'
+        + (sellTruckStep > 1 ? '<button class="btn ghost" id="btnSellTruckBack" style="flex:1;" data-i18n="wizard.back">Orqaga</button>' : '')
+        + '<button class="btn" id="btnSellTruckNext" style="flex:2;" data-i18n="'+(isLast ? (sellTruckEditingId ? "trucks.saveBtn" : "trucks.publishBtn") : "wizard.next")+'">'
+        +   (isLast ? (sellTruckEditingId ? "Saqlash" : "Joylash") : "Davom etish")
+        + '</button></div>';
+      footer.hidden = false;
+    }
+
+    // Step 1 category picker
+    body.querySelectorAll("[data-sell-cat]").forEach(function(b){
+      b.addEventListener("click", function(){
+        sellTruckDraft.category = b.getAttribute("data-sell-cat");
+        renderSellTruckSheet();
+      });
+    });
+    // Boolean chips on steps 2 and 3
+    body.querySelectorAll("[data-sell-flag]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var k = b.getAttribute("data-sell-flag");
+        sellTruckDraft[k] = !sellTruckDraft[k];
+        b.classList.toggle("active", sellTruckDraft[k]);
+      });
+    });
+    body.querySelectorAll("[data-sell-pricetype]").forEach(function(b){
+      b.addEventListener("click", function(){
+        sellTruckDraft.priceType = b.getAttribute("data-sell-pricetype");
+        body.querySelectorAll("[data-sell-pricetype]").forEach(function(x){
+          x.classList.toggle("active", x.getAttribute("data-sell-pricetype") === sellTruckDraft.priceType);
+        });
+      });
+    });
+
+    if(sellTruckStep === 4){
+      renderTruckPhotoRow();
+      var fileInput = document.getElementById("fTruckPhotoFile");
+      if(fileInput) fileInput.addEventListener("change", function(){
+        var file = fileInput.files && fileInput.files[0];
+        fileInput.value = ""; // lets the same file be picked again later
+        if(!file) return;
+        if(sellTruckPhotos.length >= 5){
+          toast(t("trucks.maxPhotos") || "Ko'pi bilan 5 ta rasm", "", "info");
+          return;
+        }
+        if(!/^image\//.test(file.type)){
+          toast(t("trucks.badFileType") || "Faqat rasm fayllari", "", "info");
+          return;
+        }
+        fileToPhotoDataUrl(file, function(dataUrl){
+          if(!dataUrl){ toast(t("trucks.photoFailed") || "Rasmni o'qib bo'lmadi", "", "info"); return; }
+          sellTruckPhotos.push(dataUrl);
+          renderTruckPhotoRow();
+        });
+      });
+    }
+
+    var backBtn = document.getElementById("btnSellTruckBack");
+    if(backBtn) backBtn.addEventListener("click", function(){
+      readSellTruckStep();
+      sellTruckStep = Math.max(1, sellTruckStep - 1);
+      renderSellTruckSheet();
+    });
+    var nextBtn = document.getElementById("btnSellTruckNext");
+    if(nextBtn) nextBtn.addEventListener("click", function(){
+      readSellTruckStep();
+      if(isLast){ submitTruckListing(nextBtn); return; }
+      if(!sellTruckCanAdvance()){
+        toast(t("trucks.fillStep") || "Ma'lumotlarni to'ldiring", "", "info");
+        return;
+      }
+      sellTruckStep = Math.min(SELL_TRUCK_STEPS.length, sellTruckStep + 1);
+      renderSellTruckSheet();
+    });
+
+    applyLang();
+  }
+
+  /** `existing` = edit an existing listing; omit to post a new one. */
+  function openSellTruckSheet(existing){
     if(!isSignedIn()){
       toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
       return;
     }
-    sellTruckPhotos = [];
-    var html = ''
-      + '<div class="edit-section-heading" data-i18n="trucks.photosLabel">Rasmlar (ixtiyoriy, 5 tagacha)</div>'
-      + '<div class="photo-picker-row" id="truckPhotoRow"></div>'
-      + '<input type="file" accept="image/*" id="fTruckPhotoFile" hidden>'
-      + '<div class="field"><label for="fTruckSellerName" data-i18n="order.nameLabel">Ismingiz</label>'
-      +   '<input type="text" id="fTruckSellerName" maxlength="60" placeholder="Ismingiz" data-autofocus></div>'
-      + '<div class="field"><label for="fTruckPhone" data-i18n="order.phoneLabel">Telefon</label>'
-      +   '<input type="tel" id="fTruckPhone" inputmode="tel" placeholder="90 123 45 67"></div>'
-      + '<div class="field"><label for="fTruckVehicleType" data-i18n="order.truckTypeLabel">Mashina turi</label>'
-      +   '<select id="fTruckVehicleType"><option value="" data-i18n="profile.roleUnset">Tanlanmagan</option>'
-      +   Object.keys(VEHICLE_LABELS).map(function(k){ return '<option value="'+k+'">'+VEHICLE_LABELS[k]+'</option>'; }).join("")
-      +   '</select></div>'
-      + '<div class="field"><label for="fTruckBrand" data-i18n="trucks.brandLabel">Marka va model</label>'
-      +   '<input type="text" id="fTruckBrand" maxlength="60" placeholder="masalan: Isuzu NPR"></div>'
-      + '<div class="row2">'
-      +   '<div class="field"><label for="fTruckYear" data-i18n="trucks.yearLabel">Ishlab chiqarilgan yili</label>'
-      +     '<input type="number" id="fTruckYear" min="1970" max="'+(new Date().getFullYear()+1)+'" placeholder="2015"></div>'
-      +   '<div class="field"><label for="fTruckMileage" data-i18n="trucks.mileageLabel">Probeg (km, ixtiyoriy)</label>'
-      +     '<input type="number" id="fTruckMileage" min="0" placeholder="120000"></div>'
-      + '</div>'
-      + '<div class="field"><label for="fTruckPrice" data-i18n="trucks.priceLabel">Narx (so\'m)</label>'
-      +   '<input type="number" id="fTruckPrice" min="0" step="1000" placeholder="150000000"></div>'
-      + '<div class="field"><label for="fTruckCityInput" data-i18n="profile.cityLabel">Shahar</label>'
-      +   '<select id="fTruckCityInput"><option value="" data-i18n="profile.roleUnset">Tanlanmagan</option>'+cityOptions("")+'</select></div>'
-      + '<div class="field" style="margin-bottom:0;"><label for="fTruckDesc" data-i18n="trucks.descLabel">Qisqa tavsif (ixtiyoriy)</label>'
-      +   '<input type="text" id="fTruckDesc" maxlength="500" placeholder="masalan: yaxshi holatda, bitta egasida"></div>'
-      + '<p class="note" id="sellTruckNote"></p>';
+    sellTruckStep = 1;
+    sellTruckEditingId = existing ? existing.id : null;
+    sellTruckPhotos = existing && existing.photos ? existing.photos.slice() : [];
+    sellTruckDraft = existing
+      ? {
+          category: existing.category, brand: existing.brand, year: existing.year,
+          mileageKm: existing.mileageKm, bodyType: existing.bodyType, fuel: existing.fuel,
+          transmission: existing.transmission, condition: existing.condition, steering: existing.steering,
+          engineVolumeL: existing.engineVolumeL, enginePowerHp: existing.enginePowerHp,
+          capacityTon: existing.capacityTon, axles: existing.axles, cabType: existing.cabType,
+          hasTrailer: existing.hasTrailer, refrigerated: existing.refrigerated,
+          price: existing.price, priceType: existing.priceType, city: existing.city,
+          documentsReady: existing.documentsReady, credit: existing.credit, exchange: existing.exchange,
+          sellerType: existing.sellerType, sellerName: existing.sellerName, phone: existing.phone,
+          description: existing.description
+        }
+      : {
+          priceType: "FIXED",
+          // Prefill from the signed-in profile — one less thing to retype.
+          sellerName: profileDisplayName(lastLoadedProfile || {}) || "",
+          phone: (lastLoadedProfile && lastLoadedProfile.phone) || "",
+          city: (lastLoadedProfile && lastLoadedProfile.city) || ""
+        };
 
     Sheet.open({
-      title: t("trucks.sellBtnTitle") || "Mashina e'lonini joylash",
-      html: html,
-      footerHtml: '<button class="btn" id="btnSubmitTruck" data-i18n="trucks.publishBtn">Joylash</button>',
-      onOpen: function(){
-        applyLang();
-        renderTruckPhotoRow();
-        var fileInput = document.getElementById("fTruckPhotoFile");
-        if(fileInput) fileInput.addEventListener("change", function(){
-          var file = fileInput.files && fileInput.files[0];
-          fileInput.value = ""; // lets the same file be picked again later
-          if(!file || sellTruckPhotos.length >= 5) return;
-          fileToPhotoDataUrl(file, function(dataUrl){
-            if(!dataUrl) return;
-            sellTruckPhotos.push(dataUrl);
-            renderTruckPhotoRow();
-          });
-        });
-        var btn = document.getElementById("btnSubmitTruck");
-        if(btn) btn.addEventListener("click", function(){ submitTruckListing(btn); });
-      }
+      title: t(existing ? "trucks.editTitle" : "trucks.sellBtnTitle") || "Mashina e'lonini joylash",
+      html: "",
+      footerHtml: "<div></div>",
+      onOpen: function(){ renderSellTruckSheet(); }
     });
   }
 
   function submitTruckListing(btn){
-    var note = document.getElementById("sellTruckNote");
-    var get = function(id){ var el = document.getElementById(id); return el ? el.value : ""; };
+    var d = sellTruckDraft;
     var payload = {
       googleIdToken: googleIdToken,
       telegramInitData: telegramInitData,
-      sellerName: get("fTruckSellerName").trim(),
-      phone: get("fTruckPhone").trim(),
-      vehicleType: get("fTruckVehicleType"),
-      brand: get("fTruckBrand").trim(),
-      year: get("fTruckYear"),
-      mileageKm: get("fTruckMileage"),
-      price: get("fTruckPrice"),
-      city: get("fTruckCityInput"),
-      description: get("fTruckDesc").trim(),
+      category: d.category, brand: d.brand, year: d.year, mileageKm: d.mileageKm,
+      bodyType: d.bodyType || "", fuel: d.fuel || "", transmission: d.transmission || "",
+      condition: d.condition || "", steering: d.steering || "", sellerType: d.sellerType || "",
+      engineVolumeL: d.engineVolumeL, enginePowerHp: d.enginePowerHp,
+      capacityTon: d.capacityTon, axles: d.axles, cabType: d.cabType || "",
+      hasTrailer: Boolean(d.hasTrailer), refrigerated: Boolean(d.refrigerated),
+      price: d.price, priceType: d.priceType || "FIXED", city: d.city,
+      documentsReady: Boolean(d.documentsReady), credit: Boolean(d.credit), exchange: Boolean(d.exchange),
+      sellerName: d.sellerName, phone: d.phone, description: d.description || "",
       photos: sellTruckPhotos
     };
+    if(sellTruckEditingId) payload.id = sellTruckEditingId;
+
     btn.disabled = true;
+    var note = document.getElementById("sellTruckNote");
     if(note) note.textContent = "";
-    fetch("/api/trucks?action=create", {
+
+    fetch("/api/trucks?action=" + (sellTruckEditingId ? "update" : "create"), {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify(payload)
@@ -4200,8 +5301,10 @@
         if(note){ note.textContent = res.body.error || "Xato yuz berdi"; note.style.color = "#DC2626"; }
         return;
       }
-      toast(t("trucks.published") || "E'lon joylandi", "", "success");
+      toast(t(sellTruckEditingId ? "trucks.saved" : "trucks.published") || "E'lon joylandi", "", "success");
       sellTruckPhotos = [];
+      sellTruckDraft = {};
+      sellTruckEditingId = null;
       Sheet.close();
       fetchTrucks();
     }).catch(function(){
@@ -4210,39 +5313,19 @@
     });
   }
 
-  function openTruckDetailSheet(tk){
-    var photos = tk.photos || [];
-    var gallery = photos.length
-      ? '<div class="truck-gallery">'+photos.map(function(p){ return '<img src="'+p+'" alt="">'; }).join("")+'</div>'
-      : '<div class="truck-gallery empty">'+icon("iconTruck")+'</div>';
-
-    var html = gallery
-      + '<h3 class="card-title" style="margin-top:0;">'+escapeHtml(tk.brand)+'</h3>'
-      + '<div class="lc-price" style="margin:0 0 var(--s3);">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
-      + '<div class="lc-meta" style="margin-bottom:var(--s4);">'
-      +   '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[tk.vehicleType] || tk.vehicleType)+'</span>'
-      +   '<span>'+icon("iconRoute")+' '+escapeHtml(String(tk.year))+'</span>'
-      +   (tk.mileageKm != null ? '<span>'+icon("iconWeight")+' '+formatNum(tk.mileageKm)+' km</span>' : '')
-      +   '<span>'+icon("iconMap")+' '+escapeHtml(tk.city)+'</span>'
-      + '</div>'
-      + (tk.description ? '<p class="note" style="margin:0 0 var(--s4);">'+escapeHtml(tk.description)+'</p>' : '')
-      + '<div class="lc-meta"><span>'+icon("iconUser")+' '+escapeHtml(tk.sellerName)+'</span></div>'
-      + '<a href="tel:'+escapeHtml(tk.phone)+'" class="btn" style="margin-top:var(--s4);display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">'
-      +   icon("iconPhone")+' '+escapeHtml(tk.phone)
-      + '</a>'
-      + (trucksState.mineOnly
-          ? '<button type="button" class="btn ghost" id="btnDeleteTruckDetail" style="margin-top:var(--s3);" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>'
-          : '');
-
-    Sheet.open({
-      title: t("trucks.detailTitle") || "Mashina haqida",
-      html: html,
-      onOpen: function(container){
-        applyLang();
-        var delBtn = container.querySelector("#btnDeleteTruckDetail");
-        if(delBtn) delBtn.addEventListener("click", function(){ Sheet.close(); deleteTruckListing(tk.id); });
-      }
-    });
+  /* ---------- Listing management ---------- */
+  function setTruckStatus(id, status){
+    fetch("/api/trucks?action=set-status", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id, status: status })
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok){ toast(res.body.error || "Saqlanmadi", "", "info"); return; }
+        toast(t("trucks.statusUpdated") || "Holat yangilandi", "", "success");
+        Sheet.close();
+        fetchTrucks();
+      }).catch(function(){});
   }
 
   function deleteTruckListing(id){
@@ -4257,6 +5340,37 @@
       if(!res.ok){ toast(res.body.error || "O'chirilmadi", "", "info"); return; }
       fetchTrucks();
     }).catch(function(){});
+  }
+
+  function toggleTruckFavorite(id){
+    if(!isSignedIn()){
+      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      return;
+    }
+    var wasFav = isTruckFav(id);
+    // Optimistic local flip so the heart responds instantly; the refresh
+    // below reconciles against what the server actually stored.
+    if(wasFav) truckFavIds = truckFavIds.filter(function(x){ return x !== id; });
+    else truckFavIds.push(id);
+    document.querySelectorAll('[data-truck-fav="'+id+'"]').forEach(function(b){
+      b.textContent = wasFav ? "♡" : "♥";
+    });
+
+    fetch("/api/trucks?action=" + (wasFav ? "unfavorite" : "favorite"), {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id })
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok) toast(res.body.error || "Saqlanmadi", "", "info");
+        // The favourites view's own list changes when an item is un-favorited.
+        if(trucksState.view === "favs") fetchTrucks();
+      }).catch(function(){});
+  }
+
+  /** Entry point from switchTab("trucks") — favorites first so hearts render correctly. */
+  function renderTrucksTab(){
+    refreshTruckFavIds(fetchTrucks);
   }
 
   /* ============================================================
@@ -5822,7 +6936,7 @@
     if(name === "profile") renderProfile();
     if(name === "loads") renderLoadsTab();
     if(name === "chat") renderChatTab();
-    if(name === "trucks") fetchTrucks();
+    if(name === "trucks") renderTrucksTab();
     if(name === "home") renderHomeMatch();
     if(name !== "chat") stopChatPoll();
     // A tab switch triggered from inside a sheet (e.g. Settings → Xabarlar)
@@ -5877,31 +6991,51 @@
   });
 
   var btnSellTruck = document.getElementById("btnSellTruck");
-  if(btnSellTruck) btnSellTruck.addEventListener("click", openSellTruckSheet);
+  if(btnSellTruck) btnSellTruck.addEventListener("click", function(){ openSellTruckSheet(); });
+  var btnTrucksSearchBar = document.getElementById("trucksSearchBar");
+  if(btnTrucksSearchBar) btnTrucksSearchBar.addEventListener("click", openTruckSearchSheet);
+  var btnTrucksFilters = document.getElementById("btnTrucksFilters");
+  if(btnTrucksFilters) btnTrucksFilters.addEventListener("click", openTruckFiltersSheet);
   var btnTrucksMine = document.getElementById("btnTrucksMine");
   if(btnTrucksMine) btnTrucksMine.addEventListener("click", function(){
-    trucksState.mineOnly = !trucksState.mineOnly;
+    trucksState.view = trucksState.view === "mine" ? "all" : "mine";
     fetchTrucks();
   });
-  var fTrucksCity = document.getElementById("fTrucksCity");
-  if(fTrucksCity) fTrucksCity.addEventListener("change", function(){
-    trucksState.city = fTrucksCity.value;
+  var btnTrucksFavs = document.getElementById("btnTrucksFavs");
+  if(btnTrucksFavs) btnTrucksFavs.addEventListener("click", function(){
+    trucksState.view = trucksState.view === "favs" ? "all" : "favs";
     fetchTrucks();
   });
-  var fTrucksType = document.getElementById("fTrucksType");
-  if(fTrucksType) fTrucksType.addEventListener("change", function(){
-    trucksState.vehicleType = fTrucksType.value;
+  var fTrucksSort = document.getElementById("fTrucksSort");
+  if(fTrucksSort) fTrucksSort.addEventListener("change", function(){
+    trucksState.sort = fTrucksSort.value;
     fetchTrucks();
   });
-  // Truck cards are rebuilt on every fetchTrucks() re-render, so per-element
-  // binding would go stale immediately — same reasoning as the load-card
-  // favorite-button delegation. A tap opens the detail sheet; delete lives
-  // there now, not on the card itself.
+  // Truck cards, category tiles, favorite hearts and the "Mening e'lonlarim"
+  // status tabs are all rebuilt on every re-render, so per-element binding
+  // would go stale immediately — same reasoning as the load-card delegation.
   document.addEventListener("click", function(e){
+    var favBtn = e.target.closest("[data-truck-fav]");
+    if(favBtn){ e.stopPropagation(); toggleTruckFavorite(favBtn.getAttribute("data-truck-fav")); return; }
+
+    var catBtn = e.target.closest("[data-truck-cat]");
+    if(catBtn){
+      var cat = catBtn.getAttribute("data-truck-cat");
+      trucksState.category = trucksState.category === cat ? "" : cat;
+      trucksState.view = "all";
+      fetchTrucks();
+      return;
+    }
+
+    var mineTab = e.target.closest("[data-mine-status]");
+    if(mineTab){
+      trucksState.mineStatus = mineTab.getAttribute("data-mine-status");
+      fetchTrucks();
+      return;
+    }
+
     var card = e.target.closest("[data-truck-id]");
-    if(!card) return;
-    var tk = lastTrucksResult.filter(function(t){ return t.id === card.getAttribute("data-truck-id"); })[0];
-    if(tk) openTruckDetailSheet(tk);
+    if(card) openTruckDetailSheet(card.getAttribute("data-truck-id"));
   });
 
   // Lang/theme buttons and Settings rows are (re)rendered on demand inside

@@ -132,6 +132,9 @@ const handleProfile = async (req, res) => {
   }
 
   const next = { ...existing };
+  // Set once, the first time this identity actually saves anything — real
+  // "member since" data for the Mashinalar seller card, not a guess.
+  if (!next.joinedAt) next.joinedAt = Date.now();
 
   if (body.username !== undefined && body.username !== null && body.username !== '') {
     const username = String(body.username).trim();

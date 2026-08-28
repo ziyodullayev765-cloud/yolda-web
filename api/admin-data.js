@@ -11,8 +11,11 @@
  *   GET  /api/admin-data?resource=users
  *   GET  /api/admin-data?resource=messages
  *   GET  /api/admin-data?resource=reports
+ *   GET  /api/admin-data?resource=trucks
  *   POST /api/admin-data?action=update-report   { id, status }
  *   POST /api/admin-data?action=verify-driver   { email, verified }
+ *   POST /api/admin-data?action=update-user     { email, ...any profile field }
+ *   POST /api/admin-data?action=update-truck    { id, verified?, promoted?, status? } | { id, remove: true }
  *
  * All of these require the signed cookie set by /api/admin-login.
  */
@@ -20,6 +23,8 @@ import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from
 import { isAdminAuthed } from '../lib/adminAuth.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
+/** Mirrors STATUSES in api/trucks.js — same duplicate-literal pattern as the lists below. */
+const TRUCK_STATUSES = ['ACTIVE', 'PAUSED', 'SOLD'];
 
 // Mirrors the same lists in api/profile.js and api/order.js — kept as a
 // duplicate literal rather than a shared import, same pattern already used
@@ -119,6 +124,71 @@ const getReports = async (res) => {
     )
   ).filter(Boolean);
   return res.status(200).json({ reports });
+};
+
+/** Every Mashinalar listing, any status — see api/trucks.js for the shape. */
+const getTrucks = async (res) => {
+  const ids = await kvSmembers('truck_ids');
+  const trucks = (
+    await Promise.all(
+      ids.map(async (id) => {
+        const raw = await kvGet(`truck:${id}`);
+        if (!raw) return null;
+        try {
+          const t = JSON.parse(raw);
+          // Photos are inline data: URLs and would bloat this response
+          // enormously across hundreds of listings — the admin list only
+          // needs to know whether a listing has any.
+          const { photos, ...rest } = t;
+          return { ...rest, photoCount: Array.isArray(photos) ? photos.length : 0 };
+        } catch {
+          return null;
+        }
+      }),
+    )
+  ).filter(Boolean).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return res.status(200).json({ trucks });
+};
+
+/**
+ * POST ?action=update-truck — the admin-only side of a Mashinalar listing.
+ * Deliberately narrow: only the trust/moderation flags an admin owns
+ * (`verified`, `promoted`, `status`) plus outright removal. Listing content
+ * stays the seller's to edit through /api/trucks?action=update — those are
+ * exactly the fields api/trucks.js refuses to let a seller set on themselves.
+ */
+const updateTruck = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const id = String(body.id || '');
+  if (!id) return res.status(400).json({ error: 'E’lon topilmadi' });
+
+  if (body.remove) {
+    await kvDel(`truck:${id}`);
+    await kvSrem('truck_ids', id);
+    return res.status(200).json({ ok: true, removed: true });
+  }
+
+  const raw = await kvGet(`truck:${id}`);
+  if (!raw) return res.status(404).json({ error: 'E’lon topilmadi' });
+  let truck;
+  try {
+    truck = JSON.parse(raw);
+  } catch {
+    return res.status(500).json({ error: 'Yozuv buzilgan' });
+  }
+
+  if (body.verified !== undefined) truck.verified = Boolean(body.verified);
+  if (body.promoted !== undefined) truck.promoted = Boolean(body.promoted);
+  if (body.status !== undefined) {
+    const status = String(body.status);
+    if (!TRUCK_STATUSES.includes(status)) return res.status(400).json({ error: 'Noto‘g‘ri holat' });
+    truck.status = status;
+  }
+
+  const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
+  if (!saved) return res.status(500).json({ error: 'Saqlanmadi' });
+  const { photos, ...rest } = truck;
+  return res.status(200).json({ ok: true, truck: { ...rest, photoCount: Array.isArray(photos) ? photos.length : 0 } });
 };
 
 const updateReport = async (req, res) => {
@@ -325,6 +395,7 @@ export default async function handler(req, res) {
     if (resource === 'users') return getUsers(res);
     if (resource === 'messages') return getMessages(res);
     if (resource === 'reports') return getReports(res);
+    if (resource === 'trucks') return getTrucks(res);
     return res.status(400).json({ error: 'Noto‘g‘ri resource' });
   }
 
@@ -333,6 +404,7 @@ export default async function handler(req, res) {
     if (action === 'update-report') return updateReport(req, res);
     if (action === 'verify-driver') return verifyDriver(req, res);
     if (action === 'update-user') return updateUser(req, res);
+    if (action === 'update-truck') return updateTruck(req, res);
     return res.status(400).json({ error: 'Noto‘g‘ri action' });
   }
 
