@@ -17,10 +17,11 @@
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush, kvGet, kvSet, kvSismember, kvRange } from '../lib/kv.js';
+import { kvPush, kvGet, kvSet, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
-import { CARGO, buildOrderMessage, STATUS_LABELS } from '../lib/orderMessage.js';
+import { CARGO, buildOrderMessage, STATUS_LABELS, formatNum } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
+import { ANY_CITY, cityIndexKey, searchesKey, matchesSearch } from '../lib/savedSearch.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Group id is not a secret, so it ships with the code as a fallback.
@@ -259,10 +260,57 @@ const createOrder = async (req, res) => {
     })).catch(() => {});
     kvPush('order_codes', code).catch(() => {});
 
+    await notifyMatches({ ...order, createdAt: Date.now() });
+
     return res.status(200).json({ ok: true, code, amount, distanceKm });
   } catch (err) {
     console.error('Telegram send failed:', err.message);
     return res.status(502).json({ error: 'Hozircha yuborib bo‘lmadi, birozdan keyin urinib ko‘ring' });
+  }
+};
+
+/**
+ * Yangi yuk saqlangan qidiruvlarga mos kelsa, egalariga xabar beradi.
+ *
+ * Butun foydalanuvchilar ro'yxati ko'rilmaydi: shahar indeksidan faqat
+ * shu shahardan (yoki "har qanday shahar") yuk kutayotganlar olinadi.
+ *
+ * Buyurtma joylash yo'lida turgani uchun ikkita cheklov bor:
+ *   - bir yukka ko'pi bilan MAX_MATCH_NOTIFICATIONS ta xabar;
+ *   - xato bo'lsa jim o'tiladi — bildirishnoma buyurtmani buzmasin.
+ */
+const MAX_MATCH_NOTIFICATIONS = 25;
+
+const notifyMatches = async (order) => {
+  try {
+    const candidates = new Set([
+      ...(await kvSmembers(cityIndexKey(order.fromCity))),
+      ...(await kvSmembers(cityIndexKey(ANY_CITY))),
+    ]);
+    // O'z yukining xabari o'ziga kelmasin.
+    candidates.delete(order.ownerIdentity);
+    if (!candidates.size) return;
+
+    const cargo = CARGO[order.cargoType] || CARGO.OTHER;
+    const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel
+      ? order.customCargoLabel
+      : cargo.label;
+    const text = `<b>Sizga mos yangi yuk</b>\n\n`
+      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
+      + `${esc(formatNum(order.weightKg))} kg · ${esc(cargoLabel)}\n`
+      + `<b>${esc(formatNum(order.amount))} so'm</b>\n\n`
+      + `Yuk haydovchilar guruhida — «Men olaman» tugmasini bosgan birinchi haydovchi oladi.`;
+
+    let sent = 0;
+    for (const identity of candidates) {
+      if (sent >= MAX_MATCH_NOTIFICATIONS) break;
+      const searches = JSON.parse((await kvGet(searchesKey(identity))) || '[]');
+      if (!Array.isArray(searches) || !searches.some((s) => matchesSearch(order, s))) continue;
+      const ok = await notifyUser(identity, { category: 'matches', text });
+      if (ok) sent += 1;
+    }
+  } catch (err) {
+    console.error('match notify failed:', err.message);
   }
 };
 

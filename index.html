@@ -786,6 +786,24 @@
   .route-pill .ic-svg{color:var(--muted);flex-shrink:0;font-size:16px;}
   .route-pill .arrow{color:var(--stamp);margin:0 4px;}
 
+  /* Saqlangan qidiruvlar — bosilsa filtr qo'llanadi, × o'chiradi. */
+  .saved-searches{display:flex;gap:var(--s2);flex-wrap:wrap;margin:var(--s4) 0 0;}
+  .ss-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-pill);
+    padding:7px 8px 7px 13px;font-size:13px;color:var(--ink);cursor:pointer;
+    font-family:inherit;
+  }
+  .ss-chip:hover{border-color:var(--route);color:var(--route);}
+  .ss-chip .ic-svg{font-size:14px;color:var(--route);}
+  .ss-del{
+    display:flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:50%;border:none;background:var(--paper-dark);
+    color:var(--muted);cursor:pointer;padding:0;flex-shrink:0;
+  }
+  .ss-del:hover{background:#FEE2E2;color:#DC2626;}
+  .ss-del .ic-svg{font-size:11px;}
+
   /* Narx maslahatchisi — haqiqiy buyurtmalardan olingan oraliq. */
   .price-hint{
     display:flex;gap:var(--s3);align-items:flex-start;
@@ -1872,7 +1890,13 @@
         <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
         <button type="button" class="chip" id="chipMatchOnly" hidden><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span data-i18n="loads.matchOnly">Faqat mos yuklar</span></button>
       </div>
-      <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
+      <div style="display:flex;gap:var(--s4);flex-wrap:wrap;align-items:center;">
+        <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
+        <button type="button" class="link-btn" id="btnSaveSearch" hidden>
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"></use></svg>
+          <span data-i18n="search.save">Bu qidiruvni saqlash va xabar olish</span>
+        </button>
+      </div>
       <!-- Lives here (not inline) so its <select>/<input> elements and their
            listeners are only ever wired up once by initLoadsFilters() — the
            filter Sheet just relocates this whole node into itself while
@@ -1904,6 +1928,8 @@
         </div>
       </div>
     </div>
+
+    <div id="savedSearches" hidden></div>
 
     <div id="backhaulBanner" hidden></div>
 
@@ -2273,6 +2299,10 @@
       "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
       "track.release": "Haydovchini bo'shatish", "track.cancel": "Buyurtmani bekor qilish",
       "track.cancelled": "Bu buyurtma bekor qilingan.",
+      "search.save": "Bu qidiruvni saqlash va xabar olish", "search.anyRoute": "Barcha yo'nalishlar",
+      "search.delete": "O'chirish", "search.saved": "Qidiruv saqlandi",
+      "search.savedSub": "Mos yuk chiqqanda Telegram orqali xabar beramiz",
+      "search.saveFailed": "Saqlanmadi",
       "loads.exactDate": "Sana", "loads.showResults": "Natijalarni ko'rsatish",
       "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
       "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
@@ -2415,6 +2445,7 @@
       "notif.tgOrders": "Buyurtmam holati", "notif.tgOrdersSub": "Haydovchi topildi, yo'lga chiqdi, yetkazildi",
       "notif.tgListings": "E'lonlarim", "notif.tgListingsSub": "E'lon tasdiqlandi yoki rad etildi",
       "notif.tgChat": "Yangi xabarlar", "notif.tgChatSub": "Suhbatga birinchi yangi xabar kelganda",
+      "notif.tgMatches": "Mos yuklar", "notif.tgMatchesSub": "Saqlangan qidiruvingizga mos yuk chiqqanda",
       "notif.tgSignIn": "Telegram bildirishnomalarini sozlash uchun avval tizimga kiring.",
       "notif.tgNotLinked": "Bu xabarlar Telegram orqali keladi. Ularni olish uchun ilovani Telegram'da oching yoki akkauntingizni Telegram bilan bog'lang.",
       "feedback.sub": "Yolda haqida fikringiz, taklifingiz yoki muammo bo'lsa — shu yerdan yozing.",
@@ -2525,6 +2556,10 @@
       "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
       "track.release": "Освободить водителя", "track.cancel": "Отменить заказ",
       "track.cancelled": "Этот заказ отменён.",
+      "search.save": "Сохранить поиск и получать уведомления", "search.anyRoute": "Все маршруты",
+      "search.delete": "Удалить", "search.saved": "Поиск сохранён",
+      "search.savedSub": "Сообщим в Telegram, когда появится подходящий груз",
+      "search.saveFailed": "Не сохранено",
       "loads.exactDate": "Дата", "loads.showResults": "Показать результаты",
       "loads.groupTitle": "Хотите видеть новые грузы первыми?",
       "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
@@ -2667,6 +2702,7 @@
       "notif.tgOrders": "Статус моего заказа", "notif.tgOrdersSub": "Водитель найден, выехал, доставил",
       "notif.tgListings": "Мои объявления", "notif.tgListingsSub": "Объявление одобрено или отклонено",
       "notif.tgChat": "Новые сообщения", "notif.tgChatSub": "При первом новом сообщении в переписке",
+      "notif.tgMatches": "Подходящие грузы", "notif.tgMatchesSub": "Когда появится груз по сохранённому поиску",
       "notif.tgSignIn": "Чтобы настроить уведомления в Telegram, сначала войдите.",
       "notif.tgNotLinked": "Эти сообщения приходят через Telegram. Откройте приложение в Telegram или привяжите аккаунт к Telegram.",
       "feedback.sub": "Есть отзыв, предложение или проблема — напишите нам здесь.",
@@ -2777,6 +2813,10 @@
       "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
       "track.release": "Release the driver", "track.cancel": "Cancel the order",
       "track.cancelled": "This order has been cancelled.",
+      "search.save": "Save this search and get alerts", "search.anyRoute": "All routes",
+      "search.delete": "Delete", "search.saved": "Search saved",
+      "search.savedSub": "We will message you on Telegram when a matching load appears",
+      "search.saveFailed": "Not saved",
       "loads.exactDate": "Date", "loads.showResults": "Show results",
       "loads.groupTitle": "Want to see new loads first?",
       "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
@@ -2919,6 +2959,7 @@
       "notif.tgOrders": "My order status", "notif.tgOrdersSub": "Driver found, departed, delivered",
       "notif.tgListings": "My listings", "notif.tgListingsSub": "Listing approved or rejected",
       "notif.tgChat": "New messages", "notif.tgChatSub": "On the first new message in a conversation",
+      "notif.tgMatches": "Matching loads", "notif.tgMatchesSub": "When a load matches one of your saved searches",
       "notif.tgSignIn": "Sign in first to set up Telegram notifications.",
       "notif.tgNotLinked": "These arrive through Telegram. Open the app in Telegram, or link your account to Telegram.",
       "feedback.sub": "Have feedback, an idea, or ran into a problem? Write to us here.",
@@ -3302,7 +3343,9 @@
     { key: "listings", labelKey: "notif.tgListings", label: "E'lonlarim",
       subKey: "notif.tgListingsSub", sub: "E'lon tasdiqlandi yoki rad etildi" },
     { key: "chat",     labelKey: "notif.tgChat",     label: "Yangi xabarlar",
-      subKey: "notif.tgChatSub", sub: "Suhbatga birinchi yangi xabar kelganda" }
+      subKey: "notif.tgChatSub", sub: "Suhbatga birinchi yangi xabar kelganda" },
+    { key: "matches",  labelKey: "notif.tgMatches",  label: "Mos yuklar",
+      subKey: "notif.tgMatchesSub", sub: "Saqlangan qidiruvingizga mos yuk chiqqanda" }
   ];
 
   function renderTelegramNotifSection(profile){
@@ -6268,6 +6311,10 @@
       fetchLoads();
     });
 
+    var saveSearchBtn = document.getElementById("btnSaveSearch");
+    if(saveSearchBtn) saveSearchBtn.addEventListener("click", saveCurrentSearch);
+    loadSavedSearches();
+
     var matchChip = document.getElementById("chipMatchOnly");
     if(matchChip) matchChip.addEventListener("click", function(){
       loadsState.matchOnly = !loadsState.matchOnly;
@@ -6585,6 +6632,108 @@
       }).catch(function(){
         list.innerHTML = '<p class="note">Yuklab bo\'lmadi, qayta urinib ko\'ring.</p>';
       });
+  }
+
+  /* ---------- Saqlangan qidiruvlar ----------
+     Haydovchi filtrni saqlab qo'yadi va mos yuk chiqqanda Telegram
+     orqali xabar oladi (api/order.js dagi notifyMatches). Faqat
+     tizimga kirganlar uchun — xabarni kimga yuborishni bilish kerak. */
+  var savedSearches = [];
+
+  function describeSearch(x){
+    var route = [x.fromCity, x.toCity].filter(Boolean).join(" → ");
+    var parts = [route || (t("search.anyRoute") || "Barcha yo'nalishlar")];
+    if(x.minWeight || x.maxWeight){
+      parts.push((x.minWeight || 0) + "–" + (x.maxWeight || "∞") + " kg");
+    }
+    return parts.join(" · ");
+  }
+
+  function renderSavedSearches(){
+    var box = document.getElementById("savedSearches");
+    var saveBtn = document.getElementById("btnSaveSearch");
+    if(saveBtn) saveBtn.hidden = !isSignedIn();
+    if(!box) return;
+    if(!savedSearches.length){ box.hidden = true; box.innerHTML = ""; return; }
+
+    box.hidden = false;
+    box.innerHTML = '<div class="saved-searches">' + savedSearches.map(function(x){
+      return '<span class="ss-chip" data-apply-search="'+escapeHtml(x.id)+'">'
+        + icon("iconBell") + escapeHtml(describeSearch(x))
+        + '<button type="button" class="ss-del" data-del-search="'+escapeHtml(x.id)+'" '
+        + 'aria-label="'+escapeHtml(t("search.delete") || "O'chirish")+'">'+icon("iconClose")+'</button>'
+        + '</span>';
+    }).join("") + '</div>';
+
+    box.querySelectorAll("[data-apply-search]").forEach(function(el){
+      el.addEventListener("click", function(e){
+        if(e.target.closest("[data-del-search]")) return;
+        var found = savedSearches.filter(function(x){ return x.id === el.getAttribute("data-apply-search"); })[0];
+        if(found) applySavedSearch(found);
+      });
+    });
+    box.querySelectorAll("[data-del-search]").forEach(function(el){
+      el.addEventListener("click", function(e){
+        e.stopPropagation();
+        searchRequest("delete-search", { id: el.getAttribute("data-del-search") });
+      });
+    });
+  }
+
+  function applySavedSearch(x){
+    loadsState.fromCity = x.fromCity || "";
+    loadsState.toCity = x.toCity || "";
+    loadsState.cargoType = x.cargoType || "";
+    loadsState.truckType = x.truckType || "";
+    loadsState.minWeight = x.minWeight || null;
+    loadsState.maxWeight = x.maxWeight || null;
+    // Filtr maydonlari init() ichidagi lokal o'zgaruvchilar, shuning
+    // uchun ularni id bo'yicha to'g'ridan-to'g'ri yangilaymiz.
+    var set = function(id, value){
+      var el = document.getElementById(id);
+      if(el) el.value = value == null ? "" : value;
+    };
+    set("fLoadsFrom", x.fromCity); set("fLoadsTo", x.toCity);
+    set("fLoadsCargo", x.cargoType); set("fLoadsTruck", x.truckType);
+    set("fLoadsMinWeight", x.minWeight); set("fLoadsMaxWeight", x.maxWeight);
+    fetchLoads();
+  }
+
+  /** Uchala amal ham bitta javob shaklini qaytaradi: {searches:[...]}. */
+  function searchRequest(action, extra){
+    if(!isSignedIn()) return Promise.resolve();
+    return fetch("/api/profile?action=" + action, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.assign({
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData
+      }, extra || {}))
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.body.error || "Xato yuz berdi");
+        savedSearches = res.body.searches || [];
+        renderSavedSearches();
+        return savedSearches;
+      });
+  }
+
+  function loadSavedSearches(){
+    searchRequest("searches").catch(function(){ /* ro'yxat — majburiy emas */ });
+  }
+
+  function saveCurrentSearch(){
+    searchRequest("save-search", {
+      search: {
+        fromCity: loadsState.fromCity, toCity: loadsState.toCity,
+        cargoType: loadsState.cargoType, truckType: loadsState.truckType,
+        minWeight: loadsState.minWeight, maxWeight: loadsState.maxWeight
+      }
+    }).then(function(){
+      toast(t("search.saved") || "Qidiruv saqlandi",
+        t("search.savedSub") || "Mos yuk chiqqanda Telegram orqali xabar beramiz", "success");
+    }).catch(function(err){
+      toast(t("search.saveFailed") || "Saqlanmadi", err.message, "info");
+    });
   }
 
   /* ---------- Narx maslahatchisi ----------

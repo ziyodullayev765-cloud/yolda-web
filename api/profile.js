@@ -24,7 +24,8 @@
  *   profile:<identity>     -> JSON blob { username, displayName, role, city, bio, phone, avatarUrl, ... }
  */
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
-import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSismember } from '../lib/kv.js';
+import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember } from '../lib/kv.js';
+import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { NOTIFY_CATEGORIES } from '../lib/notify.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
@@ -268,9 +269,115 @@ const handleProfile = async (req, res) => {
   return res.status(200).json({ ok: true, profile: withTelegramFlag(next, await telegramReachable(email)) });
 };
 
+/* ============================================================
+   Saqlangan qidiruvlar
+   ------------------------------------------------------------
+   Haydovchi "Toshkent → Farg'ona yo'nalishida yuk chiqsa menga
+   ayt" deb aytib qo'yadi. Yangi yuk joylanganda mos kelganlarga
+   Telegram orqali xabar boradi (api/order.js dagi notifyMatches).
+
+   Profil yozuvidan alohida kalitda saqlanadi: admin paneldagi
+   foydalanuvchilar ro'yxati profil bilan birga bularni ham
+   tortib yurmasin.
+
+   `search_cities:<shahar>` — qaysi identity shu shahardan yuk
+   kutayotgani indeksi. Yangi yuk kelganda hamma foydalanuvchini
+   ko'rib chiqmaslik uchun kerak; "har qanday shahar" degan
+   qidiruvlar ANY_CITY kalitida turadi.
+   ============================================================ */
+const readSearches = async (identity) => {
+  try {
+    const parsed = JSON.parse((await kvGet(searchesKey(identity))) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+/** Faqat tanish maydonlar saqlanadi — mijoz yuborgan qolgani tashlanadi. */
+const cleanSearch = (raw) => {
+  const num = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  };
+  const str = (v, max) => String(v ?? '').trim().slice(0, max);
+  const search = {
+    id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    fromCity: str(raw.fromCity, 40),
+    toCity: str(raw.toCity, 40),
+    cargoType: str(raw.cargoType, 30),
+    truckType: str(raw.truckType, 30),
+    minWeight: num(raw.minWeight),
+    maxWeight: num(raw.maxWeight),
+    createdAt: Date.now(),
+  };
+  if (search.minWeight && search.maxWeight && search.minWeight > search.maxWeight) {
+    return { error: 'Og‘irlik oralig‘i noto‘g‘ri' };
+  }
+  return { search };
+};
+
+const getSearches = async (req, res, identity) =>
+  res.status(200).json({ ok: true, searches: await readSearches(identity) });
+
+const saveSearch = async (req, res, identity, body) => {
+  const { search, error } = cleanSearch(body.search || {});
+  if (error) return res.status(400).json({ error });
+
+  const searches = await readSearches(identity);
+  if (searches.length >= MAX_SEARCHES) {
+    return res.status(409).json({ error: `Ko‘pi bilan ${MAX_SEARCHES} ta qidiruv saqlash mumkin` });
+  }
+  // Aynan shu qidiruv allaqachon bormi? Ikki xil nomdagi bir xil
+  // qidiruv ikki marta xabar yuborardi.
+  const sameAs = (a, b) => ['fromCity', 'toCity', 'cargoType', 'truckType', 'minWeight', 'maxWeight']
+    .every((k) => (a[k] || null) === (b[k] || null));
+  if (searches.some((s) => sameAs(s, search))) {
+    return res.status(409).json({ error: 'Bunday qidiruv allaqachon saqlangan' });
+  }
+
+  searches.push(search);
+  const saved = await kvSet(searchesKey(identity), JSON.stringify(searches));
+  if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  await kvSadd(cityIndexKey(search.fromCity), identity);
+  return res.status(200).json({ ok: true, searches });
+};
+
+const deleteSearch = async (req, res, identity, body) => {
+  const id = String(body.id || '');
+  const searches = await readSearches(identity);
+  const removed = searches.find((s) => s.id === id);
+  if (!removed) return res.status(404).json({ error: 'Qidiruv topilmadi' });
+
+  const next = searches.filter((s) => s.id !== id);
+  const saved = await kvSet(searchesKey(identity), JSON.stringify(next));
+  if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  // Shu shahardan boshqa qidiruv qolmagan bo'lsa, indeksdan chiqamiz.
+  if (!next.some((s) => (s.fromCity || ANY_CITY) === (removed.fromCity || ANY_CITY))) {
+    await kvSrem(cityIndexKey(removed.fromCity), identity);
+  }
+  return res.status(200).json({ ok: true, searches: next });
+};
+
+const handleSearches = async (req, res, action) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  if (action === 'searches') return getSearches(req, res, identity);
+  if (action === 'save-search') return saveSearch(req, res, identity, body);
+  return deleteSearch(req, res, identity, body);
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const action = String(req.query.action || '');
+  if (action === 'searches' || action === 'save-search' || action === 'delete-search') {
+    return handleSearches(req, res, action);
+  }
   if (action === 'link-telegram-start') return linkTelegramStart(req, res);
   if (action === 'link-telegram-finish') return linkTelegramFinish(req, res);
   if (action === 'request-verification') return requestVerification(req, res);

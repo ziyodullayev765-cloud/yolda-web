@@ -52,6 +52,10 @@ export const resolveIdentity = async (creds) => {
   return identity ? { identity, method: 'google' } : null;
 };
 export const tgIdentity = (id) => 'tg:' + id;
+// api/profile.js also imports the linking helpers; they are not under
+// test here, so stubs are enough to satisfy the import.
+export const createTelegramLinkCode = async () => ({ error: 'not under test' });
+export const redeemTelegramLinkCode = async () => ({ error: 'not under test' });
 `);
 
 /**
@@ -321,6 +325,72 @@ console.log('\n== cancel / release ==');
   check('a released load is back in the public list', publicCodes.includes('R3'), publicCodes.join(','));
   check('a cancelled load is not in the public list', !publicCodes.includes('C3'));
   check('a load with a driver is not in the public list', !publicCodes.includes('C1'));
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== saved searches ==');
+const profileHandler = (await load('api/profile.js', 'profile_under_test')).default;
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const call = async (action, body) => {
+    const res = mkRes();
+    await profileHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const driver = { googleIdToken: 'driver@example.com' };
+
+  const anon = await call('save-search', { search: { fromCity: 'Toshkent' } });
+  check('saving without signing in is refused', anon.statusCode === 401);
+
+  const empty = await call('searches', driver);
+  check('a new user has no saved searches', empty.body.searches.length === 0);
+
+  const first = await call('save-search', { ...driver, search: { fromCity: 'Toshkent', toCity: 'Buxoro' } });
+  check('a search can be saved', first.statusCode === 200 && first.body.searches.length === 1);
+  check('it gets an id', Boolean(first.body.searches[0].id));
+
+  const dupe = await call('save-search', { ...driver, search: { fromCity: 'Toshkent', toCity: 'Buxoro' } });
+  check('the same search cannot be saved twice', dupe.statusCode === 409);
+
+  const badRange = await call('save-search', { ...driver, search: { minWeight: 9000, maxWeight: 100 } });
+  check('a backwards weight range is rejected', badRange.statusCode === 400);
+
+  for (let i = 0; i < 4; i++) {
+    await call('save-search', { ...driver, search: { fromCity: 'Toshkent', toCity: `City${i}` } });
+  }
+  const overflow = await call('save-search', { ...driver, search: { fromCity: 'Nukus' } });
+  check('the number of saved searches is capped', overflow.statusCode === 409);
+
+  check('the city index knows who is waiting',
+    (await (await import(join(work, 'kvmock.mjs'))).kvSmembers('search_cities:Toshkent'))
+      .includes('driver@example.com'));
+
+  const list = await call('searches', driver);
+  const firstId = list.body.searches[0].id;
+  const gone = await call('delete-search', { ...driver, id: firstId });
+  check('a search can be deleted', gone.statusCode === 200 && gone.body.searches.length === 4);
+  const missing = await call('delete-search', { ...driver, id: 'nope' });
+  check('deleting an unknown search is a 404', missing.statusCode === 404);
+
+  // Another user's searches must be entirely separate.
+  const other = await call('searches', { googleIdToken: 'other@example.com' });
+  check('searches are per-user', other.body.searches.length === 0);
+}
+
+console.log('\n== matching rules ==');
+{
+  const { matchesSearch } = await import(join(repo, 'lib/savedSearch.js'));
+  const load1 = { fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, cargoType: 'MEBEL', truckType: 'FURGON' };
+  check('an empty search matches everything', matchesSearch(load1, {}));
+  check('the route must match', !matchesSearch(load1, { fromCity: 'Nukus' }));
+  check('a matching route passes', matchesSearch(load1, { fromCity: 'Toshkent', toCity: 'Buxoro' }));
+  check('half a route still filters', !matchesSearch(load1, { toCity: 'Nukus' }));
+  check('weight below the minimum is excluded', !matchesSearch(load1, { minWeight: 9000 }));
+  check('weight above the maximum is excluded', !matchesSearch(load1, { maxWeight: 1000 }));
+  check('weight inside the range passes', matchesSearch(load1, { minWeight: 1000, maxWeight: 9000 }));
+  check('cargo type is honoured', !matchesSearch(load1, { cargoType: 'OTHER' }));
+  check('truck type is honoured', !matchesSearch(load1, { truckType: 'REF' }));
+  check('a missing order never matches', !matchesSearch(null, {}));
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
