@@ -19,6 +19,7 @@
  *   POST /api/admin-data?action=update-truck    { id, verified?, promoted?, status?, rejectionReason? } | { id, remove: true }
  *   GET  /api/admin-data?resource=settings
  *   POST /api/admin-data?action=update-settings { platformName?, supportPhone?, ... }
+ *   POST /api/admin-data?action=requeue-legacy  { confirm: true }
  *
  * All of these require the signed cookie set by /api/admin-login, and each
  * one is gated on the caller's role — see READ_PERMISSIONS /
@@ -210,6 +211,10 @@ const updateTruck = async (req, res) => {
     const status = String(body.status);
     if (!TRUCK_STATUSES.includes(status)) return res.status(400).json({ error: 'Noto‘g‘ri holat' });
     truck.status = status;
+    // Records that a human actually looked at this listing. Before this
+    // existed there was no way to tell an admin-approved listing from one
+    // that auto-published in the pre-moderation days — see requeueLegacy.
+    truck.moderatedAt = Date.now();
     // A rejection reason only makes sense while the listing is rejected —
     // clear it on any other transition so an approved listing never
     // carries a stale "why we turned this down" note.
@@ -225,6 +230,59 @@ const updateTruck = async (req, res) => {
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi' });
   const { photos, ...rest } = truck;
   return res.status(200).json({ ok: true, truck: { ...rest, photoCount: Array.isArray(photos) ? photos.length : 0 } });
+};
+
+/**
+ * Listings created before listing moderation shipped went straight to
+ * ACTIVE — nobody ever reviewed them. This puts exactly those back in the
+ * queue, once, when an admin asks for it.
+ *
+ * A listing is only touched when all three hold:
+ *   - it is ACTIVE right now (PAUSED/SOLD/REJECTED are left alone),
+ *   - it was created before moderation shipped,
+ *   - it carries no moderatedAt stamp, so no admin has ruled on it.
+ *
+ * The stamp only started being written in this same change, so a listing
+ * an admin approved during the few hours in between will come back for
+ * one more look. That is the safe direction to be wrong in.
+ */
+const MODERATION_LAUNCHED_AT = Date.parse('2026-09-01T06:18:58Z');
+
+const requeueLegacy = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  // Deliberately explicit: this rewrites many records at once, so it must
+  // never fire from a stray request.
+  if (body.confirm !== true) return res.status(400).json({ error: 'Tasdiqlash kerak' });
+
+  const ids = await kvSmembers('truck_ids');
+  let requeued = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  for (const id of ids) {
+    const raw = await kvGet(`truck:${id}`);
+    if (!raw) { skipped += 1; continue; }
+    let truck;
+    try {
+      truck = JSON.parse(raw);
+    } catch {
+      failed += 1;
+      continue;
+    }
+    const isLegacy =
+      (truck.status || 'ACTIVE') === 'ACTIVE' &&
+      !truck.moderatedAt &&
+      Number(truck.createdAt || 0) < MODERATION_LAUNCHED_AT;
+    if (!isLegacy) { skipped += 1; continue; }
+
+    truck.status = 'PENDING';
+    delete truck.rejectionReason;
+    const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
+    if (saved) requeued += 1;
+    else failed += 1;
+  }
+
+  return res.status(200).json({ ok: true, requeued, skipped, failed });
 };
 
 const updateReport = async (req, res) => {
@@ -491,6 +549,7 @@ const WRITE_PERMISSIONS = {
   'update-user': 'users:write',
   'update-truck': 'trucks:write',
   'update-settings': 'settings:write',
+  'requeue-legacy': 'trucks:write',
 };
 
 export default async function handler(req, res) {
@@ -527,6 +586,7 @@ export default async function handler(req, res) {
     if (action === 'update-user') return updateUser(req, res);
     if (action === 'update-truck') return updateTruck(req, res);
     if (action === 'update-settings') return updateSettings(req, res);
+    if (action === 'requeue-legacy') return requeueLegacy(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

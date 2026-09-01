@@ -226,6 +226,8 @@
   .btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark);}
   .btn.ok{border-color:rgba(34,197,94,0.45);color:#86EFAC;background:var(--ok-soft);}
   .btn.ok:hover{background:rgba(34,197,94,0.24);}
+  .btn.warn{border-color:rgba(245,158,11,0.45);color:#FCD34D;background:var(--warn-soft);}
+  .btn.warn:hover{background:rgba(245,158,11,0.24);}
   .btn.bad{border-color:rgba(239,68,68,0.45);color:#FCA5A5;background:var(--bad-soft);}
   .btn.bad:hover{background:rgba(239,68,68,0.24);}
   .btn.sm{padding:6px 10px;font-size:12px;border-radius:7px;}
@@ -709,6 +711,18 @@
   function truckPill(s){ var k = s || "ACTIVE"; return pill(TRUCK_LABELS[k] || k, TRUCK_PILL[k] || "pill-dim"); }
   function reportPill(s){ var k = s || "NEW"; return pill(REPORT_LABELS[k] || k, REPORT_PILL[k] || "pill-dim"); }
   function truckStatus(t){ return t.status || "ACTIVE"; }
+
+  /* Moderatsiya ishga tushgan payt (api/admin-data.js dagi
+     MODERATION_LAUNCHED_AT bilan bir xil). Bundan oldin joylangan va
+     hech kim ko'rib chiqmagan e'lonlar avtomatik ravishda saytga
+     chiqib ketgan edi. Bu yerdagi hisob faqat tugmani ko'rsatish
+     uchun — kimni qaytarishni server o'zi qaytadan aniqlaydi. */
+  var MODERATION_LAUNCHED_AT = Date.parse("2026-09-01T06:18:58Z");
+  function isUnreviewedLegacy(t){
+    return truckStatus(t) === "ACTIVE"
+      && !t.moderatedAt
+      && Number(t.createdAt || 0) < MODERATION_LAUNCHED_AT;
+  }
 
   /* ==========================================================
      4. Toasts
@@ -1800,8 +1814,15 @@
         var trucks = Store.list("trucks");
         var counts = {};
         trucks.forEach(function(t){ var s = truckStatus(t); counts[s] = (counts[s] || 0) + 1; });
+        var legacy = trucks.filter(isUnreviewedLegacy).length;
         return dataTable({
           id: "trucks",
+          // Faqat qaytariladigan e'lon bor bo'lsa ko'rinadi — ish tugagach
+          // tugma o'z-o'zidan yo'qoladi.
+          toolbarExtra: (legacy && writable)
+            ? '<button type="button" class="btn warn" data-act="requeue-legacy">'
+              + ico("clock") + 'Tekshirilmagan eski e\'lonlar (' + legacy + ')</button>'
+            : "",
           // Opens on the review queue — that is the point of the screen.
           defaults: { sortKey:"createdAt", sortDir:"desc", filter:"PENDING" },
           rows: trucks,
@@ -2587,6 +2608,54 @@
     });
   }
 
+  /**
+   * Moderatsiyadan oldin joylangan e'lonlarni bir marta tekshiruvga
+   * qaytaradi. Nechta e'longa tegishini oldindan aytadi — admin nimaga
+   * rozi bo'layotganini ko'rib turishi kerak.
+   */
+  function confirmRequeueLegacy(){
+    var list = Store.list("trucks").filter(isUnreviewedLegacy);
+    openModal({
+      title: "Eski e'lonlarni tekshiruvga qaytarish",
+      body: '<p style="margin:0 0 14px;color:var(--text-soft);font-size:13.5px;">'
+        + '<b>' + list.length + " ta</b> e'lon moderatsiya joriy qilinishidan oldin "
+        + "joylangan va hech kim ularni ko'rib chiqmagan — ular saytga o'z-o'zidan chiqib ketgan."
+        + '</p>'
+        + '<p style="margin:0 0 14px;color:var(--text-soft);font-size:13.5px;">'
+        + "Ular <b>Tekshiruvda</b> holatiga o'tadi va siz tasdiqlamaguningizcha saytda ko'rinmaydi. "
+        + "Sotuvchi e'lonini o'chirmaydi — u o'z kabinetida qoladi."
+        + '</p>'
+        + (list.length
+            ? '<div class="table-wrap"><div class="table-scroll"><table><tbody>'
+              + list.slice(0, 8).map(function(t){
+                  return '<tr><td><b>' + esc(t.brand) + '</b></td><td class="dim">'
+                    + esc(t.city) + '</td><td class="dim">' + esc(dateOnly(t.createdAt)) + '</td></tr>';
+                }).join("")
+              + '</tbody></table></div></div>'
+              + (list.length > 8
+                  ? '<p style="color:var(--text-dim);font-size:12px;margin:10px 0 0;">…va yana '
+                    + (list.length - 8) + ' ta</p>'
+                  : "")
+            : ""),
+      foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
+        + '<button type="button" class="btn primary" data-act="modal-save"'
+        + (list.length ? "" : " disabled") + '>Tekshiruvga qaytarish</button>',
+      onSave: function(){
+        var btn = byId("modalFoot").querySelector('[data-act="modal-save"]');
+        if(btn) btn.disabled = true;
+        Api.post("requeue-legacy", { confirm: true }).then(function(body){
+          closeModal();
+          toast(body.requeued + " ta e'lon tekshiruvga qaytarildi");
+          Store.load("trucks", true);
+        }).catch(function(err){
+          if(btn) btn.disabled = false;
+          if(handleApiError(err)) return;
+          toast(err.message, "bad");
+        });
+      }
+    });
+  }
+
   function setVerified(email, verified){
     Api.post("verify-driver", { email:email, verified:verified }).then(function(){
       toast(verified ? "Profil tasdiqlandi" : "Tasdiq bekor qilindi");
@@ -2767,6 +2836,7 @@
     if(act === "verify"){ setVerified(t.getAttribute("data-email"), t.getAttribute("data-on") === "1"); return; }
     if(act === "user-edit"){ openUserModal(t.getAttribute("data-email")); return; }
     if(act === "settings-save"){ saveSettings(); return; }
+    if(act === "requeue-legacy"){ confirmRequeueLegacy(); return; }
 
     if(act === "modal-close"){ closeModal(); return; }
     if(act === "modal-save"){ if(modalOnSave) modalOnSave(); return; }

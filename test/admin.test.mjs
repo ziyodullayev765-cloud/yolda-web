@@ -215,5 +215,63 @@ console.log('\n== single-listing detail ==');
   check('detail without an id gets 400', noId.statusCode === 400);
 }
 
+console.log('\n== requeue of never-reviewed listings ==');
+{
+  const BEFORE = Date.parse('2026-09-01T06:18:58Z');
+  store.clear();
+  sets.clear();
+  const seed = (id, patch) => {
+    store.set(`truck:${id}`, JSON.stringify({ id, brand: id, createdAt: BEFORE - 86400000, status: 'ACTIVE', ...patch }));
+    return id;
+  };
+  sets.set('truck_ids', new Set([
+    seed('legacy1'),
+    seed('legacy2'),
+    // Already ruled on by an admin — must not be dragged back in.
+    seed('reviewed', { moderatedAt: BEFORE + 1000 }),
+    // Posted after moderation shipped, so it was approved on purpose.
+    seed('recent', { createdAt: BEFORE + 3600000 }),
+    // Not public anyway; requeueing these would just confuse the seller.
+    seed('paused', { status: 'PAUSED' }),
+    seed('sold', { status: 'SOLD' }),
+    seed('rejected', { status: 'REJECTED', rejectionReason: 'Rasm yo‘q' }),
+    // Left over from a previous rejection that was later reactivated.
+    seed('stale', { rejectionReason: 'eski sabab' }),
+  ]));
+
+  const noConfirm = await call(adminData, 'POST', { action: 'requeue-legacy' }, {}, cookieFor('SUPER_ADMIN'));
+  check('requeue refuses without an explicit confirm', noConfirm.statusCode === 400);
+  // Nothing was written above, so the seeded rows are still untouched here.
+
+  const res = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: true }, cookieFor('SUPER_ADMIN'));
+  const at = (id) => JSON.parse(store.get(`truck:${id}`));
+  check('only the never-reviewed ones are requeued', res.body.requeued === 2 + 1, `requeued=${res.body.requeued}`);
+  check('legacy listing moved to PENDING', at('legacy1').status === 'PENDING');
+  check('admin-reviewed listing untouched', at('reviewed').status === 'ACTIVE');
+  check('post-moderation listing untouched', at('recent').status === 'ACTIVE');
+  check('paused listing untouched', at('paused').status === 'PAUSED');
+  check('sold listing untouched', at('sold').status === 'SOLD');
+  check('rejected listing keeps its reason', at('rejected').rejectionReason === 'Rasm yo‘q');
+  check('stale rejection reason cleared on requeue', at('stale').rejectionReason === undefined);
+
+  const again = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: true }, cookieFor('SUPER_ADMIN'));
+  check('running it twice changes nothing', again.body.requeued === 0);
+
+  // Moderation is a moderator's job, so the action must be open to them
+  // too — checked last, on an already-drained queue, so it can't skew
+  // the counts above.
+  const asModerator = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: true }, cookieFor('MODERATOR'));
+  check('moderator may requeue (has trucks:write)', asModerator.statusCode === 200);
+}
+
+console.log('\n== moderation stamp ==');
+{
+  store.set('truck:s1', JSON.stringify({ id:'s1', brand:'S', status:'PENDING', createdAt: 1 }));
+  sets.set('truck_ids', new Set(['s1']));
+  await call(adminData, 'POST', { action: 'update-truck' }, { id:'s1', status:'ACTIVE' }, cookieFor('ADMIN'));
+  const t = JSON.parse(store.get('truck:s1'));
+  check('approving stamps moderatedAt', typeof t.moderatedAt === 'number' && t.moderatedAt > 0);
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);
