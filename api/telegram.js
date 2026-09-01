@@ -15,6 +15,7 @@
  */
 import { kvGet, kvSet } from '../lib/kv.js';
 import { buildOrderMessage, escapeMd } from '../lib/orderMessage.js';
+import { notifyUser, esc } from '../lib/notify.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Optional but recommended: set it in Vercel and pass the same value to setWebhook.
@@ -37,6 +38,23 @@ const answer = (query, text, showAlert) =>
 const displayName = (user) =>
   [user.first_name, user.last_name].filter(Boolean).join(' ')
   || (user.username ? `@${user.username}` : `id${user.id}`);
+
+/**
+ * Buyurtma egasiga holat o'zgargani haqida shaxsiy xabar.
+ *
+ * Ilgari yuk beruvchi hech narsa bilmasdi: yuk guruhga tushardi va u
+ * saytga o'zi kirib ko'rmaguncha haydovchi topilgani ham noma'lum edi.
+ *
+ * ownerIdentity — Google va Telegram egalarini ham qamraydi; undan
+ * oldingi buyurtmalarda googleEmail bo'lgan.
+ */
+const notifyOwner = (order, text) =>
+  notifyUser(order.ownerIdentity || order.googleEmail, {
+    text,
+    category: 'orders',
+  });
+
+const routeOf = (order) => `${esc(order.fromCity)} → ${esc(order.toCity)}`;
 
 const getOrder = async (code) => {
   const raw = await kvGet(`order:${code}`);
@@ -91,6 +109,15 @@ const handleTake = async (query, code, phone) => {
     order.updatedAt = Date.now();
     if (!order.phone) order.phone = phone;
     await kvSet(`order:${code}`, JSON.stringify(order));
+
+    await notifyOwner(order,
+      `<b>Haydovchi topildi</b>\n\n`
+      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `${routeOf(order)}\n\n`
+      + `Haydovchi: <b>${esc(driverName)}</b>`
+      + (order.driver.verified ? ' ✓' : '')
+      + (query.from.username ? `\n@${esc(query.from.username)}` : '')
+      + `\n\nU tez orada siz bilan bog'lanadi.`);
 
     await telegram('editMessageText', {
       chat_id: message.chat.id,
@@ -162,6 +189,12 @@ const handleDepart = async (query, code) => {
   order.updatedAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
 
+  await notifyOwner(order,
+    `<b>Haydovchi yo'lga chiqdi</b>\n\n`
+    + `Buyurtma: <b>${esc(code)}</b>\n`
+    + `${routeOf(order)}\n\n`
+    + `Haydovchi: ${esc(order.driver && order.driver.name)}`);
+
   await telegram('editMessageText', {
     chat_id: query.message.chat.id,
     message_id: query.message.message_id,
@@ -180,6 +213,13 @@ const handleDeliver = async (query, code) => {
   order.deliveredAt = Date.now();
   order.updatedAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
+
+  await notifyOwner(order,
+    `<b>Yuk yetkazildi</b>\n\n`
+    + `Buyurtma: <b>${esc(code)}</b>\n`
+    + `${routeOf(order)}\n\n`
+    + `Haydovchi: ${esc(order.driver && order.driver.name)}\n\n`
+    + `Saytdagi «Buyurtmani kuzatish» bo'limida haydovchiga baho qoldirishingiz mumkin.`);
 
   await telegram('editMessageText', {
     chat_id: query.message.chat.id,

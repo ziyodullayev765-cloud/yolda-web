@@ -8,6 +8,6 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node test/trucks.test.mjs && node test/admin.test.mjs"
+    "test": "node test/trucks.test.mjs && node test/admin.test.mjs && node test/notify.test.mjs"
   }
 }

@@ -25,6 +25,7 @@
  */
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSismember } from '../lib/kv.js';
+import { NOTIFY_CATEGORIES } from '../lib/notify.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -51,6 +52,20 @@ const parseProfile = (raw) => {
   }
   return { username: raw };
 };
+
+/**
+ * Bot shu foydalanuvchiga yoza oladimi? Sozlamalardagi bildirishnoma
+ * kalitlari faqat shu rost bo'lganda ma'noga ega — aks holda ular
+ * hech narsa qilmaydigan tugmalar bo'lib qolardi.
+ *
+ * Indeksni lib/identity.js yozadi (Telegram orqali har kirganda).
+ */
+const telegramReachable = async (identity) => {
+  if (String(identity).startsWith('tg:')) return true;
+  return Boolean(await kvGet(`tgChat:${identity}`));
+};
+
+const withTelegramFlag = (profile, reachable) => ({ ...profile, telegramReachable: reachable });
 
 const normalisePhone = (v) => {
   const d = String(v).replace(/\D/g, '');
@@ -122,10 +137,10 @@ const handleProfile = async (req, res) => {
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
 
-  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername', 'avatarDataUrl']
+  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername', 'avatarDataUrl', 'notify']
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
-    return res.status(200).json({ ok: true, profile: existing });
+    return res.status(200).json({ ok: true, profile: withTelegramFlag(existing, await telegramReachable(email)) });
   }
   if (await kvSismember('banned', email.toLowerCase())) {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
@@ -226,6 +241,23 @@ const handleProfile = async (req, res) => {
     await kvSet(`tgToEmail:${tg}`, email);
   }
 
+  /**
+   * Telegram bildirishnomalari sozlamasi (lib/notify.js o'qiydi).
+   * Faqat ma'lum turkumlar, faqat boolean — mijoz yuborgan boshqa
+   * narsa e'tiborga olinmaydi. Maydon yo'q bo'lsa — yoqilgan deb
+   * hisoblanadi, shuning uchun faqat `false` saqlashning ma'nosi bor.
+   */
+  if (body.notify !== undefined && body.notify !== null && typeof body.notify === 'object') {
+    const nextNotify = { ...(existing.notify || {}) };
+    for (const key of NOTIFY_CATEGORIES) {
+      if (body.notify[key] === undefined) continue;
+      if (body.notify[key]) delete nextNotify[key];
+      else nextNotify[key] = false;
+    }
+    if (Object.keys(nextNotify).length) next.notify = nextNotify;
+    else delete next.notify;
+  }
+
   const saved = await kvSet(profileKey, JSON.stringify(next));
   if (!saved) {
     return res.status(502).json({ error: 'Saqlab bo‘lmadi (bazachaga yozib bo‘lmadi), qayta urinib ko‘ring' });
@@ -233,7 +265,7 @@ const handleProfile = async (req, res) => {
   // Registers this identity in the admin panel's user index. Safe to
   // repeat — SADD is a no-op if it's already a member.
   await kvSadd('profile_emails', email);
-  return res.status(200).json({ ok: true, profile: next });
+  return res.status(200).json({ ok: true, profile: withTelegramFlag(next, await telegramReachable(email)) });
 };
 
 export default async function handler(req, res) {

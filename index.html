@@ -786,6 +786,16 @@
   .route-pill .ic-svg{color:var(--muted);flex-shrink:0;font-size:16px;}
   .route-pill .arrow{color:var(--stamp);margin:0 4px;}
 
+  /* Narx maslahatchisi — haqiqiy buyurtmalardan olingan oraliq. */
+  .price-hint{
+    display:flex;gap:var(--s3);align-items:flex-start;
+    background:var(--paper-dark);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:var(--s3);margin-top:var(--s4);
+  }
+  .price-hint .ic-svg{font-size:18px;color:var(--route);flex-shrink:0;margin-top:1px;}
+  .price-hint .ph-range{font-weight:700;font-size:15px;letter-spacing:-0.01em;}
+  .price-hint .ph-sub{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
+
   /* ---------- Yuk joylash: 5-step wizard ---------- */
   .wizard-steps{display:flex;align-items:flex-start;margin-bottom:var(--s6);}
   .wizard-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:30px;}
@@ -2260,6 +2270,7 @@
       "loads.anyType": "Barchasi", "loads.clearFilters": "Filtrlarni tozalash",
       "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
       "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
+      "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
       "loads.exactDate": "Sana", "loads.showResults": "Natijalarni ko'rsatish",
       "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
       "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
@@ -2398,7 +2409,12 @@
       "link.success": "Bog'landi! Endi ikkala usul bilan ham shu profilga kirasiz.",
       "notif.soundLabel": "Yangi xabar ovozi", "notif.soundSub": "Suhbat ochiq turganda yangi xabar kelsa, qisqa signal chalinadi.",
       "notif.motionLabel": "Animatsiyalarni kamaytirish", "notif.motionSub": "Qurilma sozlamasidan qat'i nazar, ilovadagi harakatlarni kamaytiradi.",
-      "notif.note": "Hozircha bildirishnomalar faqat ilova ochiq turgan holatda ishlaydi — push-bildirishnoma tizimi keyinroq qo'shiladi.",
+      "notif.tgHeading": "Telegram bildirishnomalari", "notif.deviceHeading": "Shu qurilmada",
+      "notif.tgOrders": "Buyurtmam holati", "notif.tgOrdersSub": "Haydovchi topildi, yo'lga chiqdi, yetkazildi",
+      "notif.tgListings": "E'lonlarim", "notif.tgListingsSub": "E'lon tasdiqlandi yoki rad etildi",
+      "notif.tgChat": "Yangi xabarlar", "notif.tgChatSub": "Suhbatga birinchi yangi xabar kelganda",
+      "notif.tgSignIn": "Telegram bildirishnomalarini sozlash uchun avval tizimga kiring.",
+      "notif.tgNotLinked": "Bu xabarlar Telegram orqali keladi. Ularni olish uchun ilovani Telegram'da oching yoki akkauntingizni Telegram bilan bog'lang.",
       "feedback.sub": "Yolda haqida fikringiz, taklifingiz yoki muammo bo'lsa — shu yerdan yozing.",
       "feedback.nameLabel": "Ismingiz (ixtiyoriy)", "feedback.contactLabel": "Aloqa uchun (ixtiyoriy)",
       "feedback.msgLabel": "Fikringiz", "feedback.btn": "Yuborish", "feedback.sent": "Rahmat! Fikringiz yuborildi.",
@@ -2504,6 +2520,7 @@
       "loads.anyType": "Любой", "loads.clearFilters": "Сбросить фильтры",
       "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
       "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
+      "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
       "loads.exactDate": "Дата", "loads.showResults": "Показать результаты",
       "loads.groupTitle": "Хотите видеть новые грузы первыми?",
       "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
@@ -2642,7 +2659,12 @@
       "link.success": "Привязано! Теперь вход возможен обоими способами в этот же профиль.",
       "notif.soundLabel": "Звук нового сообщения", "notif.soundSub": "Пока диалог открыт, новое сообщение сопровождается коротким сигналом.",
       "notif.motionLabel": "Меньше анимации", "notif.motionSub": "Уменьшает анимацию в приложении независимо от настроек устройства.",
-      "notif.note": "Пока уведомления работают только при открытом приложении — push-уведомления появятся позже.",
+      "notif.tgHeading": "Уведомления в Telegram", "notif.deviceHeading": "На этом устройстве",
+      "notif.tgOrders": "Статус моего заказа", "notif.tgOrdersSub": "Водитель найден, выехал, доставил",
+      "notif.tgListings": "Мои объявления", "notif.tgListingsSub": "Объявление одобрено или отклонено",
+      "notif.tgChat": "Новые сообщения", "notif.tgChatSub": "При первом новом сообщении в переписке",
+      "notif.tgSignIn": "Чтобы настроить уведомления в Telegram, сначала войдите.",
+      "notif.tgNotLinked": "Эти сообщения приходят через Telegram. Откройте приложение в Telegram или привяжите аккаунт к Telegram.",
       "feedback.sub": "Есть отзыв, предложение или проблема — напишите нам здесь.",
       "feedback.nameLabel": "Ваше имя (необязательно)", "feedback.contactLabel": "Контакт (необязательно)",
       "feedback.msgLabel": "Ваш отзыв", "feedback.btn": "Отправить", "feedback.sent": "Спасибо! Ваш отзыв отправлен.",
@@ -2748,6 +2770,7 @@
       "loads.anyType": "Any", "loads.clearFilters": "Clear filters",
       "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
       "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
+      "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
       "loads.exactDate": "Date", "loads.showResults": "Show results",
       "loads.groupTitle": "Want to see new loads first?",
       "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
@@ -2886,7 +2909,12 @@
       "link.success": "Linked! You can now sign in with either method into this same profile.",
       "notif.soundLabel": "New message sound", "notif.soundSub": "Plays a short sound when a new message arrives while a chat is open.",
       "notif.motionLabel": "Reduce motion", "notif.motionSub": "Reduces animation across the app regardless of your device setting.",
-      "notif.note": "Notifications currently only work while the app is open — push notifications are coming later.",
+      "notif.tgHeading": "Telegram notifications", "notif.deviceHeading": "On this device",
+      "notif.tgOrders": "My order status", "notif.tgOrdersSub": "Driver found, departed, delivered",
+      "notif.tgListings": "My listings", "notif.tgListingsSub": "Listing approved or rejected",
+      "notif.tgChat": "New messages", "notif.tgChatSub": "On the first new message in a conversation",
+      "notif.tgSignIn": "Sign in first to set up Telegram notifications.",
+      "notif.tgNotLinked": "These arrive through Telegram. Open the app in Telegram, or link your account to Telegram.",
       "feedback.sub": "Have feedback, an idea, or ran into a problem? Write to us here.",
       "feedback.nameLabel": "Your name (optional)", "feedback.contactLabel": "Contact (optional)",
       "feedback.msgLabel": "Your message", "feedback.btn": "Send", "feedback.sent": "Thanks! Your feedback was sent.",
@@ -3258,21 +3286,106 @@
   }
 
   /* ---------- NotificationsPage ---------- */
-  function renderNotificationsPage(){
+  /* Telegram bildirishnomalari — serverda profilga saqlanadi (api/profile.js
+     `notify`), chunki xabarni server yuboradi, brauzer emas. Quyidagi
+     ovoz/animatsiya sozlamalari esa shu qurilmaga tegishli va localStorage'da
+     qoladi. */
+  var TG_NOTIF_ROWS = [
+    { key: "orders",   labelKey: "notif.tgOrders",   label: "Buyurtmam holati",
+      subKey: "notif.tgOrdersSub", sub: "Haydovchi topildi, yo'lga chiqdi, yetkazildi" },
+    { key: "listings", labelKey: "notif.tgListings", label: "E'lonlarim",
+      subKey: "notif.tgListingsSub", sub: "E'lon tasdiqlandi yoki rad etildi" },
+    { key: "chat",     labelKey: "notif.tgChat",     label: "Yangi xabarlar",
+      subKey: "notif.tgChatSub", sub: "Suhbatga birinchi yangi xabar kelganda" }
+  ];
+
+  function renderTelegramNotifSection(profile){
+    if(!isSignedIn()){
+      return '<p class="note" data-i18n="notif.tgSignIn">Telegram bildirishnomalarini sozlash uchun avval tizimga kiring.</p>';
+    }
+    if(!profile){
+      return '<div class="skeleton sk-line" style="width:60%;"></div>'
+        + '<div class="skeleton sk-line" style="width:45%;"></div>';
+    }
+    var notify = profile.notify || {};
+    var rows = TG_NOTIF_ROWS.map(function(r){
+      var on = notify[r.key] !== false;
+      return '<div class="pref-switch">'
+        + '<div><div class="lbl" data-i18n="'+r.labelKey+'">'+escapeHtml(r.label)+'</div>'
+        +   '<div class="sub" data-i18n="'+r.subKey+'">'+escapeHtml(r.sub)+'</div></div>'
+        + '<button type="button" class="switch-track" data-tg-notif="'+r.key+'" role="switch" '
+        +   'aria-checked="'+on+'" aria-label="'+escapeHtml(t(r.labelKey) || r.label)+'"></button>'
+        + '</div>';
+    }).join("");
+    // Bot faqat o'zi bilan suhbat boshlagan odamga yoza oladi. Buni
+    // yashirmaymiz — aks holda kalitlar yoqilgandek ko'rinib, hech narsa
+    // kelmasdi.
+    var warn = profile.telegramReachable ? ""
+      : '<p class="note" data-i18n="notif.tgNotLinked">Bu xabarlar Telegram orqali keladi. '
+        + 'Ularni olish uchun ilovani Telegram\'da oching yoki akkauntingizni Telegram bilan bog\'lang.</p>';
+    return rows + warn;
+  }
+
+  function renderNotificationsPage(profile){
     var prefs = getNotifPrefs();
-    return '<div class="pref-switch">'
+    return '<div class="edit-section-heading" style="margin-top:0;" data-i18n="notif.tgHeading">Telegram bildirishnomalari</div>'
+      + '<div id="tgNotifRows">' + renderTelegramNotifSection(profile) + '</div>'
+      + '<div class="edit-section-heading" data-i18n="notif.deviceHeading">Shu qurilmada</div>'
+      + '<div class="pref-switch">'
       +   '<div><div class="lbl" data-i18n="notif.soundLabel">Yangi xabar ovozi</div><div class="sub" data-i18n="notif.soundSub"></div></div>'
       +   '<button type="button" class="switch-track" id="notifSoundSwitch" role="switch" aria-checked="'+prefs.sound+'" aria-label="'+escapeHtml(t("notif.soundLabel")||"")+'" data-autofocus></button>'
       + '</div>'
       + '<div class="pref-switch">'
       +   '<div><div class="lbl" data-i18n="notif.motionLabel">Animatsiyalarni kamaytirish</div><div class="sub" data-i18n="notif.motionSub"></div></div>'
       +   '<button type="button" class="switch-track" id="notifMotionSwitch" role="switch" aria-checked="'+prefs.motion+'" aria-label="'+escapeHtml(t("notif.motionLabel")||"")+'"></button>'
-      + '</div>'
-      + '<p class="note" data-i18n="notif.note" style="margin-top:var(--s3);"></p>';
+      + '</div>';
   }
+
+  /** Kalitni bosgan zahoti serverga yozamiz — "Saqlash" tugmasi shart emas. */
+  function saveTgNotifPref(key, on, btn){
+    var payload = { googleIdToken: googleIdToken, telegramInitData: telegramInitData, notify: {} };
+    payload.notify[key] = on;
+    btn.setAttribute("aria-checked", String(on));
+    fetch("/api/profile", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if(data && data.error) throw new Error(data.error);
+    }).catch(function(){
+      // Saqlanmadi — kalitni orqaga qaytaramiz, aks holda ekran yolg'on gapirardi.
+      btn.setAttribute("aria-checked", String(!on));
+      toast("Saqlanmadi", "Internetni tekshirib qayta urinib ko'ring", "info");
+    });
+  }
+
   function bindNotificationsPage(container){
     var soundBtn = container.querySelector("#notifSoundSwitch");
     var motionBtn = container.querySelector("#notifMotionSwitch");
+
+    // Telegram kalitlari profil bilan keladi — sahifa ochilgach yuklaymiz.
+    if(isSignedIn()){
+      fetch("/api/profile", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
+      }).then(function(r){ return r.json(); }).then(function(data){
+        var box = container.querySelector("#tgNotifRows");
+        if(!box) return;
+        box.innerHTML = renderTelegramNotifSection(data.profile || {});
+        applyLang();
+        box.querySelectorAll("[data-tg-notif]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            saveTgNotifPref(btn.getAttribute("data-tg-notif"),
+              btn.getAttribute("aria-checked") !== "true", btn);
+          });
+        });
+      }).catch(function(){
+        var box = container.querySelector("#tgNotifRows");
+        if(box) box.innerHTML = '<p class="note">Yuklab bo\'lmadi, sahifani qayta oching.</p>';
+      });
+    }
+
     if(soundBtn) soundBtn.addEventListener("click", function(){
       var next = setNotifPref("sound", soundBtn.getAttribute("aria-checked") !== "true");
       soundBtn.setAttribute("aria-checked", String(next.sound));
@@ -3416,7 +3529,7 @@
   var SETTINGS_PAGES = {
     language: function(){ return { titleKey: "settings.langPageTitle", html: renderLanguagePage() }; },
     theme: function(){ return { titleKey: "settings.themePageTitle", html: renderThemePage() }; },
-    notifications: function(){ return { titleKey: "settings.notifications", html: renderNotificationsPage(), onOpen: bindNotificationsPage }; },
+    notifications: function(){ return { titleKey: "settings.notifications", html: renderNotificationsPage(null), onOpen: bindNotificationsPage }; },
     feedback: function(){ return { titleKey: "settings.feedback", html: renderFeedbackPage(), onOpen: bindFeedbackPage }; },
     about: function(){ return { titleKey: "about.title", html: t("about.body") || "" }; },
     terms: function(){ return { titleKey: "terms.title", html: t("terms.body") || "" }; },
@@ -6468,6 +6581,48 @@
       });
   }
 
+  /* ---------- Narx maslahatchisi ----------
+     Faqat yo'nalish va og'irlik ma'lum bo'lgach chaqiriladi (4-qadam),
+     har bir tugma bosilganda emas. Javob "yetarli ma'lumot yo'q" bo'lsa
+     hech narsa chizilmaydi: bo'sh joy noto'g'ri raqamdan yaxshiroq. */
+  var priceHintCache = {};
+
+  function loadPriceHint(){
+    var box = document.getElementById("priceHint");
+    if(!box || !state.from || !state.to || !state.weight) return;
+
+    var key = state.from + ">" + state.to + ":" + state.weight;
+    if(priceHintCache[key] !== undefined){ renderPriceHint(box, priceHintCache[key]); return; }
+
+    fetch("/api/order?action=price-stats&fromCity=" + encodeURIComponent(state.from)
+      + "&toCity=" + encodeURIComponent(state.to)
+      + "&weightKg=" + encodeURIComponent(state.weight))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        priceHintCache[key] = data;
+        // Foydalanuvchi qadamni almashtirgan bo'lishi mumkin — qutini
+        // qaytadan qidiramiz.
+        renderPriceHint(document.getElementById("priceHint"), data);
+      })
+      .catch(function(){ /* maslahat — majburiy emas, jim qolamiz */ });
+  }
+
+  function renderPriceHint(box, data){
+    if(!box) return;
+    if(!data || !data.enough || !data.estimate){ box.innerHTML = ""; return; }
+    box.innerHTML = '<div class="price-hint">'
+      + icon("iconInfo")
+      + '<div>'
+      +   '<div class="ph-range">' + formatNum(data.estimate.low) + ' – '
+      +     formatNum(data.estimate.high) + ' <span data-i18n="loads.sum">so\'m</span></div>'
+      +   '<div class="ph-sub">'
+      +     '<span data-i18n="price.hintLead">Shu yo\'nalishda odatdagi narx</span> · '
+      +     data.count + ' <span data-i18n="price.hintSample">ta buyurtma asosida</span>'
+      +   '</div>'
+      + '</div></div>';
+    applyLang();
+  }
+
   /* ---------- Home tab: "Siz uchun mos yuklar" ---------- */
   function renderHomeMatch(){
     var wrap = document.getElementById("homeMatchWrap");
@@ -6898,6 +7053,9 @@
       +   '<div class="stat"><div class="v">'+formatNum(state.weight)+' kg</div><div class="k" data-i18n="order.weightLabel">Og\'irlik</div></div>'
       +   '<div class="stat"><div class="v">'+icon(cargo.icon)+' '+(state.cargo==="OTHER" && state.customCargoLabel ? escapeHtml(state.customCargoLabel) : cargo.label)+'</div><div class="k" data-i18n="order.cargoTypeLabel">Yuk turi</div></div>'
       + '</div>'
+      // Haqiqiy buyurtmalar asosidagi narx oralig'i. Ma'lumot yetarli
+      // bo'lmasa bu joy bo'sh qoladi — taxminiy raqam ko'rsatilmaydi.
+      + '<div id="priceHint"></div>'
       + '<div class="field" style="margin-top:var(--s3);">'
       +   '<label for="fCustomPrice" data-i18n="order.customPriceLabel">O\'z narxingizni taklif qilasizmi? (ixtiyoriy)</label>'
       +   '<input type="number" id="fCustomPrice" min="10000" max="100000000" step="1000" placeholder="'+formatNum(price)+'" value="'+escapeHtml(state.customPrice)+'">'
@@ -7161,6 +7319,9 @@
 
     var sendBtn = document.getElementById("btnSend");
     if(sendBtn) sendBtn.addEventListener("click", submitOrder);
+
+    // Narx qadami — yo'nalish va og'irlik shu paytga kelib ma'lum.
+    if(state.step === 4) loadPriceHint();
   }
 
   async function submitOrder(){

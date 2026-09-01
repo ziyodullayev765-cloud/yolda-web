@@ -295,6 +295,127 @@ const getOrderStatus = async (req, res) => {
   });
 };
 
+/* ============================================================
+   Narx maslahatchisi
+   ------------------------------------------------------------
+   "Bu yo'nalishda odatda qancha turadi?" — savolga haqiqiy
+   buyurtmalar asosida javob. Hech qanday taxmin yoki qo'lda
+   kiritilgan tarif yo'q: faqat odamlar aslida e'lon qilgan narxlar.
+
+   Ikkita halollik qoidasi:
+     - Yetarli ma'lumot bo'lmasa, hech narsa ko'rsatilmaydi. Ikkita
+       buyurtmadan "o'rtacha narx" chiqarish — yolg'on.
+     - Bitta raqam emas, oraliq beriladi. Yuk tashishda aniq narx
+       yo'q; oraliq esa rost.
+
+   Hisob har so'rovda emas, 15 daqiqada bir marta qilinadi va KV'da
+   saqlanadi — aks holda har bir foydalanuvchi 300 ta yozuvni
+   o'qishga majbur qilardi.
+   ============================================================ */
+const PRICE_STATS_KEY = 'price_stats';
+const PRICE_STATS_TTL_MS = 15 * 60 * 1000;
+/** Shundan kam buyurtma bo'lsa — yo'nalish bo'yicha hech narsa aytmaymiz. */
+const MIN_SAMPLE = 5;
+
+const percentile = (sorted, p) => {
+  if (!sorted.length) return 0;
+  const idx = (sorted.length - 1) * p;
+  const low = Math.floor(idx);
+  const high = Math.ceil(idx);
+  if (low === high) return sorted[low];
+  return sorted[low] + (sorted[high] - sorted[low]) * (idx - low);
+};
+
+/** Barcha yo'nalishlar bo'yicha tonna-narx taqsimotini qayta hisoblaydi. */
+const computePriceStats = async () => {
+  const codes = await kvRange('order_codes', 0, 299);
+  const perRoute = new Map();
+
+  await Promise.all(
+    codes.map(async (code) => {
+      const raw = await kvGet(`order:${code}`);
+      if (!raw) return;
+      let order;
+      try {
+        order = JSON.parse(raw);
+      } catch {
+        return;
+      }
+      const amount = Number(order.amount);
+      const weightKg = Number(order.weightKg);
+      if (!order.fromCity || !order.toCity) return;
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      if (!Number.isFinite(weightKg) || weightKg <= 0) return;
+
+      const key = `${order.fromCity}>${order.toCity}`;
+      if (!perRoute.has(key)) perRoute.set(key, []);
+      perRoute.get(key).push(amount / (weightKg / 1000));
+    }),
+  );
+
+  const routes = {};
+  for (const [key, values] of perRoute) {
+    if (values.length < MIN_SAMPLE) continue;
+    values.sort((a, b) => a - b);
+    routes[key] = {
+      count: values.length,
+      p25: Math.round(percentile(values, 0.25)),
+      p50: Math.round(percentile(values, 0.5)),
+      p75: Math.round(percentile(values, 0.75)),
+    };
+  }
+
+  const stats = { computedAt: Date.now(), routes };
+  await kvSet(PRICE_STATS_KEY, JSON.stringify(stats));
+  return stats;
+};
+
+const readPriceStats = async () => {
+  try {
+    const cached = JSON.parse((await kvGet(PRICE_STATS_KEY)) || 'null');
+    if (cached && Date.now() - cached.computedAt < PRICE_STATS_TTL_MS) return cached;
+  } catch {
+    // buzilgan kesh — qayta hisoblaymiz
+  }
+  return computePriceStats();
+};
+
+/**
+ * GET ?action=price-stats&fromCity=&toCity=&weightKg=
+ *
+ * Ochiq endpoint: javobda faqat yig'ma raqamlar bor, birorta ham
+ * buyurtma, ism yoki telefon chiqmaydi.
+ */
+const getPriceStats = async (req, res) => {
+  const fromCity = String(req.query.fromCity || '');
+  const toCity = String(req.query.toCity || '');
+  const weightKg = Number(req.query.weightKg);
+  if (!fromCity || !toCity) return res.status(400).json({ error: 'Yo‘nalish kerak' });
+
+  const stats = await readPriceStats();
+  const route = stats.routes[`${fromCity}>${toCity}`];
+  if (!route) {
+    // Ma'lumot yetarli emas — buni yashirmaymiz, shunchaki aytamiz.
+    return res.status(200).json({ enough: false, minSample: MIN_SAMPLE });
+  }
+
+  const body = {
+    enough: true,
+    count: route.count,
+    perTon: { low: route.p25, mid: route.p50, high: route.p75 },
+  };
+  // Og'irlik berilgan bo'lsa, uni shu yukka moslab ko'rsatamiz.
+  if (Number.isFinite(weightKg) && weightKg > 0) {
+    const tons = weightKg / 1000;
+    body.estimate = {
+      low: Math.round(route.p25 * tons),
+      mid: Math.round(route.p50 * tons),
+      high: Math.round(route.p75 * tons),
+    };
+  }
+  return res.status(200).json(body);
+};
+
 /**
  * GET ?action=list&fromCity=&toCity=&cargoType=&truckType=&minWeight=&
  * maxWeight=&when=today|tomorrow — the "Yuklar" tab's browse list.
@@ -539,6 +660,7 @@ export default async function handler(req, res) {
     if (action === 'list') return listLoads(req, res);
     if (action === 'detail') return getLoadDetail(req, res);
     if (action === 'backhaul') return getBackhaul(req, res);
+    if (action === 'price-stats') return getPriceStats(req, res);
     return getOrderStatus(req, res);
   }
   if (req.method === 'POST') {
