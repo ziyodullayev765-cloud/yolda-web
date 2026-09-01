@@ -673,10 +673,12 @@
     RESOLVED:"pill-ok", BANNED:"pill-dim"
   };
   var ORDER_LABELS = {
-    NEW:"Yangi", DRIVER_FOUND:"Haydovchi topildi", ON_THE_WAY:"Yo'lda", DELIVERED:"Yetkazildi"
+    NEW:"Yangi", DRIVER_FOUND:"Haydovchi topildi", ON_THE_WAY:"Yo'lda",
+    DELIVERED:"Yetkazildi", CANCELLED:"Bekor qilindi"
   };
   var ORDER_PILL = {
-    NEW:"pill-dim", DRIVER_FOUND:"pill-warn", ON_THE_WAY:"pill-blue", DELIVERED:"pill-ok"
+    NEW:"pill-dim", DRIVER_FOUND:"pill-warn", ON_THE_WAY:"pill-blue",
+    DELIVERED:"pill-ok", CANCELLED:"pill-bad"
   };
   var TRUCK_STATUSES = ["PENDING","ACTIVE","PAUSED","SOLD","REJECTED"];
   var TRUCK_LABELS = {
@@ -1644,7 +1646,7 @@
           searchPlaceholder: "Kod, shahar, ism, telefon…",
           search: orderSearch,
           filters: [{key:"ALL", label:"Barchasi", count:orders.length}].concat(
-            ["NEW","DRIVER_FOUND","ON_THE_WAY","DELIVERED"].map(function(s){
+            ["NEW","DRIVER_FOUND","ON_THE_WAY","DELIVERED","CANCELLED"].map(function(s){
               return { key:s, label:ORDER_LABELS[s], count:counts[s] || 0 };
             })),
           filterFn: function(o, f){ return (o.status || "NEW") === f; },
@@ -1702,6 +1704,19 @@
           + kvRow("Kod", '<b>' + esc(order.code) + '</b>')
           + kvRow("Holat", orderPill(order.status))
           + kvRow("Yaratilgan", esc(dt(order.createdAt)) + ' <span style="color:var(--text-dim);">(' + esc(relTime(order.createdAt)) + ')</span>')
+          + (order.cancelledAt
+              ? kvRow("Bekor qilingan", esc(dt(order.cancelledAt))
+                  + (order.cancelReason ? ' — ' + esc(order.cancelReason) : ''))
+              : "")
+          + (Array.isArray(order.releases) && order.releases.length
+              ? kvRow("Haydovchi almashgan",
+                  order.releases.length + " marta<br>" + order.releases.map(function(r){
+                    return '<span style="color:var(--text-dim);font-size:12px;">'
+                      + esc(dateOnly(r.at)) + ' · ' + esc(r.driverName || "—") + ' · '
+                      + (r.by === "DRIVER" ? "haydovchi voz kechdi" : "yuk beruvchi bo'shatdi")
+                      + (r.reason ? ' · ' + esc(r.reason) : '') + '</span>';
+                  }).join("<br>"))
+              : "")
           + kvRow("Yo'nalish", esc(order.fromCity) + " → " + esc(order.toCity))
           + kvRow("Og'irlik", fmt(order.weightKg) + " kg")
           + kvRow("Yuk turi", esc(cargoLabel(order)))
