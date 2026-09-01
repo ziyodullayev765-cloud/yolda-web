@@ -699,5 +699,117 @@ console.log('\n== the same chain runs from the Telegram button ==');
   check('and the load loses its driver', JSON.parse(store.get('order:TG1')).driver === null);
 }
 
+/* ---------------------------------------------------------- */
+console.log('\n== review criteria ==');
+{
+  const { validateReview, applyReview, topTags, CRITERIA } =
+    await import(join(repo, 'lib/reviews.js'));
+
+  check('a rating outside 1-5 is refused', Boolean(validateReview({ stars: 6 }, 'DRIVER').error));
+  check('a missing rating is refused', Boolean(validateReview({}, 'DRIVER').error));
+  check('half stars are refused', Boolean(validateReview({ stars: 4.5 }, 'DRIVER').error));
+
+  const ok = validateReview({ stars: 5, comment: '  yaxshi  ', tags: ['ONTIME', 'CARE'] }, 'DRIVER');
+  check('a valid review passes', !ok.error && ok.value.stars === 5);
+  check('the comment is trimmed', ok.value.comment === 'yaxshi');
+  check('the tags survive', ok.value.tags.join() === 'ONTIME,CARE');
+
+  const mixed = validateReview({ stars: 3, tags: ['ONTIME', 'MADE_UP', 'ONTIME'] }, 'DRIVER');
+  check('an unknown tag is dropped, not fatal', mixed.value.tags.join() === 'ONTIME');
+  check('a repeated tag counts once', mixed.value.tags.length === 1);
+  check("the other side's tags do not apply here",
+    validateReview({ stars: 3, tags: ['PAID_ONTIME'] }, 'DRIVER').value.tags.length === 0);
+  check('but they do on their own side',
+    validateReview({ stars: 3, tags: ['PAID_ONTIME'] }, 'OWNER').value.tags.length === 1);
+  check('the two sides ask different questions',
+    CRITERIA.DRIVER.join() !== CRITERIA.OWNER.join());
+
+  const p = {};
+  applyReview(p, { stars: 5, tags: ['ONTIME'] }, 'DRIVER');
+  applyReview(p, { stars: 3, tags: ['ONTIME', 'CARE'] }, 'DRIVER');
+  check('driver ratings add up', p.ratingCount === 2 && p.ratingSum === 8);
+  check('tags are tallied', p.tags.ONTIME === 2 && p.tags.CARE === 1);
+
+  applyReview(p, { stars: 4, tags: [] }, 'OWNER');
+  check('the shipper rating is kept apart', p.ownerRatingCount === 1 && p.ownerRatingSum === 4);
+  check('and does not pollute the driver average', p.ratingCount === 2 && p.ratingSum === 8);
+
+  const top = topTags(p.tags);
+  check('only tags said more than once are shown', top.length === 1 && top[0].tag === 'ONTIME');
+  check('and they carry a readable label', Boolean(top[0].label));
+}
+
+console.log('\n== both sides rate each other ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  const seed = (code, patch) => store.set(`order:${code}`, JSON.stringify({
+    code, ownerIdentity: 'owner@example.com', phone: '+998901112233',
+    fromCity: 'Toshkent', toCity: 'Buxoro', status: 'DELIVERED',
+    driver: { name: 'Aziz', identity: 'driver1@example.com' }, ...patch,
+  }));
+  const rate = async (body) => {
+    const res = mkRes();
+    await orderHandler({ method: 'POST', query: { action: 'rate' }, body, headers: {} }, res);
+    return res;
+  };
+  const profile = (id) => JSON.parse(store.get(`profile:${id}`) || '{}');
+
+  seed('RV1');
+  check('a stranger with the wrong phone is refused',
+    (await rate({ code: 'RV1', phone: '+998900000000', stars: 5 })).statusCode === 404);
+
+  const byPhone = await rate({ code: 'RV1', phone: '+998901112233', stars: 5, tags: ['ONTIME', 'CARE'] });
+  check('the shipper rates by code and phone, as before', byPhone.statusCode === 200);
+  check('the rating lands on the driver profile',
+    profile('driver1@example.com').ratingCount === 1 && profile('driver1@example.com').ratingSum === 5);
+  check('the tags land with it', profile('driver1@example.com').tags.ONTIME === 1);
+  check('rating twice is refused',
+    (await rate({ code: 'RV1', phone: '+998901112233', stars: 3 })).statusCode === 409);
+
+  // Bu ilgari ishlamasdi: taklif orqali kelgan haydovchining bahosi
+  // faqat telegramUsername orqali qidirilardi, ya'ni hech qayerga
+  // tushmasdi.
+  check('an offer-assigned driver is credited at all',
+    profile('driver1@example.com').ratingCount === 1);
+
+  seed('RV2');
+  check('the driver cannot rate the shipper without signing in',
+    (await rate({ code: 'RV2', side: 'OWNER', stars: 5 })).statusCode === 403);
+  check('and neither can the shipper rate themselves as one',
+    (await rate({ code: 'RV2', side: 'OWNER', googleIdToken: 'owner@example.com', stars: 5 })).statusCode === 403);
+
+  const back = await rate({
+    code: 'RV2', side: 'OWNER', googleIdToken: 'driver1@example.com',
+    stars: 4, tags: ['PAID_ONTIME'],
+  });
+  check('the driver rates the shipper', back.statusCode === 200);
+  check('it lands on the shipper as a shipper score',
+    profile('owner@example.com').ownerRatingCount === 1 && profile('owner@example.com').ownerRatingSum === 4);
+  check('and never on their driver score', !profile('owner@example.com').ratingCount);
+  check('the shipper can still be rated as a driver separately',
+    (await rate({ code: 'RV2', phone: '+998901112233', stars: 2 })).statusCode === 200);
+  check('the two directions are stored separately', (() => {
+    const o = JSON.parse(store.get('order:RV2'));
+    return o.rating.stars === 2 && o.ownerRating.stars === 4;
+  })());
+
+  seed('RV3', { status: 'ON_THE_WAY' });
+  check('an undelivered order cannot be rated',
+    (await rate({ code: 'RV3', phone: '+998901112233', stars: 5 })).statusCode === 400);
+
+  // Yulduzsiz baho bo'lmaydi — teg va izohning o'zi yetarli emas.
+  seed('RV4');
+  check('stars are still required',
+    (await rate({ code: 'RV4', phone: '+998901112233', tags: ['ONTIME'] })).statusCode === 400);
+
+  // Telegram guruhidan olgan haydovchi eski yo'l bilan topiladi.
+  store.set('tgToEmail:aziz_driver', 'legacy@example.com');
+  seed('RV5', { driver: { name: 'Aziz', telegramUsername: 'aziz_driver' } });
+  await rate({ code: 'RV5', phone: '+998901112233', stars: 5 });
+  check('a Telegram-claimed driver is still credited through the username index',
+    profile('legacy@example.com').ratingCount === 1);
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

@@ -28,6 +28,7 @@ import {
   OFFERABLE_ORDER_STATUSES, MAX_OFFERS_PER_ORDER, validateOffer,
   offerKey, orderOffersKey, driverOffersKey, publicOfferShape,
 } from '../lib/offers.js';
+import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
@@ -359,6 +360,9 @@ const getOrderStatus = async (req, res) => {
     updatedAt: order.updatedAt || order.createdAt,
     canRate: status === 'DELIVERED' && !order.rating,
     rating: order.rating || null,
+    // Mezonlar server tomondan keladi, shunda ro'yxat bir joyda turadi
+    // va sayt bilan tekshiruv qoidasi hech qachon ajralib ketmaydi.
+    criteria: CRITERIA.DRIVER,
   });
 };
 
@@ -740,53 +744,115 @@ const getBackhaul = async (req, res) => {
  * driver's aggregate is rolled up onto their profile, but only if they
  * linked a Telegram username to a Google account.
  */
+/**
+ * Baho kimga tegishli ekanini topadi.
+ *
+ * Haydovchi taklif orqali kelgan bo'lsa uning identity'si buyurtmada
+ * turadi. Telegram guruhidan olgan bo'lsa faqat username bor —
+ * o'shanda teskari indeksdan qidiramiz. Ilgari faqat ikkinchi yo'l
+ * bor edi, ya'ni taklif orqali kelgan haydovchining bahosi
+ * profiliga umuman tushmasdi.
+ */
+const driverIdentityOf = async (order) => {
+  if (!order.driver) return null;
+  if (order.driver.identity) return order.driver.identity;
+  if (!order.driver.telegramUsername) return null;
+  return await kvGet(`tgToEmail:${order.driver.telegramUsername.toLowerCase()}`);
+};
+
+/** Bahoni profilga va odam o'qiydigan izohlar ro'yxatiga yozadi. */
+const recordReview = async (identity, review, side, meta) => {
+  if (!identity) return;
+  try {
+    const key = `profile:${identity}`;
+    const profile = await readJson(key, {});
+    await kvSet(key, JSON.stringify(applyReview(profile, review, side)));
+    // Izoh yoki teg bo'lmasa ro'yxatga yozadigan narsa yo'q —
+    // yulduzlar profil raqamlarida allaqachon hisoblangan.
+    if (review.comment || review.tags.length) {
+      await kvPush(reviewsKey(identity), JSON.stringify({ ...review, ...meta, side }));
+    }
+  } catch (err) {
+    // Baho buyurtmaning o'zida saqlangan; yig'indi keyin ham tiklanadi.
+    console.error('recordReview failed:', err.message);
+  }
+};
+
+/**
+ * POST ?action=rate — buyurtma yetkazilgach baho qoldirish.
+ *
+ * Ikki tomon, ikki yo'l bilan tanaladi:
+ *   - yuk beruvchi: kod + telefon (u ikkalasini ham biladi), yoki
+ *     kirgan bo'lsa o'z identity'si bilan;
+ *   - haydovchi: faqat identity — telefon raqami yuk beruvchiniki,
+ *     uni haydovchi ham biladi, demak u tanitish uchun yaramaydi.
+ */
 const rateOrder = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const code = String(body.code || '').trim().toUpperCase();
   const phone = normalisePhone(body.phone || '');
-  const stars = Number(body.stars);
-  const comment = String(body.comment || '').trim().slice(0, 300);
+  const side = body.side === 'OWNER' ? 'OWNER' : 'DRIVER';
 
-  if (!code || !phone) return res.status(400).json({ error: 'Kod va telefon kerak' });
-  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
-    return res.status(400).json({ error: 'Baho 1 dan 5 gacha bo‘lsin' });
-  }
+  if (!code) return res.status(400).json({ error: 'Buyurtma kodi kerak' });
 
-  const raw = await kvGet(`order:${code}`);
-  if (!raw) return res.status(404).json({ error: 'Topilmadi' });
-  let order;
-  try {
-    order = JSON.parse(raw);
-  } catch {
-    return res.status(500).json({ error: 'Xato yuz berdi' });
-  }
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
 
-  if (order.phone !== phone) return res.status(404).json({ error: 'Topilmadi' });
-  if (order.status !== 'DELIVERED') return res.status(400).json({ error: 'Buyurtma hali yetkazilmagan' });
-  if (order.rating) return res.status(409).json({ error: 'Bu buyurtma allaqachon baholangan' });
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Topilmadi' });
 
-  order.rating = { stars, comment, ratedAt: Date.now() };
-  const saved = await kvSet(`order:${code}`, JSON.stringify(order));
-  if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  const driverIdentity = await driverIdentityOf(order);
+  const ownerIdentity = order.ownerIdentity || order.googleEmail || null;
 
-  // Best-effort rollup onto the driver's profile — never blocks the rating
-  // itself, which is already safely stored on the order above.
-  if (order.driver && order.driver.telegramUsername) {
-    try {
-      const email = await kvGet(`tgToEmail:${order.driver.telegramUsername.toLowerCase()}`);
-      if (email) {
-        const praw = await kvGet(`profile:${email}`);
-        const profile = praw ? JSON.parse(praw) : {};
-        profile.ratingCount = (profile.ratingCount || 0) + 1;
-        profile.ratingSum = (profile.ratingSum || 0) + stars;
-        await kvSet(`profile:${email}`, JSON.stringify(profile));
-      }
-    } catch {
-      // Non-fatal.
+  if (side === 'OWNER') {
+    // Haydovchi yuk beruvchini baholaydi.
+    if (!identity || !driverIdentity || identity !== driverIdentity) {
+      return res.status(403).json({ error: 'Bu buyurtma sizga tegishli emas' });
     }
+  } else {
+    // Yuk beruvchi haydovchini baholaydi.
+    const byPhone = phone && order.phone === phone;
+    const bySignIn = identity && ownerIdentity && identity === ownerIdentity;
+    if (!byPhone && !bySignIn) return res.status(404).json({ error: 'Topilmadi' });
   }
 
-  return res.status(200).json({ ok: true });
+  if (order.status !== 'DELIVERED') return res.status(400).json({ error: 'Buyurtma hali yetkazilmagan' });
+
+  const field = side === 'OWNER' ? 'ownerRating' : 'rating';
+  if (order[field]) return res.status(409).json({ error: 'Bu buyurtma allaqachon baholangan' });
+
+  const { error, value } = validateReview(
+    { stars: body.stars, comment: body.comment, tags: body.tags },
+    side,
+  );
+  if (error) return res.status(400).json({ error });
+
+  order[field] = value;
+  if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
+    return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  }
+
+  // Profilga ko'chirish — buyurtmadagi baho allaqachon saqlangani
+  // uchun bu qadam muvaffaqiyatsiz bo'lsa ham javob 200 qoladi.
+  const target = side === 'OWNER' ? ownerIdentity : driverIdentity;
+  await recordReview(target, value, side, {
+    orderCode: code,
+    route: `${order.fromCity} → ${order.toCity}`,
+  });
+
+  if (target) {
+    await notifyUser(target, {
+      category: 'orders',
+      text: `<b>Sizga baho qoldirildi</b>\n\n`
+        + `<b>${esc(code)}</b>\n${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+        + `${'★'.repeat(value.stars)}${'☆'.repeat(5 - value.stars)}`
+        + (value.comment ? `\n\n«${esc(value.comment)}»` : ''),
+    });
+  }
+
+  return res.status(200).json({ ok: true, rating: value });
 };
 
 /* ============================================================
@@ -933,6 +999,10 @@ const listOffers = async (req, res) => {
     orderStatus: order.status || 'NEW',
     nextStatus: next,
     nextLabel: next ? NEXT_STATUS_BUTTON[order.status] || '' : '',
+    // Yetkazib bo'lgach haydovchi ham yuk beruvchini baholaydi.
+    canRateOwner: isDriver && order.status === 'DELIVERED' && !order.ownerRating,
+    ownerRating: isDriver ? order.ownerRating || null : null,
+    ownerCriteria: CRITERIA.OWNER,
     offers: visible.map(publicOfferShape),
   });
 };

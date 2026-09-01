@@ -27,6 +27,7 @@ import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '..
 import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvRange } from '../lib/kv.js';
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
+import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -407,6 +408,14 @@ const publicProfileShape = (identity, profile) => ({
   bio: profile.bio || '',
   ratingCount: profile.ratingCount || 0,
   ratingSum: profile.ratingSum || 0,
+  // Yuk beruvchi sifatidagi baho alohida turadi: yaxshi haydovchi
+  // bo'lish bilan yukni to'g'ri ko'rsatib, vaqtida to'lash — bir
+  // narsa emas, va ular bitta o'rtachaga qo'shilib ketmasligi kerak.
+  ownerRatingCount: profile.ownerRatingCount || 0,
+  ownerRatingSum: profile.ownerRatingSum || 0,
+  // Eng ko'p takrorlangan maqtovlar. Bir marta aytilgani chiqmaydi —
+  // bitta odamning bitta bosishi hali fazilat degani emas.
+  topTags: topTags(profile.tags),
   // Faqat shu hisoblagich joriy qilingandan keyingi yetkazishlar.
   // Undan oldingilari sanalmaydi — noto'g'ri raqamdan ko'ra kamroq
   // raqam yaxshiroq.
@@ -423,8 +432,24 @@ const getPublicProfile = async (req, res) => {
   const profile = parseProfile(await kvGet(`profile:${identity}`));
   if (!profile || !profile.username) return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
 
+  // Oxirgi izohlar. Raqamlar ishonch bermaydi — odamning o'z so'zi
+  // beradi. Kim yozgani ko'rsatilmaydi: baho buyurtma orqali
+  // bog'langan, ya'ni ismni chiqarish ikkala tomonni ham ochib
+  // qo'yardi.
+  const reviews = (await kvRange(reviewsKey(identity), 0, REVIEW_LIMIT - 1))
+    .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+    .filter(Boolean)
+    .slice(0, 10)
+    .map((r) => ({
+      stars: r.stars,
+      comment: r.comment || '',
+      route: r.route || '',
+      at: r.ratedAt || 0,
+      tags: (r.tags || []).filter((t) => CRITERIA_LABELS[t]),
+    }));
+
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
-  return res.status(200).json({ ok: true, profile: publicProfileShape(identity, profile) });
+  return res.status(200).json({ ok: true, profile: publicProfileShape(identity, profile), reviews });
 };
 
 export default async function handler(req, res) {

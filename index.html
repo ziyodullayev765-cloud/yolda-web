@@ -1032,6 +1032,26 @@
   .track-line{width:2px;height:19px;background:var(--border);margin:-2px 0 -2px 5px;}
   .track-line--done{background:var(--route);}
   .star-btn{background:none;border:none;font-size:26px;line-height:0;cursor:pointer;color:#F59E0B;padding:2px;}
+
+  /* Baholash: yulduzlar + mezon chiplari. Bitta widget ikki joyda
+     ishlatiladi (yuk beruvchi haydovchini, haydovchi yuk beruvchini),
+     shuning uchun uslub id'ga emas, sinfga bog'langan. */
+  .rate-box{margin-top:var(--s4);}
+  .star-picker{display:flex;gap:6px;margin-bottom:10px;}
+  .crit-chips{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:10px;}
+  .crit-chips .chip{font-size:12px;padding:7px 12px;}
+  .crit-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .crit-tag{
+    font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:var(--r-pill);
+    background:var(--paper-dark);color:var(--ink-soft);
+  }
+  .crit-count{font-size:11.5px;font-weight:700;color:var(--muted);align-self:center;}
+  .review-item{padding:var(--s3) 0;border-top:1px solid var(--line);}
+  .review-item:first-of-type{border-top:none;padding-top:var(--s2);}
+  .review-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);}
+  .review-stars{color:#F59E0B;line-height:1;}
+  .review-route{font-size:12px;color:var(--muted);}
+  .review-text{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:6px 0 0;}
   .chat-row{
     display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
     padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;
@@ -2401,6 +2421,15 @@
       "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
       "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
       "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
+      "crit.ONTIME": "Vaqtida yetkazdi", "crit.CARE": "Yukka ehtiyot bo'ldi",
+      "crit.COMMUNICATION": "Aloqaga oson chiqdi", "crit.PRICE_KEPT": "Narxni o'zgartirmadi",
+      "crit.PAID_ONTIME": "To'lovni vaqtida qildi", "crit.ACCURATE": "Yukni to'g'ri ko'rsatdi",
+      "crit.FAST_LOADING": "Yuklash tez bo'ldi",
+      "rate.rateDriver": "Haydovchini baholang:", "rate.rateOwner": "Yuk beruvchini baholang:",
+      "rate.yours": "Siz bergan baho:", "rate.send": "Baho yuborish",
+      "rate.commentPlaceholder": "Izoh (ixtiyoriy)", "rate.thanks": "Rahmat!",
+      "rate.accepted": "Bahoyingiz qabul qilindi", "rate.failed": "Yuborilmadi, qayta urinib ko'ring.",
+      "rate.oftenSaid": "Ko'p aytilgan", "rate.reviews": "Izohlar",
       "stage.NEW": "Yangi", "stage.DRIVER_FOUND": "Haydovchi topildi",
       "stage.PICKING_UP": "Yuklashga ketdi", "stage.LOADED": "Yuklandi",
       "stage.ON_THE_WAY": "Yo'lda", "stage.DELIVERED": "Yetkazildi",
@@ -2684,6 +2713,15 @@
       "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
       "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
       "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
+      "crit.ONTIME": "Доставил вовремя", "crit.CARE": "Бережно обошёлся с грузом",
+      "crit.COMMUNICATION": "Легко выходил на связь", "crit.PRICE_KEPT": "Не менял цену",
+      "crit.PAID_ONTIME": "Заплатил вовремя", "crit.ACCURATE": "Груз описан верно",
+      "crit.FAST_LOADING": "Погрузка прошла быстро",
+      "rate.rateDriver": "Оцените водителя:", "rate.rateOwner": "Оцените отправителя:",
+      "rate.yours": "Ваша оценка:", "rate.send": "Отправить оценку",
+      "rate.commentPlaceholder": "Комментарий (необязательно)", "rate.thanks": "Спасибо!",
+      "rate.accepted": "Ваша оценка принята", "rate.failed": "Не отправлено, попробуйте ещё раз.",
+      "rate.oftenSaid": "Чаще всего отмечают", "rate.reviews": "Отзывы",
       "stage.NEW": "Новый", "stage.DRIVER_FOUND": "Водитель найден",
       "stage.PICKING_UP": "Едет на погрузку", "stage.LOADED": "Загружен",
       "stage.ON_THE_WAY": "В пути", "stage.DELIVERED": "Доставлен",
@@ -2967,6 +3005,15 @@
       "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
       "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
       "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
+      "crit.ONTIME": "Delivered on time", "crit.CARE": "Handled the cargo carefully",
+      "crit.COMMUNICATION": "Easy to reach", "crit.PRICE_KEPT": "Kept to the agreed price",
+      "crit.PAID_ONTIME": "Paid on time", "crit.ACCURATE": "Described the load accurately",
+      "crit.FAST_LOADING": "Loading went quickly",
+      "rate.rateDriver": "Rate the driver:", "rate.rateOwner": "Rate the shipper:",
+      "rate.yours": "Your rating:", "rate.send": "Send rating",
+      "rate.commentPlaceholder": "Comment (optional)", "rate.thanks": "Thank you!",
+      "rate.accepted": "Your rating has been recorded", "rate.failed": "Not sent, please try again.",
+      "rate.oftenSaid": "Most mentioned", "rate.reviews": "Reviews",
       "stage.NEW": "New", "stage.DRIVER_FOUND": "Driver found",
       "stage.PICKING_UP": "Heading to pickup", "stage.LOADED": "Loaded",
       "stage.ON_THE_WAY": "On the way", "stage.DELIVERED": "Delivered",
@@ -6970,7 +7017,7 @@
               body.innerHTML = '<p class="note">' + escapeHtml(res.body.error || "Topilmadi") + '</p>';
               return;
             }
-            body.innerHTML = publicProfileHtml(res.body.profile);
+            body.innerHTML = publicProfileHtml(res.body.profile, res.body.reviews);
             applyLang();
           })
           .catch(function(){
@@ -6991,20 +7038,20 @@
     goToChatWith(username, "");
   });
 
-  function publicProfileHtml(p){
+  function publicProfileHtml(p, reviews){
     var rating = p.ratingCount ? (p.ratingSum / p.ratingCount).toFixed(1) : null;
+    var ownerRating = p.ownerRatingCount ? (p.ownerRatingSum / p.ownerRatingCount).toFixed(1) : null;
     var stats = [];
-    if(rating) stats.push({ v: icon("iconStar","filled") + " " + rating, k: "Reyting" });
-    if(p.ratingCount) stats.push({ v: p.ratingCount, k: "Baho" });
+    if(rating) stats.push({ v: icon("iconStar","filled") + " " + rating, k: "Haydovchi sifatida" });
+    if(ownerRating) stats.push({ v: icon("iconStar","filled") + " " + ownerRating, k: "Yuk beruvchi sifatida" });
+    if(!rating && !ownerRating && p.ratingCount) stats.push({ v: p.ratingCount, k: "Baho" });
     if(p.deliveredCount) stats.push({ v: p.deliveredCount, k: "Yetkazilgan" });
 
     var facts = [];
     if(p.role) facts.push({ ic: "iconUser", v: PROFILE_ROLE_LABELS[p.role] || p.role });
     if(p.city) facts.push({ ic: "iconMap", v: p.city });
     if(p.vehicleType) facts.push({ ic: "iconTruck", v: VEHICLE_LABELS_PUBLIC[p.vehicleType] || p.vehicleType });
-    if(p.joinedAt) facts.push({ ic: "iconInfo",
-                                v: "A'zo: " + new Date(p.joinedAt).toLocaleDateString("uz-UZ",
-                                    { year:"numeric", month:"long" }) });
+    if(p.joinedAt) facts.push({ ic: "iconInfo", v: "A'zo: " + monthYear(p.joinedAt) });
 
     return '<div style="display:flex;gap:14px;align-items:center;margin-bottom:var(--s4);">'
       + (p.avatarDataUrl
@@ -7029,9 +7076,70 @@
             }).join("") + '</div>'
           : "")
       + (p.bio ? '<div class="card"><p class="note" style="margin:0;">'+escapeHtml(p.bio)+'</p></div>' : "")
+      + publicTagsHtml(p.topTags)
+      + publicReviewsHtml(reviews)
       + '<button type="button" class="btn ghost" style="margin-top:var(--s4);" '
       +   'data-message-user="'+escapeHtml(p.username)+'">'+icon("iconChat")
       +   ' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>';
+  }
+
+  /* Oy nomini o'zimiz yozamiz: Chromium'da uz-UZ uchun `month:"long"`
+     "M07" qaytaradi — foydalanuvchi uchun bu shunchaki buzuq matn. */
+  var MONTHS_UZ = ["yanvar","fevral","mart","aprel","may","iyun",
+                   "iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
+  var MONTHS_RU = ["январь","февраль","март","апрель","май","июнь",
+                   "июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+  var MONTHS_EN = ["January","February","March","April","May","June",
+                   "July","August","September","October","November","December"];
+  function monthYear(ts){
+    var d = new Date(ts);
+    if(isNaN(d.getTime())) return "";
+    if(currentLang === "ru") return MONTHS_RU[d.getMonth()] + " " + d.getFullYear();
+    if(currentLang === "en") return MONTHS_EN[d.getMonth()] + " " + d.getFullYear();
+    var uz = MONTHS_UZ[d.getMonth()] + " " + d.getFullYear();
+    // Kirill yozuvi t() dagi bilan bir xil yo'ldan o'tadi.
+    return currentLang === "uz-cyrl" ? transliterateHtmlAware(uz) : uz;
+  }
+
+  /* Eng ko'p takrorlangan maqtovlar. Server allaqachon kamida ikki
+     marta aytilganlarini ajratib beradi — bu yerda hisob yo'q. */
+  function publicTagsHtml(tags){
+    if(!tags || !tags.length) return "";
+    return '<div class="card" style="margin-top:var(--s3);">'
+      + '<h3 class="card-title" style="font-size:14px;">'+icon("iconCheckLine")+' '
+      +   '<span data-i18n="rate.oftenSaid">Ko\'p aytilgan</span></h3>'
+      + '<div class="crit-tags">' + tags.map(function(x){
+          return '<span class="crit-tag" data-i18n="crit.'+escapeHtml(x.tag)+'">'
+            + escapeHtml(critLabel(x.tag))+'</span> <span class="crit-count">'+x.count+'</span>';
+        }).join("") + '</div></div>';
+  }
+
+  /* Izohlar. Kim yozgani ko'rsatilmaydi: baho buyurtma orqali
+     bog'langan, ismni chiqarish ikkala tomonni ham ochib qo'yardi. */
+  function publicReviewsHtml(reviews){
+    var items = (reviews || []).filter(function(r){ return r.comment || (r.tags || []).length; });
+    if(!items.length) return "";
+    return '<div class="card" style="margin-top:var(--s3);">'
+      + '<h3 class="card-title" style="font-size:14px;">'+icon("iconChat")+' '
+      +   '<span data-i18n="rate.reviews">Izohlar</span>'
+      +   ' <span style="color:var(--muted);font-weight:500;">('+items.length+')</span></h3>'
+      + items.map(function(r){
+          return '<div class="review-item">'
+            + '<div class="review-head">'
+            +   '<span class="review-stars">'+icon("iconStar","filled").repeat(r.stars)
+            +     icon("iconStar").repeat(5 - r.stars)+'</span>'
+            +   (r.route ? '<span class="review-route">'+escapeHtml(r.route)+'</span>' : "")
+            + '</div>'
+            + (r.comment ? '<p class="review-text">'+escapeHtml(r.comment)+'</p>' : "")
+            + ((r.tags || []).length
+                ? '<div class="crit-tags">' + r.tags.map(function(tg){
+                    return '<span class="crit-tag" data-i18n="crit.'+escapeHtml(tg)+'">'
+                      + escapeHtml(critLabel(tg))+'</span>';
+                  }).join("") + '</div>'
+                : "")
+            + '</div>';
+        }).join("")
+      + '</div>';
   }
 
   var PROFILE_ROLE_LABELS = { DRIVER: "Haydovchi", OWNER: "Yuk beruvchi", BOTH: "Ikkalasi ham" };
@@ -7152,9 +7260,18 @@
 
     if(!info.nextStatus){
       // Yetkazildi yoki bekor qilindi — suradigan bosqich qolmadi.
+      // Yetkazilgan bo'lsa haydovchi endi yuk beruvchini baholaydi.
+      var rate = "";
+      if(info.canRateOwner){
+        rate = ratingPickerHtml("rateOwner", info.ownerCriteria,
+          "rate.rateOwner", "Yuk beruvchini baholang:");
+      } else if(info.ownerRating){
+        rate = ratingSummaryHtml(info.ownerRating, "rate.yours", "Siz bergan baho:");
+      }
       return '<div class="drive-panel">'
         + '<p class="drive-now" data-i18n="drive.now">Hozirgi bosqich</p>' + stage
         + '<p class="drive-hint" data-i18n="drive.done">Bu yuk yopilgan. Yuk beruvchi sizga baho qoldirishi mumkin.</p>'
+        + rate
         + '</div>';
     }
 
@@ -7167,9 +7284,112 @@
       + '</div>';
   }
 
+  /* ============================================================
+     Baholash — bitta widget, ikkala tomon uchun
+     ------------------------------------------------------------
+     Yuk beruvchi haydovchini, haydovchi yuk beruvchini baholaydi.
+     Yulduzlar bir xil, faqat mezonlar ro'yxati boshqa — shuning
+     uchun bu yerda bitta funksiya, ikkita nusxa emas. Mezonlar
+     serverdan keladi (lib/reviews.js), ya'ni ro'yxat bir joyda.
+     ============================================================ */
+  var CRIT_FALLBACK = {
+    ONTIME: "Vaqtida yetkazdi", CARE: "Yukka ehtiyot bo'ldi",
+    COMMUNICATION: "Aloqaga oson chiqdi", PRICE_KEPT: "Narxni o'zgartirmadi",
+    PAID_ONTIME: "To'lovni vaqtida qildi", ACCURATE: "Yukni to'g'ri ko'rsatdi",
+    FAST_LOADING: "Yuklash tez bo'ldi"
+  };
+  function critLabel(tag){ return t("crit." + tag) || CRIT_FALLBACK[tag] || tag; }
+
+  /**
+   * @param {string} p         id prefiksi — bir sahifada ikkita widget bo'lishi mumkin
+   * @param {string[]} criteria server bergan mezonlar
+   * @param {string} titleKey  "Haydovchini baholang" / "Yuk beruvchini baholang"
+   */
+  function ratingPickerHtml(p, criteria, titleKey, titleFallback){
+    var tags = (criteria || []).map(function(c){
+      return '<button type="button" class="chip" data-crit="'+escapeHtml(c)+'" '
+        + 'data-i18n="crit.'+escapeHtml(c)+'">'+escapeHtml(critLabel(c))+'</button>';
+    }).join("");
+    return '<div class="rate-box" id="'+p+'Box">'
+      + '<p class="note" style="margin:0 0 8px;" data-i18n="'+titleKey+'">'+titleFallback+'</p>'
+      + '<div class="star-picker" id="'+p+'Stars">'
+      +   [1,2,3,4,5].map(function(n){
+            return '<button type="button" class="star-btn" data-star="'+n+'" '
+              + 'aria-label="'+n+'">'+icon("iconStar")+'</button>';
+          }).join("")
+      + '</div>'
+      + (tags ? '<div class="crit-chips" id="'+p+'Tags">'+tags+'</div>' : "")
+      + '<input type="text" id="'+p+'Comment" maxlength="300" placeholder="Izoh (ixtiyoriy)" '
+      +   'data-i18n-placeholder="rate.commentPlaceholder">'
+      + '<button class="btn ghost" id="'+p+'Submit" disabled style="margin-top:10px;" '
+      +   'data-i18n="rate.send">Baho yuborish</button>'
+      + '</div>';
+  }
+
+  /** Widgetni jonlantiradi. onSubmit({stars, tags, comment}, btn) chaqiriladi. */
+  function bindRatingPicker(p, onSubmit){
+    var starsBox = document.getElementById(p + "Stars");
+    var submitBtn = document.getElementById(p + "Submit");
+    if(!starsBox || !submitBtn) return;
+
+    var chosen = 0;
+    var starBtns = starsBox.querySelectorAll(".star-btn");
+    starBtns.forEach(function(b){
+      b.addEventListener("click", function(){
+        chosen = parseInt(b.getAttribute("data-star"), 10);
+        starBtns.forEach(function(sb){
+          sb.innerHTML = icon("iconStar",
+            parseInt(sb.getAttribute("data-star"), 10) <= chosen ? "filled" : "");
+        });
+        submitBtn.disabled = false;
+      });
+    });
+
+    var tagsBox = document.getElementById(p + "Tags");
+    if(tagsBox){
+      tagsBox.querySelectorAll("[data-crit]").forEach(function(b){
+        b.addEventListener("click", function(){ b.classList.toggle("active"); });
+      });
+    }
+
+    submitBtn.addEventListener("click", function(){
+      if(!chosen) return;
+      var commentEl = document.getElementById(p + "Comment");
+      var picked = tagsBox
+        ? [].slice.call(tagsBox.querySelectorAll("[data-crit].active"))
+            .map(function(b){ return b.getAttribute("data-crit"); })
+        : [];
+      onSubmit({
+        stars: chosen,
+        tags: picked,
+        comment: commentEl ? commentEl.value.trim() : ""
+      }, submitBtn);
+    });
+  }
+
+  /** Berilgan bahoni ko'rsatish (yulduzlar + tanlangan mezonlar). */
+  function ratingSummaryHtml(rating, labelKey, labelFallback){
+    if(!rating) return "";
+    var tags = (rating.tags || []).map(function(tg){
+      return '<span class="crit-tag" data-i18n="crit.'+escapeHtml(tg)+'">'+escapeHtml(critLabel(tg))+'</span>';
+    }).join("");
+    return '<div style="margin-top:var(--s3);">'
+      + '<p class="note" style="margin:0;"><span data-i18n="'+labelKey+'">'+labelFallback+'</span> '
+      +   icon("iconStar","filled").repeat(rating.stars)+icon("iconStar").repeat(5-rating.stars)+'</p>'
+      + (tags ? '<div class="crit-tags">'+tags+'</div>' : "")
+      + '</div>';
+  }
+
   function bindDrivePanel(d){
     var btn = document.getElementById("btnAdvance");
     if(btn) btn.addEventListener("click", function(){ advanceOrder(d, btn); });
+
+    bindRatingPicker("rateOwner", function(review, rateBtn){
+      submitRating({
+        code: d.code, side: "OWNER",
+        stars: review.stars, tags: review.tags, comment: review.comment
+      }, rateBtn, function(){ openLoadDetail(d.code); });
+    });
   }
 
   /** Bosqichni bir qadam oldinga suradi va detalni qayta yuklaydi. */
@@ -8086,16 +8306,10 @@
 
     var ratingHtml = '';
     if(data.canRate){
-      ratingHtml = '<div style="margin-top:var(--s4);">'
-        + '<p class="note" style="margin:0 0 8px;">Haydovchini baholang:</p>'
-        + '<div id="starPicker" style="display:flex;gap:6px;margin-bottom:10px;">'
-        +   [1,2,3,4,5].map(function(n){ return '<button type="button" class="star-btn" data-star="'+n+'">'+icon("iconStar")+'</button>'; }).join("")
-        + '</div>'
-        + '<input type="text" id="fRatingComment" maxlength="300" placeholder="Izoh (ixtiyoriy)">'
-        + '<button class="btn ghost" id="btnSubmitRating" disabled style="margin-top:10px;">Baho yuborish</button>'
-        + '</div>';
+      ratingHtml = ratingPickerHtml("rateDriver", data.criteria,
+        "rate.rateDriver", "Haydovchini baholang:");
     } else if(data.rating){
-      ratingHtml = '<p class="note" style="margin-top:var(--s3);">Siz bergan baho: '+icon("iconStar","filled").repeat(data.rating.stars)+icon("iconStar").repeat(5-data.rating.stars)+'</p>';
+      ratingHtml = ratingSummaryHtml(data.rating, "rate.yours", "Siz bergan baho:");
     }
 
     // Buyurtma egasi bo'lmagan odam (kod + telefonni bilgan haydovchi)
@@ -8135,20 +8349,13 @@
     applyLang();
 
     if(data.canRate){
-      var selectedStar = 0;
-      var starBtns = document.querySelectorAll(".star-btn");
-      starBtns.forEach(function(b){
-        b.addEventListener("click", function(){
-          selectedStar = parseInt(b.getAttribute("data-star"), 10);
-          starBtns.forEach(function(sb){
-            sb.innerHTML = icon("iconStar", parseInt(sb.getAttribute("data-star"), 10) <= selectedStar ? "filled" : "");
-          });
-          document.getElementById("btnSubmitRating").disabled = false;
-        });
-      });
-      document.getElementById("btnSubmitRating").addEventListener("click", function(){
-        if(!selectedStar) return;
-        submitRating(data.code, document.getElementById("fTrackPhone").value, selectedStar, document.getElementById("fRatingComment").value.trim());
+      bindRatingPicker("rateDriver", function(review, btn){
+        submitRating({
+          code: data.code,
+          phone: document.getElementById("fTrackPhone").value,
+          side: "DRIVER",
+          stars: review.stars, tags: review.tags, comment: review.comment
+        }, btn, function(){ submitTrack(data.code, normalisePhone(document.getElementById("fTrackPhone").value)); });
       });
     }
   }
@@ -8195,25 +8402,34 @@
       });
   }
 
-  function submitRating(code, phone, stars, comment){
-    var btn = document.getElementById("btnSubmitRating");
+  /** Ikkala tomon uchun bitta yuborish yo'li. */
+  function submitRating(payload, btn, onDone){
     if(btn) btn.disabled = true;
     fetch("/api/order?action=rate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ code: code, phone: normalisePhone(phone), stars: stars, comment: comment })
+      body: JSON.stringify({
+        code: payload.code,
+        phone: payload.phone ? normalisePhone(payload.phone) : "",
+        side: payload.side,
+        stars: payload.stars,
+        tags: payload.tags,
+        comment: payload.comment,
+        googleIdToken: googleIdToken,
+        telegramInitData: telegramInitData
+      })
     }).then(function(r){
       return r.json().then(function(body){ return {ok: r.ok, body: body}; });
     }).then(function(res){
       if(!res.ok){
-        alert(res.body.error || "Yuborilmadi");
+        toast(res.body.error || (t("rate.failed") || "Yuborilmadi"), "", "info");
         if(btn) btn.disabled = false;
         return;
       }
-      toast("Rahmat!", "Bahoyingiz qabul qilindi", "success");
-      submitTrack(code, normalisePhone(phone));
+      toast(t("rate.thanks") || "Rahmat!", t("rate.accepted") || "Bahoyingiz qabul qilindi", "success");
+      if(onDone) onDone();
     }).catch(function(){
-      alert("Yuborilmadi, qayta urinib ko'ring.");
+      toast(t("rate.failed") || "Yuborilmadi, qayta urinib ko'ring.", "", "info");
       if(btn) btn.disabled = false;
     });
   }
