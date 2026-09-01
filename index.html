@@ -1500,6 +1500,12 @@
 </head>
 <body>
 
+<!-- Shown only when an admin turns on "Texnik ishlar" in /admin →
+     Sozlamalar. Rendered from /api/config, so it needs no redeploy. -->
+<div id="maintenanceBanner" hidden style="position:sticky;top:0;z-index:60;background:#B45309;color:#fff;padding:10px 16px;font-size:14px;font-weight:600;text-align:center;line-height:1.4;">
+  <span id="maintenanceBannerText"></span>
+</div>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="truckIcon" viewBox="0 0 240 110">
     <rect x="0" y="18" width="196" height="4" fill="currentColor"/>
@@ -1820,13 +1826,13 @@
     <p class="section-sub reveal" style="margin:var(--s3) auto var(--s6);" data-i18n="contact.sub">Savol yoki yordam kerakmi? Biz bilan bog'laning.</p>
 
     <div class="card reveal" style="margin:0 auto var(--s4);text-align:left;">
-      <a class="btn ghost" href="tel:+998944402090" style="justify-content:flex-start;gap:12px;">
-        <svg class="ic-svg" aria-hidden="true"><use href="#iconPhone"/></svg> +998 94 440 20 90
+      <a class="btn ghost" id="supportPhoneLink" href="tel:+998944402090" style="justify-content:flex-start;gap:12px;">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconPhone"/></svg> <span id="supportPhoneText">+998 94 440 20 90</span>
       </a>
     </div>
     <div class="card reveal" style="margin:0 auto var(--s6);text-align:left;">
-      <a class="btn ghost" href="https://t.me/ziyodullayv" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
-        <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg> @ziyodullayv
+      <a class="btn ghost" id="supportTelegramLink" href="https://t.me/ziyodullayv" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg> <span id="supportTelegramText">@ziyodullayv</span>
       </a>
     </div>
 
@@ -3734,6 +3740,32 @@
 
     fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
       TELEGRAM_BOT_USERNAME = cfg.telegramBotUsername || "";
+
+      // Platform settings an admin can change from /admin → Sozlamalar.
+      // Each one falls back to the value already in the markup, so an
+      // unset (empty) setting leaves the hardcoded default in place
+      // rather than blanking the contact card.
+      if(cfg.supportPhone){
+        var phoneLink = document.getElementById("supportPhoneLink");
+        var phoneText = document.getElementById("supportPhoneText");
+        if(phoneLink) phoneLink.href = "tel:" + cfg.supportPhone.replace(/[^\d+]/g, "");
+        if(phoneText) phoneText.textContent = cfg.supportPhone;
+      }
+      if(cfg.supportTelegram){
+        var tgLink = document.getElementById("supportTelegramLink");
+        var tgText = document.getElementById("supportTelegramText");
+        if(tgLink) tgLink.href = "https://t.me/" + cfg.supportTelegram;
+        if(tgText) tgText.textContent = "@" + cfg.supportTelegram;
+      }
+      if(cfg.maintenanceMode){
+        var banner = document.getElementById("maintenanceBanner");
+        var bannerText = document.getElementById("maintenanceBannerText");
+        if(banner && bannerText){
+          bannerText.textContent = cfg.maintenanceMessage
+            || "Saytda texnik ishlar olib borilmoqda. Ba'zi bo'limlar vaqtincha ishlamasligi mumkin.";
+          banner.hidden = false;
+        }
+      }
       var tgRow = document.getElementById("telegramLoginRow");
       var tgBtn = document.getElementById("telegramLoginBtn");
       // Only worth offering from a normal browser tab, to a signed-out
