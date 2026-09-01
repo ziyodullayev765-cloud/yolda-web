@@ -81,6 +81,20 @@ check('favorites requires auth', (await call('GET', {action:'favorites'}, null))
 
 console.log('\n== validation ==');
 check('bad category rejected', (await call('POST', {action:'create'}, {...VALID, category:'NOPE'})).statusCode === 400);
+// Only freight vehicles are sold here — the passenger categories the
+// marketplace used to carry must no longer be postable.
+for (const gone of ['YENGIL', 'MIKROAVTOBUS', 'AVTOBUS', 'MOTOSIKL']) {
+  check(`passenger category ${gone} rejected`,
+    (await call('POST', {action:'create'}, {...VALID, category: gone})).statusCode === 400);
+}
+for (const ok of ['YUK', 'FURGON', 'TIRKAMA', 'SAMOSVAL', 'REFRIJERATOR', 'EVAKUATOR', 'MAXSUS', 'BOSHQA']) {
+  check(`freight category ${ok} accepted`,
+    (await call('POST', {action:'create'}, {...VALID, category: ok})).statusCode === 200);
+}
+check('passenger body type rejected',
+  (await call('POST', {action:'create'}, {...VALID, bodyType:'SEDAN'})).statusCode === 400);
+check('freight body type accepted',
+  (await call('POST', {action:'create'}, {...VALID, bodyType:'SAMOSVAL_KUZOV'})).statusCode === 200);
 check('bad city rejected', (await call('POST', {action:'create'}, {...VALID, city:'Paris'})).statusCode === 400);
 check('bad year rejected', (await call('POST', {action:'create'}, {...VALID, year:1800})).statusCode === 400);
 check('bad phone rejected', (await call('POST', {action:'create'}, {...VALID, phone:'123'})).statusCode === 400);

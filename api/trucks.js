@@ -43,9 +43,20 @@
 import { resolveEmail } from '../lib/identity.js';
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvSismember } from '../lib/kv.js';
 
-const CATEGORIES = ['YENGIL', 'YUK', 'MIKROAVTOBUS', 'FURGON', 'AVTOBUS', 'MAXSUS', 'MOTOSIKL', 'BOSHQA'];
+/**
+ * Only freight vehicles are sold here — YO'LDA is a logistics platform,
+ * not a general classifieds site. Passenger categories (YENGIL,
+ * MIKROAVTOBUS, AVTOBUS, MOTOSIKL) were removed; listings already stored
+ * under them keep working and stay visible to their owner and to the
+ * admin, but nothing new can be created or edited into them, because
+ * this list is what create/update validate against.
+ */
+const CATEGORIES = [
+  'YUK', 'FURGON', 'TIRKAMA', 'SAMOSVAL', 'REFRIJERATOR', 'EVAKUATOR', 'MAXSUS', 'BOSHQA',
+];
 const BODY_TYPES = [
-  'SEDAN', 'SUV', 'UNIVERSAL', 'HATCHBACK', 'FURA', 'BORT', 'FURGON_KUZOV', 'REF', 'MIKROAVTOBUS_KUZOV', 'MAXSUS_KUZOV',
+  'FURA', 'TENT', 'BORT', 'FURGON_KUZOV', 'REF', 'SAMOSVAL_KUZOV',
+  'SISTERNA', 'AVTOVOZ', 'TRALL', 'MAXSUS_KUZOV',
 ];
 const FUEL_TYPES = ['DIZEL', 'BENZIN', 'GAZ', 'GIBRID', 'ELEKTR'];
 const TRANSMISSIONS = ['MEXANIKA', 'AVTOMAT', 'ROBOT', 'BOSHQA'];

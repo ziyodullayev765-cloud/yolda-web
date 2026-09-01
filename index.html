@@ -18,6 +18,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YO'LDA — Yuk tashish bozori</title>
 <meta name="description" content="Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi O'zbekiston yuk tashish bozori. Narxni hisoblang, buyurtma joylashtiring.">
+
+<!-- ===== O'rnatiladigan ilova (PWA) =====
+     Telefonga "Bosh ekranga qo'shish" orqali o'rnatiladi va Play Store
+     uchun TWA sifatida qadoqlanadi. theme-color brauzer sarlavhasini
+     bo'yaydi, shuning uchun mavzuga qarab ikkitasi berilgan. -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+<meta name="application-name" content="YO'LDA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="YO'LDA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+<!-- Ijtimoiy tarmoqda ulashilganda ko'rinadigan karta -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="YO'LDA">
+<meta property="og:title" content="YO'LDA — Yuk tashish bozori">
+<meta property="og:description" content="O'zbekiston bo'ylab yuk tashish: narxni hisoblang, buyurtma bering, haydovchi toping.">
+<meta property="og:image" content="/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -132,6 +156,9 @@
     fill:none;stroke:currentColor;stroke-width:1.8;
     stroke-linecap:round;stroke-linejoin:round;
   }
+  /* Yoqilgan holat: yurak va yulduz ichi bo'yaladi. Emoji o'rniga
+     ishlatiladigan ikonkalar shu bilan "to'ldirilgan" ko'rinishga o'tadi. */
+  .ic-svg.filled{fill:currentColor;}
   .reveal{
     opacity:0;transform:translateY(26px) scale(0.985);filter:blur(6px);
     transition:opacity 0.9s var(--ease), transform 0.9s var(--ease), filter 0.9s var(--ease);
@@ -883,7 +910,7 @@
   .track-step--done, .track-step--current{color:var(--ink);font-weight:600;}
   .track-line{flex:1;height:2px;background:var(--border);margin-top:6px;min-width:12px;}
   .track-line--done{background:var(--route);}
-  .star-btn{background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#F59E0B;padding:2px;}
+  .star-btn{background:none;border:none;font-size:26px;line-height:0;cursor:pointer;color:#F59E0B;padding:2px;}
   .chat-row{
     display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
     padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;
@@ -924,7 +951,9 @@
   }
   .chat-bubble.theirs .cb-react-pill{background:var(--border);}
   .cb-react-pill.mine{outline:1.5px solid currentColor;}
-  .cb-react-add{background:none;border:none;font-size:12px;cursor:pointer;opacity:0.75;padding:0 2px;color:inherit;}
+  .cb-react-add{background:none;border:none;font-size:14px;line-height:0;cursor:pointer;opacity:0.75;padding:0 2px;color:inherit;}
+  .cb-react-pill .ic-svg{font-size:13px;vertical-align:-0.2em;}
+  .cb-edit .ic-svg,.cb-del .ic-svg{font-size:13px;vertical-align:-0.15em;}
   .cb-emoji-picker{display:inline-flex;gap:3px;}
   .cb-emoji-opt{background:none;border:none;font-size:15px;cursor:pointer;padding:0 2px;}
   .chat-input-row{display:flex;gap:8px;}
@@ -1256,7 +1285,7 @@
   .verify-docs-note{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 var(--s5);}
   .verify-checklist{list-style:none;margin:0 0 var(--s5);padding:0;display:flex;flex-direction:column;gap:7px;}
   .verify-checklist li{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
-  .verify-checklist li .vc-mark{flex-shrink:0;font-weight:700;}
+  .verify-checklist li .vc-mark{flex-shrink:0;font-weight:700;line-height:0;font-size:15px;}
   .verify-checklist li.good .vc-mark{color:var(--accepted);}
   .verify-checklist li.bad .vc-mark{color:#DC2626;}
   .verify-review-note{font-size:12px;color:var(--muted);text-align:center;margin:0;}
@@ -1427,7 +1456,7 @@
     background:var(--card);cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-soft);
     text-align:center;transition:border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
   }
-  .truck-category-item .tci-emoji{font-size:22px;line-height:1;}
+  .truck-category-item .tci-emoji{font-size:22px;line-height:0;color:var(--route);}
   .truck-category-item.active{border-color:var(--route);color:var(--route);background:rgba(23,53,104,0.07);}
   .trucks-sort-select{
     width:auto;padding:7px 30px 7px 12px;font-size:12.5px;border-radius:var(--r-pill);
@@ -1562,6 +1591,152 @@
     <symbol id="iconChevronRight" viewBox="0 0 24 24"><path d="M9 5 16 12 9 19"/></symbol>
     <symbol id="iconBell" viewBox="0 0 24 24"><path d="M6 10.5C6 6.9 8.7 4 12 4C15.3 4 18 6.9 18 10.5V14.5L20 17.5H4L6 14.5Z"/><path d="M9.5 20A2.6 2.6 0 0 0 14.5 20"/></symbol>
     <symbol id="iconLogout" viewBox="0 0 24 24"><path d="M10 4H5C3.9 4 3 4.9 3 6V18C3 19.1 3.9 20 5 20H10"/><path d="M16 16L21 12L16 8"/><path d="M21 12H9"/></symbol>
+    <!-- ===== Yuk transporti turkumlari =====
+         Bir xil grammatika: g'ildiraklar y=17.4 r=2.1, kuzov chizig'i
+         y=6..17.4 oralig'ida, shunda barcha turkum ikonkalari bir qatorda
+         bir tekis turadi. -->
+    <symbol id="iconCatYuk" viewBox="0 0 24 24">
+      <!-- Baland kuzov + alohida kabina: furgondan aniq farq qilsin. -->
+      <path d="M2.4 16.7V5.9a1.2 1.2 0 0 1 1.2-1.2h8.7a1.2 1.2 0 0 1 1.2 1.2v10.8"/>
+      <path d="M13.5 9.7h3c.4 0 .7.2.9.5l2.6 3.5c.2.2.2.4.2.7v2.3"/>
+      <path d="M2.4 16.7h1.3M9 16.7h5.4M20.2 16.7h1"/>
+      <circle cx="6.3" cy="16.7" r="2.1"/>
+      <circle cx="17.3" cy="16.7" r="2.1"/>
+    </symbol>
+    <symbol id="iconCatFurgon" viewBox="0 0 24 24">
+      <!-- Yaxlit past kuzov, qiya old qism — yuk mashinasidan pastroq. -->
+      <path d="M2.4 16.7V8.8a1.2 1.2 0 0 1 1.2-1.2h8.7c.4 0 .8.2 1 .6l4.3 5.5c.2.2.3.5.3.8v2.2"/>
+      <path d="M12.4 8.1v5.7h5.4"/>
+      <path d="M2.4 16.7h1.2M8.8 16.7h4.8M17.9 16.7h.9"/>
+      <circle cx="6" cy="16.7" r="2.1"/>
+      <circle cx="15.8" cy="16.7" r="2.1"/>
+    </symbol>
+    <symbol id="iconCatTirkama" viewBox="0 0 24 24">
+      <!-- Tortuvchi + yarim tirkama: uzun kuzov va uch o'q. -->
+      <path d="M2.2 15.7V10a1.2 1.2 0 0 1 1.2-1.2h2.8c.4 0 .7.2.9.5l1.8 2.6v3.8"/>
+      <path d="M6.6 8.9v3h2.3"/>
+      <path d="M8.9 6.5h11.7a1.1 1.1 0 0 1 1.1 1.1v8.1"/>
+      <path d="M8.9 6.5v9.2"/>
+      <path d="M10.9 15.7h1M15.6 15.7h1.4M19.7 15.7h2.1"/>
+      <circle cx="4.6" cy="15.7" r="1.9"/>
+      <circle cx="13.5" cy="15.7" r="1.9"/>
+      <circle cx="18.3" cy="15.7" r="1.9"/>
+    </symbol>
+    <symbol id="iconCatSamosval" viewBox="0 0 24 24">
+      <!-- Ko'tarilgan ag'darma kuzov + o'ngdagi kabina. -->
+      <path d="m2.6 16.3 1.9-7.1a1.1 1.1 0 0 1 1.3-.8l7.5 2a1.1 1.1 0 0 1 .8 1.3l-1.2 4.6"/>
+      <path d="M2.6 16.3h9.6"/>
+      <path d="M15.2 8.9h1.6c.4 0 .8.2 1 .5l2.6 3.5c.2.2.3.5.3.7v2.7"/>
+      <path d="M15.2 16.3h.6M19.6 16.3h1.1"/>
+      <circle cx="6.4" cy="16.3" r="2.1"/>
+      <circle cx="17.7" cy="16.3" r="2.1"/>
+    </symbol>
+    <symbol id="iconCatRefrijerator" viewBox="0 0 24 24">
+      <!-- Yuk kuzovi + qorcha: sovutgichli fura. -->
+      <path d="M2.4 16.7V5.9a1.2 1.2 0 0 1 1.2-1.2h8.7a1.2 1.2 0 0 1 1.2 1.2v10.8"/>
+      <path d="M13.5 9.7h3c.4 0 .7.2.9.5l2.6 3.5c.2.2.2.4.2.7v2.3"/>
+      <path d="M2.4 16.7h1.3M9 16.7h5.4M20.2 16.7h1"/>
+      <circle cx="6.3" cy="16.7" r="2.1"/>
+      <circle cx="17.3" cy="16.7" r="2.1"/>
+      <path d="M8 6.6v8.2M4.5 8.7l7 4.1M11.5 8.7l-7 4.1"/>
+    </symbol>
+    <symbol id="iconCatMaxsus" viewBox="0 0 24 24">
+      <!-- Ekskavator: gusenitsa, kabina, strela va cho'mich. -->
+      <rect x="2.5" y="16" width="11.4" height="3.6" rx="1.8"/>
+      <path d="M5.4 17.8h5.6"/>
+      <path d="M4.6 16v-5.1a1.2 1.2 0 0 1 1.2-1.2h3.7V16"/>
+      <path d="m9.7 10.5 6.2-2.3"/>
+      <path d="m15.9 8.2 4.3 4.4"/>
+      <path d="m20.2 12.6-1.5 3.6h-3.4l1.4-3.6Z"/>
+    </symbol>
+    <symbol id="iconCatEvakuator" viewBox="0 0 24 24">
+      <!-- Evakuator: kabina, platforma va yuqoridagi strela ilmog'i. -->
+      <path d="M2.4 17V9.8a1.2 1.2 0 0 1 1.2-1.2h4.2c.4 0 .8.2 1 .6l2.1 3.2V17"/>
+      <path d="M7.9 8.6v3.8h3"/>
+      <path d="M11 14.5h10.4V17h-6.5"/>
+      <path d="m13.2 14.5 6.2-6.1"/>
+      <path d="M19.4 8.4v3.3"/>
+      <path d="M2.4 17h1M9.1 17h1.3"/>
+      <circle cx="5.6" cy="17" r="2"/>
+      <circle cx="12.7" cy="17" r="2"/>
+    </symbol>
+    <symbol id="iconCatBoshqa" viewBox="0 0 24 24">
+      <path d="M3 16.4v-3.1l2-4.6a1.2 1.2 0 0 1 1.1-.7h9.6c.4 0 .8.2 1 .6l2.4 4 1.9.9v2.9"/>
+      <path d="M3 13.3h18"/>
+      <path d="M8.6 16.4h5.8"/>
+      <circle cx="6.5" cy="16.4" r="2.1"/>
+      <circle cx="16.5" cy="16.4" r="2.1"/>
+    </symbol>
+
+    <!-- ===== Interfeys ikonkalari ===== -->
+    <symbol id="iconFlame" viewBox="0 0 24 24">
+      <path d="M12 2.8c3.4 3.9 5.6 6.7 5.6 10a5.6 5.6 0 1 1-11.2 0c0-1.8.6-3.2 1.6-4.5.2 1.1.7 1.9 1.5 2.4-.4-3 .5-5.7 2.5-7.9Z"/>
+      <path d="M12 21.2a2.9 2.9 0 0 1-2.9-2.9c0-1.5 1.2-2.3 2.9-4.4 1.7 2.1 2.9 2.9 2.9 4.4a2.9 2.9 0 0 1-2.9 2.9Z"/>
+    </symbol>
+    <symbol id="iconList" viewBox="0 0 24 24">
+      <path d="M9 6.5h11M9 12h11M9 17.5h11"/>
+      <path d="M4.4 6.5h.01M4.4 12h.01M4.4 17.5h.01"/>
+    </symbol>
+    <symbol id="iconGear" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.4"/>
+      <path d="M19.5 14.7a1.7 1.7 0 0 0 .3 1.9l.1.1a2.1 2.1 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.3a2.1 2.1 0 1 1-4.2 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2.1 2.1 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0-1.2-2.9H2.6a2.1 2.1 0 1 1 0-4.2h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2.1 2.1 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 2.9-1.2V2.6a2.1 2.1 0 1 1 4.2 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2.1 2.1 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.3a2.1 2.1 0 1 1 0 4.2h-.2a1.7 1.7 0 0 0-1.6 1Z"/>
+    </symbol>
+    <symbol id="iconSun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4.2"/>
+      <path d="M12 2.6v2.3M12 19.1v2.3M4.35 4.35l1.63 1.63M18.02 18.02l1.63 1.63M2.6 12h2.3M19.1 12h2.3M4.35 19.65l1.63-1.63M18.02 5.98l1.63-1.63"/>
+    </symbol>
+    <symbol id="iconMoon" viewBox="0 0 24 24">
+      <path d="M20.5 14.6A8.7 8.7 0 0 1 9.4 3.5a8.7 8.7 0 1 0 11.1 11.1Z"/>
+    </symbol>
+    <symbol id="iconMonitor" viewBox="0 0 24 24">
+      <rect x="2.8" y="4.2" width="18.4" height="12.4" rx="1.6"/>
+      <path d="M8.6 20.2h6.8M12 16.6v3.6"/>
+    </symbol>
+    <symbol id="iconStar" viewBox="0 0 24 24">
+      <path d="m12 3.2 2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 18.17l-5.88 3.14 1.12-6.55L2.48 10.1l6.58-.96L12 3.2Z"/>
+    </symbol>
+    <symbol id="iconHeart" viewBox="0 0 24 24">
+      <path d="M12 20.4 4.2 12.9a4.6 4.6 0 0 1 0-6.6 4.8 4.8 0 0 1 6.7 0l1.1 1.1 1.1-1.1a4.8 4.8 0 0 1 6.7 0 4.6 4.6 0 0 1 0 6.6L12 20.4Z"/>
+    </symbol>
+    <symbol id="iconTrash" viewBox="0 0 24 24">
+      <path d="M3.6 6.2h16.8"/>
+      <path d="M8.4 6.2V4.4a1.2 1.2 0 0 1 1.2-1.2h4.8a1.2 1.2 0 0 1 1.2 1.2v1.8"/>
+      <path d="M18.4 6.2 17.5 19a1.8 1.8 0 0 1-1.8 1.6H8.3A1.8 1.8 0 0 1 6.5 19L5.6 6.2"/>
+      <path d="M10.3 10.2v6.3M13.7 10.2v6.3"/>
+    </symbol>
+    <symbol id="iconCheckLine" viewBox="0 0 24 24">
+      <path d="M4.5 12.6 9.6 17.7 19.5 6.9"/>
+    </symbol>
+
+    <!-- ===== Chat reaksiyalari =====
+         KV'da eski reaksiyalar emoji satr sifatida saqlangan; ular shu
+         ikonkalarga moslanadi, shuning uchun eski reaksiyalar ham to'g'ri
+         chiziladi. -->
+    <symbol id="iconReactThumb" viewBox="0 0 24 24">
+      <path d="M7.4 20.4V10.2l4-7.1a2 2 0 0 1 2.9 2.6l-1.5 3.6h5.3a2 2 0 0 1 2 2.4l-1.4 6.8a2.4 2.4 0 0 1-2.3 1.9H7.4Z"/>
+      <path d="M7.4 10.6H4.6a1.2 1.2 0 0 0-1.2 1.2v7.4a1.2 1.2 0 0 0 1.2 1.2h2.8"/>
+    </symbol>
+    <symbol id="iconReactLaugh" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9.2"/>
+      <path d="M7.4 13.6h9.2a4.6 4.6 0 0 1-9.2 0Z"/>
+      <path d="m7.2 9.4 1.7-1.5 1.7 1.5M13.4 9.4l1.7-1.5 1.7 1.5"/>
+    </symbol>
+    <symbol id="iconReactWow" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9.2"/>
+      <ellipse cx="12" cy="15.2" rx="2.2" ry="2.8"/>
+      <path d="M8.6 9.2h.01M15.4 9.2h.01"/>
+    </symbol>
+    <symbol id="iconReactSad" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9.2"/>
+      <path d="M8.4 16.4a4.4 4.4 0 0 1 7.2 0"/>
+      <path d="M8.6 9.4h.01M15.4 9.4h.01"/>
+      <path d="M16.9 12.4c.9 1.3 1.4 2.1 1.4 2.7a1.4 1.4 0 0 1-2.8 0c0-.6.5-1.4 1.4-2.7Z"/>
+    </symbol>
+    <symbol id="iconReactSmile" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9.2"/>
+      <path d="M8.2 14.2a4.6 4.6 0 0 0 7.6 0"/>
+      <path d="M8.8 9.4h.01M15.2 9.4h.01"/>
+    </symbol>
   </g>
 </svg>
 
@@ -1609,7 +1784,7 @@
   <div class="section" id="homeMatchWrap" style="padding-top:var(--s5);padding-bottom:var(--s2);max-width:640px;" hidden>
     <div class="section-head reveal" style="margin-bottom:var(--s4);text-align:left;">
       <div class="section-eyebrow" data-i18n="home.matchEyebrow">Siz uchun</div>
-      <h2 class="section-title" style="font-size:clamp(20px,4vw,26px);">🔥 <span class="accent" data-i18n="home.matchTitle">Sizga mos yuklar</span></h2>
+      <h2 class="section-title" style="font-size:clamp(20px,4vw,26px);"><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span class="accent" data-i18n="home.matchTitle">Sizga mos yuklar</span></h2>
     </div>
     <div id="homeMatchList"></div>
   </div>
@@ -1685,7 +1860,7 @@
         <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
         <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
         <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
-        <button type="button" class="chip" id="chipMatchOnly" hidden data-i18n="loads.matchOnly">🔥 Faqat mos yuklar</button>
+        <button type="button" class="chip" id="chipMatchOnly" hidden><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span data-i18n="loads.matchOnly">Faqat mos yuklar</span></button>
       </div>
       <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
       <!-- Lives here (not inline) so its <select>/<input> elements and their
@@ -1723,8 +1898,8 @@
     <div id="backhaulBanner" hidden></div>
 
     <div class="view-toggle" id="loadsViewToggle">
-      <button type="button" class="vt-btn active" data-view="list">📋 <span data-i18n="loads.viewList">Ro'yxat</span></button>
-      <button type="button" class="vt-btn" data-view="map">🗺️ <span data-i18n="loads.viewMap">Xarita</span></button>
+      <button type="button" class="vt-btn active" data-view="list"><svg class="ic-svg" aria-hidden="true"><use href="#iconList"></use></svg> <span data-i18n="loads.viewList">Ro'yxat</span></button>
+      <button type="button" class="vt-btn" data-view="map"><svg class="ic-svg" aria-hidden="true"><use href="#iconMap"></use></svg> <span data-i18n="loads.viewMap">Xarita</span></button>
     </div>
 
     <p class="note" id="loadsCount" style="margin:var(--s3) 0 var(--s3);"></p>
@@ -1765,12 +1940,12 @@
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:960px;">
     <div class="section-head reveal">
       <div class="section-eyebrow" data-i18n="trucks.eyebrow">Mashinalar</div>
-      <h2 class="section-title"><span data-i18n="trucks.titleA">Mashina</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
-      <p class="section-sub" data-i18n="trucks.sub">Yengil, yuk va maxsus texnika e'lonlari — o'zingiz ham e'lon joylashtiring.</p>
+      <h2 class="section-title"><span data-i18n="trucks.titleA">Yuk mashinasi</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
+      <p class="section-sub" data-i18n="trucks.sub">Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.</p>
     </div>
 
     <button type="button" class="home-search-bar reveal" id="trucksSearchBar" style="margin-bottom:var(--s4);">
-      <span class="hsb-icon">🔎</span>
+      <span class="hsb-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"></use></svg></span>
       <span style="flex:1;text-align:left;">
         <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka, model yoki kalit so'z...</span></span>
       </span>
@@ -1844,7 +2019,7 @@
       </details>
       <details class="faq-item">
         <summary data-i18n="contact.faq2q">Buyurtmam qanday tasdiqlanadi?</summary>
-        <p data-i18n="contact.faq2a">Guruhda birinchi bo'lib <strong>«✅ Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.</p>
+        <p data-i18n="contact.faq2a">Guruhda birinchi bo'lib <strong>«Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.</p>
       </details>
       <details class="faq-item">
         <summary data-i18n="contact.faq3q">Narx qanday kelishiladi?</summary>
@@ -1899,7 +2074,7 @@
     </div>
 
     <div class="card reveal" id="settingsCard" style="text-align:left;margin-top:var(--s4);">
-      <h3 class="card-title">⚙️ <span data-i18n="settings.title">Sozlamalar</span></h3>
+      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconGear"></use></svg> <span data-i18n="settings.title">Sozlamalar</span></h3>
       <ul class="settings-menu" id="settingsMenu">
         <li><button type="button" class="settings-row" data-settings-page="language">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg>
@@ -2012,8 +2187,8 @@
       "nav.home": "Asosiy", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
       "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)", "nav.trucks": "Mashinalar",
 
-      "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Mashina", "trucks.titleB": "soting yoki oling",
-      "trucks.sub": "Yengil, yuk va maxsus texnika e'lonlari — o'zingiz ham e'lon joylashtiring.",
+      "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
+      "trucks.sub": "Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.",
       "trucks.mine": "Mening e'lonlarim", "trucks.sellBtn": "+ Sotish", "trucks.sellBtnTitle": "Mashina e'lonini joylash",
       "trucks.editTitle": "E'lonni tahrirlash", "trucks.publishBtn": "Joylash", "trucks.saveBtn": "Saqlash",
       "trucks.brandLabel": "Marka va model", "trucks.yearLabel": "Ishlab chiqarilgan yili",
@@ -2029,9 +2204,11 @@
       "trucks.emptyMine": "Sizda hali e'lonlar yo'q.", "trucks.emptyFavs": "Saqlangan mashinalar yo'q.",
       "trucks.photosLabel": "Rasmlar (ixtiyoriy, 5 tagacha)", "trucks.detailTitle": "Mashina haqida",
       "trucks.categoriesLabel": "Kategoriyalar", "trucks.countSuffix": "ta e'lon",
-      "trucks.catYengil": "Yengil", "trucks.catYuk": "Yuk", "trucks.catMikroavtobus": "Mikroavtobus",
-      "trucks.catFurgon": "Furgon", "trucks.catAvtobus": "Avtobus", "trucks.catMaxsus": "Maxsus texnika",
-      "trucks.catMotosikl": "Motosikl", "trucks.catBoshqa": "Boshqa", "trucks.catLabel": "Turkum",
+      "trucks.catYuk": "Yuk mashinasi", "trucks.catFurgon": "Furgon",
+      "trucks.catTirkama": "Tirkama", "trucks.catSamosval": "Samosval",
+      "trucks.catRefrijerator": "Refrijerator", "trucks.catEvakuator": "Evakuator",
+      "trucks.catMaxsus": "Maxsus texnika", "trucks.catBoshqa": "Boshqa yuk texnikasi",
+      "trucks.catLabel": "Turkum",
       "trucks.searchPlaceholder": "Marka, model yoki kalit so'z...", "trucks.searchTitle": "Qidirish",
       "trucks.recentSearches": "So'nggi qidiruvlar", "trucks.popularSearches": "Mashhur qidiruvlar",
       "trucks.filtersBtn": "Filtrlar", "trucks.applyFilters": "Ko'rsatish", "trucks.resetFilters": "Tozalash",
@@ -2068,7 +2245,6 @@
       "trucks.fillStep": "Ma'lumotlarni to'ldiring",
       "nav.drivers": "Haydovchilar", "nav.contact": "Aloqa",
 
-      "home.greeting": "Assalomu alaykum 👋",
       "home.searchLabel": "Yo'nalish", "home.searchPlaceholder": "Qayerdan → Qayerga?",
       "search.title": "Yo'nalish qidirish", "search.recent": "Yaqinda qidirilganlar",
       "search.popular": "Mashhur yo'nalishlar", "search.go": "Qidirish",
@@ -2092,7 +2268,7 @@
       "loads.emptyTitle": "Mos yuk topilmadi.",
       "loads.emptySub": "Yo'nalishingiz yoki filtrlaringizni o'zgartirib ko'ring.",
       "loads.emptyBtn": "Filtrlarni o'zgartirish",
-      "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "🔥 Faqat mos yuklar",
+      "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "Faqat mos yuklar",
       "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
       "home.matchEyebrow": "Siz uchun", "home.matchTitle": "Sizga mos yuklar",
@@ -2108,7 +2284,7 @@
       "order.sub": "Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.",
       "order.howTitle": "Qanday ishlaydi?",
       "order.how1": "Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.",
-      "order.how2": "Birinchi bo'lib <strong>\"✅ Men olaman\"</strong> tugmasini bosgan haydovchi buyurtmani oladi.",
+      "order.how2": "Birinchi bo'lib <strong>\"Men olaman\"</strong> tugmasini bosgan haydovchi buyurtmani oladi.",
       "order.how3": "Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.",
       "order.how4": "Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Aloqa</button> bo'limidan yozing.",
       "order.trackTitle": "Buyurtmani kuzatish", "order.trackNote": "Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.",
@@ -2140,7 +2316,7 @@
       "profile.roleLabel": "Kimsiz?", "profile.roleUnset": "Tanlanmagan",
       "profile.editMainGroup": "Asosiy ma'lumotlar", "profile.editContactGroup": "Aloqa",
       "profile.editVehicleGroup": "Transport", "profile.editAboutGroup": "Qo'shimcha",
-      "profile.telegramHint": "Guruhda yukni olganda \"✓ Tasdiqlangan\" belgingiz ko'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.",
+      "profile.telegramHint": "Guruhda yukni olganda \"Tasdiqlangan\" belgingiz ko'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.",
       "profile.bioLabel": "Qisqa bio (ixtiyoriy)",
       "profile.usernameHint": "Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo'ladi.",
       "profile.saveBtn": "Saqlash", "profile.signOutTitle": "Chiqishni tasdiqlang",
@@ -2159,7 +2335,7 @@
       "contact.faq1q": "Xizmat pullikmi?",
       "contact.faq1a": "Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.",
       "contact.faq2q": "Buyurtmam qanday tasdiqlanadi?",
-      "contact.faq2a": "Guruhda birinchi bo'lib <strong>«✅ Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.",
+      "contact.faq2a": "Guruhda birinchi bo'lib <strong>«Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.",
       "contact.faq3q": "Narx qanday kelishiladi?",
       "contact.faq3a": "Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.",
       "contact.faq4q": "Haydovchi kelmasa yoki javob bermasa nima qilaman?",
@@ -2255,8 +2431,8 @@
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
       "nav.telegramGroupAria": "Группа водителей (Telegram)", "nav.trucks": "Машины",
 
-      "trucks.eyebrow": "Машины", "trucks.titleA": "Машину", "trucks.titleB": "продайте или купите",
-      "trucks.sub": "Объявления о легковых, грузовых машинах и спецтехнике — разместите и своё.",
+      "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовик", "trucks.titleB": "продайте или купите",
+      "trucks.sub": "Только грузовой транспорт: грузовики, фургоны, прицепы и спецтехника.",
       "trucks.mine": "Мои объявления", "trucks.sellBtn": "+ Продать", "trucks.sellBtnTitle": "Разместить объявление о машине",
       "trucks.editTitle": "Редактировать объявление", "trucks.publishBtn": "Разместить", "trucks.saveBtn": "Сохранить",
       "trucks.brandLabel": "Марка и модель", "trucks.yearLabel": "Год выпуска",
@@ -2272,9 +2448,11 @@
       "trucks.emptyMine": "У вас пока нет объявлений.", "trucks.emptyFavs": "Нет сохранённых машин.",
       "trucks.photosLabel": "Фото (необязательно, до 5 шт.)", "trucks.detailTitle": "О машине",
       "trucks.categoriesLabel": "Категории", "trucks.countSuffix": "объявлений",
-      "trucks.catYengil": "Легковые", "trucks.catYuk": "Грузовые", "trucks.catMikroavtobus": "Микроавтобусы",
-      "trucks.catFurgon": "Фургоны", "trucks.catAvtobus": "Автобусы", "trucks.catMaxsus": "Спецтехника",
-      "trucks.catMotosikl": "Мотоциклы", "trucks.catBoshqa": "Другое", "trucks.catLabel": "Категория",
+      "trucks.catYuk": "Грузовик", "trucks.catFurgon": "Фургон",
+      "trucks.catTirkama": "Прицеп", "trucks.catSamosval": "Самосвал",
+      "trucks.catRefrijerator": "Рефрижератор", "trucks.catEvakuator": "Эвакуатор",
+      "trucks.catMaxsus": "Спецтехника", "trucks.catBoshqa": "Другая грузовая техника",
+      "trucks.catLabel": "Категория",
       "trucks.searchPlaceholder": "Марка, модель или ключевое слово...", "trucks.searchTitle": "Поиск",
       "trucks.recentSearches": "Недавние запросы", "trucks.popularSearches": "Популярные запросы",
       "trucks.filtersBtn": "Фильтры", "trucks.applyFilters": "Показать", "trucks.resetFilters": "Сбросить",
@@ -2311,7 +2489,6 @@
       "trucks.fillStep": "Заполните данные",
       "nav.drivers": "Водители", "nav.contact": "Контакты",
 
-      "home.greeting": "Assalomu alaykum 👋",
       "home.searchLabel": "Направление", "home.searchPlaceholder": "Откуда → Куда?",
       "search.title": "Поиск направления", "search.recent": "Недавние поиски",
       "search.popular": "Популярные направления", "search.go": "Искать",
@@ -2335,7 +2512,7 @@
       "loads.emptyTitle": "Подходящих грузов не найдено.",
       "loads.emptySub": "Попробуйте изменить направление или фильтры.",
       "loads.emptyBtn": "Изменить фильтры",
-      "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "🔥 Только подходящие",
+      "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "Только подходящие",
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
       "home.matchEyebrow": "Для вас", "home.matchTitle": "Подходящие вам грузы",
@@ -2351,7 +2528,7 @@
       "order.sub": "Ваш заказ сразу попадает в группу водителей. Первый ответивший водитель свяжется с вами.",
       "order.howTitle": "Как это работает?",
       "order.how1": "Вы заполняете форму — заказ сразу появляется в группе водителей.",
-      "order.how2": "Водитель, первым нажавший <strong>«✅ Я беру»</strong>, получает заказ.",
+      "order.how2": "Водитель, первым нажавший <strong>«Я беру»</strong>, получает заказ.",
       "order.how3": "Водитель звонит вам — <strong>окончательная цена и время согласовываются напрямую</strong>.",
       "order.how4": "Если возникла проблема (водитель не приехал, не сошлись в цене) — напишите нам в разделе <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Контакты</button>.",
       "order.trackTitle": "Отследить заказ", "order.trackNote": "Проверьте статус по коду заказа и номеру телефона.",
@@ -2383,7 +2560,7 @@
       "profile.roleLabel": "Кто вы?", "profile.roleUnset": "Не выбрано",
       "profile.editMainGroup": "Основные данные", "profile.editContactGroup": "Контакты",
       "profile.editVehicleGroup": "Транспорт", "profile.editAboutGroup": "Дополнительно",
-      "profile.telegramHint": "Нужно, чтобы в группе появлялся значок «✓ Подтверждён» при взятии груза, а оценка после доставки попадала в этот профиль.",
+      "profile.telegramHint": "Нужно, чтобы в группе появлялся значок «Подтверждён» при взятии груза, а оценка после доставки попадала в этот профиль.",
       "profile.bioLabel": "Короткое био (необязательно)",
       "profile.usernameHint": "Username 3–20 символов, только латинские буквы/цифры/подчёркивание (_) — принадлежит только одному человеку.",
       "profile.saveBtn": "Сохранить", "profile.signOutTitle": "Подтвердите выход",
@@ -2402,7 +2579,7 @@
       "contact.faq1q": "Сервис платный?",
       "contact.faq1a": "Пока полностью бесплатно — и регистрация, и размещение заказов без комиссии. Если что-то изменится, мы заранее предупредим пользователей.",
       "contact.faq2q": "Как подтверждается мой заказ?",
-      "contact.faq2a": "Водитель, первым нажавший в группе кнопку <strong>«✅ Я беру»</strong>, получает заказ и после этого сразу звонит вам.",
+      "contact.faq2a": "Водитель, первым нажавший в группе кнопку <strong>«Я беру»</strong>, получает заказ и после этого сразу звонит вам.",
       "contact.faq3q": "Как согласовывается цена?",
       "contact.faq3a": "Цена на сайте — примерный расчёт по расстоянию и весу. Окончательную цену вы согласовываете с водителем по телефону.",
       "contact.faq4q": "Что делать, если водитель не приехал или не отвечает?",
@@ -2498,8 +2675,8 @@
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
       "nav.telegramGroupAria": "Drivers group (Telegram)", "nav.trucks": "Vehicles",
 
-      "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a vehicle",
-      "trucks.sub": "Listings for cars, trucks and special equipment — post your own too.",
+      "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a freight vehicle",
+      "trucks.sub": "Freight transport only: trucks, vans, trailers and special equipment.",
       "trucks.mine": "My listings", "trucks.sellBtn": "+ Sell", "trucks.sellBtnTitle": "Post a vehicle listing",
       "trucks.editTitle": "Edit listing", "trucks.publishBtn": "Post", "trucks.saveBtn": "Save",
       "trucks.brandLabel": "Make and model", "trucks.yearLabel": "Year",
@@ -2515,9 +2692,11 @@
       "trucks.emptyMine": "You don't have any listings yet.", "trucks.emptyFavs": "No saved vehicles.",
       "trucks.photosLabel": "Photos (optional, up to 5)", "trucks.detailTitle": "About this vehicle",
       "trucks.categoriesLabel": "Categories", "trucks.countSuffix": "listings",
-      "trucks.catYengil": "Cars", "trucks.catYuk": "Trucks", "trucks.catMikroavtobus": "Minibuses",
-      "trucks.catFurgon": "Vans", "trucks.catAvtobus": "Buses", "trucks.catMaxsus": "Special equipment",
-      "trucks.catMotosikl": "Motorcycles", "trucks.catBoshqa": "Other", "trucks.catLabel": "Category",
+      "trucks.catYuk": "Truck", "trucks.catFurgon": "Van",
+      "trucks.catTirkama": "Trailer", "trucks.catSamosval": "Tipper",
+      "trucks.catRefrijerator": "Refrigerated", "trucks.catEvakuator": "Tow truck",
+      "trucks.catMaxsus": "Special equipment", "trucks.catBoshqa": "Other freight vehicle",
+      "trucks.catLabel": "Category",
       "trucks.searchPlaceholder": "Make, model or keyword...", "trucks.searchTitle": "Search",
       "trucks.recentSearches": "Recent searches", "trucks.popularSearches": "Popular searches",
       "trucks.filtersBtn": "Filters", "trucks.applyFilters": "Show results", "trucks.resetFilters": "Reset",
@@ -2554,7 +2733,6 @@
       "trucks.fillStep": "Fill in the details",
       "nav.drivers": "Drivers", "nav.contact": "Contact",
 
-      "home.greeting": "Assalomu alaykum 👋",
       "home.searchLabel": "Route", "home.searchPlaceholder": "From → To?",
       "search.title": "Search a route", "search.recent": "Recent searches",
       "search.popular": "Popular routes", "search.go": "Search",
@@ -2578,7 +2756,7 @@
       "loads.emptyTitle": "No matching loads found.",
       "loads.emptySub": "Try changing your route or filters.",
       "loads.emptyBtn": "Change filters",
-      "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "🔥 Matching loads only",
+      "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "Matching loads only",
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
       "home.matchEyebrow": "For you", "home.matchTitle": "Loads that fit you",
@@ -2594,7 +2772,7 @@
       "order.sub": "Your order goes straight to the drivers' group. Whoever responds first will contact you.",
       "order.howTitle": "How it works",
       "order.how1": "You fill out the form — the order appears in the drivers' group immediately.",
-      "order.how2": "The first driver to tap <strong>\"✅ I'll take it\"</strong> gets the order.",
+      "order.how2": "The first driver to tap <strong>\"I'll take it\"</strong> gets the order.",
       "order.how3": "The driver calls you — <strong>the final price and time are agreed there</strong>.",
       "order.how4": "If something goes wrong (driver didn't show, couldn't agree on price) — let us know in the <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Contact</button> section.",
       "order.trackTitle": "Track your order", "order.trackNote": "Check the status with your order code and phone number.",
@@ -2626,7 +2804,7 @@
       "profile.roleLabel": "Who are you?", "profile.roleUnset": "Not set",
       "profile.editMainGroup": "Basic information", "profile.editContactGroup": "Contact",
       "profile.editVehicleGroup": "Vehicle", "profile.editAboutGroup": "Additional",
-      "profile.telegramHint": "Needed so the \"✓ Verified\" badge shows in the group when you claim a load, and so a rating left after delivery lands on this profile.",
+      "profile.telegramHint": "Needed so the \"Verified\" badge shows in the group when you claim a load, and so a rating left after delivery lands on this profile.",
       "profile.bioLabel": "Short bio (optional)",
       "profile.usernameHint": "Username: 3-20 characters, Latin letters/digits/underscore (_) only — belongs to one person at a time.",
       "profile.saveBtn": "Save", "profile.signOutTitle": "Confirm sign out",
@@ -2645,7 +2823,7 @@
       "contact.faq1q": "Is the service paid?",
       "contact.faq1a": "It's completely free for now — sign-up and posting orders both come with no commission. If that ever changes, users will be notified in advance.",
       "contact.faq2q": "How does my order get confirmed?",
-      "contact.faq2a": "Whichever driver taps <strong>\"✅ I'll take it\"</strong> first in the group gets the order, then calls you directly.",
+      "contact.faq2a": "Whichever driver taps <strong>\"I'll take it\"</strong> first in the group gets the order, then calls you directly.",
       "contact.faq3q": "How is the price agreed?",
       "contact.faq3a": "The price shown on the site is an estimate based on distance and weight. You agree on the final price with the driver by phone.",
       "contact.faq4q": "What if the driver doesn't show up or reply?",
@@ -3073,9 +3251,9 @@
   /* ---------- ThemeSelector ---------- */
   function renderThemePage(){
     return '<div class="theme-switch" role="radiogroup" aria-label="'+escapeHtml(t("settings.themePageTitle") || "")+'">'
-      + '<button type="button" class="theme-btn" data-theme-choice="light" role="radio" data-autofocus>☀️ <span data-i18n="settings.light">Kunduzgi</span></button>'
-      + '<button type="button" class="theme-btn" data-theme-choice="dark" role="radio">🌙 <span data-i18n="settings.dark">Tungi</span></button>'
-      + '<button type="button" class="theme-btn" data-theme-choice="auto" role="radio">💻 <span data-i18n="settings.auto">Tizim</span></button>'
+      + '<button type="button" class="theme-btn" data-theme-choice="light" role="radio" data-autofocus>'+icon("iconSun")+' <span data-i18n="settings.light">Kunduzgi</span></button>'
+      + '<button type="button" class="theme-btn" data-theme-choice="dark" role="radio">'+icon("iconMoon")+' <span data-i18n="settings.dark">Tungi</span></button>'
+      + '<button type="button" class="theme-btn" data-theme-choice="auto" role="radio">'+icon("iconMonitor")+' <span data-i18n="settings.auto">Tizim</span></button>'
       + '</div>';
   }
 
@@ -3133,7 +3311,7 @@
         body: JSON.stringify({
           name: name ? name.value.trim() : "",
           contact: contact ? contact.value.trim() : "",
-          message: "📝 " + text
+          message: text
         })
       }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
         .then(function(res){
@@ -3305,9 +3483,9 @@
       + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconUser")+'</span><span class="vd-label" data-i18n="verify.doc3">Hujjatni ushlab turgan selfie</span></div>'
       + '<p class="verify-docs-note" data-i18n="verify.docsNote">So\'rov yuborgach, operatorimiz hujjatlarni qanday yuborish kerakligini Telegram orqali yozadi.</p>'
       + '<ul class="verify-checklist">'
-      +   '<li class="good"><span class="vc-mark">✓</span><span data-i18n="verify.check1">Yorug\' joyda, matn aniq ko\'rinsin</span></li>'
-      +   '<li class="good"><span class="vc-mark">✓</span><span data-i18n="verify.check2">Yuzingiz va hujjat birga ko\'rinsin</span></li>'
-      +   '<li class="bad"><span class="vc-mark">✕</span><span data-i18n="verify.check3">Noaniq yoki chala rasmlar rad etiladi</span></li>'
+      +   '<li class="good"><span class="vc-mark">'+icon("iconCheckLine")+'</span><span data-i18n="verify.check1">Yorug\' joyda, matn aniq ko\'rinsin</span></li>'
+      +   '<li class="good"><span class="vc-mark">'+icon("iconCheckLine")+'</span><span data-i18n="verify.check2">Yuzingiz va hujjat birga ko\'rinsin</span></li>'
+      +   '<li class="bad"><span class="vc-mark">'+icon("iconClose")+'</span><span data-i18n="verify.check3">Noaniq yoki chala rasmlar rad etiladi</span></li>'
       + '</ul>'
       + '<button type="button" class="btn" id="btnRequestVerification" data-i18n="verify.submitBtn">Tasdiqlashni so\'rash</button>'
       + '<p class="verify-review-note" style="margin-top:var(--s3);" data-i18n="verify.reviewNote">So\'rovingiz odatda 1-3 kun ichida ko\'rib chiqiladi.</p>'
@@ -3982,7 +4160,7 @@
     var pct = profileCompletion(p);
     var ratingLabel = p.ratingCount ? (p.ratingSum / p.ratingCount).toFixed(1) : "—";
     return '<div class="profile-stats">'
-      + '<div class="profile-stat"><div class="v">★ '+ratingLabel+'</div><div class="k" data-i18n="profile.statRating">Reyting</div></div>'
+      + '<div class="profile-stat"><div class="v">'+icon("iconStar","filled")+' '+ratingLabel+'</div><div class="k" data-i18n="profile.statRating">Reyting</div></div>'
       + '<div class="profile-stat"><div class="v">'+(p.ratingCount || 0)+'</div><div class="k" data-i18n="profile.statRatings">Baholar</div></div>'
       + '<div class="profile-stat"><div class="v">'+pct+'%</div><div class="k" data-i18n="profile.statCompletion">To\'liqlik</div></div>'
       + '</div>';
@@ -4027,7 +4205,7 @@
       + infoRow("settings.linkTelegram", "Telegram", p.telegramUsername ? "@"+p.telegramUsername : "", "profile.notSet", "Bog\'lanmagan")
       + '<div class="info-row"><span class="ir-k" data-i18n="profile.statusLabel">Holat</span>'
       +   '<span class="ir-v" style="color:'+(connected ? 'var(--accepted)' : 'var(--muted)')+';">'
-      +     (connected ? '✓ ' : '') + '<span data-i18n="'+(connected ? 'profile.connected' : 'profile.notConnected')+'">'+(connected ? 'Ulangan' : 'Ulanmagan')+'</span>'
+      +     (connected ? icon("iconCheckLine")+' ' : '') + '<span data-i18n="'+(connected ? 'profile.connected' : 'profile.notConnected')+'">'+(connected ? 'Ulangan' : 'Ulanmagan')+'</span>'
       +   '</span></div>'
       + '</div>';
   }
@@ -4117,7 +4295,7 @@
       +   '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'
       +     escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : (telegramUser && telegramUser.username ? "@"+telegramUser.username : ""))
       +   '"></div>'
-      + '<p class="note" style="margin-top:-6px;" data-i18n="profile.telegramHint">Guruhda yukni olganda "✓ Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
+      + '<p class="note" style="margin-top:-6px;" data-i18n="profile.telegramHint">Guruhda yukni olganda "Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
 
       + '<div class="edit-section-heading" data-i18n="profile.editVehicleGroup">Transport</div>'
       + '<div class="field"><label for="fVehicleType" data-i18n="order.truckTypeLabel">Mashina turi</label>'
@@ -4263,26 +4441,32 @@
        - Photos are inline data: URLs (no blob storage) — same trick and
          same constraint as the profile avatar.
      ============================================================ */
+  /* Faqat yuk tashiydigan transport. Yengil avtomobil, mikroavtobus,
+     avtobus va motosikl bozordan olib tashlandi — YO'LDA yuk platformasi,
+     shuning uchun bu yerda faqat yuk texnikasi sotiladi. */
   var TRUCK_CATEGORIES = [
-    { id: "YENGIL",       emoji: "🚗", labelKey: "trucks.catYengil",       label: "Yengil" },
-    { id: "YUK",          emoji: "🚛", labelKey: "trucks.catYuk",          label: "Yuk" },
-    { id: "MIKROAVTOBUS", emoji: "🚐", labelKey: "trucks.catMikroavtobus", label: "Mikroavtobus" },
-    { id: "FURGON",       emoji: "🚚", labelKey: "trucks.catFurgon",       label: "Furgon" },
-    { id: "AVTOBUS",      emoji: "🚌", labelKey: "trucks.catAvtobus",      label: "Avtobus" },
-    { id: "MAXSUS",       emoji: "🚜", labelKey: "trucks.catMaxsus",       label: "Maxsus texnika" },
-    { id: "MOTOSIKL",     emoji: "🏍️", labelKey: "trucks.catMotosikl",     label: "Motosikl" },
-    { id: "BOSHQA",       emoji: "🚘", labelKey: "trucks.catBoshqa",       label: "Boshqa" }
+    { id: "YUK",          icon: "iconCatYuk",          labelKey: "trucks.catYuk",          label: "Yuk mashinasi" },
+    { id: "FURGON",       icon: "iconCatFurgon",       labelKey: "trucks.catFurgon",       label: "Furgon" },
+    { id: "TIRKAMA",      icon: "iconCatTirkama",      labelKey: "trucks.catTirkama",      label: "Tirkama" },
+    { id: "SAMOSVAL",     icon: "iconCatSamosval",     labelKey: "trucks.catSamosval",     label: "Samosval" },
+    { id: "REFRIJERATOR", icon: "iconCatRefrijerator", labelKey: "trucks.catRefrijerator", label: "Refrijerator" },
+    { id: "EVAKUATOR",    icon: "iconCatEvakuator",    labelKey: "trucks.catEvakuator",    label: "Evakuator" },
+    { id: "MAXSUS",       icon: "iconCatMaxsus",       labelKey: "trucks.catMaxsus",       label: "Maxsus texnika" },
+    { id: "BOSHQA",       icon: "iconCatBoshqa",       labelKey: "trucks.catBoshqa",       label: "Boshqa yuk texnikasi" }
   ];
-  // Categories where commercial/truck-specific fields are the relevant ones.
-  // Drives which fields the post wizard shows and which specs the detail
-  // page lists — YO'LDA is a logistics platform first, so these lead.
-  var COMMERCIAL_CATEGORIES = ["YUK", "FURGON", "MAXSUS", "AVTOBUS"];
-  function isCommercialCategory(c){ return COMMERCIAL_CATEGORIES.indexOf(c) !== -1; }
+  /* Bozor yuk texnikasiga qisqartirilgunga qadar joylangan e'lonlar hali
+     ham o'z nomi bilan ko'rinsin. Yangi e'lon bu turkumlarda ochilmaydi —
+     ro'yxatda ham yo'q, server ham qabul qilmaydi. */
+  var LEGACY_TRUCK_CATEGORIES = {
+    YENGIL: "Yengil avtomobil", MIKROAVTOBUS: "Mikroavtobus",
+    AVTOBUS: "Avtobus", MOTOSIKL: "Motosikl"
+  };
 
+  /* Kuzov turlari ham faqat yuk transportiniki. */
   var TRUCK_BODY_LABELS = {
-    SEDAN: "Sedan", SUV: "SUV", UNIVERSAL: "Universal", HATCHBACK: "Hatchback",
-    FURA: "Fura", BORT: "Bort", FURGON_KUZOV: "Furgon", REF: "Ref",
-    MIKROAVTOBUS_KUZOV: "Mikroavtobus", MAXSUS_KUZOV: "Maxsus texnika"
+    FURA: "Fura", TENT: "Tent", BORT: "Bort", FURGON_KUZOV: "Furgon",
+    REF: "Refrijerator", SAMOSVAL_KUZOV: "Samosval", SISTERNA: "Sisterna",
+    AVTOVOZ: "Avtovoz", TRALL: "Trall", MAXSUS_KUZOV: "Maxsus texnika"
   };
   var TRUCK_FUEL_LABELS = { DIZEL: "Dizel", BENZIN: "Benzin", GAZ: "Gaz", GIBRID: "Gibrid", ELEKTR: "Elektr" };
   var TRUCK_TRANSMISSION_LABELS = { MEXANIKA: "Mexanika", AVTOMAT: "Avtomat", ROBOT: "Robot", BOSHQA: "Boshqa" };
@@ -4320,11 +4504,12 @@
 
   function truckCategoryLabel(id){
     var c = TRUCK_CATEGORIES.filter(function(x){ return x.id === id; })[0];
-    return c ? (t(c.labelKey) || c.label) : id;
+    if(c) return t(c.labelKey) || c.label;
+    return LEGACY_TRUCK_CATEGORIES[id] || id;
   }
-  function truckCategoryEmoji(id){
+  function truckCategoryIcon(id){
     var c = TRUCK_CATEGORIES.filter(function(x){ return x.id === id; })[0];
-    return c ? c.emoji : "🚘";
+    return icon(c ? c.icon : "iconCatBoshqa");
   }
   function isTruckFav(id){ return truckFavIds.indexOf(id) !== -1; }
 
@@ -4355,7 +4540,7 @@
     if(!row) return;
     row.innerHTML = TRUCK_CATEGORIES.map(function(c){
       return '<button type="button" class="truck-category-item'+(trucksState.category === c.id ? " active" : "")+'" data-truck-cat="'+c.id+'">'
-        + '<span class="tci-emoji">'+c.emoji+'</span>'
+        + '<span class="tci-emoji">'+icon(c.icon)+'</span>'
         + '<span data-i18n="'+c.labelKey+'">'+c.label+'</span>'
         + '</button>';
     }).join("");
@@ -4392,7 +4577,7 @@
       +   (tk.verified ? '<span class="tc-badge verified" data-i18n="trucks.badgeVerified">Tekshirilgan</span>' : '')
       +   (isFresh ? '<span class="tc-badge fresh" data-i18n="trucks.badgeNew">Yangi</span>' : '')
       + '</div>'
-      + '<button type="button" class="tc-fav" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+(fav ? '♥' : '♡')+'</button>'
+      + '<button type="button" class="tc-fav" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
       + '<div class="tc-photo">'+(photo ? '<img src="'+photo+'" alt="" loading="lazy">' : icon("iconTruck"))+'</div>'
       + '<div class="tc-body">'
       +   '<div class="tc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
@@ -4836,14 +5021,14 @@
       +     (tk.priceType === "NEGOTIABLE" ? '<div class="tc-meta" data-i18n="trucks.negotiable">Kelishiladi</div>' : '')
       +     '<h3 class="card-title" style="margin:var(--s2) 0 0;">'+escapeHtml(tk.brand)+'</h3>'
       +   '</div>'
-      +   '<button type="button" class="tc-fav" style="position:static;flex-shrink:0;" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+(fav ? '♥' : '♡')+'</button>'
+      +   '<button type="button" class="tc-fav" style="position:static;flex-shrink:0;" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
       + '</div>'
       + '<div class="tc-meta" style="margin:var(--s2) 0 var(--s4);">'
       +   escapeHtml(truckRelativeTime(tk.createdAt))
       +   ' · ' + escapeHtml(String(tk.viewCount || 0)) + ' ' + escapeHtml(t("trucks.views") || "ko'rildi")
       + '</div>'
       + '<div class="lc-meta" style="margin-bottom:var(--s4);">'
-      +   '<span>'+truckCategoryEmoji(tk.category)+' '+escapeHtml(truckCategoryLabel(tk.category))+'</span>'
+      +   '<span>'+truckCategoryIcon(tk.category)+' '+escapeHtml(truckCategoryLabel(tk.category))+'</span>'
       +   '<span>'+icon("iconMap")+' '+escapeHtml(tk.city)+'</span>'
       + '</div>'
 
@@ -4863,7 +5048,7 @@
       +   '<div style="flex:1;min-width:0;">'
       +     '<div class="sc-name">'+escapeHtml(tk.sellerName)+(tk.sellerVerified ? verifyBadgeSvg("profile-name-badge") : '')+'</div>'
       +     '<div class="sc-meta">'
-      +       (ratingLabel ? '★ '+ratingLabel+' · ' : '')
+      +       (ratingLabel ? icon("iconStar","filled")+' '+ratingLabel+' · ' : '')
       +       escapeHtml(String(tk.sellerListingCount || 0))+' '+escapeHtml(t("trucks.listingsCount") || "ta e'lon")
       +       (joinedYear ? ' · '+escapeHtml(String(joinedYear))+(t("trucks.sinceYear") || "-yildan beri") : '')
       +     '</div>'
@@ -4876,11 +5061,10 @@
       +   icon("iconPhone")+' '+escapeHtml(tk.phone)
       + '</a>'
 
-      // YO'LDA-specific: from a commercial vehicle, jump straight into the
-      // load marketplace this app already has.
-      + (isCommercialCategory(tk.category)
-          ? '<button type="button" class="btn ghost" id="btnTruckFindLoads" style="margin-top:var(--s3);">'+icon("iconBox")+' <span data-i18n="trucks.findLoads">Bu mashina uchun mos yuklarni ko\'rish</span></button>'
-          : '')
+      // YO'LDA-specific: from a listing, jump straight into the load
+      // marketplace this app already has. Every category here is freight
+      // transport, so this always applies.
+      + '<button type="button" class="btn ghost" id="btnTruckFindLoads" style="margin-top:var(--s3);">'+icon("iconBox")+' <span data-i18n="trucks.findLoads">Bu mashina uchun mos yuklarni ko\'rish</span></button>'
 
       + (isMine
           ? '<div class="edit-section-heading" style="margin-top:var(--s6);" data-i18n="trucks.manageHeading">E\'lonni boshqarish</div>'
@@ -5040,7 +5224,7 @@
     return '<div class="wizard-steps">' + SELL_TRUCK_STEPS.map(function(s, i){
       var n = i + 1;
       var cls = n < sellTruckStep ? "done" : (n === sellTruckStep ? "active" : "");
-      var dot = n < sellTruckStep ? "✓" : String(n);
+      var dot = n < sellTruckStep ? icon("iconCheckLine") : String(n);
       var line = i < SELL_TRUCK_STEPS.length - 1 ? '<div class="wizard-line'+(n < sellTruckStep ? ' done' : '')+'"></div>' : '';
       return '<div class="wizard-step '+cls+'"><div class="ws-dot">'+dot+'</div><div class="ws-label" data-i18n="'+s.labelKey+'">'+s.label+'</div></div>' + line;
     }).join("") + '</div>';
@@ -5052,7 +5236,7 @@
     row.innerHTML = sellTruckPhotos.map(function(p, i){
         return '<div class="photo-picker-thumb">'
           + '<img src="'+p+'" alt="">'
-          + '<button type="button" class="pp-remove" data-remove-photo="'+i+'" aria-label="O\'chirish">✕</button>'
+          + '<button type="button" class="pp-remove" data-remove-photo="'+i+'" aria-label="O\'chirish">'+icon("iconClose")+'</button>'
           + (i === 0 ? '<span class="tc-badge verified" style="position:absolute;bottom:2px;left:2px;font-size:8px;" data-i18n="trucks.coverPhoto">Asosiy</span>' : '')
           + '</div>';
       }).join("")
@@ -5093,7 +5277,7 @@
         + '<div class="cargo-grid">'
         + TRUCK_CATEGORIES.map(function(c){
             return '<button type="button" class="cargo-opt'+(d.category === c.id ? " sel" : "")+'" data-sell-cat="'+c.id+'">'
-              + '<span class="ic">'+c.emoji+'</span>'
+              + '<span class="ic">'+icon(c.icon)+'</span>'
               + '<span style="font-size:13px;font-weight:600;" data-i18n="'+c.labelKey+'">'+c.label+'</span>'
               + '</button>';
           }).join("")
@@ -5102,7 +5286,6 @@
     }
 
     if(sellTruckStep === 2){
-      var commercial = isCommercialCategory(d.category);
       return '<div class="wizard-panel">'
         + '<h3 class="card-title" data-i18n="trucks.stepDetailsTitle">Mashina ma\'lumotlari</h3>'
         + '<div class="field"><label for="fTruckBrand" data-i18n="trucks.brandLabel">Marka va model</label>'
@@ -5124,23 +5307,21 @@
         +   '<div class="field"><label for="fTruckEnginePower" data-i18n="trucks.enginePower">Ot kuchi</label>'
         +     '<input type="number" id="fTruckEnginePower" min="0" placeholder="480" value="'+esc(d.enginePowerHp)+'"></div>'
         + '</div>'
-        // Truck-specific fields, only for commercial categories — YO'LDA's
-        // differentiator, and pointless clutter on a sedan.
-        + (commercial
-            ? '<div class="edit-section-heading" data-i18n="trucks.commercialHeading">Yuk mashinasi ma\'lumotlari</div>'
-              + '<div class="row2">'
-              +   '<div class="field"><label for="fTruckCapacity" data-i18n="trucks.capacity">Yuk ko\'tarish (tonna)</label>'
-              +     '<input type="number" id="fTruckCapacity" min="0" step="0.5" placeholder="20" value="'+esc(d.capacityTon)+'"></div>'
-              +   '<div class="field"><label for="fTruckAxles" data-i18n="trucks.axles">O\'qlar soni</label>'
-              +     '<input type="number" id="fTruckAxles" min="1" max="12" placeholder="3" value="'+esc(d.axles)+'"></div>'
-              + '</div>'
-              + '<div class="field"><label for="fTruckCabType" data-i18n="trucks.cabType">Kabina turi</label>'
-              +   '<input type="text" id="fTruckCabType" maxlength="40" placeholder="masalan: Space Cab" value="'+esc(d.cabType)+'"></div>'
-              + '<div class="chip-row" style="margin-bottom:var(--s4);">'
-              +   '<button type="button" class="chip'+(d.hasTrailer?" active":"")+'" data-sell-flag="hasTrailer" data-i18n="trucks.hasTrailer">Pritsep bilan</button>'
-              +   '<button type="button" class="chip'+(d.refrigerated?" active":"")+'" data-sell-flag="refrigerated" data-i18n="trucks.refrigerated">Ref (sovutgichli)</button>'
-              + '</div>'
-            : '')
+        // Bozorda faqat yuk texnikasi bo'lgani uchun bu maydonlar
+        // hamma turkumga tegishli — YO'LDA'ni ajratib turadigan qism.
+        + '<div class="edit-section-heading" data-i18n="trucks.commercialHeading">Yuk mashinasi ma\'lumotlari</div>'
+        + '<div class="row2">'
+        +   '<div class="field"><label for="fTruckCapacity" data-i18n="trucks.capacity">Yuk ko\'tarish (tonna)</label>'
+        +     '<input type="number" id="fTruckCapacity" min="0" step="0.5" placeholder="20" value="'+esc(d.capacityTon)+'"></div>'
+        +   '<div class="field"><label for="fTruckAxles" data-i18n="trucks.axles">O\'qlar soni</label>'
+        +     '<input type="number" id="fTruckAxles" min="1" max="12" placeholder="3" value="'+esc(d.axles)+'"></div>'
+        + '</div>'
+        + '<div class="field"><label for="fTruckCabType" data-i18n="trucks.cabType">Kabina turi</label>'
+        +   '<input type="text" id="fTruckCabType" maxlength="40" placeholder="masalan: Space Cab" value="'+esc(d.cabType)+'"></div>'
+        + '<div class="chip-row" style="margin-bottom:var(--s4);">'
+        +   '<button type="button" class="chip'+(d.hasTrailer?" active":"")+'" data-sell-flag="hasTrailer" data-i18n="trucks.hasTrailer">Pritsep bilan</button>'
+        +   '<button type="button" class="chip'+(d.refrigerated?" active":"")+'" data-sell-flag="refrigerated" data-i18n="trucks.refrigerated">Ref (sovutgichli)</button>'
+        + '</div>'
         + '</div>';
     }
 
@@ -5465,7 +5646,7 @@
     if(wasFav) truckFavIds = truckFavIds.filter(function(x){ return x !== id; });
     else truckFavIds.push(id);
     document.querySelectorAll('[data-truck-fav="'+id+'"]').forEach(function(b){
-      b.textContent = wasFav ? "♡" : "♥";
+      b.innerHTML = icon("iconHeart", wasFav ? "" : "filled");
     });
 
     fetch("/api/trucks?action=" + (wasFav ? "unfavorite" : "favorite"), {
@@ -5497,7 +5678,19 @@
   var chatSearchDebounce = null;
   var chatEditingId = null;
   var chatLastSeenId = null;
+  /* Reaksiya qiymati KV'da emoji satr sifatida saqlanadi — o'zgartirmaymiz,
+     shunda eski reaksiyalar ham joyida qoladi. Ekranda esa emoji emas,
+     shu ikonkalar chiziladi. */
   var CHAT_EMOJIS = ["👍","❤️","😂","😮","😢","🙏"];
+  var CHAT_REACTION_ICONS = {
+    "👍": "iconReactThumb", "❤️": "iconHeart", "😂": "iconReactLaugh",
+    "😮": "iconReactWow", "😢": "iconReactSad", "🙏": "iconStar"
+  };
+  /* Noma'lum (eski) reaksiya ham chizilsin — jilmayish zaxira variant. */
+  function chatReactionIcon(emoji){
+    var id = CHAT_REACTION_ICONS[emoji] || "iconReactSmile";
+    return icon(id, (id === "iconHeart" || id === "iconStar") ? "filled" : "");
+  }
 
   function formatChatTime(ts){
     var d = new Date(ts);
@@ -5632,13 +5825,13 @@
         + '</div>';
     }
     var reactionsHtml = (m.reactions || []).map(function(r){
-      return '<button type="button" class="cb-react-pill'+(r.mine ? " mine" : "")+'" data-id="'+m.id+'" data-emoji="'+r.emoji+'">'+r.emoji+' '+r.count+'</button>';
-    }).join("") + '<button type="button" class="cb-react-add" data-id="'+m.id+'">😊</button>';
+      return '<button type="button" class="cb-react-pill'+(r.mine ? " mine" : "")+'" data-id="'+m.id+'" data-emoji="'+r.emoji+'">'+chatReactionIcon(r.emoji)+' '+r.count+'</button>';
+    }).join("") + '<button type="button" class="cb-react-add" data-id="'+m.id+'">'+icon("iconReactSmile")+'</button>';
 
     var metaHtml = formatChatTime(m.at) + (m.editedAt ? " · tahrirlangan" : "");
     if(m.fromMe){
-      metaHtml += ' <button type="button" class="cb-edit" data-id="'+m.id+'" data-text="'+escapeHtml(m.text)+'">✏️</button>'
-        + '<button type="button" class="cb-del" data-id="'+m.id+'">🗑</button>';
+      metaHtml += ' <button type="button" class="cb-edit" data-id="'+m.id+'" data-text="'+escapeHtml(m.text)+'">'+icon("iconEdit")+'</button>'
+        + '<button type="button" class="cb-del" data-id="'+m.id+'">'+icon("iconTrash")+'</button>';
     }
 
     return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+'" data-id="'+m.id+'">'
@@ -5660,7 +5853,7 @@
         var picker = document.createElement("span");
         picker.className = "cb-emoji-picker";
         picker.innerHTML = CHAT_EMOJIS.map(function(e){
-          return '<button type="button" class="cb-emoji-opt" data-id="'+id+'" data-emoji="'+e+'">'+e+'</button>';
+          return '<button type="button" class="cb-emoji-opt" data-id="'+id+'" data-emoji="'+e+'">'+chatReactionIcon(e)+'</button>';
         }).join("");
         btn.replaceWith(picker);
         picker.querySelectorAll(".cb-emoji-opt").forEach(function(opt){
@@ -6193,11 +6386,11 @@
     return '<div class="load-card" data-code="'+escapeHtml(o.code)+'">'
       + (hasBadgeRow
           ? '<div class="lc-badges">'
-            + (o._match != null ? '<span class="match-badge">🔥 '+o._match+'% <span data-i18n="loads.matchShort">mos</span></span>' : '')
+            + (o._match != null ? '<span class="match-badge">'+icon("iconFlame")+' '+o._match+'% <span data-i18n="loads.matchShort">mos</span></span>' : '')
             + (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
             + '</div>'
           : '')
-      + '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+(fav?'♥':'♡')+'</button>'
+      + '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
       + '<div class="lc-route">'+escapeHtml(o.fromCity)+'<span class="arrow">→</span>'+escapeHtml(o.toCity)+'</div>'
       + '<div class="lc-price">'+formatNum(o.amount)+' <span data-i18n="loads.sum">so\'m</span></div>'
       + '<div class="lc-meta">'
@@ -6275,7 +6468,7 @@
       });
   }
 
-  /* ---------- Home tab: "🔥 Siz uchun mos yuklar" ---------- */
+  /* ---------- Home tab: "Siz uchun mos yuklar" ---------- */
   function renderHomeMatch(){
     var wrap = document.getElementById("homeMatchWrap");
     var list = document.getElementById("homeMatchList");
@@ -6359,8 +6552,8 @@
       '<div class="detail-topbar">'
       +   '<button type="button" class="dt-icon-btn" id="btnDetailBack" aria-label="Orqaga">&larr;</button>'
       +   '<div style="display:flex;gap:8px;">'
-      +     '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+(fav?'♥':'♡')+'</button>'
-      +     '<button type="button" class="dt-icon-btn" id="btnDetailShare" aria-label="Ulashish">↗</button>'
+      +     '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      +     '<button type="button" class="dt-icon-btn" id="btnDetailShare" aria-label="Ulashish">'+icon("iconShare")+'</button>'
       +   '</div>'
       + '</div>'
       + '<div class="detail-route-big">'+escapeHtml(d.fromCity)+' <span class="arrow">→</span> '+escapeHtml(d.toCity)+'</div>'
@@ -6388,7 +6581,7 @@
     if(favBtn) favBtn.addEventListener("click", function(){
       var now = toggleFavorite(d.code);
       favBtn.classList.toggle("on", now);
-      favBtn.textContent = now ? "♥" : "♡";
+      favBtn.innerHTML = icon("iconHeart", now ? "filled" : "");
     });
 
     var shareBtn = document.getElementById("btnDetailShare");
@@ -6558,7 +6751,11 @@
     return Math.max(MIN_PRICE, rounded);
   }
   function formatNum(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
-  function icon(id){ return '<svg class="ic-svg" aria-hidden="true"><use href="#'+id+'"></use></svg>'; }
+  /* Sprite'dagi belgini chizadi. `cls` — qo'shimcha sinf, masalan
+     "filled" (yurak/yulduz ichi bo'yalgan holati). */
+  function icon(id, cls){
+    return '<svg class="ic-svg'+(cls ? ' '+cls : '')+'" aria-hidden="true"><use href="#'+id+'"></use></svg>';
+  }
   /** Small green check badge next to a verified profile's @username in chat (search/inbox/thread). */
   function chatVerifiedBadgeHtml(verified){
     if(!verified) return "";
@@ -6631,7 +6828,7 @@
     return '<div class="wizard-steps">' + WIZARD_STEPS.map(function(s, i){
       var n = i + 1;
       var cls = n < state.step ? "done" : (n === state.step ? "active" : "");
-      var dot = n < state.step ? "✓" : String(n);
+      var dot = n < state.step ? icon("iconCheckLine") : String(n);
       var line = i < WIZARD_STEPS.length - 1 ? '<div class="wizard-line'+(n < state.step ? ' done' : '')+'"></div>' : '';
       return '<div class="wizard-step '+cls+'"><div class="ws-dot">'+dot+'</div><div class="ws-label" data-i18n="'+s.labelKey+'">'+s.label+'</div></div>' + line;
     }).join("") + '</div>';
@@ -6797,7 +6994,7 @@
     });
 
     var driverHtml = data.driverName
-      ? '<p class="note" style="margin-top:var(--s3);">Haydovchi: <strong>'+escapeHtml(data.driverName)+'</strong>'+(data.driverVerified ? ' <span style="color:#16A34A;">✓ Tasdiqlangan</span>' : '')+'</p>'
+      ? '<p class="note" style="margin-top:var(--s3);">Haydovchi: <strong>'+escapeHtml(data.driverName)+'</strong>'+(data.driverVerified ? ' <span style="color:#16A34A;">'+icon("iconCheckLine")+' Tasdiqlangan</span>' : '')+'</p>'
       : '';
 
     var ratingHtml = '';
@@ -6805,13 +7002,13 @@
       ratingHtml = '<div style="margin-top:var(--s4);">'
         + '<p class="note" style="margin:0 0 8px;">Haydovchini baholang:</p>'
         + '<div id="starPicker" style="display:flex;gap:6px;margin-bottom:10px;">'
-        +   [1,2,3,4,5].map(function(n){ return '<button type="button" class="star-btn" data-star="'+n+'">☆</button>'; }).join("")
+        +   [1,2,3,4,5].map(function(n){ return '<button type="button" class="star-btn" data-star="'+n+'">'+icon("iconStar")+'</button>'; }).join("")
         + '</div>'
         + '<input type="text" id="fRatingComment" maxlength="300" placeholder="Izoh (ixtiyoriy)">'
         + '<button class="btn ghost" id="btnSubmitRating" disabled style="margin-top:10px;">Baho yuborish</button>'
         + '</div>';
     } else if(data.rating){
-      ratingHtml = '<p class="note" style="margin-top:var(--s3);">Siz bergan baho: '+'★'.repeat(data.rating.stars)+'☆'.repeat(5-data.rating.stars)+'</p>';
+      ratingHtml = '<p class="note" style="margin-top:var(--s3);">Siz bergan baho: '+icon("iconStar","filled").repeat(data.rating.stars)+icon("iconStar").repeat(5-data.rating.stars)+'</p>';
     }
 
     document.getElementById("trackResult").innerHTML = '<div class="track-steps">'+parts.join("")+'</div>' + driverHtml + ratingHtml;
@@ -6823,7 +7020,7 @@
         b.addEventListener("click", function(){
           selectedStar = parseInt(b.getAttribute("data-star"), 10);
           starBtns.forEach(function(sb){
-            sb.textContent = parseInt(sb.getAttribute("data-star"), 10) <= selectedStar ? "★" : "☆";
+            sb.innerHTML = icon("iconStar", parseInt(sb.getAttribute("data-star"), 10) <= selectedStar ? "filled" : "");
           });
           document.getElementById("btnSubmitRating").disabled = false;
         });
@@ -7076,7 +7273,7 @@
       e.stopPropagation();
       var nowFav = toggleFavorite(favBtn.getAttribute("data-fav"));
       favBtn.classList.toggle("on", nowFav);
-      favBtn.textContent = nowFav ? "♥" : "♡";
+      favBtn.innerHTML = icon("iconHeart", nowFav ? "filled" : "");
       return;
     }
     var card = e.target.closest(".load-card[data-code]");
@@ -7094,7 +7291,7 @@
       title: t("order.howTitle") || "Qanday ishlaydi?",
       html: '<ol class="how-steps">'
         + '<li data-i18n="order.how1">Formani to\'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>'
-        + '<li data-i18n="order.how2">Birinchi bo\'lib <strong>"✅ Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>'
+        + '<li data-i18n="order.how2">Birinchi bo\'lib <strong>"Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>'
         + '<li data-i18n="order.how3">Haydovchi sizga qo\'ng\'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>'
         + '<li data-i18n="order.how4">Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo\'limidan yozing.</li>'
         + '</ol>',
@@ -7295,6 +7492,19 @@
     revealEls.forEach(function(el){ io.observe(el); });
   } else {
     revealEls.forEach(function(el){ el.classList.add("in"); });
+  }
+
+  /* ---------- O'rnatiladigan ilova (PWA) ----------
+     Service worker faqat ilova qobig'ini keshlaydi (sw.js'dagi izohga
+     qarang) — /api/ ga tegmaydi, shuning uchun Google bilan kirish va
+     boshqa jonli so'rovlar avvalgidek ishlayveradi. Ro'yxatdan o'tkazish
+     "load" dan keyin: birinchi ochilish tezligini sekinlashtirmasin. */
+  if("serviceWorker" in navigator && location.protocol === "https:"){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("/sw.js").catch(function(){
+        /* Ro'yxatdan o'tmasa ham sayt oddiy sayt sifatida ishlayveradi. */
+      });
+    });
   }
 
 })();
