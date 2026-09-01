@@ -12,15 +12,20 @@
  *   GET  /api/admin-data?resource=messages
  *   GET  /api/admin-data?resource=reports
  *   GET  /api/admin-data?resource=trucks
+ *   GET  /api/admin-data?resource=truck&id=<id>   (one listing, with photos)
  *   POST /api/admin-data?action=update-report   { id, status }
  *   POST /api/admin-data?action=verify-driver   { email, verified }
  *   POST /api/admin-data?action=update-user     { email, ...any profile field }
  *   POST /api/admin-data?action=update-truck    { id, verified?, promoted?, status?, rejectionReason? } | { id, remove: true }
+ *   GET  /api/admin-data?resource=settings
+ *   POST /api/admin-data?action=update-settings { platformName?, supportPhone?, ... }
  *
- * All of these require the signed cookie set by /api/admin-login.
+ * All of these require the signed cookie set by /api/admin-login, and each
+ * one is gated on the caller's role — see READ_PERMISSIONS /
+ * WRITE_PERMISSIONS below and the permission table in lib/adminAuth.js.
  */
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from '../lib/kv.js';
-import { isAdminAuthed } from '../lib/adminAuth.js';
+import { requireAdmin } from '../lib/adminAuth.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -155,6 +160,24 @@ const getTrucks = async (res) => {
 };
 
 /**
+ * One listing *with* its photos — the list above strips them because
+ * hundreds of inline data: URLs would be a multi-megabyte response, but
+ * approving a listing without looking at its photos isn't moderation, so
+ * the detail screen fetches the full record for the single listing open.
+ */
+const getTruck = async (req, res) => {
+  const id = String(req.query.id || '');
+  if (!id) return res.status(400).json({ error: 'E’lon topilmadi' });
+  const raw = await kvGet(`truck:${id}`);
+  if (!raw) return res.status(404).json({ error: 'E’lon topilmadi' });
+  try {
+    return res.status(200).json({ truck: JSON.parse(raw) });
+  } catch {
+    return res.status(500).json({ error: 'Yozuv buzilgan' });
+  }
+};
+
+/**
  * POST ?action=update-truck — the admin-only side of a Mashinalar listing.
  * Deliberately narrow: only the trust/moderation flags an admin owns
  * (`verified`, `promoted`, `status`) plus outright removal. Listing content
@@ -267,7 +290,7 @@ const verifyDriver = async (req, res) => {
  * chosen user's profile, including the rating (ratingCount/ratingSum
  * directly, not just the verified flag verifyDriver above handles) and
  * a ban toggle. Unlike /api/profile, this trusts the admin session
- * (isAdminAuthed below), not the target user's own Google/Telegram
+ * (requireAdmin, lib/adminAuth.js), not the target user's own Google/Telegram
  * identity — `email` in the body is just the profile:<email> key to
  * edit, taken from whatever ?resource=users already listed.
  *
@@ -399,26 +422,111 @@ const updateUser = async (req, res) => {
   return res.status(200).json({ ok: true, profile: next });
 };
 
-export default async function handler(req, res) {
-  if (!isAdminAuthed(req)) return res.status(401).json({ error: 'Kirish kerak' });
+/**
+ * Platform settings, stored as one JSON blob. Read by the admin panel and
+ * — for the two public ones — by /api/config, so changing them here really
+ * does change the public site rather than just this screen.
+ */
+const SETTINGS_KEY = 'admin_settings';
+const DEFAULT_SETTINGS = {
+  platformName: "YO'LDA",
+  supportPhone: '',
+  supportTelegram: '',
+  commissionPercent: 0,
+  maintenanceMode: false,
+  maintenanceMessage: '',
+};
 
+const readSettings = async () => {
+  const raw = await kvGet(SETTINGS_KEY);
+  let stored = {};
+  try {
+    const parsed = JSON.parse(raw || '{}');
+    if (parsed && typeof parsed === 'object') stored = parsed;
+  } catch {
+    // fall through to defaults
+  }
+  return { ...DEFAULT_SETTINGS, ...stored };
+};
+
+const getSettings = async (res) => res.status(200).json({ settings: await readSettings() });
+
+const updateSettings = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const next = await readSettings();
+
+  if (body.platformName !== undefined) next.platformName = String(body.platformName).trim().slice(0, 60) || DEFAULT_SETTINGS.platformName;
+  if (body.supportPhone !== undefined) next.supportPhone = String(body.supportPhone).trim().slice(0, 30);
+  if (body.supportTelegram !== undefined) next.supportTelegram = String(body.supportTelegram).trim().replace(/^@/, '').slice(0, 40);
+  if (body.maintenanceMessage !== undefined) next.maintenanceMessage = String(body.maintenanceMessage).trim().slice(0, 200);
+  if (body.maintenanceMode !== undefined) next.maintenanceMode = Boolean(body.maintenanceMode);
+  if (body.commissionPercent !== undefined) {
+    const pct = Number(body.commissionPercent);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      return res.status(400).json({ error: 'Komissiya 0–100 oralig‘ida bo‘lishi kerak' });
+    }
+    next.commissionPercent = Math.round(pct * 100) / 100;
+  }
+
+  const saved = await kvSet(SETTINGS_KEY, JSON.stringify(next));
+  if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  return res.status(200).json({ ok: true, settings: next });
+};
+
+/** Read permission required per GET resource. */
+const READ_PERMISSIONS = {
+  orders: 'orders:read',
+  users: 'users:read',
+  messages: 'messages:read',
+  reports: 'reports:read',
+  trucks: 'trucks:read',
+  truck: 'trucks:read',
+  settings: 'settings:read',
+};
+
+/** Write permission required per POST action. */
+const WRITE_PERMISSIONS = {
+  'update-report': 'reports:write',
+  'verify-driver': 'users:write',
+  'update-user': 'users:write',
+  'update-truck': 'trucks:write',
+  'update-settings': 'settings:write',
+};
+
+export default async function handler(req, res) {
   if (req.method === 'GET') {
     const resource = String(req.query.resource || '');
+    const permission = READ_PERMISSIONS[resource];
+    if (!permission) {
+      // Still require a session before saying anything about the request.
+      if (!requireAdmin(req, res)) return;
+      return res.status(400).json({ error: 'Noto‘g‘ri resource' });
+    }
+    if (!requireAdmin(req, res, permission)) return;
+
     if (resource === 'orders') return getOrders(res);
     if (resource === 'users') return getUsers(res);
     if (resource === 'messages') return getMessages(res);
     if (resource === 'reports') return getReports(res);
     if (resource === 'trucks') return getTrucks(res);
-    return res.status(400).json({ error: 'Noto‘g‘ri resource' });
+    if (resource === 'truck') return getTruck(req, res);
+    if (resource === 'settings') return getSettings(res);
   }
 
   if (req.method === 'POST') {
     const action = String(req.query.action || '');
+    const permission = WRITE_PERMISSIONS[action];
+    if (!permission) {
+      if (!requireAdmin(req, res)) return;
+      return res.status(400).json({ error: 'Noto‘g‘ri action' });
+    }
+    if (!requireAdmin(req, res, permission)) return;
+
     if (action === 'update-report') return updateReport(req, res);
     if (action === 'verify-driver') return verifyDriver(req, res);
     if (action === 'update-user') return updateUser(req, res);
     if (action === 'update-truck') return updateTruck(req, res);
-    return res.status(400).json({ error: 'Noto‘g‘ri action' });
+    if (action === 'update-settings') return updateSettings(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
