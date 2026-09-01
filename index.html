@@ -1471,6 +1471,31 @@
 
   .similar-trucks-row{display:flex;gap:var(--s3);overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
   .similar-trucks-row .truck-card{flex:0 0 150px;}
+
+  /* Seller-only notice explaining why a listing isn't public yet. */
+  .truck-moderation{
+    display:flex;flex-direction:column;gap:3px;padding:var(--s3) var(--s4);
+    border-radius:var(--r-md);margin-bottom:var(--s3);font-size:12.5px;line-height:1.5;
+  }
+  .truck-moderation strong{font-size:13px;}
+  .truck-moderation .tm-reason{margin-top:4px;font-style:italic;opacity:0.9;}
+  .truck-moderation.pending{background:rgba(245,158,11,0.12);color:#92610A;}
+  .truck-moderation.rejected{background:rgba(220,38,38,0.12);color:#B91C1C;}
+  :root[data-theme="dark"] .truck-moderation.pending{color:#FCD34D;}
+  :root[data-theme="dark"] .truck-moderation.rejected{color:#FCA5A5;}
+
+  /* Status chip on a card, shown only in the seller's own listings view. */
+  .tc-status{
+    display:inline-block;margin-top:3px;font-size:10px;font-weight:700;
+    padding:2px 7px;border-radius:var(--r-pill);
+  }
+  .tc-status.PENDING{background:rgba(245,158,11,0.16);color:#92610A;}
+  .tc-status.REJECTED{background:rgba(220,38,38,0.14);color:#B91C1C;}
+  .tc-status.ACTIVE{background:rgba(22,163,74,0.14);color:#15803D;}
+  .tc-status.PAUSED, .tc-status.SOLD{background:var(--paper-dark);color:var(--muted);}
+  :root[data-theme="dark"] .tc-status.PENDING{color:#FCD34D;}
+  :root[data-theme="dark"] .tc-status.REJECTED{color:#FCA5A5;}
+  :root[data-theme="dark"] .tc-status.ACTIVE{color:#86EFAC;}
 </style>
 </head>
 <body>
@@ -1989,8 +2014,11 @@
       "trucks.mileageLabel": "Probeg (km)", "trucks.mileageShort": "Probeg", "trucks.priceLabel": "Narx (so'm)",
       "trucks.descLabel": "Tavsif", "trucks.descHeading": "Tavsif",
       "trucks.deleteBtn": "E'lonni o'chirish", "trucks.deleteConfirm": "E'lonni o'chirasizmi?",
-      "trucks.editBtn": "Tahrirlash", "trucks.saved": "Saqlandi", "trucks.statusUpdated": "Holat yangilandi",
-      "trucks.published": "E'lon joylandi", "trucks.needSignIn": "Avval Google yoki Telegram orqali kiring",
+      "trucks.editBtn": "Tahrirlash", "trucks.saved": "Saqlandi va qayta tekshiruvga yuborildi", "trucks.statusUpdated": "Holat yangilandi",
+      "trucks.published": "E'lon tekshiruvga yuborildi", "trucks.needSignIn": "Avval Google yoki Telegram orqali kiring",
+      "trucks.pendingToastNote": "Administrator tasdiqlagach hammaga ko'rinadi",
+      "trucks.pendingTitle": "Tekshiruvda", "trucks.pendingNote": "E'loningiz administrator tasdiqlaganidan keyin hammaga ko'rinadi.",
+      "trucks.rejectedTitle": "Rad etilgan", "trucks.rejectedNote": "E'lonni tahrirlab, qayta yuborishingiz mumkin.",
       "trucks.emptyTitle": "Bu filtrlar bo'yicha mashina topilmadi.", "trucks.emptySub": "Filtrlarni o'zgartirib ko'ring.",
       "trucks.emptyMine": "Sizda hali e'lonlar yo'q.", "trucks.emptyFavs": "Saqlangan mashinalar yo'q.",
       "trucks.photosLabel": "Rasmlar (ixtiyoriy, 5 tagacha)", "trucks.detailTitle": "Mashina haqida",
@@ -2229,8 +2257,11 @@
       "trucks.mileageLabel": "Пробег (км)", "trucks.mileageShort": "Пробег", "trucks.priceLabel": "Цена (сум)",
       "trucks.descLabel": "Описание", "trucks.descHeading": "Описание",
       "trucks.deleteBtn": "Удалить объявление", "trucks.deleteConfirm": "Удалить объявление?",
-      "trucks.editBtn": "Редактировать", "trucks.saved": "Сохранено", "trucks.statusUpdated": "Статус обновлён",
-      "trucks.published": "Объявление размещено", "trucks.needSignIn": "Сначала войдите через Google или Telegram",
+      "trucks.editBtn": "Редактировать", "trucks.saved": "Сохранено и отправлено на повторную проверку", "trucks.statusUpdated": "Статус обновлён",
+      "trucks.published": "Объявление отправлено на проверку", "trucks.needSignIn": "Сначала войдите через Google или Telegram",
+      "trucks.pendingToastNote": "Появится после подтверждения администратором",
+      "trucks.pendingTitle": "На проверке", "trucks.pendingNote": "Объявление станет видно всем после подтверждения администратором.",
+      "trucks.rejectedTitle": "Отклонено", "trucks.rejectedNote": "Вы можете отредактировать объявление и отправить снова.",
       "trucks.emptyTitle": "По этим фильтрам машин не найдено.", "trucks.emptySub": "Попробуйте изменить фильтры.",
       "trucks.emptyMine": "У вас пока нет объявлений.", "trucks.emptyFavs": "Нет сохранённых машин.",
       "trucks.photosLabel": "Фото (необязательно, до 5 шт.)", "trucks.detailTitle": "О машине",
@@ -2469,8 +2500,11 @@
       "trucks.mileageLabel": "Mileage (km)", "trucks.mileageShort": "Mileage", "trucks.priceLabel": "Price (so'm)",
       "trucks.descLabel": "Description", "trucks.descHeading": "Description",
       "trucks.deleteBtn": "Delete listing", "trucks.deleteConfirm": "Delete this listing?",
-      "trucks.editBtn": "Edit", "trucks.saved": "Saved", "trucks.statusUpdated": "Status updated",
-      "trucks.published": "Listing posted", "trucks.needSignIn": "Sign in with Google or Telegram first",
+      "trucks.editBtn": "Edit", "trucks.saved": "Saved and sent for re-review", "trucks.statusUpdated": "Status updated",
+      "trucks.published": "Listing sent for review", "trucks.needSignIn": "Sign in with Google or Telegram first",
+      "trucks.pendingToastNote": "It goes live once an admin approves it",
+      "trucks.pendingTitle": "Under review", "trucks.pendingNote": "Your listing becomes visible to everyone once an admin approves it.",
+      "trucks.rejectedTitle": "Rejected", "trucks.rejectedNote": "You can edit the listing and submit it again.",
       "trucks.emptyTitle": "No vehicles match these filters.", "trucks.emptySub": "Try changing your filters.",
       "trucks.emptyMine": "You don't have any listings yet.", "trucks.emptyFavs": "No saved vehicles.",
       "trucks.photosLabel": "Photos (optional, up to 5)", "trucks.detailTitle": "About this vehicle",
@@ -4223,7 +4257,12 @@
   var TRUCK_CONDITION_LABELS = { YANGI: "Yangi", ISHLATILGAN: "Ishlatilgan" };
   var TRUCK_STEERING_LABELS = { CHAP: "Chap", ONG: "O'ng" };
   var TRUCK_SELLER_TYPE_LABELS = { SHAXSIY: "Shaxsiy", KOMPANIYA: "Kompaniya" };
-  var TRUCK_STATUS_LABELS = { ACTIVE: "Faol", PAUSED: "To'xtatilgan", SOLD: "Sotilgan" };
+  var TRUCK_STATUS_LABELS = {
+    PENDING: "Tekshiruvda", ACTIVE: "Faol", PAUSED: "To'xtatilgan", SOLD: "Sotilgan", REJECTED: "Rad etilgan"
+  };
+  // Statuses a seller may switch between themselves, and only on a listing
+  // that's already been approved — see the lifecycle note in api/trucks.js.
+  var TRUCK_SELLER_STATUSES = ["ACTIVE", "PAUSED", "SOLD"];
   var TRUCK_SORTS = [
     { id: "recommended", labelKey: "trucks.sortRecommended", label: "Tavsiya etilgan" },
     { id: "newest",      labelKey: "trucks.sortNewest",      label: "Eng yangi" },
@@ -4237,7 +4276,7 @@
 
   // view: "all" | "mine" | "favs" — which dataset the list is showing.
   var trucksState = {
-    view: "all", mineStatus: "ACTIVE", q: "", category: "",
+    view: "all", mineStatus: "PENDING", q: "", category: "",
     city: "", bodyType: "", fuel: "", transmission: "", condition: "", steering: "", sellerType: "",
     minPrice: null, maxPrice: null, minYear: null, maxYear: null, minMileage: null, maxMileage: null,
     documentsReady: false, credit: false, exchange: false, refrigerated: false,
@@ -4304,7 +4343,7 @@
     if(!wrap) return;
     wrap.hidden = trucksState.view !== "mine";
     if(trucksState.view !== "mine") return;
-    wrap.innerHTML = ["ACTIVE", "PAUSED", "SOLD"].map(function(s){
+    wrap.innerHTML = ["PENDING", "ACTIVE", "PAUSED", "SOLD", "REJECTED"].map(function(s){
       return '<button type="button" class="chip'+(trucksState.mineStatus === s ? " active" : "")+'" data-mine-status="'+s+'">'
         + escapeHtml(TRUCK_STATUS_LABELS[s]) + '</button>';
     }).join("");
@@ -4329,9 +4368,11 @@
       +   '<div class="tc-meta">'+escapeHtml(String(tk.year))
       +     (tk.fuel ? ' · '+escapeHtml(TRUCK_FUEL_LABELS[tk.fuel] || tk.fuel) : '')
       +     ' · '+escapeHtml(tk.city)+'</div>'
-      +   '<div class="tc-meta">'+escapeHtml(truckRelativeTime(tk.createdAt))
-      +     (trucksState.view === "mine" ? ' · '+escapeHtml(TRUCK_STATUS_LABELS[tk.status] || tk.status) : '')
-      +     '</div>'
+      +   '<div class="tc-meta">'+escapeHtml(truckRelativeTime(tk.createdAt))+'</div>'
+      +   (trucksState.view === "mine"
+            ? '<span class="tc-status '+escapeHtml(tk.status || "ACTIVE")+'">'
+              + escapeHtml(TRUCK_STATUS_LABELS[tk.status] || tk.status || "") + '</span>'
+            : '')
       + '</div>'
       + '</div>';
   }
@@ -4651,6 +4692,29 @@
   }
 
   /* ---------- Detail sheet (the "/cars/[id]" view) ---------- */
+  /**
+   * Explains a non-public status to the listing's own seller: why it isn't
+   * visible yet, and (for a rejection) what the admin said. Returns "" for
+   * an approved listing, which needs no explanation.
+   */
+  function truckModerationNoticeHtml(tk){
+    var status = tk.status || "ACTIVE";
+    if(status === "PENDING"){
+      return '<div class="truck-moderation pending">'
+        + '<strong data-i18n="trucks.pendingTitle">Tekshiruvda</strong>'
+        + '<span data-i18n="trucks.pendingNote">E\'loningiz administrator tasdiqlaganidan keyin hammaga ko\'rinadi.</span>'
+        + '</div>';
+    }
+    if(status === "REJECTED"){
+      return '<div class="truck-moderation rejected">'
+        + '<strong data-i18n="trucks.rejectedTitle">Rad etilgan</strong>'
+        + '<span data-i18n="trucks.rejectedNote">E\'lonni tahrirlab, qayta yuborishingiz mumkin.</span>'
+        + (tk.rejectionReason ? '<span class="tm-reason">'+escapeHtml(tk.rejectionReason)+'</span>' : '')
+        + '</div>';
+    }
+    return "";
+  }
+
   function truckSpecRows(tk){
     var rows = [];
     var push = function(labelKey, labelText, value){
@@ -4788,11 +4852,17 @@
 
       + (isMine
           ? '<div class="edit-section-heading" style="margin-top:var(--s6);" data-i18n="trucks.manageHeading">E\'lonni boshqarish</div>'
-            + '<div class="chip-row" style="margin-bottom:var(--s3);">'
-            +   ["ACTIVE","PAUSED","SOLD"].map(function(st){
-                  return '<button type="button" class="chip'+((tk.status||"ACTIVE") === st ? " active" : "")+'" data-truck-status="'+st+'">'+escapeHtml(TRUCK_STATUS_LABELS[st])+'</button>';
-                }).join("")
-            + '</div>'
+            + truckModerationNoticeHtml(tk)
+            // Status chips only make sense once a listing is approved —
+            // while it's PENDING/REJECTED the server refuses to change it
+            // anyway, so offering the buttons would just mislead.
+            + (TRUCK_SELLER_STATUSES.indexOf(tk.status || "ACTIVE") !== -1
+                ? '<div class="chip-row" style="margin-bottom:var(--s3);">'
+                  + TRUCK_SELLER_STATUSES.map(function(st){
+                      return '<button type="button" class="chip'+((tk.status||"ACTIVE") === st ? " active" : "")+'" data-truck-status="'+st+'">'+escapeHtml(TRUCK_STATUS_LABELS[st])+'</button>';
+                    }).join("")
+                  + '</div>'
+                : '')
             + '<button type="button" class="btn ghost" id="btnEditTruck" style="margin-bottom:var(--s2);" data-i18n="trucks.editBtn">Tahrirlash</button>'
             + '<button type="button" class="btn ghost" id="btnDeleteTruckDetail" style="color:#DC2626;" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>'
           : '<button type="button" class="link-btn" id="btnReportTruck" style="display:block;margin:var(--s5) auto 0;" data-i18n="trucks.reportBtn">Shubhali e\'lon haqida xabar berish</button>')
@@ -5301,11 +5371,21 @@
         if(note){ note.textContent = res.body.error || "Xato yuz berdi"; note.style.color = "#DC2626"; }
         return;
       }
-      toast(t(sellTruckEditingId ? "trucks.saved" : "trucks.published") || "E'lon joylandi", "", "success");
+      // Both create and edit leave the listing PENDING, so say so rather
+      // than implying it's already live.
+      toast(
+        t(sellTruckEditingId ? "trucks.saved" : "trucks.published") || "E'lon yuborildi",
+        t("trucks.pendingToastNote") || "Administrator tasdiqlagach ko'rinadi",
+        "success"
+      );
       sellTruckPhotos = [];
       sellTruckDraft = {};
       sellTruckEditingId = null;
       Sheet.close();
+      // Land on the tab the listing actually went to — otherwise the seller
+      // is looking at the public list, where a PENDING listing isn't.
+      trucksState.view = "mine";
+      trucksState.mineStatus = "PENDING";
       fetchTrucks();
     }).catch(function(){
       btn.disabled = false;

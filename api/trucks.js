@@ -16,6 +16,10 @@
  *   POST /api/trucks?action=favorite      { googleIdToken|telegramInitData, id }
  *   POST /api/trucks?action=unfavorite    { googleIdToken|telegramInitData, id }
  *
+ * Listings are moderated: create (and every later edit) leaves the listing
+ * PENDING, and only an admin approving it via /api/admin-data can make it
+ * ACTIVE and therefore publicly visible. See the status block below.
+ *
  * `photos` is up to 5 data: URLs — this app has no blob/file storage (see
  * api/profile.js's avatar comment for the same constraint), so each photo
  * is just a small resized JPEG stored inline as a string, same trick as
@@ -49,7 +53,21 @@ const CONDITIONS = ['YANGI', 'ISHLATILGAN'];
 const STEERING_SIDES = ['CHAP', 'ONG'];
 const SELLER_TYPES = ['SHAXSIY', 'KOMPANIYA'];
 const PRICE_TYPES = ['FIXED', 'NEGOTIABLE'];
-const STATUSES = ['ACTIVE', 'PAUSED', 'SOLD'];
+/**
+ * Listing lifecycle. Nothing reaches the public list without an admin
+ * approving it first:
+ *
+ *   PENDING  → created, or edited, and waiting for admin review
+ *   ACTIVE   → admin approved it; the only status the public list shows
+ *   REJECTED → admin turned it down (rejectionReason explains why)
+ *   PAUSED   → seller temporarily hid an already-approved listing
+ *   SOLD     → seller marked an already-approved listing sold
+ *
+ * SELLER_STATUSES is what a seller may move a listing between on their
+ * own, and only from one of those same statuses — so PENDING/REJECTED
+ * can never be self-approved into ACTIVE. Admins can set any status.
+ */
+const SELLER_STATUSES = ['ACTIVE', 'PAUSED', 'SOLD'];
 const CITIES = [
   'Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Nukus', 'Qarshi', 'Urganch',
   'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
@@ -122,6 +140,7 @@ const publicShape = (t) => ({
   description: t.description,
   photos: t.photos || [],
   status: t.status || 'ACTIVE',
+  rejectionReason: t.rejectionReason || null,
   verified: Boolean(t.verified),
   promoted: Boolean(t.promoted),
   viewCount: t.viewCount || 0,
@@ -346,7 +365,9 @@ const create = async (req, res) => {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
   }
 
-  const truck = { id: generateId(), sellerIdentity: email, status: 'ACTIVE', verified: false, promoted: false, viewCount: 0, createdAt: Date.now() };
+  // PENDING, not ACTIVE — every new listing goes through admin review
+  // before it can appear in the public list.
+  const truck = { id: generateId(), sellerIdentity: email, status: 'PENDING', verified: false, promoted: false, viewCount: 0, createdAt: Date.now() };
   const error = applyFields(body, truck, { requireCore: true });
   if (error) return res.status(400).json({ error });
   if (!truck.photos) truck.photos = [];
@@ -378,6 +399,12 @@ const update = async (req, res) => {
   const error = applyFields(body, truck, { requireCore: false });
   if (error) return res.status(400).json({ error });
 
+  // Any content edit goes back into the review queue — otherwise a seller
+  // could get innocuous content approved and then swap it out afterwards,
+  // which would defeat the whole point of reviewing listings.
+  truck.status = 'PENDING';
+  delete truck.rejectionReason;
+
   const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
   if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
   return res.status(200).json({ ok: true, truck: publicShape(truck) });
@@ -390,11 +417,18 @@ const setStatus = async (req, res) => {
 
   const id = String(body.id || '');
   const status = String(body.status || '');
-  if (!id || !STATUSES.includes(status)) return res.status(400).json({ error: 'Noto‘g‘ri so‘rov' });
+  if (!id || !SELLER_STATUSES.includes(status)) return res.status(400).json({ error: 'Noto‘g‘ri so‘rov' });
 
   const truck = parseJson(await kvGet(`truck:${id}`));
   if (!truck) return res.status(404).json({ error: 'E’lon topilmadi' });
   if (truck.sellerIdentity !== email) return res.status(403).json({ error: 'Bu amalga huquqingiz yo‘q' });
+
+  // The seller may only shuffle an already-approved listing between
+  // ACTIVE/PAUSED/SOLD. A PENDING or REJECTED one stays where it is —
+  // this is what stops a seller approving their own listing.
+  if (!SELLER_STATUSES.includes(truck.status || 'ACTIVE')) {
+    return res.status(403).json({ error: 'E’lon hali tekshiruvda — holatini o‘zgartirib bo‘lmaydi' });
+  }
 
   truck.status = status;
   const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));

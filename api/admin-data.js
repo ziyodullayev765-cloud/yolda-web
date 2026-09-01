@@ -15,7 +15,7 @@
  *   POST /api/admin-data?action=update-report   { id, status }
  *   POST /api/admin-data?action=verify-driver   { email, verified }
  *   POST /api/admin-data?action=update-user     { email, ...any profile field }
- *   POST /api/admin-data?action=update-truck    { id, verified?, promoted?, status? } | { id, remove: true }
+ *   POST /api/admin-data?action=update-truck    { id, verified?, promoted?, status?, rejectionReason? } | { id, remove: true }
  *
  * All of these require the signed cookie set by /api/admin-login.
  */
@@ -23,8 +23,12 @@ import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from
 import { isAdminAuthed } from '../lib/adminAuth.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
-/** Mirrors STATUSES in api/trucks.js — same duplicate-literal pattern as the lists below. */
-const TRUCK_STATUSES = ['ACTIVE', 'PAUSED', 'SOLD'];
+/**
+ * Every listing status — see the lifecycle comment in api/trucks.js. The
+ * admin can set any of them; a seller is limited to ACTIVE/PAUSED/SOLD on
+ * an already-approved listing, which is what makes approval meaningful.
+ */
+const TRUCK_STATUSES = ['PENDING', 'ACTIVE', 'PAUSED', 'SOLD', 'REJECTED'];
 
 // Mirrors the same lists in api/profile.js and api/order.js — kept as a
 // duplicate literal rather than a shared import, same pattern already used
@@ -183,6 +187,15 @@ const updateTruck = async (req, res) => {
     const status = String(body.status);
     if (!TRUCK_STATUSES.includes(status)) return res.status(400).json({ error: 'Noto‘g‘ri holat' });
     truck.status = status;
+    // A rejection reason only makes sense while the listing is rejected —
+    // clear it on any other transition so an approved listing never
+    // carries a stale "why we turned this down" note.
+    if (status !== 'REJECTED') delete truck.rejectionReason;
+  }
+  if (body.rejectionReason !== undefined) {
+    const reason = String(body.rejectionReason).trim().slice(0, 300);
+    if (reason) truck.rejectionReason = reason;
+    else delete truck.rejectionReason;
   }
 
   const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
