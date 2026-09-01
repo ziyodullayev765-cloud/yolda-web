@@ -20,6 +20,7 @@
 import { kvPush, kvGet, kvSet, kvSismember, kvRange } from '../lib/kv.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import { CARGO, buildOrderMessage, STATUS_LABELS } from '../lib/orderMessage.js';
+import { notifyUser, esc } from '../lib/notify.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Group id is not a secret, so it ships with the code as a fallback.
@@ -227,7 +228,7 @@ const createOrder = async (req, res) => {
   };
 
   try {
-    await telegram('sendMessage', {
+    const posted = await telegram('sendMessage', {
       chat_id: GROUP_ID,
       text: buildOrderMessage(order),
       parse_mode: 'MarkdownV2',
@@ -247,7 +248,15 @@ const createOrder = async (req, res) => {
     // can update its status later, and so the owner can track it by code.
     // Best-effort — the order already went to Telegram either way, so a
     // logging hiccup never blocks the customer.
-    kvSet(`order:${code}`, JSON.stringify({ ...order, createdAt: Date.now() })).catch(() => {});
+    // groupMessageId — buyurtma bekor qilinganda yoki haydovchi voz
+    // kechganda guruhdagi xabarni tahrirlash uchun kerak. Bundan oldin
+    // joylangan buyurtmalarda u yo'q: ular baribir bekor qilinadi, faqat
+    // guruhdagi eski xabar o'zgarmay qoladi.
+    kvSet(`order:${code}`, JSON.stringify({
+      ...order,
+      createdAt: Date.now(),
+      groupMessageId: posted && posted.message_id ? posted.message_id : null,
+    })).catch(() => {});
     kvPush('order_codes', code).catch(() => {});
 
     return res.status(200).json({ ok: true, code, amount, distanceKm });
@@ -654,6 +663,166 @@ const rateOrder = async (req, res) => {
   return res.status(200).json({ ok: true });
 };
 
+/* ============================================================
+   Bekor qilish va haydovchini bo'shatish
+   ------------------------------------------------------------
+   Ilgari haydovchi yukni olib, keyin g'oyib bo'lsa, buyurtma
+   "Haydovchi topildi" holatida abadiy qotib qolardi: yuk beruvchi
+   hech narsa qila olmasdi va boshqa haydovchi ham ololmasdi.
+
+   Ikkita chiqish yo'li:
+     - bekor qilish  — yuk endi kerak emas (CANCELLED, oxirgi holat);
+     - bo'shatish     — yuk kerak, lekin bu haydovchi javob bermayapti
+                        (NEW ga qaytadi va guruhda yana ko'rinadi).
+
+   Ikkalasini ham yuk egasi qiladi; haydovchi o'zi voz kechishi
+   api/telegram.js dagi tugma orqali.
+   ============================================================ */
+const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'ON_THE_WAY'];
+const RELEASABLE = ['DRIVER_FOUND', 'ON_THE_WAY'];
+
+/** Guruhdagi xabarni yangilaydi. Xabar id'si yo'q bo'lsa — jim o'tadi. */
+const editGroupMessage = async (order, keyboard) => {
+  if (!order.groupMessageId || !GROUP_ID || !BOT_TOKEN) return;
+  try {
+    await telegram('editMessageText', {
+      chat_id: GROUP_ID,
+      message_id: order.groupMessageId,
+      text: buildOrderMessage(order),
+      parse_mode: 'MarkdownV2',
+      reply_markup: { inline_keyboard: keyboard },
+    });
+  } catch (err) {
+    // Guruh xabari yangilanmasa ham buyurtma holati to'g'ri saqlangan.
+    console.error('group message edit failed:', err.message);
+  }
+};
+
+/** Yukni yana guruhga chiqaradigan "Men olaman" tugmasi. */
+const claimKeyboard = (order) => [[
+  { text: '✅ Men olaman', callback_data: `take:${order.code}:${order.phone}` },
+]];
+
+/**
+ * Buyurtmani faqat egasi o'zgartira oladi. Telefon raqami yetarli emas:
+ * haydovchi guruhda uni ko'rgan bo'ladi, ya'ni u boshqa odamning
+ * buyurtmasini bekor qila olardi.
+ */
+const loadOwnOrder = async (req, res, allowedStatuses) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) {
+    res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+    return null;
+  }
+
+  const code = String(body.code || '').trim().toUpperCase();
+  if (!code) {
+    res.status(400).json({ error: 'Buyurtma kodi kerak' });
+    return null;
+  }
+
+  const raw = await kvGet(`order:${code}`);
+  if (!raw) {
+    res.status(404).json({ error: 'Buyurtma topilmadi' });
+    return null;
+  }
+  let order;
+  try {
+    order = JSON.parse(raw);
+  } catch {
+    res.status(500).json({ error: 'Yozuv buzilgan' });
+    return null;
+  }
+
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  if (!ownerKey || ownerKey !== identity) {
+    // Egasi emasligini "topilmadi" deb aytamiz: shu kod umuman bor-yo'qligini
+    // begonaga bildirmaslik kerak.
+    res.status(404).json({ error: 'Buyurtma topilmadi' });
+    return null;
+  }
+
+  const status = order.status || 'NEW';
+  if (!allowedStatuses.includes(status)) {
+    res.status(409).json({ error: `Bu buyurtma uchun bu amal mavjud emas (${STATUS_LABELS[status] || status})` });
+    return null;
+  }
+
+  return { order, code, reason: String(body.reason || '').trim().slice(0, 200) };
+};
+
+/** POST ?action=cancel — yuk endi kerak emas. */
+const cancelOrder = async (req, res) => {
+  const found = await loadOwnOrder(req, res, CANCELLABLE);
+  if (!found) return;
+  const { order, code, reason } = found;
+
+  const hadDriver = order.driver;
+  order.status = 'CANCELLED';
+  order.cancelledAt = Date.now();
+  order.cancelledBy = 'OWNER';
+  if (reason) order.cancelReason = reason;
+  order.updatedAt = Date.now();
+
+  const saved = await kvSet(`order:${code}`, JSON.stringify(order));
+  if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+
+  await editGroupMessage(order, []);
+  if (hadDriver && hadDriver.telegramId) {
+    await notifyUser(`tg:${hadDriver.telegramId}`, {
+      category: 'orders',
+      text: `<b>Buyurtma bekor qilindi</b>\n\n<b>${esc(code)}</b>\n`
+        + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+        + `Yuk beruvchi buyurtmani bekor qildi.`
+        + (reason ? `\n\nSabab: ${esc(reason)}` : ''),
+    });
+  }
+
+  return res.status(200).json({ ok: true, status: order.status });
+};
+
+/** POST ?action=release — haydovchi javob bermayapti, yuk yana guruhga chiqsin. */
+const releaseDriver = async (req, res) => {
+  const found = await loadOwnOrder(req, res, RELEASABLE);
+  if (!found) return;
+  const { order, code, reason } = found;
+
+  const previousDriver = order.driver;
+  // Kim va nechchi marta bo'shatilgani yozib boriladi — bu keyinchalik
+  // ishonchsiz haydovchilarni ko'rish uchun yagona manba.
+  order.releases = Array.isArray(order.releases) ? order.releases : [];
+  order.releases.push({
+    at: Date.now(),
+    by: 'OWNER',
+    driverName: previousDriver ? previousDriver.name : null,
+    driverTelegramId: previousDriver ? previousDriver.telegramId : null,
+    reason: reason || null,
+  });
+  order.status = 'NEW';
+  order.driver = null;
+  order.updatedAt = Date.now();
+
+  const saved = await kvSet(`order:${code}`, JSON.stringify(order));
+  if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+
+  await editGroupMessage(order, claimKeyboard(order));
+  if (previousDriver && previousDriver.telegramId) {
+    await notifyUser(`tg:${previousDriver.telegramId}`, {
+      category: 'orders',
+      text: `<b>Buyurtma sizdan olindi</b>\n\n<b>${esc(code)}</b>\n`
+        + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+        + `Yuk beruvchi buyurtmani boshqa haydovchiga ochdi.`
+        + (reason ? `\n\nSabab: ${esc(reason)}` : ''),
+    });
+  }
+
+  return res.status(200).json({ ok: true, status: order.status });
+};
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const action = String(req.query.action || '');
@@ -664,7 +833,10 @@ export default async function handler(req, res) {
     return getOrderStatus(req, res);
   }
   if (req.method === 'POST') {
-    if (String(req.query.action || '') === 'rate') return rateOrder(req, res);
+    const action = String(req.query.action || '');
+    if (action === 'rate') return rateOrder(req, res);
+    if (action === 'cancel') return cancelOrder(req, res);
+    if (action === 'release') return releaseDriver(req, res);
     return createOrder(req, res);
   }
   return res.status(405).json({ error: 'Method not allowed' });

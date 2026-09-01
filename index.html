@@ -2271,6 +2271,8 @@
       "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
       "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
       "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
+      "track.release": "Haydovchini bo'shatish", "track.cancel": "Buyurtmani bekor qilish",
+      "track.cancelled": "Bu buyurtma bekor qilingan.",
       "loads.exactDate": "Sana", "loads.showResults": "Natijalarni ko'rsatish",
       "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
       "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
@@ -2521,6 +2523,8 @@
       "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
       "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
       "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
+      "track.release": "Освободить водителя", "track.cancel": "Отменить заказ",
+      "track.cancelled": "Этот заказ отменён.",
       "loads.exactDate": "Дата", "loads.showResults": "Показать результаты",
       "loads.groupTitle": "Хотите видеть новые грузы первыми?",
       "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
@@ -2771,6 +2775,8 @@
       "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
       "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
       "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
+      "track.release": "Release the driver", "track.cancel": "Cancel the order",
+      "track.cancelled": "This order has been cancelled.",
       "loads.exactDate": "Date", "loads.showResults": "Show results",
       "loads.groupTitle": "Want to see new loads first?",
       "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
@@ -7139,6 +7145,61 @@
   var TRACK_STATUS_LABELS = {
     NEW: "Yangi", DRIVER_FOUND: "Haydovchi topildi", ON_THE_WAY: "Yo'lda", DELIVERED: "Yetkazildi"
   };
+  /* Bekor qilingan buyurtma bosqichlar chizig'iga tushmaydi — u shu
+     chiziqning bir nuqtasi emas, undan chiqib ketish. */
+  var TRACK_CANCELLABLE = ["NEW", "DRIVER_FOUND", "ON_THE_WAY"];
+  var TRACK_RELEASABLE = ["DRIVER_FOUND", "ON_THE_WAY"];
+  var lastTrack = null;
+
+  /** Bekor qilish / bo'shatish — ikkalasi ham egadan tasdiq so'raydi. */
+  function trackAction(action, code) {
+    var titles = {
+      cancel: { title: "Buyurtmani bekor qilish", btn: "Bekor qilish",
+                body: "Buyurtma bekor qilinadi va guruhdan olib tashlanadi. Buni ortga qaytarib bo'lmaydi." },
+      release: { title: "Haydovchini bo'shatish", btn: "Bo'shatish",
+                 body: "Yuk yana guruhga chiqadi va boshqa haydovchi olishi mumkin. Buyurtmangiz saqlanadi." }
+    }[action];
+
+    Sheet.open({
+      title: titles.title,
+      html: '<p class="note" style="margin-top:0;">' + titles.body + '</p>'
+        + '<div class="field"><label for="fTrackReason">Sabab (ixtiyoriy)</label>'
+        + '<input type="text" id="fTrackReason" maxlength="200" placeholder="Masalan: haydovchi javob bermayapti"></div>'
+        + '<p class="note" id="trackActionNote"></p>',
+      footerHtml: '<button class="btn" id="btnTrackConfirm">' + titles.btn + '</button>',
+      onOpen: function(container){
+        var btn = container.querySelector("#btnTrackConfirm")
+          || document.getElementById("btnTrackConfirm");
+        if(!btn) return;
+        btn.addEventListener("click", function(){
+          var reasonEl = document.getElementById("fTrackReason");
+          var noteEl = document.getElementById("trackActionNote");
+          btn.disabled = true;
+          fetch("/api/order?action=" + action, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              code: code,
+              reason: reasonEl ? reasonEl.value.trim() : "",
+              googleIdToken: googleIdToken,
+              telegramInitData: telegramInitData
+            })
+          }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+            .then(function(res){
+              if(!res.ok) throw new Error(res.body.error || "Xato yuz berdi");
+              Sheet.close();
+              toast(action === "cancel" ? "Buyurtma bekor qilindi" : "Haydovchi bo'shatildi",
+                action === "cancel" ? "" : "Yuk yana guruhga chiqdi", "success");
+              submitTrack();
+            })
+            .catch(function(err){
+              btn.disabled = false;
+              if(noteEl){ noteEl.textContent = err.message; noteEl.style.color = "#DC2626"; }
+            });
+        });
+      }
+    });
+  }
 
   function renderTrackResult(data){
     var idx = TRACK_STATUS_ORDER.indexOf(data.status);
@@ -7169,7 +7230,41 @@
       ratingHtml = '<p class="note" style="margin-top:var(--s3);">Siz bergan baho: '+icon("iconStar","filled").repeat(data.rating.stars)+icon("iconStar").repeat(5-data.rating.stars)+'</p>';
     }
 
-    document.getElementById("trackResult").innerHTML = '<div class="track-steps">'+parts.join("")+'</div>' + driverHtml + ratingHtml;
+    // Buyurtma egasi bo'lmagan odam (kod + telefonni bilgan haydovchi)
+    // bu tugmalarni ko'rmasin; server ham baribir rad etadi.
+    var ownerActionsHtml = "";
+    if(isSignedIn() && data.status !== "CANCELLED"){
+      var buttons = [];
+      if(TRACK_RELEASABLE.indexOf(data.status) !== -1){
+        buttons.push('<button type="button" class="btn ghost" data-track-action="release">'
+          + icon("iconRefresh") + ' <span data-i18n="track.release">Haydovchini bo\'shatish</span></button>');
+      }
+      if(TRACK_CANCELLABLE.indexOf(data.status) !== -1){
+        buttons.push('<button type="button" class="btn ghost" data-track-action="cancel" '
+          + 'style="color:#DC2626;border-color:rgba(220,38,38,0.35);">'
+          + icon("iconClose") + ' <span data-i18n="track.cancel">Buyurtmani bekor qilish</span></button>');
+      }
+      if(buttons.length){
+        ownerActionsHtml = '<div style="display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s4);">'
+          + buttons.join("") + '</div>';
+      }
+    }
+
+    var cancelledHtml = data.status === "CANCELLED"
+      ? '<p class="note" style="margin-top:var(--s3);color:#DC2626;" data-i18n="track.cancelled">'
+        + 'Bu buyurtma bekor qilingan.</p>'
+      : '';
+
+    document.getElementById("trackResult").innerHTML =
+      (data.status === "CANCELLED" ? "" : '<div class="track-steps">'+parts.join("")+'</div>')
+      + cancelledHtml + driverHtml + ratingHtml + ownerActionsHtml;
+
+    document.querySelectorAll("[data-track-action]").forEach(function(b){
+      b.addEventListener("click", function(){
+        trackAction(b.getAttribute("data-track-action"), lastTrack && lastTrack.code);
+      });
+    });
+    applyLang();
 
     if(data.canRate){
       var selectedStar = 0;
@@ -7223,6 +7318,7 @@
           note.style.color = "#DC2626";
           return;
         }
+        lastTrack = { code: code };
         renderTrackResult(res.body);
       }).catch(function(){
         btn.disabled = false;

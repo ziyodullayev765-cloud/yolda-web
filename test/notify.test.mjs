@@ -41,16 +41,31 @@ export const kvRange = async (k) => lists.has(k) ? lists.get(k) : [];
 export const kvKeys = async () => [];
 `);
 
+// Same test double as test/trucks.test.mjs: the credential string IS the
+// identity, so "owner@example.com" vs "someone@else.com" exercises the
+// real ownership checks without a network round trip to Google.
+writeFileSync(join(work, 'identitymock.mjs'), `
+export const resolveEmail = async ({ googleIdToken, telegramInitData } = {}) =>
+  googleIdToken || telegramInitData || null;
+export const resolveIdentity = async (creds) => {
+  const identity = await resolveEmail(creds);
+  return identity ? { identity, method: 'google' } : null;
+};
+export const tgIdentity = (id) => 'tg:' + id;
+`);
+
 /**
- * Copies a module into a temp dir with lib/kv.js swapped for the mock.
- * Every other relative import is rewritten to an absolute repo path,
- * since the copy no longer sits next to its siblings.
+ * Copies a module into a temp dir with lib/kv.js and lib/identity.js
+ * swapped for mocks. Every other relative import is rewritten to an
+ * absolute repo path, since the copy no longer sits next to its siblings.
  */
 const load = async (relPath, name) => {
   const kvMock = JSON.stringify(join(work, 'kvmock.mjs'));
   const src = readFileSync(join(repo, relPath), 'utf8')
     .replaceAll("'./kv.js'", kvMock)
     .replaceAll("'../lib/kv.js'", kvMock)
+    .replaceAll("'../lib/identity.js'", JSON.stringify(join(work, 'identitymock.mjs')))
+    .replaceAll("'../lib/notify.js'", JSON.stringify(join(work, 'notify.mjs')))
     .replace(/'\.\.\/lib\/([\w.]+)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)))
     .replace(/'\.\/([\w.]+\.js)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)));
   const out = join(work, `${name}.mjs`);
@@ -221,6 +236,91 @@ const priceCall = async (query) => {
   check('no personal data leaks into the response',
     JSON.stringify(good.body).indexOf('Toshkent') === -1
     && !('orders' in good.body) && !('phone' in good.body));
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== cancel / release ==');
+{
+  store.clear(); lists.clear(); resetFetch();
+
+  const seedOrder = (code, patch) => {
+    if (!lists.has('order_codes')) lists.set('order_codes', []);
+    if (!lists.get('order_codes').includes(code)) lists.get('order_codes').push(code);
+    store.set(`order:${code}`, JSON.stringify({
+      code, ownerIdentity: 'owner@example.com', phone: '+998901112233',
+      fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, amount: 900000,
+      status: 'DRIVER_FOUND', groupMessageId: 42,
+      driver: { name: 'Haydovchi', telegramId: 777 },
+      ...patch,
+    }));
+  };
+  const post = async (action, body) => {
+    const res = mkRes();
+    await orderHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  // In this suite the credential IS the identity (no real Google/Telegram
+  // verification runs), so "owner@example.com" proves ownership.
+  const asOwner = (extra) => ({ googleIdToken: 'owner@example.com', ...extra });
+
+  const anon = await post('cancel', { code: 'C1' });
+  check('cancelling without signing in is refused', anon.statusCode === 401);
+
+  seedOrder('C1');
+  const stranger = await post('cancel', { googleIdToken: 'someone@else.com', code: 'C1' });
+  check('a non-owner cannot cancel', stranger.statusCode === 404);
+  check('and the order is untouched', JSON.parse(store.get('order:C1')).status === 'DRIVER_FOUND');
+
+  const missing = await post('cancel', asOwner({ code: 'NOPE' }));
+  check('an unknown code is a 404', missing.statusCode === 404);
+
+  seedOrder('C2', { status: 'DELIVERED' });
+  const late = await post('cancel', asOwner({ code: 'C2' }));
+  check('a delivered order can no longer be cancelled', late.statusCode === 409);
+
+  seedOrder('C3');
+  resetFetch();
+  const cancelled = await post('cancel', asOwner({ code: 'C3', reason: 'Yuk kerak emas' }));
+  const toDriver = sentMessages.filter((m) => m.body.chat_id === '777');
+  check('the driver is told the load is gone', toDriver.length === 1);
+  check('and told why', toDriver.length === 1 && toDriver[0].body.text.includes('Yuk kerak emas'));
+  const c3 = JSON.parse(store.get('order:C3'));
+  check('the owner can cancel', cancelled.statusCode === 200 && c3.status === 'CANCELLED');
+  check('the reason is kept', c3.cancelReason === 'Yuk kerak emas');
+  check('who cancelled it is recorded', c3.cancelledBy === 'OWNER' && c3.cancelledAt > 0);
+
+  const twice = await post('cancel', asOwner({ code: 'C3' }));
+  check('cancelling twice is refused', twice.statusCode === 409);
+
+  seedOrder('R1');
+  resetFetch();
+  const released = await post('release', asOwner({ code: 'R1', reason: 'Javob bermayapti' }));
+  check('the released driver is notified',
+    sentMessages.some((m) => m.body.chat_id === '777' && m.body.text.includes('Javob bermayapti')));
+  const r1 = JSON.parse(store.get('order:R1'));
+  check('releasing returns the load to the pool', released.statusCode === 200 && r1.status === 'NEW');
+  check('the driver is cleared', r1.driver === null);
+  check('the release is recorded with who and why',
+    r1.releases.length === 1 && r1.releases[0].by === 'OWNER'
+    && r1.releases[0].driverName === 'Haydovchi' && r1.releases[0].reason === 'Javob bermayapti');
+
+  const nothingToRelease = await post('release', asOwner({ code: 'R1' }));
+  check('a load with no driver cannot be released', nothingToRelease.statusCode === 409);
+
+  seedOrder('R2', { status: 'ON_THE_WAY' });
+  const midRoute = await post('release', asOwner({ code: 'R2' }));
+  check('a driver already en route can still be released',
+    midRoute.statusCode === 200 && JSON.parse(store.get('order:R2')).status === 'NEW');
+
+  // A released load must be claimable again — that is the whole point.
+  seedOrder('R3');
+  await post('release', asOwner({ code: 'R3' }));
+  const listRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'list' }, headers: {} }, listRes);
+  const publicCodes = (listRes.body.loads || []).map((o) => o.code);
+  check('a released load is back in the public list', publicCodes.includes('R3'), publicCodes.join(','));
+  check('a cancelled load is not in the public list', !publicCodes.includes('C3'));
+  check('a load with a driver is not in the public list', !publicCodes.includes('C1'));
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

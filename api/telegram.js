@@ -124,7 +124,10 @@ const handleTake = async (query, code, phone) => {
       message_id: message.message_id,
       text: buildOrderMessage(order),
       parse_mode: 'MarkdownV2',
-      reply_markup: { inline_keyboard: [[{ text: "🚛 Yo'lga chiqdim", callback_data: `depart:${code}` }]] },
+      reply_markup: { inline_keyboard: [[
+        { text: "🚛 Yo'lga chiqdim", callback_data: `depart:${code}` },
+        { text: '✖️ Voz kechaman', callback_data: `giveup:${code}` },
+      ]] },
     });
   } else {
     // No persisted record — edit the message directly, no status buttons.
@@ -200,7 +203,10 @@ const handleDepart = async (query, code) => {
     message_id: query.message.message_id,
     text: buildOrderMessage(order),
     parse_mode: 'MarkdownV2',
-    reply_markup: { inline_keyboard: [[{ text: '✅ Yetkazdim', callback_data: `deliver:${code}` }]] },
+    reply_markup: { inline_keyboard: [[
+      { text: '✅ Yetkazdim', callback_data: `deliver:${code}` },
+      { text: '✖️ Voz kechaman', callback_data: `giveup:${code}` },
+    ]] },
   });
   await answer(query, "Holat yangilandi: Yo'lda");
 };
@@ -229,6 +235,63 @@ const handleDeliver = async (query, code) => {
     reply_markup: { inline_keyboard: [] },
   });
   await answer(query, 'Rahmat! Yetkazildi deb belgilandi.');
+};
+
+/**
+ * Haydovchi olgan yukidan voz kechadi.
+ *
+ * Yuk yo'qolmaydi: NEW ga qaytadi va guruhdagi o'sha xabarda yana
+ * "Men olaman" tugmasi paydo bo'ladi, ya'ni boshqa haydovchi darrov
+ * ola oladi. Yuk beruvchiga xabar boradi — aks holda u haydovchi
+ * kutayotganini o'ylab o'tiraverardi.
+ */
+const handleGiveUp = async (query, code) => {
+  const order = await getOrder(code);
+  if (!order) {
+    await answer(query, 'Buyurtma topilmadi.', true);
+    return;
+  }
+  if (order.status !== 'DRIVER_FOUND' && order.status !== 'ON_THE_WAY') {
+    await answer(query, 'Bu amal endi mavjud emas.', true);
+    return;
+  }
+  if (!order.driver || order.driver.telegramId !== query.from.id) {
+    await answer(query, 'Bu buyurtma sizga tegishli emas.', true);
+    return;
+  }
+
+  const previousDriver = order.driver;
+  order.releases = Array.isArray(order.releases) ? order.releases : [];
+  order.releases.push({
+    at: Date.now(),
+    by: 'DRIVER',
+    driverName: previousDriver.name,
+    driverTelegramId: previousDriver.telegramId,
+    reason: null,
+  });
+  order.status = 'NEW';
+  order.driver = null;
+  order.updatedAt = Date.now();
+  await kvSet(`order:${code}`, JSON.stringify(order));
+
+  await telegram('editMessageText', {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id,
+    text: buildOrderMessage(order),
+    parse_mode: 'MarkdownV2',
+    reply_markup: {
+      inline_keyboard: [[{ text: '✅ Men olaman', callback_data: `take:${code}:${order.phone}` }]],
+    },
+  });
+
+  await notifyOwner(order,
+    `<b>Haydovchi voz kechdi</b>\n\n`
+    + `Buyurtma: <b>${esc(code)}</b>\n`
+    + `${routeOf(order)}\n\n`
+    + `${esc(previousDriver.name)} yukdan voz kechdi. Yuk yana guruhda — `
+    + `boshqa haydovchi olishi mumkin.`);
+
+  await answer(query, 'Yukdan voz kechdingiz. U yana guruhga chiqdi.');
 };
 
 const handleCommand = async (message) => {
@@ -280,6 +343,8 @@ export default async function handler(req, res) {
         await handleDepart(update.callback_query, code);
       } else if (action === 'deliver' && code) {
         await handleDeliver(update.callback_query, code);
+      } else if (action === 'giveup' && code) {
+        await handleGiveUp(update.callback_query, code);
       }
     } else if (update.message) {
       await handleCommand(update.message);
