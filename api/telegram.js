@@ -220,6 +220,21 @@ const handleDeliver = async (query, code) => {
   order.updatedAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
 
+  // Haydovchi profilidagi "yetkazilgan yuklar" hisoblagichi. Faqat
+  // taklif orqali biriktirilgan haydovchida identity bo'ladi; eski
+  // oqimdagi (Telegram username orqali) haydovchilar sanalmaydi.
+  if (order.driver && order.driver.identity) {
+    try {
+      const key = `profile:${order.driver.identity}`;
+      const profile = JSON.parse((await kvGet(key)) || '{}');
+      profile.deliveredCount = (profile.deliveredCount || 0) + 1;
+      await kvSet(key, JSON.stringify(profile));
+    } catch (err) {
+      // Hisoblagich yetkazishning o'zidan muhim emas.
+      console.error('deliveredCount update failed:', err.message);
+    }
+  }
+
   await notifyOwner(order,
     `<b>Yuk yetkazildi</b>\n\n`
     + `Buyurtma: <b>${esc(code)}</b>\n`

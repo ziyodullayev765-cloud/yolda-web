@@ -22,8 +22,13 @@ import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import { CARGO, buildOrderMessage, STATUS_LABELS, formatNum } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { ANY_CITY, cityIndexKey, searchesKey, matchesSearch } from '../lib/savedSearch.js';
+import {
+  OFFERABLE_ORDER_STATUSES, MAX_OFFERS_PER_ORDER, validateOffer,
+  offerKey, orderOffersKey, driverOffersKey, publicOfferShape,
+} from '../lib/offers.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
 // Group id is not a secret, so it ships with the code as a fallback.
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '-1003778958582';
 
@@ -233,14 +238,17 @@ const createOrder = async (req, res) => {
       chat_id: GROUP_ID,
       text: buildOrderMessage(order),
       parse_mode: 'MarkdownV2',
+      // Guruhdagi tugma endi yukni darrov bermaydi — ilovadagi taklif
+      // oynasini ochadi. Telegram kashfiyot kanali bo'lib qoladi,
+      // kelishuv esa YO'LDA ichida bo'ladi: yuk beruvchi narx va
+      // haydovchini tanlay olsin.
       reply_markup: {
         inline_keyboard: [[
-          {
-            text: '✅ Men olaman',
-            // The phone rides in callback_data so the bot can reveal it to
-            // whoever taps first, even if the KV write below never lands.
-            callback_data: `take:${code}:${value.phone}`,
-          },
+          BOT_USERNAME
+            ? { text: '📩 Taklif yuborish', url: `https://t.me/${BOT_USERNAME}?startapp=load_${code}` }
+            // Bot username sozlanmagan bo'lsa, eski tezkor oqim ishlayveradi,
+            // aks holda guruhda umuman tugma bo'lmasdi.
+            : { text: '✅ Men olaman', callback_data: `take:${code}:${value.phone}` },
         ]],
       },
     });
@@ -435,6 +443,74 @@ const readPriceStats = async () => {
     // buzilgan kesh — qayta hisoblaymiz
   }
   return computePriceStats();
+};
+
+/* ============================================================
+   Bosh sahifa statistikasi
+   ------------------------------------------------------------
+   Faqat bazadagi haqiqiy qiymatlar. Bironta raqam qo'lda
+   yozilmagan va "24/7" kabi hech narsa anglatmaydigan ko'rsatkich
+   yo'q. Ma'lumot bo'lmasa, raqam umuman qaytarilmaydi va bosh
+   sahifa o'sha blokni ko'rsatmaydi.
+
+   price-stats kabi keshlanadi: har bir tashrif buyurtmalarni
+   qaytadan sanamasin.
+   ============================================================ */
+const HOME_STATS_KEY = 'home_stats';
+const HOME_STATS_TTL_MS = 10 * 60 * 1000;
+
+const computeHomeStats = async () => {
+  const codes = await kvRange('order_codes', 0, 299);
+  const orders = (await Promise.all(codes.map((c) => readJson(`order:${c}`, null)))).filter(Boolean);
+
+  const cities = new Set();
+  let activeLoads = 0;
+  let delivered = 0;
+  for (const order of orders) {
+    const status = order.status || 'NEW';
+    if (status === 'NEW') activeLoads += 1;
+    if (status === 'DELIVERED') delivered += 1;
+    if (order.fromCity) cities.add(order.fromCity);
+    if (order.toCity) cities.add(order.toCity);
+  }
+
+  // Haydovchilar: profil yozuvlaridan. kvKeys qimmat, shuning uchun
+  // profile_emails indeksidan foydalanamiz (admin paneli ham shuni
+  // to'ldirib boradi).
+  const identities = await kvSmembers('profile_emails');
+  let drivers = 0;
+  await Promise.all(identities.map(async (id) => {
+    const profile = await readJson(`profile:${id}`, null);
+    if (profile && (profile.role === 'DRIVER' || profile.role === 'BOTH')) drivers += 1;
+  }));
+
+  const stats = {
+    computedAt: Date.now(),
+    activeLoads,
+    delivered,
+    drivers,
+    cities: cities.size,
+  };
+  await kvSet(HOME_STATS_KEY, JSON.stringify(stats));
+  return stats;
+};
+
+/**
+ * GET ?action=stats — bosh sahifadagi raqamlar.
+ * Har bir maydon haqiqiy hisob; nol bo'lsa ham rost qaytadi.
+ */
+const getHomeStats = async (req, res) => {
+  let stats = await readJson(HOME_STATS_KEY, null);
+  if (!stats || Date.now() - stats.computedAt > HOME_STATS_TTL_MS) {
+    stats = await computeHomeStats();
+  }
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+  return res.status(200).json({
+    activeLoads: stats.activeLoads,
+    delivered: stats.delivered,
+    drivers: stats.drivers,
+    cities: stats.cities,
+  });
 };
 
 /**
@@ -712,6 +788,254 @@ const rateOrder = async (req, res) => {
 };
 
 /* ============================================================
+   Takliflar
+   ------------------------------------------------------------
+   lib/offers.js dagi izohga qarang: haydovchi narx va yetib borish
+   vaqtini taklif qiladi, yuk beruvchi tanlaydi.
+   ============================================================ */
+const readJson = async (key, fallback) => {
+  try {
+    const parsed = JSON.parse((await kvGet(key)) || 'null');
+    return parsed == null ? fallback : parsed;
+  } catch {
+    return fallback;
+  }
+};
+
+const readOffer = (id) => readJson(offerKey(id), null);
+
+/** Buyurtmaga kelgan barcha takliflar, eng yangisi birinchi. */
+const readOrderOffers = async (code) => {
+  const ids = await kvRange(orderOffersKey(code), 0, MAX_OFFERS_PER_ORDER - 1);
+  const offers = await Promise.all(ids.map((id) => readOffer(id)));
+  return offers.filter(Boolean);
+};
+
+/** Haydovchi profilidan taklifga ko'chiriladigan ishonch belgilari. */
+const driverSnapshot = async (identity) => {
+  const profile = await readJson(`profile:${identity}`, {});
+  return {
+    driverName: profile.displayName || profile.username || 'Haydovchi',
+    driverUsername: profile.username || '',
+    driverVerified: Boolean(profile.verified),
+    driverRatingCount: profile.ratingCount || 0,
+    driverRatingSum: profile.ratingSum || 0,
+    driverCity: profile.city || '',
+    driverVehicleType: profile.vehicleType || '',
+    driverPhone: profile.phone || '',
+    driverTelegramUsername: profile.telegramUsername || '',
+  };
+};
+
+/** POST ?action=offer — haydovchi taklif yuboradi. */
+const submitOffer = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+  if (await kvSismember('banned', identity.toLowerCase())) {
+    return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
+  }
+
+  const code = String(body.code || '').trim().toUpperCase();
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  if (ownerKey && ownerKey === identity) {
+    return res.status(400).json({ error: 'O‘z yukingizga taklif yubora olmaysiz' });
+  }
+  if (!OFFERABLE_ORDER_STATUSES.includes(order.status || 'NEW')) {
+    return res.status(409).json({ error: 'Bu yuk uchun taklif qabul qilinmayapti' });
+  }
+
+  const { value, error } = validateOffer(body);
+  if (error) return res.status(400).json({ error });
+
+  const existing = await readOrderOffers(code);
+  // Bitta haydovchidan bitta kutilayotgan taklif: qayta yuborsa,
+  // eskisi yangilanadi — yuk beruvchi bir odamdan ikkita narx ko'rmasin.
+  const mine = existing.find((o) => o.driverIdentity === identity && o.status === 'PENDING');
+  const snapshot = await driverSnapshot(identity);
+
+  if (mine) {
+    const updated = { ...mine, ...value, ...snapshot, updatedAt: Date.now() };
+    if (!(await kvSet(offerKey(mine.id), JSON.stringify(updated)))) {
+      return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+    }
+    return res.status(200).json({ ok: true, offer: publicOfferShape(updated), updated: true });
+  }
+
+  if (existing.length >= MAX_OFFERS_PER_ORDER) {
+    return res.status(409).json({ error: 'Bu yukka juda ko‘p taklif kelgan' });
+  }
+
+  const id = `o${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+  const offer = {
+    id, orderCode: code, driverIdentity: identity,
+    ...value, ...snapshot,
+    status: 'PENDING', createdAt: Date.now(), updatedAt: Date.now(),
+  };
+  if (!(await kvSet(offerKey(id), JSON.stringify(offer)))) {
+    return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  }
+  await kvPush(orderOffersKey(code), id);
+  await kvPush(driverOffersKey(identity), id);
+
+  await notifyUser(ownerKey, {
+    category: 'offers',
+    text: `<b>Yangi taklif</b>\n\n`
+      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+      + `${esc(snapshot.driverName)}${snapshot.driverVerified ? ' ✓' : ''}\n`
+      + `<b>${esc(formatNum(value.price))} so'm</b>`
+      + (value.eta ? `\nYetib borish: ${esc(value.eta)}` : '')
+      + (value.note ? `\n\n${esc(value.note)}` : '')
+      + `\n\nSaytda «Kelgan takliflar» bo'limidan ko'ring.`,
+  });
+
+  return res.status(200).json({ ok: true, offer: publicOfferShape(offer) });
+};
+
+/** GET ?action=offers&code= — yuk egasi kelgan takliflarni ko'radi. */
+const listOffers = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const code = String(req.query.code || '').trim().toUpperCase();
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  const isOwner = Boolean(ownerKey) && ownerKey === identity;
+  const offers = await readOrderOffers(code);
+
+  // Egasi hammasini ko'radi; haydovchi faqat o'zinikini — boshqa
+  // haydovchilarning narxi raqobat ma'lumoti, uni ochib bo'lmaydi.
+  const visible = isOwner ? offers : offers.filter((o) => o.driverIdentity === identity);
+  return res.status(200).json({
+    ok: true,
+    isOwner,
+    offers: visible.map(publicOfferShape),
+  });
+};
+
+/** Taklifni qabul qilish yoki rad etish — faqat yuk egasi. */
+const decideOffer = async (req, res, accept) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const offer = await readOffer(String(body.id || ''));
+  if (!offer) return res.status(404).json({ error: 'Taklif topilmadi' });
+
+  const order = await readJson(`order:${offer.orderCode}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  if (!ownerKey || ownerKey !== identity) {
+    return res.status(404).json({ error: 'Taklif topilmadi' });
+  }
+  if (offer.status !== 'PENDING') {
+    return res.status(409).json({ error: 'Bu taklif allaqachon ko‘rib chiqilgan' });
+  }
+
+  if (!accept) {
+    const rejected = { ...offer, status: 'REJECTED', updatedAt: Date.now() };
+    if (!(await kvSet(offerKey(offer.id), JSON.stringify(rejected)))) {
+      return res.status(500).json({ error: 'Saqlanmadi' });
+    }
+    await notifyUser(offer.driverIdentity, {
+      category: 'offers',
+      text: `<b>Taklifingiz rad etildi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
+        + `${esc(order.fromCity)} → ${esc(order.toCity)}`,
+    });
+    return res.status(200).json({ ok: true, offer: publicOfferShape(rejected) });
+  }
+
+  if (!OFFERABLE_ORDER_STATUSES.includes(order.status || 'NEW')) {
+    return res.status(409).json({ error: 'Bu buyurtmada allaqachon haydovchi bor' });
+  }
+
+  const accepted = { ...offer, status: 'ACCEPTED', updatedAt: Date.now() };
+  if (!(await kvSet(offerKey(offer.id), JSON.stringify(accepted)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+
+  order.status = 'DRIVER_FOUND';
+  order.driver = {
+    name: offer.driverName,
+    identity: offer.driverIdentity,
+    telegramUsername: offer.driverTelegramUsername || null,
+    phone: offer.driverPhone || null,
+    verified: Boolean(offer.driverVerified),
+    viaOffer: offer.id,
+  };
+  // Kelishilgan narx alohida saqlanadi — e'lon qilingan narx o'z holicha
+  // qoladi, shunda narx statistikasi joylangan narxlarni hisoblayveradi.
+  order.agreedAmount = offer.price;
+  order.updatedAt = Date.now();
+  if (!(await kvSet(`order:${offer.orderCode}`, JSON.stringify(order)))) {
+    return res.status(500).json({ error: 'Buyurtma saqlanmadi' });
+  }
+
+  // Qolgan kutilayotgan takliflar avtomatik rad etiladi — yuk band.
+  const others = (await readOrderOffers(offer.orderCode))
+    .filter((o) => o.id !== offer.id && o.status === 'PENDING');
+  for (const other of others) {
+    await kvSet(offerKey(other.id), JSON.stringify({ ...other, status: 'REJECTED', updatedAt: Date.now() }));
+    await notifyUser(other.driverIdentity, {
+      category: 'offers',
+      text: `<b>Yuk boshqa haydovchiga berildi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
+        + `${esc(order.fromCity)} → ${esc(order.toCity)}`,
+    });
+  }
+
+  await notifyUser(offer.driverIdentity, {
+    category: 'offers',
+    text: `<b>Taklifingiz qabul qilindi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
+      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
+      + `<b>${esc(formatNum(offer.price))} so'm</b>\n\n`
+      + (order.phone ? `Mijoz: ${esc(order.phone)}\n\n` : '')
+      + `Yukni olib, holatni saytda yangilab boring.`,
+  });
+
+  await editGroupMessage(order, []);
+  return res.status(200).json({ ok: true, offer: publicOfferShape(accepted), status: order.status });
+};
+
+/** POST ?action=withdraw-offer — haydovchi o'z taklifini qaytarib oladi. */
+const withdrawOffer = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const offer = await readOffer(String(body.id || ''));
+  if (!offer || offer.driverIdentity !== identity) {
+    return res.status(404).json({ error: 'Taklif topilmadi' });
+  }
+  if (offer.status !== 'PENDING') {
+    return res.status(409).json({ error: 'Bu taklifni qaytarib bo‘lmaydi' });
+  }
+
+  const withdrawn = { ...offer, status: 'WITHDRAWN', updatedAt: Date.now() };
+  if (!(await kvSet(offerKey(offer.id), JSON.stringify(withdrawn)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+  return res.status(200).json({ ok: true, offer: publicOfferShape(withdrawn) });
+};
+
+/* ============================================================
    Bekor qilish va haydovchini bo'shatish
    ------------------------------------------------------------
    Ilgari haydovchi yukni olib, keyin g'oyib bo'lsa, buyurtma
@@ -878,6 +1202,8 @@ export default async function handler(req, res) {
     if (action === 'detail') return getLoadDetail(req, res);
     if (action === 'backhaul') return getBackhaul(req, res);
     if (action === 'price-stats') return getPriceStats(req, res);
+    if (action === 'offers') return listOffers(req, res);
+    if (action === 'stats') return getHomeStats(req, res);
     return getOrderStatus(req, res);
   }
   if (req.method === 'POST') {
@@ -885,6 +1211,10 @@ export default async function handler(req, res) {
     if (action === 'rate') return rateOrder(req, res);
     if (action === 'cancel') return cancelOrder(req, res);
     if (action === 'release') return releaseDriver(req, res);
+    if (action === 'offer') return submitOffer(req, res);
+    if (action === 'accept-offer') return decideOffer(req, res, true);
+    if (action === 'reject-offer') return decideOffer(req, res, false);
+    if (action === 'withdraw-offer') return withdrawOffer(req, res);
     return createOrder(req, res);
   }
   return res.status(405).json({ error: 'Method not allowed' });

@@ -372,7 +372,49 @@ const handleSearches = async (req, res, action) => {
   return deleteSearch(req, res, identity, body);
 };
 
+/* ============================================================
+   Ommaviy profil
+   ------------------------------------------------------------
+   Taklif kelganda yuk beruvchi "bu kim?" deb so'raydi — shu savolga
+   javob. Faqat ishonchga aloqador maydonlar chiqadi: telefon va
+   email hech qachon. Ular aloqa boshlangandan keyin ochiladi.
+   ============================================================ */
+const publicProfileShape = (identity, profile) => ({
+  username: profile.username || '',
+  displayName: profile.displayName || profile.username || '',
+  avatarDataUrl: profile.avatarDataUrl || '',
+  verified: Boolean(profile.verified),
+  role: profile.role || '',
+  city: profile.city || '',
+  vehicleType: profile.vehicleType || '',
+  bio: profile.bio || '',
+  ratingCount: profile.ratingCount || 0,
+  ratingSum: profile.ratingSum || 0,
+  // Faqat shu hisoblagich joriy qilingandan keyingi yetkazishlar.
+  // Undan oldingilari sanalmaydi — noto'g'ri raqamdan ko'ra kamroq
+  // raqam yaxshiroq.
+  deliveredCount: profile.deliveredCount || 0,
+  joinedAt: profile.joinedAt || null,
+});
+
+const getPublicProfile = async (req, res) => {
+  const username = String(req.query.username || '').trim().toLowerCase();
+  if (!username) return res.status(400).json({ error: 'Username kerak' });
+
+  const identity = await kvGet(`username:${username}`);
+  if (!identity) return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+  const profile = parseProfile(await kvGet(`profile:${identity}`));
+  if (!profile || !profile.username) return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
+  return res.status(200).json({ ok: true, profile: publicProfileShape(identity, profile) });
+};
+
 export default async function handler(req, res) {
+  // Ommaviy profil — yagona GET yo'l; qolgani hamma vaqt POST.
+  if (req.method === 'GET' && String(req.query.action || '') === 'public') {
+    return getPublicProfile(req, res);
+  }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const action = String(req.query.action || '');
   if (action === 'searches' || action === 'save-search' || action === 'delete-search') {
