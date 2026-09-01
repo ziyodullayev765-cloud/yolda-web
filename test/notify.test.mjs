@@ -539,5 +539,165 @@ console.log('\n== home statistics ==');
     Object.values(stats.body).every((v) => typeof v === 'number'));
 }
 
+/* ---------------------------------------------------------- */
+console.log('\n== seven-stage tracking ==');
+{
+  const { nextStatus, STATUS_FLOW } = await import(join(repo, 'lib/orderMessage.js'));
+  check('the chain has six stages', STATUS_FLOW.length === 6);
+  check('a claimed load heads for pickup next', nextStatus('DRIVER_FOUND') === 'PICKING_UP');
+  check('loading comes before the road', nextStatus('PICKING_UP') === 'LOADED');
+  check('the road comes before delivery', nextStatus('ON_THE_WAY') === 'DELIVERED');
+  check('delivery is the end of the chain', nextStatus('DELIVERED') === null);
+  check('a cancelled order is off the chain', nextStatus('CANCELLED') === null);
+}
+
+console.log('\n== the driver advances the load from the site ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  const seed = (code, patch) => store.set(`order:${code}`, JSON.stringify({
+    code, ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, amount: 900000, status: 'DRIVER_FOUND', groupMessageId: 42,
+    driver: { name: 'Aziz', identity: 'driver1@example.com' }, ...patch,
+  }));
+  const post = async (action, body) => {
+    const res = mkRes();
+    await orderHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const statusOf = (code) => JSON.parse(store.get(`order:${code}`)).status;
+  const driver = (extra) => ({ googleIdToken: 'driver1@example.com', ...extra });
+
+  seed('AD1');
+  check('advancing needs a signed-in user',
+    (await post('advance', { code: 'AD1' })).statusCode === 401);
+  check("a stranger cannot advance someone else's load",
+    (await post('advance', { googleIdToken: 'nobody@example.com', code: 'AD1' })).statusCode === 403);
+  check('the owner is not the driver either',
+    (await post('advance', { googleIdToken: 'owner@example.com', code: 'AD1' })).statusCode === 403);
+  check('an unknown code is not found',
+    (await post('advance', driver({ code: 'NOPE' }))).statusCode === 404);
+
+  const step1 = await post('advance', driver({ code: 'AD1' }));
+  check('the driver moves one stage forward',
+    step1.statusCode === 200 && step1.body.status === 'PICKING_UP');
+  check('and the order record is what changed', statusOf('AD1') === 'PICKING_UP');
+  check('the response names the stage after this one', step1.body.nextStatus === 'LOADED');
+
+  await post('advance', driver({ code: 'AD1' }));
+  check('loading is its own stage', statusOf('AD1') === 'LOADED');
+  await post('advance', driver({ code: 'AD1' }));
+  check('then the road', statusOf('AD1') === 'ON_THE_WAY');
+
+  store.set('profile:driver1@example.com', JSON.stringify({ username: 'driver1', deliveredCount: 3 }));
+  const last = await post('advance', driver({ code: 'AD1' }));
+  check('and finally delivery', statusOf('AD1') === 'DELIVERED');
+  check('no stage is offered past delivery', last.body.nextStatus === null);
+  check('the delivered counter goes up once',
+    JSON.parse(store.get('profile:driver1@example.com')).deliveredCount === 4);
+  check('a delivered order cannot be advanced again',
+    (await post('advance', driver({ code: 'AD1' }))).statusCode === 409);
+  check('the counter did not move on the refused call',
+    JSON.parse(store.get('profile:driver1@example.com')).deliveredCount === 4);
+
+  const ownerNotes = (lists.get('notifs:owner@example.com') || []).map((s) => JSON.parse(s).title);
+  check('the owner hears about every stage', ownerNotes.length === 4, ownerNotes.length);
+  check('including the last one', ownerNotes[0] === 'Yetkazildi', ownerNotes[0]);
+
+  // Bekor qilingan buyurtma zanjirdan chiqib ketgan — uni surib bo'lmaydi.
+  seed('AD2', { status: 'CANCELLED' });
+  check('a cancelled load has nowhere to advance to',
+    (await post('advance', driver({ code: 'AD2' }))).statusCode === 409);
+}
+
+console.log('\n== a driver can find the load they were given ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  store.set('order:MY1', JSON.stringify({
+    code: 'MY1', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, status: 'LOADED', driver: { name: 'Aziz', identity: 'driver1@example.com' },
+  }));
+  store.set('order:MY2', JSON.stringify({
+    code: 'MY2', ownerIdentity: 'owner@example.com', fromCity: 'Buxoro', toCity: 'Nukus',
+    weightKg: 2000, status: 'NEW',
+  }));
+  store.set('offer:o1', JSON.stringify({
+    id: 'o1', orderCode: 'MY1', driverIdentity: 'driver1@example.com', price: 800000, status: 'ACCEPTED',
+  }));
+  store.set('offer:o2', JSON.stringify({
+    id: 'o2', orderCode: 'MY2', driverIdentity: 'driver1@example.com', price: 500000, status: 'PENDING',
+  }));
+  lists.set('driver_offers:driver1@example.com', ['o2', 'o1']);
+
+  const get = async (query) => {
+    const res = mkRes();
+    await orderHandler({ method: 'GET', query, headers: {} }, res);
+    return res;
+  };
+
+  check('the list needs a signed-in driver', (await get({ action: 'my-offers' })).statusCode === 401);
+
+  const mine = await get({ action: 'my-offers', googleIdToken: 'driver1@example.com' });
+  check('both offers come back', mine.body.offers.length === 2);
+  const byCode = Object.fromEntries(mine.body.offers.map((o) => [o.orderCode, o]));
+  check('the route rides along so the row can be read', byCode.MY1.fromCity === 'Toshkent');
+  check('the assigned load knows it is being driven', byCode.MY1.isDriver === true);
+  check('and carries the stage, not just the offer status', byCode.MY1.orderStatus === 'LOADED');
+  check('with the next step named', byCode.MY1.nextStatus === 'ON_THE_WAY');
+  check('a still-pending offer is not a trip', byCode.MY2.isDriver === false);
+  check('and offers no stage button', byCode.MY2.nextStatus === null);
+  check('no offer leaks a phone or identity',
+    mine.body.offers.every((o) => !('driverIdentity' in o) && !('driverPhone' in o)));
+
+  const other = await get({ action: 'my-offers', googleIdToken: 'driver2@example.com' });
+  check('another driver sees none of it', other.body.offers.length === 0);
+}
+
+console.log('\n== the same chain runs from the Telegram button ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const telegramMod = await load('api/telegram.js', 'telegram_under_test');
+  const telegramHandler = telegramMod.default;
+
+  store.set('order:TG1', JSON.stringify({
+    code: 'TG1', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, amount: 900000, cargoType: 'OTHER', phone: '+998901112233',
+    status: 'DRIVER_FOUND', driver: { name: 'Aziz', telegramId: 555 },
+  }));
+
+  const tap = async (data, fromId) => {
+    const res = mkRes();
+    await telegramHandler({
+      method: 'POST', headers: {},
+      body: { callback_query: {
+        id: 'q1', from: { id: fromId, first_name: 'Aziz' },
+        message: { chat: { id: -100 }, message_id: 42, text: '' },
+        data,
+      } },
+    }, res);
+    return res;
+  };
+  const statusOf = (code) => JSON.parse(store.get(`order:${code}`)).status;
+
+  await tap('next:TG1', 999);
+  check('a driver who does not own the load changes nothing', statusOf('TG1') === 'DRIVER_FOUND');
+
+  await tap('next:TG1', 555);
+  check('the assigned driver advances one stage', statusOf('TG1') === 'PICKING_UP');
+  const edits = sentMessages.filter((m) => m.url.endsWith('/editMessageText'));
+  const button = edits[edits.length - 1].body.reply_markup.inline_keyboard[0][0].text;
+  check('and the button now names the stage after that', button.includes('Yukladim'), button);
+
+  await tap('next:TG1', 555);
+  check('loading is a stage here too', statusOf('TG1') === 'LOADED');
+
+  // Ilgari voz kechish faqat DRIVER_FOUND va ON_THE_WAY da ishlardi —
+  // yangi oraliq bosqichlarda haydovchi qamalib qolardi.
+  await tap('giveup:TG1', 555);
+  check('a driver can still give up from a new middle stage', statusOf('TG1') === 'NEW');
+  check('and the load loses its driver', JSON.parse(store.get('order:TG1')).driver === null);
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

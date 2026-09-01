@@ -2,9 +2,11 @@
  * POST /api/telegram
  *
  * Telegram webhook. Drives the order through its lifecycle from the
- * driver's side, one button tap at a time:
- *   ✅ Men olaman  → 🚛 Yo'lga chiqdim  → ✅ Yetkazdim
- *   (NEW)            (DRIVER_FOUND)        (ON_THE_WAY)      (DELIVERED)
+ * driver's side, one button tap at a time. The button always names the
+ * next stage, so the driver never has to choose between four of them:
+ *
+ *   ✅ Men olaman → 🚚 Yuklashga ketdim → 📦 Yukladim → 🛣️ Yo'lga chiqdim → ✅ Yetkazdim
+ *   (NEW)          (DRIVER_FOUND)        (PICKING_UP)   (LOADED)            (ON_THE_WAY → DELIVERED)
  *
  * The persisted `order:<code>` record (written by /api/order) is the source
  * of truth for status and who's driving it. If that record is missing —
@@ -14,7 +16,9 @@
  * need to know which driver owns the order.
  */
 import { kvGet, kvSet } from '../lib/kv.js';
-import { buildOrderMessage, escapeMd } from '../lib/orderMessage.js';
+import {
+  buildOrderMessage, escapeMd, STATUS_LABELS, nextStatus, NEXT_STATUS_BUTTON,
+} from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -55,6 +59,36 @@ const notifyOwner = (order, text) =>
   });
 
 const routeOf = (order) => `${esc(order.fromCity)} → ${esc(order.toCity)}`;
+
+/**
+ * Haydovchining bitta tugmasi butun zanjirni yuritadi.
+ *
+ * Har bosqich uchun alohida tugma qo'yish haydovchiga to'rt marta
+ * bosishni yuklardi; bitta tugma esa keyingi bosqichning nomini o'zi
+ * yozib turadi. Yuk beruvchi esa buyurtma qayerda ekanini aniq ko'radi.
+ */
+const BUTTON_EMOJI = {
+  DRIVER_FOUND: '🚚', PICKING_UP: '📦', LOADED: '🛣️', ON_THE_WAY: '✅',
+};
+
+/** Yetkazilgunga qadar har qanday bosqichda voz kechish mumkin. */
+const GIVEUPABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
+
+/** Haydovchi uchun klaviatura: keyingi bosqich + voz kechish. */
+const driverKeyboard = (order) => {
+  const label = NEXT_STATUS_BUTTON[order.status];
+  const row = [];
+  if (label) {
+    row.push({
+      text: `${BUTTON_EMOJI[order.status] || '➡️'} ${label}`,
+      callback_data: `next:${order.code}`,
+    });
+  }
+  if (GIVEUPABLE.includes(order.status)) {
+    row.push({ text: '✖️ Voz kechaman', callback_data: `giveup:${order.code}` });
+  }
+  return row.length ? [row] : [];
+};
 
 const getOrder = async (code) => {
   const raw = await kvGet(`order:${code}`);
@@ -124,10 +158,7 @@ const handleTake = async (query, code, phone) => {
       message_id: message.message_id,
       text: buildOrderMessage(order),
       parse_mode: 'MarkdownV2',
-      reply_markup: { inline_keyboard: [[
-        { text: "🚛 Yo'lga chiqdim", callback_data: `depart:${code}` },
-        { text: '✖️ Voz kechaman', callback_data: `giveup:${code}` },
-      ]] },
+      reply_markup: { inline_keyboard: driverKeyboard(order) },
     });
   } else {
     // No persisted record — edit the message directly, no status buttons.
@@ -158,7 +189,7 @@ const handleTake = async (query, code, phone) => {
   // a chat with the bot.
   await telegram('sendMessage', {
     chat_id: query.from.id,
-    text: `Siz *${escapeMd(code)}* yukini oldingiz\\.\n📞 Mijoz: \`${escapeMd(phone)}\`\n\nGuruhdagi xabar ostida holatni yangilab boring: yo'lga chiqqach va yetkazgach tugmani bosing\\.`,
+    text: `Siz *${escapeMd(code)}* yukini oldingiz\\.\n📞 Mijoz: \`${escapeMd(phone)}\`\n\nGuruhdagi xabar ostidagi tugma har safar keyingi bosqichni yozib turadi — yuklashga ketganingizda, yuklaganingizda, yo'lga chiqqaningizda va yetkazganingizda bosing\\.`,
     parse_mode: 'MarkdownV2',
   }).catch(() => {});
 };
@@ -203,10 +234,7 @@ const handleDepart = async (query, code) => {
     message_id: query.message.message_id,
     text: buildOrderMessage(order),
     parse_mode: 'MarkdownV2',
-    reply_markup: { inline_keyboard: [[
-      { text: '✅ Yetkazdim', callback_data: `deliver:${code}` },
-      { text: '✖️ Voz kechaman', callback_data: `giveup:${code}` },
-    ]] },
+    reply_markup: { inline_keyboard: driverKeyboard(order) },
   });
   await answer(query, "Holat yangilandi: Yo'lda");
 };
@@ -266,7 +294,7 @@ const handleGiveUp = async (query, code) => {
     await answer(query, 'Buyurtma topilmadi.', true);
     return;
   }
-  if (order.status !== 'DRIVER_FOUND' && order.status !== 'ON_THE_WAY') {
+  if (!GIVEUPABLE.includes(order.status)) {
     await answer(query, 'Bu amal endi mavjud emas.', true);
     return;
   }
@@ -307,6 +335,59 @@ const handleGiveUp = async (query, code) => {
     + `boshqa haydovchi olishi mumkin.`);
 
   await answer(query, 'Yukdan voz kechdingiz. U yana guruhga chiqdi.');
+};
+
+/** Buyurtmani zanjir bo'yicha bir bosqich oldinga suradi. */
+const handleAdvance = async (query, code) => {
+  const order = await getOrder(code);
+  if (!order) {
+    await answer(query, 'Buyurtma topilmadi.', true);
+    return;
+  }
+  if (!order.driver || order.driver.telegramId !== query.from.id) {
+    await answer(query, 'Bu buyurtma sizga tegishli emas.', true);
+    return;
+  }
+  const next = nextStatus(order.status);
+  if (!next) {
+    await answer(query, 'Bu amal endi mavjud emas.', true);
+    return;
+  }
+
+  order.status = next;
+  order.updatedAt = Date.now();
+  if (next === 'DELIVERED') order.deliveredAt = Date.now();
+  await kvSet(`order:${code}`, JSON.stringify(order));
+
+  if (next === 'DELIVERED' && order.driver && order.driver.identity) {
+    try {
+      const key = `profile:${order.driver.identity}`;
+      const profile = JSON.parse((await kvGet(key)) || '{}');
+      profile.deliveredCount = (profile.deliveredCount || 0) + 1;
+      await kvSet(key, JSON.stringify(profile));
+    } catch (err) {
+      console.error('deliveredCount update failed:', err.message);
+    }
+  }
+
+  await telegram('editMessageText', {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id,
+    text: buildOrderMessage(order),
+    parse_mode: 'MarkdownV2',
+    reply_markup: { inline_keyboard: driverKeyboard(order) },
+  });
+
+  await notifyOwner(order,
+    `<b>${esc(STATUS_LABELS[next] || next)}</b>\n\n`
+    + `Buyurtma: <b>${esc(code)}</b>\n`
+    + `${routeOf(order)}\n\n`
+    + `Haydovchi: ${esc(order.driver.name)}`
+    + (next === 'DELIVERED'
+        ? `\n\nSaytdagi «Buyurtmani kuzatish» bo'limida haydovchiga baho qoldirishingiz mumkin.`
+        : ''));
+
+  await answer(query, `Holat yangilandi: ${STATUS_LABELS[next] || next}`);
 };
 
 const handleCommand = async (message) => {
@@ -360,6 +441,8 @@ export default async function handler(req, res) {
         await handleDeliver(update.callback_query, code);
       } else if (action === 'giveup' && code) {
         await handleGiveUp(update.callback_query, code);
+      } else if (action === 'next' && code) {
+        await handleAdvance(update.callback_query, code);
       }
     } else if (update.message) {
       await handleCommand(update.message);

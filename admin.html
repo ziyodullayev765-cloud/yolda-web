@@ -673,11 +673,13 @@
     RESOLVED:"pill-ok", BANNED:"pill-dim"
   };
   var ORDER_LABELS = {
-    NEW:"Yangi", DRIVER_FOUND:"Haydovchi topildi", ON_THE_WAY:"Yo'lda",
+    NEW:"Yangi", DRIVER_FOUND:"Haydovchi topildi", PICKING_UP:"Yuklashga ketdi",
+    LOADED:"Yuklandi", ON_THE_WAY:"Yo'lda",
     DELIVERED:"Yetkazildi", CANCELLED:"Bekor qilindi"
   };
   var ORDER_PILL = {
-    NEW:"pill-dim", DRIVER_FOUND:"pill-warn", ON_THE_WAY:"pill-blue",
+    NEW:"pill-dim", DRIVER_FOUND:"pill-warn", PICKING_UP:"pill-warn",
+    LOADED:"pill-blue", ON_THE_WAY:"pill-blue",
     DELIVERED:"pill-ok", CANCELLED:"pill-bad"
   };
   var TRUCK_STATUSES = ["PENDING","ACTIVE","PAUSED","SOLD","REJECTED"];
@@ -1646,7 +1648,7 @@
           searchPlaceholder: "Kod, shahar, ism, telefon…",
           search: orderSearch,
           filters: [{key:"ALL", label:"Barchasi", count:orders.length}].concat(
-            ["NEW","DRIVER_FOUND","ON_THE_WAY","DELIVERED","CANCELLED"].map(function(s){
+            ["NEW","DRIVER_FOUND","PICKING_UP","LOADED","ON_THE_WAY","DELIVERED","CANCELLED"].map(function(s){
               return { key:s, label:ORDER_LABELS[s], count:counts[s] || 0 };
             })),
           filterFn: function(o, f){ return (o.status || "NEW") === f; },
@@ -1771,7 +1773,7 @@
             return orderSearch(o, q) || matches([o.driver && o.driver.name, o.driver && o.driver.phone], q);
           },
           filters: [{key:"ALL", label:"Barchasi", count:trips.length}].concat(
-            ["DRIVER_FOUND","ON_THE_WAY","DELIVERED"].map(function(s){
+            ["DRIVER_FOUND","PICKING_UP","LOADED","ON_THE_WAY","DELIVERED"].map(function(s){
               return { key:s, label:ORDER_LABELS[s], count:counts[s] || 0 };
             })),
           filterFn: function(o, f){ return (o.status || "NEW") === f; },

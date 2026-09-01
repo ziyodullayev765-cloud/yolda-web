@@ -242,9 +242,15 @@
   .nav-icon-btn{
     width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);
     display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--route);
-    flex-shrink:0;margin-left:auto;position:relative;z-index:1;text-decoration:none;
+    flex-shrink:0;position:relative;z-index:1;text-decoration:none;
     transition:transform 0.2s var(--ease), border-color 0.2s var(--ease);
   }
+  .nav-actions{display:flex;align-items:center;gap:var(--s2);margin-left:auto;}
+  /* Brauzerning [hidden]{display:none} qoidasi yuqoridagi display:flex
+     dan kuchsizroq, shuning uchun `el.hidden = true` o'z-o'zicha bu
+     tugmani yashira olmasdi — qo'ng'iroq kirmagan odamga ham
+     ko'rinib turardi. */
+  .nav-icon-btn[hidden]{display:none;}
   .nav-icon-btn:hover{transform:translateY(-1px);border-color:var(--route);}
   .nav-icon-btn .ic-svg{font-size:17px;}
   .nav-links{display:flex;gap:var(--s1);list-style:none;margin:0;padding:0;}
@@ -786,6 +792,28 @@
   .route-pill .ic-svg{color:var(--muted);flex-shrink:0;font-size:16px;}
   .route-pill .arrow{color:var(--stamp);margin:0 4px;}
 
+  /* Bildirishnoma qo'ng'irog'i va o'qilmaganlar nishoni. */
+  .nav-bell{position:relative;}
+  .nav-bell-dot{
+    position:absolute;top:5px;right:5px;min-width:16px;height:16px;padding:0 4px;
+    border-radius:999px;background:#DC2626;color:#fff;
+    font-size:10px;font-weight:700;line-height:16px;text-align:center;
+    box-shadow:0 0 0 2px var(--paper);
+  }
+  .nav-bell-dot[hidden]{display:none;}
+  .notif-item{
+    display:flex;gap:var(--s3);padding:var(--s3) 0;border-bottom:1px solid var(--line);
+  }
+  .notif-item:last-child{border-bottom:none;}
+  .notif-dot{
+    width:8px;height:8px;border-radius:50%;background:var(--route);
+    flex-shrink:0;margin-top:6px;
+  }
+  .notif-dot.read{background:transparent;}
+  .notif-title{font-weight:600;font-size:14px;line-height:1.4;}
+  .notif-body{font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.5;white-space:pre-line;}
+  .notif-time{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
   /* Takliflar — yuk egasi taqqoslab tanlaydigan kartochkalar. */
   .offer-card{
     border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4);
@@ -814,6 +842,32 @@
   .offer-status.ACCEPTED{background:rgba(22,163,74,0.14);color:#15803D;}
   .offer-status.REJECTED{background:rgba(220,38,38,0.12);color:#B91C1C;}
   .offer-status.WITHDRAWN{background:var(--paper-dark);color:var(--muted);}
+
+  /* Haydovchi bosqichni suradigan panel. Telegram guruhidan yuk olgan
+     haydovchida bu tugma guruh xabarida turadi; taklif orqali
+     biriktirilgan haydovchi esa yukni shu yerdan yuritadi. */
+  .drive-panel{
+    border:1px solid var(--route);border-radius:var(--r-md);padding:var(--s4);
+    margin-bottom:var(--s3);background:var(--card);
+  }
+  .drive-now{font-size:12.5px;color:var(--muted);margin:0;}
+  .drive-stage{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;
+    color:var(--ink);margin:2px 0 0;letter-spacing:-0.01em;
+  }
+  .drive-panel .btn{margin-top:var(--s3);width:100%;}
+  .drive-hint{font-size:12.5px;color:var(--muted);margin:var(--s3) 0 0;line-height:1.55;}
+
+  /* Profildagi "Mening takliflarim" qatorlari. */
+  .trip-row{
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);width:100%;
+    background:none;border:none;border-top:1px solid var(--line);padding:var(--s3) 0;
+    text-align:left;cursor:pointer;color:inherit;font:inherit;
+  }
+  .trip-row:first-of-type{border-top:none;}
+  .trip-main{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .trip-route{font-weight:600;font-size:14px;}
+  .trip-sub{font-size:12.5px;color:var(--muted);}
 
   /* Saqlangan qidiruvlar — bosilsa filtr qo'llanadi, × o'chiradi. */
   .saved-searches{display:flex;gap:var(--s2);flex-wrap:wrap;margin:var(--s4) 0 0;}
@@ -957,15 +1011,25 @@
   .faq-item p{
     font-size:13.5px;color:var(--ink-soft);line-height:1.65;margin:var(--s2) 0 0;
   }
-  .track-steps{display:flex;align-items:flex-start;margin:var(--s3) 0 0;}
+  /* Bosqichlar tepadan pastga. Ilgari ular bir qatorda yonma-yon
+     turardi; to'rtta qisqa yozuv sig'ardi, oltitasi esa yo'q — eng
+     tor telefonda so'zlar o'rtasidan bo'linib ketardi ("Haydovc /
+     hi topildi"), ruscha va inglizchada bundan ham battar. Vertikal
+     ro'yxatda yozuv qanchalik uzun bo'lsa ham to'liq ko'rinadi. */
+  .track-steps{margin:var(--s3) 0 0;}
   .track-step{
-    display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;
-    color:var(--muted);width:70px;text-align:center;flex-shrink:0;
+    display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.2;color:var(--muted);
   }
-  .track-step .track-dot{width:12px;height:12px;border-radius:50%;background:var(--border);}
+  .track-step .track-dot{
+    width:12px;height:12px;border-radius:50%;background:var(--border);flex:0 0 12px;
+  }
   .track-step--done .track-dot, .track-step--current .track-dot{background:var(--route);}
-  .track-step--done, .track-step--current{color:var(--ink);font-weight:600;}
-  .track-line{flex:1;height:2px;background:var(--border);margin-top:6px;min-width:12px;}
+  .track-step--current .track-dot{box-shadow:0 0 0 3px var(--paper-dark);}
+  .track-step--done, .track-step--current{color:var(--ink);}
+  .track-step--current{font-weight:700;}
+  /* Manfiy chetlar chiziqni nuqtalar ichiga kirgizadi, shunda relslar
+     uzluksiz ko'rinadi — aks holda har bosqich orasida bo'shliq qoladi. */
+  .track-line{width:2px;height:19px;background:var(--border);margin:-2px 0 -2px 5px;}
   .track-line--done{background:var(--route);}
   .star-btn{background:none;border:none;font-size:26px;line-height:0;cursor:pointer;color:#F59E0B;padding:2px;}
   .chat-row{
@@ -1802,9 +1866,20 @@
 <nav class="nav" aria-label="Asosiy navigatsiya" style="position:relative;">
   <div id="googleGateHome"></div>
   <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);"><span class="word">YO'LDA</span></a>
-  <a class="nav-icon-btn" href="https://t.me/yoldaku" target="_blank" rel="noopener" aria-label="Haydovchilar guruhi (Telegram)" data-i18n-aria="nav.telegramGroupAria" title="Haydovchilar guruhi">
-    <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
-  </a>
+  <!-- O'ng tomondagi ikonkalar bitta guruhda turadi. Ilgari har biri
+       o'zi `margin-left:auto` olardi va ikkitasi bo'lgach bo'sh joyni
+       teng bo'lishib, qo'ng'iroq markazdagi logotip ustiga chiqib
+       qolgandi. -->
+  <div class="nav-actions">
+    <button type="button" class="nav-icon-btn nav-bell" id="btnNotifications" hidden
+            aria-label="Bildirishnomalar" data-i18n-aria="nav.notificationsAria">
+      <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"/></svg>
+      <span class="nav-bell-dot" id="notifBadge" hidden></span>
+    </button>
+    <a class="nav-icon-btn" href="https://t.me/yoldaku" target="_blank" rel="noopener" aria-label="Haydovchilar guruhi (Telegram)" data-i18n-aria="nav.telegramGroupAria" title="Haydovchilar guruhi">
+      <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+    </a>
+  </div>
 </nav>
 
 <main>
@@ -2326,6 +2401,12 @@
       "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
       "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
       "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
+      "stage.NEW": "Yangi", "stage.DRIVER_FOUND": "Haydovchi topildi",
+      "stage.PICKING_UP": "Yuklashga ketdi", "stage.LOADED": "Yuklandi",
+      "stage.ON_THE_WAY": "Yo'lda", "stage.DELIVERED": "Yetkazildi",
+      "stage.CANCELLED": "Bekor qilindi",
+      "next.DRIVER_FOUND": "Yuklashga ketdim", "next.PICKING_UP": "Yukladim",
+      "next.LOADED": "Yo'lga chiqdim", "next.ON_THE_WAY": "Yetkazdim",
       "track.release": "Haydovchini bo'shatish", "track.cancel": "Buyurtmani bekor qilish",
       "track.cancelled": "Bu buyurtma bekor qilingan.",
       "search.save": "Bu qidiruvni saqlash va xabar olish", "search.anyRoute": "Barcha yo'nalishlar",
@@ -2333,6 +2414,10 @@
       "search.savedSub": "Mos yuk chiqqanda Telegram orqali xabar beramiz",
       "search.saveFailed": "Saqlanmadi",
       "offer.incoming": "Kelgan takliflar", "offer.mine": "Sizning taklifingiz",
+      "offer.myList": "Mening takliflarim",
+      "drive.now": "Hozirgi bosqich", "drive.updated": "Holat yangilandi",
+      "drive.hint": "Har bosqichda tugmani bosing — yuk beruvchi buyurtma qayerdaligini shu orqali ko'radi.",
+      "drive.done": "Bu yuk yopilgan. Yuk beruvchi sizga baho qoldirishi mumkin.",
       "offer.accept": "Qabul qilish", "offer.reject": "Rad etish",
       "offer.withdraw": "Taklifni qaytarib olish",
       "offer.emptyOwner": "Hozircha taklif kelmagan. Haydovchilar yukingizni ko'rgach taklif yuboradi.",
@@ -2345,6 +2430,8 @@
       "offer.accepted": "Taklif qabul qilindi", "offer.acceptedSub": "Haydovchiga xabar berildi",
       "offer.rejected": "Taklif rad etildi", "offer.withdrawn": "Taklif qaytarib olindi",
       "offer.profile": "Profil",
+      "notif.empty": "Hozircha bildirishnoma yo'q.",
+      "nav.notificationsAria": "Bildirishnomalar",
       "loads.exactDate": "Sana", "loads.showResults": "Natijalarni ko'rsatish",
       "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
       "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
@@ -2356,6 +2443,7 @@
       "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "Faqat mos yuklar",
       "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
+      "loads.taken": "Bu yuk allaqachon olingan — yangi taklif qabul qilinmaydi.",
       "home.matchEyebrow": "Siz uchun", "home.matchTitle": "Sizga mos yuklar",
 
       "chatTab.eyebrow": "Xabarlar", "chatTab.titleA": "To'g'ridan-to'g'ri", "chatTab.titleB": "yozishing",
@@ -2596,6 +2684,12 @@
       "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
       "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
       "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
+      "stage.NEW": "Новый", "stage.DRIVER_FOUND": "Водитель найден",
+      "stage.PICKING_UP": "Едет на погрузку", "stage.LOADED": "Загружен",
+      "stage.ON_THE_WAY": "В пути", "stage.DELIVERED": "Доставлен",
+      "stage.CANCELLED": "Отменён",
+      "next.DRIVER_FOUND": "Еду на погрузку", "next.PICKING_UP": "Загрузился",
+      "next.LOADED": "Выехал", "next.ON_THE_WAY": "Доставил",
       "track.release": "Освободить водителя", "track.cancel": "Отменить заказ",
       "track.cancelled": "Этот заказ отменён.",
       "search.save": "Сохранить поиск и получать уведомления", "search.anyRoute": "Все маршруты",
@@ -2603,6 +2697,10 @@
       "search.savedSub": "Сообщим в Telegram, когда появится подходящий груз",
       "search.saveFailed": "Не сохранено",
       "offer.incoming": "Полученные предложения", "offer.mine": "Ваше предложение",
+      "offer.myList": "Мои предложения",
+      "drive.now": "Текущий этап", "drive.updated": "Статус обновлён",
+      "drive.hint": "Нажимайте кнопку на каждом этапе — так отправитель видит, где находится груз.",
+      "drive.done": "Этот груз закрыт. Отправитель может оставить вам оценку.",
       "offer.accept": "Принять", "offer.reject": "Отклонить",
       "offer.withdraw": "Отозвать предложение",
       "offer.emptyOwner": "Предложений пока нет. Водители отправят их, увидев ваш груз.",
@@ -2615,6 +2713,8 @@
       "offer.accepted": "Предложение принято", "offer.acceptedSub": "Водителю отправлено уведомление",
       "offer.rejected": "Предложение отклонено", "offer.withdrawn": "Предложение отозвано",
       "offer.profile": "Профиль",
+      "notif.empty": "Уведомлений пока нет.",
+      "nav.notificationsAria": "Уведомления",
       "loads.exactDate": "Дата", "loads.showResults": "Показать результаты",
       "loads.groupTitle": "Хотите видеть новые грузы первыми?",
       "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
@@ -2626,6 +2726,7 @@
       "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "Только подходящие",
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
+      "loads.taken": "Этот груз уже занят — новые предложения не принимаются.",
       "home.matchEyebrow": "Для вас", "home.matchTitle": "Подходящие вам грузы",
 
       "chatTab.eyebrow": "Сообщения", "chatTab.titleA": "Пишите", "chatTab.titleB": "напрямую",
@@ -2866,6 +2967,12 @@
       "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
       "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
       "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
+      "stage.NEW": "New", "stage.DRIVER_FOUND": "Driver found",
+      "stage.PICKING_UP": "Heading to pickup", "stage.LOADED": "Loaded",
+      "stage.ON_THE_WAY": "On the way", "stage.DELIVERED": "Delivered",
+      "stage.CANCELLED": "Cancelled",
+      "next.DRIVER_FOUND": "Heading to pickup", "next.PICKING_UP": "Loaded up",
+      "next.LOADED": "On my way", "next.ON_THE_WAY": "Delivered",
       "track.release": "Release the driver", "track.cancel": "Cancel the order",
       "track.cancelled": "This order has been cancelled.",
       "search.save": "Save this search and get alerts", "search.anyRoute": "All routes",
@@ -2873,6 +2980,10 @@
       "search.savedSub": "We will message you on Telegram when a matching load appears",
       "search.saveFailed": "Not saved",
       "offer.incoming": "Offers received", "offer.mine": "Your offer",
+      "offer.myList": "My offers",
+      "drive.now": "Current stage", "drive.updated": "Status updated",
+      "drive.hint": "Tap the button at each stage — that is how the shipper sees where the load is.",
+      "drive.done": "This load is closed. The shipper can leave you a rating.",
       "offer.accept": "Accept", "offer.reject": "Decline",
       "offer.withdraw": "Withdraw offer",
       "offer.emptyOwner": "No offers yet. Drivers will send one once they see your load.",
@@ -2885,6 +2996,8 @@
       "offer.accepted": "Offer accepted", "offer.acceptedSub": "The driver has been notified",
       "offer.rejected": "Offer declined", "offer.withdrawn": "Offer withdrawn",
       "offer.profile": "Profile",
+      "notif.empty": "No notifications yet.",
+      "nav.notificationsAria": "Notifications",
       "loads.exactDate": "Date", "loads.showResults": "Show results",
       "loads.groupTitle": "Want to see new loads first?",
       "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
@@ -2896,6 +3009,7 @@
       "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "Matching loads only",
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
+      "loads.taken": "This load is already taken — no new offers are accepted.",
       "home.matchEyebrow": "For you", "home.matchTitle": "Loads that fit you",
 
       "chatTab.eyebrow": "Messages", "chatTab.titleA": "Message people", "chatTab.titleB": "directly",
@@ -4035,6 +4149,9 @@
       renderProfile();
       renderHomeMatch();
       updateAccountLinkRows();
+      // Qo'ng'iroq sahifa yuklanganda jim turadi — o'sha paytda hali
+      // hech kim kirmagan bo'ladi. Kirish tugagach qaytadan so'raymiz.
+      refreshNotifBadge();
     }catch(e){}
     render();
   }
@@ -4099,6 +4216,7 @@
     renderProfile();
     renderHomeMatch();
     updateAccountLinkRows();
+    refreshNotifBadge();
     render();
   }
 
@@ -4396,6 +4514,61 @@
       + '</div>';
   }
 
+  /* ---------- Mening takliflarim ----------
+     Haydovchi taklif yuborgach yuk uni yo'qotmasligi kerak: yuklar
+     ro'yxatida faqat yangi yuklar turadi, shuning uchun qabul qilingan
+     taklif ham, kutilayotgani ham shu yerdan ochiladi. Yukning
+     bosqichini haydovchi o'sha sahifadagi tugma bilan suradi. */
+  function loadMyOffers(){
+    var box = document.getElementById("myOffersBox");
+    if(!box || !isSignedIn()) return;
+
+    fetch("/api/order?action=my-offers"
+      + "&googleIdToken=" + encodeURIComponent(googleIdToken || "")
+      + "&telegramInitData=" + encodeURIComponent(telegramInitData || ""))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        // Hech qachon taklif yubormagan odamga bo'sh kartochka ko'rsatmaymiz.
+        if(!data || !data.ok || !(data.offers || []).length) return;
+        renderMyOffers(data.offers);
+      })
+      .catch(function(){ /* profilning qolgani baribir ko'rinadi */ });
+  }
+
+  function renderMyOffers(offers){
+    var box = document.getElementById("myOffersBox");
+    if(!box) return;
+
+    box.innerHTML = '<div class="card" style="margin-top:var(--s4);">'
+      + '<h3 class="card-title">'+icon("iconBox")+' '
+      +   '<span data-i18n="offer.myList">Mening takliflarim</span>'
+      +   ' <span style="color:var(--muted);font-weight:500;">('+offers.length+')</span></h3>'
+      + offers.map(function(o){
+          var route = (o.fromCity || "?") + " → " + (o.toCity || "?");
+          // Haydovchi bo'lganda buyurtma bosqichi taklif holatidan
+          // muhimroq: "Qabul qilindi" o'rniga "Yo'lda" ko'rinadi.
+          var driving = o.isDriver && o.orderStatus;
+          var label = driving
+            ? (TRACK_STATUS_LABELS[o.orderStatus] || o.orderStatusLabel || o.orderStatus)
+            : (OFFER_STATUS_LABELS[o.status] || o.status);
+          return '<button type="button" class="trip-row" data-trip="'+escapeHtml(o.orderCode)+'">'
+            + '<span class="trip-main">'
+            +   '<span class="trip-route">'+escapeHtml(route)+'</span>'
+            +   '<span class="trip-sub">'+escapeHtml(o.orderCode)+' · '+formatNum(o.price)
+            +     ' <span data-i18n="loads.sum">so\'m</span></span>'
+            + '</span>'
+            + '<span class="offer-status '+(o.isDriver ? "ACCEPTED" : o.status)+'"'
+            +   (driving ? ' data-i18n="stage.'+o.orderStatus+'"' : '')+'>'+escapeHtml(label)+'</span>'
+            + '</button>';
+        }).join("")
+      + '</div>';
+
+    box.querySelectorAll("[data-trip]").forEach(function(b){
+      b.addEventListener("click", function(){ openLoadDetail(b.getAttribute("data-trip")); });
+    });
+    applyLang();
+  }
+
   function renderPersonalInfoCard(p){
     return '<div class="info-card">'
       + '<div class="info-card-head">'
@@ -4471,7 +4644,9 @@
     // (openProfileEditSheet), just no longer summarized here.
     card.innerHTML = renderProfileHeader(p)
       + renderProfileCompletionCard(p)
-      + renderProfileStats(p);
+      + renderProfileStats(p)
+      + '<div id="myOffersBox"></div>';
+    loadMyOffers();
 
     var shareBtn = document.getElementById("btnShareProfile");
     if(shareBtn) shareBtn.addEventListener("click", function(){ shareProfile(p); });
@@ -4643,6 +4818,7 @@
     var gateHome = document.getElementById("googleGateHome");
     if(gateHome) gateHome.innerHTML = "";
     updateAccountLinkRows();
+    refreshNotifBadge();
     initGoogleSignIn();
 
     switchTab("home");
@@ -6702,6 +6878,78 @@
       });
   }
 
+  /* ---------- Bildirishnoma markazi ----------
+     Telegram yagona kanal emas: foydalanuvchida Telegram bo'lmasligi
+     yoki turkumni o'chirgan bo'lishi mumkin. Server har bir
+     bildirishnomani ilova ichiga ham yozadi (lib/notify.js). */
+  var notifUnread = 0;
+
+  function notifRequest(action){
+    if(!isSignedIn()) return Promise.reject(new Error("not signed in"));
+    return fetch("/api/profile?action=" + action, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.body.error || "Xato");
+        return res.body;
+      });
+  }
+
+  function refreshNotifBadge(){
+    var bell = document.getElementById("btnNotifications");
+    if(bell) bell.hidden = !isSignedIn();
+    if(!isSignedIn()) return;
+    notifRequest("notifications").then(function(body){
+      notifUnread = body.unread || 0;
+      var badge = document.getElementById("notifBadge");
+      if(!badge) return;
+      badge.textContent = notifUnread > 9 ? "9+" : String(notifUnread);
+      badge.hidden = notifUnread === 0;
+    }).catch(function(){ /* nishon — majburiy emas */ });
+  }
+
+  function openNotifications(){
+    Sheet.open({
+      title: t("settings.notifications") || "Bildirishnomalar",
+      html: '<div class="skeleton sk-line" style="width:70%;"></div>'
+        + '<div class="skeleton sk-line" style="width:50%;margin-top:12px;"></div>'
+        + '<div class="skeleton sk-line" style="width:60%;margin-top:12px;"></div>',
+      onOpen: function(container){
+        notifRequest("notifications").then(function(body){
+          var box = container.querySelector(".sheet-body") || container;
+          var items = body.notifications || [];
+          if(!items.length){
+            box.innerHTML = '<div class="empty-state">' + icon("iconBell")
+              + '<p data-i18n="notif.empty">Hozircha bildirishnoma yo\'q.</p></div>';
+            applyLang();
+            return;
+          }
+          box.innerHTML = items.map(function(i){
+            return '<div class="notif-item">'
+              + '<span class="notif-dot'+(i.unread ? "" : " read")+'"></span>'
+              + '<div style="min-width:0;">'
+              +   (i.title ? '<div class="notif-title">'+escapeHtml(i.title)+'</div>' : "")
+              +   (i.body ? '<div class="notif-body">'+escapeHtml(i.body)+'</div>' : "")
+              +   '<div class="notif-time">'+escapeHtml(truckRelativeTime(i.at))+'</div>'
+              + '</div></div>';
+          }).join("");
+          // Ochilgan zahoti o'qilgan deb belgilanadi — ro'yxatni ko'rish
+          // aynan shu degani.
+          notifRequest("notifications-seen").then(function(){
+            notifUnread = 0;
+            var badge = document.getElementById("notifBadge");
+            if(badge) badge.hidden = true;
+          }).catch(function(){});
+        }).catch(function(){
+          var box = container.querySelector(".sheet-body") || container;
+          box.innerHTML = '<p class="note">Yuklab bo\'lmadi.</p>';
+        });
+      }
+    });
+  }
+
   /* ---------- Ommaviy profil ----------
      Taklif kelganda yuk beruvchi haydovchining kimligini ko'rishi
      kerak. Telefon va email bu yerda yo'q — ular aloqa boshlangandan
@@ -6888,37 +7136,84 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(!data || !data.ok) { box.innerHTML = ""; return; }
-        renderOffers(d, data.isOwner, data.offers || []);
+        renderOffers(d, data.isOwner, data.offers || [], data);
       })
       .catch(function(){ box.innerHTML = ""; });
   }
 
-  function renderOffers(d, isOwner, offers){
+  /* Biriktirilgan haydovchi uchun bosqichni suradigan panel.
+     Yuk beruvchi ham, haydovchi ham bir xil zanjirni ko'radi —
+     farqi shundaki, tugma faqat haydovchida bo'ladi. */
+  function drivePanelHtml(info){
+    if(!info || !info.isDriver) return "";
+    var s = info.orderStatus;
+    var stage = '<p class="drive-stage" data-i18n="stage.'+s+'">'
+      + escapeHtml(TRACK_STATUS_LABELS[s] || s) + '</p>';
+
+    if(!info.nextStatus){
+      // Yetkazildi yoki bekor qilindi — suradigan bosqich qolmadi.
+      return '<div class="drive-panel">'
+        + '<p class="drive-now" data-i18n="drive.now">Hozirgi bosqich</p>' + stage
+        + '<p class="drive-hint" data-i18n="drive.done">Bu yuk yopilgan. Yuk beruvchi sizga baho qoldirishi mumkin.</p>'
+        + '</div>';
+    }
+
+    return '<div class="drive-panel">'
+      + '<p class="drive-now" data-i18n="drive.now">Hozirgi bosqich</p>' + stage
+      + '<button type="button" class="btn" id="btnAdvance" data-i18n="next.'+s+'">'
+      +   escapeHtml(info.nextLabel)+'</button>'
+      + '<p class="drive-hint" data-i18n="drive.hint">Har bosqichda tugmani bosing — yuk beruvchi '
+      +   'buyurtma qayerdaligini shu orqali ko\'radi.</p>'
+      + '</div>';
+  }
+
+  function bindDrivePanel(d){
+    var btn = document.getElementById("btnAdvance");
+    if(btn) btn.addEventListener("click", function(){ advanceOrder(d, btn); });
+  }
+
+  /** Bosqichni bir qadam oldinga suradi va detalni qayta yuklaydi. */
+  function advanceOrder(d, btn){
+    btn.disabled = true;
+    offerRequest("advance", { code: d.code })
+      .then(function(body){
+        toast(t("drive.updated") || "Holat yangilandi",
+              t("stage." + body.status) || body.statusLabel || "", "success");
+        openLoadDetail(d.code);
+      })
+      .catch(function(err){ btn.disabled = false; toast(err.message, "", "info"); });
+  }
+
+  function renderOffers(d, isOwner, offers, info){
     var box = document.getElementById("offersBox");
     if(!box) return;
+    var drive = drivePanelHtml(info);
 
     // Yuk egasi o'ziga taklif ham, xabar ham yubormaydi — tugmalarni
     // butunlay olib tashlaymiz. Faqat `hidden` qo'yish yetarli emas:
     // .row2 ichidagi .btn uchun author qoidasi brauzerning
     // [hidden]{display:none} qoidasini yengadi va tugma ko'rinib qolardi.
     if(isOwner){
-      var offerBtn = document.getElementById("btnDetailOffer");
-      var row = offerBtn && offerBtn.closest(".row2");
+      var row = document.getElementById("detailContactRow");
       if(row) row.remove();
-      else if(offerBtn) offerBtn.remove();
     }
 
     if(!offers.length){
-      box.innerHTML = isOwner
-        ? '<div class="card" style="margin-top:var(--s4);"><p class="note" style="margin:0;" '
+      var empty = isOwner
+        ? '<p class="note" style="margin:0;" '
           + 'data-i18n="offer.emptyOwner">Hozircha taklif kelmagan. Haydovchilar yukingizni '
-          + 'ko\'rgach taklif yuboradi.</p></div>'
+          + 'ko\'rgach taklif yuboradi.</p>'
         : "";
+      box.innerHTML = (drive || empty)
+        ? '<div class="card" style="margin-top:var(--s4);">' + drive + empty + '</div>'
+        : "";
+      bindDrivePanel(d);
       applyLang();
       return;
     }
 
     box.innerHTML = '<div class="card" style="margin-top:var(--s4);">'
+      + drive
       + '<h3 class="card-title">'+icon("iconBox")+' '
       +   '<span data-i18n="'+(isOwner ? "offer.incoming" : "offer.mine")+'">'
       +   (isOwner ? "Kelgan takliflar" : "Sizning taklifingiz")+'</span>'
@@ -6926,6 +7221,7 @@
       + offers.map(function(o){ return offerCardHtml(o, isOwner); }).join("")
       + '</div>';
 
+    bindDrivePanel(d);
     box.querySelectorAll("[data-offer-accept]").forEach(function(b){
       b.addEventListener("click", function(){ decideOffer(d, b.getAttribute("data-offer-accept"), true, b); });
     });
@@ -7252,12 +7548,25 @@
     var fav = isFavorite(d.code);
     var dateLabel = d.pickupDate ? formatLoadDate(d.pickupDate) : "—";
 
+    // Taklif faqat hali bo'sh yukka yuboriladi — server ham shunday
+    // qaraydi. Olingan yukka tugmani qoldirish "bosdim, hech narsa
+    // bo'lmadi" degani bo'lardi; o'rniga nima uchun yo'qligini yozamiz.
+    var openForOffers = (d.status || "NEW") === "NEW";
     var contactBtns = "";
     if(d.ownerUsername){
-      contactBtns = '<div class="row2" style="margin-top:var(--s4);">'
-        + '<button type="button" class="btn" id="btnDetailOffer">'+icon("iconArrowRight")+' <span data-i18n="loads.sendOffer">Taklif yuborish</span></button>'
-        + '<button type="button" class="btn ghost" id="btnDetailMessage">'+icon("iconChat")+' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
+      // Yolg'iz qolgan tugma yarim kenglikda turmasin — .row2 ikkita
+      // ustunli panjara, ikkinchisi bo'sh qolsa qiyshiq ko'rinadi.
+      contactBtns = '<div class="'+(openForOffers ? "row2" : "")+'" id="detailContactRow" style="margin-top:var(--s4);">'
+        + (openForOffers
+            ? '<button type="button" class="btn" id="btnDetailOffer">'+icon("iconArrowRight")+' <span data-i18n="loads.sendOffer">Taklif yuborish</span></button>'
+            : "")
+        + '<button type="button" class="btn ghost" id="btnDetailMessage">'
+        +   icon("iconChat")+' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
         + '</div>';
+    }
+    if(!openForOffers){
+      contactBtns += '<p class="note" style="margin-top:var(--s3);" data-i18n="loads.taken">'
+        + 'Bu yuk allaqachon olingan — yangi taklif qabul qilinmaydi.</p>';
     }
 
     detailView.innerHTML =
@@ -7694,14 +8003,19 @@
      Order tracking — "Buyurtmani kuzatish" card, static on the Order tab
      (outside #content, so it survives formView()/successView() re-renders).
      ============================================================ */
-  var TRACK_STATUS_ORDER = ["NEW", "DRIVER_FOUND", "ON_THE_WAY", "DELIVERED"];
+  /* Olti bosqich. Ilgari to'rtta edi va "Haydovchi topildi" bilan
+     "Yo'lda" orasida uzun jimlik bor edi — yuk egasi haydovchi
+     yo'lga chiqqanini ham, yukni olganini ham bilmasdi. Haydovchi
+     bosqichni Telegram'dagi bitta tugma bilan surib boradi. */
+  var TRACK_STATUS_ORDER = ["NEW", "DRIVER_FOUND", "PICKING_UP", "LOADED", "ON_THE_WAY", "DELIVERED"];
   var TRACK_STATUS_LABELS = {
-    NEW: "Yangi", DRIVER_FOUND: "Haydovchi topildi", ON_THE_WAY: "Yo'lda", DELIVERED: "Yetkazildi"
+    NEW: "Yangi", DRIVER_FOUND: "Haydovchi topildi", PICKING_UP: "Yuklashga ketdi",
+    LOADED: "Yuklandi", ON_THE_WAY: "Yo'lda", DELIVERED: "Yetkazildi"
   };
   /* Bekor qilingan buyurtma bosqichlar chizig'iga tushmaydi — u shu
      chiziqning bir nuqtasi emas, undan chiqib ketish. */
-  var TRACK_CANCELLABLE = ["NEW", "DRIVER_FOUND", "ON_THE_WAY"];
-  var TRACK_RELEASABLE = ["DRIVER_FOUND", "ON_THE_WAY"];
+  var TRACK_CANCELLABLE = ["NEW", "DRIVER_FOUND", "PICKING_UP", "LOADED", "ON_THE_WAY"];
+  var TRACK_RELEASABLE = ["DRIVER_FOUND", "PICKING_UP", "LOADED", "ON_THE_WAY"];
   var lastTrack = null;
 
   /** Bekor qilish / bo'shatish — ikkalasi ham egadan tasdiq so'raydi. */
@@ -7759,7 +8073,8 @@
     var parts = [];
     TRACK_STATUS_ORDER.forEach(function(s, i){
       var cls = i < idx ? "done" : (i === idx ? "current" : "todo");
-      parts.push('<div class="track-step track-step--'+cls+'"><span class="track-dot"></span><span>'+TRACK_STATUS_LABELS[s]+'</span></div>');
+      parts.push('<div class="track-step track-step--'+cls+'"><span class="track-dot"></span>'
+        + '<span data-i18n="stage.'+s+'">'+TRACK_STATUS_LABELS[s]+'</span></div>');
       if(i < TRACK_STATUS_ORDER.length - 1){
         parts.push('<div class="track-line'+(i < idx ? ' track-line--done' : '')+'"></div>');
       }
@@ -8209,6 +8524,10 @@
   applyMotionPref();
   populateCityDatalist();
   loadHomeStats();
+
+  var bellBtn = document.getElementById("btnNotifications");
+  if(bellBtn) bellBtn.addEventListener("click", openNotifications);
+  refreshNotifBadge();
 
   var homeSearchBar = document.getElementById("homeSearchBar");
   if(homeSearchBar) homeSearchBar.addEventListener("click", openRouteSearch);

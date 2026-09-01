@@ -24,9 +24,9 @@
  *   profile:<identity>     -> JSON blob { username, displayName, role, city, bio, phone, avatarUrl, ... }
  */
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
-import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember } from '../lib/kv.js';
+import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvRange } from '../lib/kv.js';
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
-import { NOTIFY_CATEGORIES } from '../lib/notify.js';
+import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -359,6 +359,23 @@ const deleteSearch = async (req, res, identity, body) => {
   return res.status(200).json({ ok: true, searches: next });
 };
 
+/** POST ?action=notifications — ilova ichidagi bildirishnomalar. */
+const handleNotifications = async (req, res, action) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  if (action === 'notifications-seen') {
+    await markNotificationsSeen(identity);
+    return res.status(200).json({ ok: true, unread: 0 });
+  }
+  const { items, unread } = await readNotifications(identity, kvRange);
+  return res.status(200).json({ ok: true, notifications: items, unread });
+};
+
 const handleSearches = async (req, res, action) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const identity = await resolveEmail({
@@ -419,6 +436,9 @@ export default async function handler(req, res) {
   const action = String(req.query.action || '');
   if (action === 'searches' || action === 'save-search' || action === 'delete-search') {
     return handleSearches(req, res, action);
+  }
+  if (action === 'notifications' || action === 'notifications-seen') {
+    return handleNotifications(req, res, action);
   }
   if (action === 'link-telegram-start') return linkTelegramStart(req, res);
   if (action === 'link-telegram-finish') return linkTelegramFinish(req, res);

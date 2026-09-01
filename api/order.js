@@ -19,7 +19,9 @@
 
 import { kvPush, kvGet, kvSet, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
-import { CARGO, buildOrderMessage, STATUS_LABELS, formatNum } from '../lib/orderMessage.js';
+import {
+  CARGO, buildOrderMessage, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
+} from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { ANY_CITY, cityIndexKey, searchesKey, matchesSearch } from '../lib/savedSearch.js';
 import {
@@ -918,10 +920,130 @@ const listOffers = async (req, res) => {
   // Egasi hammasini ko'radi; haydovchi faqat o'zinikini — boshqa
   // haydovchilarning narxi raqobat ma'lumoti, uni ochib bo'lmaydi.
   const visible = isOwner ? offers : offers.filter((o) => o.driverIdentity === identity);
+
+  // Taklifi qabul qilingan haydovchi bosqichni saytdan suradi — Telegram
+  // guruhidagi tugma unga tegishli emas (u yukni guruhdan olmagan).
+  const isDriver = Boolean(order.driver && order.driver.identity === identity);
+  const next = isDriver ? nextStatus(order.status) : null;
+
   return res.status(200).json({
     ok: true,
     isOwner,
+    isDriver,
+    orderStatus: order.status || 'NEW',
+    nextStatus: next,
+    nextLabel: next ? NEXT_STATUS_BUTTON[order.status] || '' : '',
     offers: visible.map(publicOfferShape),
+  });
+};
+
+/**
+ * GET ?action=my-offers — haydovchi o'zi yuborgan takliflar ro'yxati.
+ *
+ * Busiz haydovchi taklif yuborgach yukni yo'qotib qo'yardi: yuklar
+ * ro'yxatida faqat NEW yuklar turadi, ya'ni taklifi qabul qilingan
+ * yukni u boshqa topa olmasdi — demak holatni ham yangilay olmasdi.
+ */
+const listMyOffers = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const ids = await kvRange(driverOffersKey(identity), 0, 49);
+  const offers = (await Promise.all(ids.map((id) => readOffer(id))))
+    .filter((o) => o && o.driverIdentity === identity);
+
+  const items = await Promise.all(offers.map(async (offer) => {
+    const order = await readJson(`order:${offer.orderCode}`, null);
+    const mine = Boolean(order && order.driver && order.driver.identity === identity);
+    const next = mine ? nextStatus(order.status) : null;
+    return {
+      ...publicOfferShape(offer),
+      fromCity: order ? order.fromCity : '',
+      toCity: order ? order.toCity : '',
+      weightKg: order ? order.weightKg : 0,
+      orderStatus: order ? order.status || 'NEW' : '',
+      orderStatusLabel: order ? STATUS_LABELS[order.status || 'NEW'] || '' : '',
+      // "Men shu yukning haydovchisiman" — taklif qabul qilingan bo'lsa ham,
+      // yuk beruvchi keyinchalik meni bo'shatgan bo'lishi mumkin.
+      isDriver: mine,
+      nextStatus: next,
+      nextLabel: next ? NEXT_STATUS_BUTTON[order.status] || '' : '',
+    };
+  }));
+
+  return res.status(200).json({ ok: true, offers: items });
+};
+
+/**
+ * POST ?action=advance — biriktirilgan haydovchi buyurtmani bir bosqich
+ * oldinga suradi.
+ *
+ * api/telegram.js dagi `next:` tugmasining sayt tomonidagi ayni o'zi.
+ * Ikkalasi ham lib/orderMessage.js dagi bitta zanjirdan foydalanadi.
+ */
+const advanceOrder = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const code = String(body.code || '').trim().toUpperCase();
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  // Faqat shu buyurtmaga biriktirilgan haydovchi. Kod yetarli emas:
+  // uni yukni ko'rgan har kim biladi.
+  if (!order.driver || order.driver.identity !== identity) {
+    return res.status(403).json({ error: 'Bu buyurtma sizga tegishli emas' });
+  }
+
+  const next = nextStatus(order.status);
+  if (!next) return res.status(409).json({ error: 'Bu amal endi mavjud emas' });
+
+  order.status = next;
+  order.updatedAt = Date.now();
+  if (next === 'DELIVERED') order.deliveredAt = Date.now();
+  if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+
+  if (next === 'DELIVERED') {
+    try {
+      const key = `profile:${identity}`;
+      const profile = JSON.parse((await kvGet(key)) || '{}');
+      profile.deliveredCount = (profile.deliveredCount || 0) + 1;
+      await kvSet(key, JSON.stringify(profile));
+    } catch (err) {
+      // Hisoblagich yetkazishning o'zidan muhim emas.
+      console.error('deliveredCount update failed:', err.message);
+    }
+  }
+
+  await editGroupMessage(order, []);
+
+  await notifyUser(order.ownerIdentity || order.googleEmail, {
+    category: 'orders',
+    text: `<b>${esc(STATUS_LABELS[next] || next)}</b>\n\n`
+      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+      + `Haydovchi: ${esc(order.driver.name)}`
+      + (next === 'DELIVERED'
+          ? `\n\nSaytdagi «Buyurtmani kuzatish» bo'limida haydovchiga baho qoldirishingiz mumkin.`
+          : ''),
+  });
+
+  const after = nextStatus(next);
+  return res.status(200).json({
+    ok: true,
+    status: next,
+    statusLabel: STATUS_LABELS[next] || next,
+    nextStatus: after,
+    nextLabel: after ? NEXT_STATUS_BUTTON[next] || '' : '',
   });
 };
 
@@ -1004,7 +1126,8 @@ const decideOffer = async (req, res, accept) => {
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
       + `<b>${esc(formatNum(offer.price))} so'm</b>\n\n`
       + (order.phone ? `Mijoz: ${esc(order.phone)}\n\n` : '')
-      + `Yukni olib, holatni saytda yangilab boring.`,
+      + `Saytdagi yuk sahifasida holatni bosqichma-bosqich yangilab boring — `
+      + `har bosqichda tugma keyingisining nomini yozib turadi.`,
   });
 
   await editGroupMessage(order, []);
@@ -1050,8 +1173,8 @@ const withdrawOffer = async (req, res) => {
    Ikkalasini ham yuk egasi qiladi; haydovchi o'zi voz kechishi
    api/telegram.js dagi tugma orqali.
    ============================================================ */
-const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'ON_THE_WAY'];
-const RELEASABLE = ['DRIVER_FOUND', 'ON_THE_WAY'];
+const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
+const RELEASABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
 
 /** Guruhdagi xabarni yangilaydi. Xabar id'si yo'q bo'lsa — jim o'tadi. */
 const editGroupMessage = async (order, keyboard) => {
@@ -1203,6 +1326,7 @@ export default async function handler(req, res) {
     if (action === 'backhaul') return getBackhaul(req, res);
     if (action === 'price-stats') return getPriceStats(req, res);
     if (action === 'offers') return listOffers(req, res);
+    if (action === 'my-offers') return listMyOffers(req, res);
     if (action === 'stats') return getHomeStats(req, res);
     return getOrderStatus(req, res);
   }
@@ -1215,6 +1339,7 @@ export default async function handler(req, res) {
     if (action === 'accept-offer') return decideOffer(req, res, true);
     if (action === 'reject-offer') return decideOffer(req, res, false);
     if (action === 'withdraw-offer') return withdrawOffer(req, res);
+    if (action === 'advance') return advanceOrder(req, res);
     return createOrder(req, res);
   }
   return res.status(405).json({ error: 'Method not allowed' });
