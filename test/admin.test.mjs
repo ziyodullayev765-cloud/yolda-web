@@ -44,11 +44,16 @@ export const kvRange = async () => [];
 export const kvKeys = async () => [...store.keys()].filter(k => k.startsWith('profile:'));
 `);
 
-/** Rewrites a handler's lib/kv.js import to the mock, then imports it. */
+/**
+ * Rewrites a handler's lib/kv.js import to the mock and every other
+ * ../lib/ import to an absolute repo path, then imports it. Generic on
+ * purpose: a handler that picks up a new lib import should not break
+ * these tests.
+ */
 const loadHandler = async (relPath, name) => {
   const src = readFileSync(join(repo, relPath), 'utf8')
-    .replace("'../lib/kv.js'", JSON.stringify(join(work, 'kvmock.mjs')))
-    .replace("'../lib/adminAuth.js'", JSON.stringify(join(repo, 'lib/adminAuth.js')));
+    .replaceAll("'../lib/kv.js'", JSON.stringify(join(work, 'kvmock.mjs')))
+    .replace(/'\.\.\/lib\/([\w.]+)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)));
   const out = join(work, `${name}.mjs`);
   writeFileSync(out, src);
   return (await import(out)).default;

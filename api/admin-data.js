@@ -27,6 +27,7 @@
  */
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
+import { notifyUser, esc } from '../lib/notify.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -205,6 +206,7 @@ const updateTruck = async (req, res) => {
     return res.status(500).json({ error: 'Yozuv buzilgan' });
   }
 
+  const previousStatus = truck.status || 'ACTIVE';
   if (body.verified !== undefined) truck.verified = Boolean(body.verified);
   if (body.promoted !== undefined) truck.promoted = Boolean(body.promoted);
   if (body.status !== undefined) {
@@ -228,6 +230,23 @@ const updateTruck = async (req, res) => {
 
   const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi' });
+
+  // Moderatsiya natijasini sotuvchiga aytamiz — aks holda u e'loni
+  // tasdiqlanganini yoki nega rad etilganini bilmay qoladi. Faqat holat
+  // haqiqatan o'zgarganda; verified/promoted almashtirilganda emas.
+  const nextStatus = truck.status || 'ACTIVE';
+  if (nextStatus !== previousStatus && (nextStatus === 'ACTIVE' || nextStatus === 'REJECTED')) {
+    const name = esc(truck.brand || "E'lon");
+    await notifyUser(truck.sellerIdentity, {
+      category: 'listings',
+      text: nextStatus === 'ACTIVE'
+        ? `<b>E'loningiz tasdiqlandi</b>\n\n${name}\n\nEndi u saytda ko'rinadi.`
+        : `<b>E'loningiz rad etildi</b>\n\n${name}`
+          + (truck.rejectionReason ? `\n\nSabab: ${esc(truck.rejectionReason)}` : '')
+          + `\n\nTuzatib, qaytadan yuborishingiz mumkin.`,
+    });
+  }
+
   const { photos, ...rest } = truck;
   return res.status(200).json({ ok: true, truck: { ...rest, photoCount: Array.isArray(photos) ? photos.length : 0 } });
 };

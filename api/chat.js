@@ -27,6 +27,7 @@
  * scale, and verified server-side on every call regardless.
  */
 import { kvGet, kvSet, kvPush, kvRange, kvSadd, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
+import { notifyUser, esc } from '../lib/notify.js';
 import { resolveEmail } from '../lib/identity.js';
 
 const MAX_TEXT = 1000;
@@ -163,6 +164,46 @@ const getThread = async (req, res) => {
   });
 };
 
+/**
+ * Qabul qiluvchiga Telegram orqali xabar bordi deb aytadi.
+ *
+ * Suhbat davomida har bir xabar uchun bildirishnoma yuborish — spam.
+ * Shuning uchun bitta suhbatga NOTIFY_COOLDOWN_MS ichida faqat bitta
+ * bildirishnoma ketadi: birinchisi darrov boradi, keyingilari odam
+ * javob bermaguncha jim turadi.
+ */
+const NOTIFY_COOLDOWN_MS = 15 * 60 * 1000;
+const NOTIFY_PREVIEW = 120;
+
+const notifyNewMessage = async (fromIdentity, toIdentity, text) => {
+  try {
+    const key = `chatNotifiedAt:${toIdentity}:${fromIdentity}`;
+    const last = Number(await kvGet(key)) || 0;
+    if (Date.now() - last < NOTIFY_COOLDOWN_MS) return;
+
+    // Yuboruvchi nomi: bor bo'lsa @username, bo'lmasa ko'rsatiladigan ism.
+    let sender = '';
+    try {
+      const raw = await kvGet(`profile:${fromIdentity}`);
+      const profile = raw ? JSON.parse(raw) : null;
+      if (profile) sender = profile.username ? `@${profile.username}` : (profile.displayName || '');
+    } catch {
+      // ismsiz ham yuboraveramiz
+    }
+
+    const preview = text.length > NOTIFY_PREVIEW ? `${text.slice(0, NOTIFY_PREVIEW)}…` : text;
+    const sent = await notifyUser(toIdentity, {
+      category: 'chat',
+      text: `<b>Yangi xabar</b>${sender ? ` — ${esc(sender)}` : ''}\n\n${esc(preview)}`,
+    });
+    // Vaqtni faqat haqiqatan yuborilganda belgilaymiz, aks holda
+    // Telegram'i yo'q foydalanuvchi uchun ham "sovish" hisoblanardi.
+    if (sent) await kvSet(key, String(Date.now()));
+  } catch (err) {
+    console.error('chat notify failed:', err.message);
+  }
+};
+
 const sendMessage = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
@@ -190,6 +231,8 @@ const sendMessage = async (req, res) => {
   await kvPush(pairKey(myEmail, toEmail), id);
   await kvSadd(`inbox:${myEmail}`, toEmail);
   await kvSadd(`inbox:${toEmail}`, myEmail);
+
+  await notifyNewMessage(myEmail, toEmail, text);
 
   return res.status(200).json({ ok: true, id });
 };
