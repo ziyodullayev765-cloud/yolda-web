@@ -52,6 +52,10 @@ export const resolveIdentity = async (creds) => {
   return identity ? { identity, method: 'google' } : null;
 };
 export const tgIdentity = (id) => 'tg:' + id;
+// api/profile.js also imports the linking helpers; they are not under
+// test here, so stubs are enough to satisfy the import.
+export const createTelegramLinkCode = async () => ({ error: 'not under test' });
+export const redeemTelegramLinkCode = async () => ({ error: 'not under test' });
 `);
 
 /**
@@ -321,6 +325,218 @@ console.log('\n== cancel / release ==');
   check('a released load is back in the public list', publicCodes.includes('R3'), publicCodes.join(','));
   check('a cancelled load is not in the public list', !publicCodes.includes('C3'));
   check('a load with a driver is not in the public list', !publicCodes.includes('C1'));
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== saved searches ==');
+const profileHandler = (await load('api/profile.js', 'profile_under_test')).default;
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const call = async (action, body) => {
+    const res = mkRes();
+    await profileHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const driver = { googleIdToken: 'driver@example.com' };
+
+  const anon = await call('save-search', { search: { fromCity: 'Toshkent' } });
+  check('saving without signing in is refused', anon.statusCode === 401);
+
+  const empty = await call('searches', driver);
+  check('a new user has no saved searches', empty.body.searches.length === 0);
+
+  const first = await call('save-search', { ...driver, search: { fromCity: 'Toshkent', toCity: 'Buxoro' } });
+  check('a search can be saved', first.statusCode === 200 && first.body.searches.length === 1);
+  check('it gets an id', Boolean(first.body.searches[0].id));
+
+  const dupe = await call('save-search', { ...driver, search: { fromCity: 'Toshkent', toCity: 'Buxoro' } });
+  check('the same search cannot be saved twice', dupe.statusCode === 409);
+
+  const badRange = await call('save-search', { ...driver, search: { minWeight: 9000, maxWeight: 100 } });
+  check('a backwards weight range is rejected', badRange.statusCode === 400);
+
+  for (let i = 0; i < 4; i++) {
+    await call('save-search', { ...driver, search: { fromCity: 'Toshkent', toCity: `City${i}` } });
+  }
+  const overflow = await call('save-search', { ...driver, search: { fromCity: 'Nukus' } });
+  check('the number of saved searches is capped', overflow.statusCode === 409);
+
+  check('the city index knows who is waiting',
+    (await (await import(join(work, 'kvmock.mjs'))).kvSmembers('search_cities:Toshkent'))
+      .includes('driver@example.com'));
+
+  const list = await call('searches', driver);
+  const firstId = list.body.searches[0].id;
+  const gone = await call('delete-search', { ...driver, id: firstId });
+  check('a search can be deleted', gone.statusCode === 200 && gone.body.searches.length === 4);
+  const missing = await call('delete-search', { ...driver, id: 'nope' });
+  check('deleting an unknown search is a 404', missing.statusCode === 404);
+
+  // Another user's searches must be entirely separate.
+  const other = await call('searches', { googleIdToken: 'other@example.com' });
+  check('searches are per-user', other.body.searches.length === 0);
+}
+
+console.log('\n== matching rules ==');
+{
+  const { matchesSearch } = await import(join(repo, 'lib/savedSearch.js'));
+  const load1 = { fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, cargoType: 'MEBEL', truckType: 'FURGON' };
+  check('an empty search matches everything', matchesSearch(load1, {}));
+  check('the route must match', !matchesSearch(load1, { fromCity: 'Nukus' }));
+  check('a matching route passes', matchesSearch(load1, { fromCity: 'Toshkent', toCity: 'Buxoro' }));
+  check('half a route still filters', !matchesSearch(load1, { toCity: 'Nukus' }));
+  check('weight below the minimum is excluded', !matchesSearch(load1, { minWeight: 9000 }));
+  check('weight above the maximum is excluded', !matchesSearch(load1, { maxWeight: 1000 }));
+  check('weight inside the range passes', matchesSearch(load1, { minWeight: 1000, maxWeight: 9000 }));
+  check('cargo type is honoured', !matchesSearch(load1, { cargoType: 'OTHER' }));
+  check('truck type is honoured', !matchesSearch(load1, { truckType: 'REF' }));
+  check('a missing order never matches', !matchesSearch(null, {}));
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== offers ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  const seedOrder = (code, patch) => {
+    if (!lists.has('order_codes')) lists.set('order_codes', []);
+    if (!lists.get('order_codes').includes(code)) lists.get('order_codes').push(code);
+    store.set(`order:${code}`, JSON.stringify({
+      code, ownerIdentity: 'owner@example.com', phone: '+998901112233',
+      fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, amount: 900000,
+      status: 'NEW', groupMessageId: 42, ...patch,
+    }));
+  };
+  const post = async (action, body) => {
+    const res = mkRes();
+    await orderHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const get = async (query) => {
+    const res = mkRes();
+    await orderHandler({ method: 'GET', query, headers: {} }, res);
+    return res;
+  };
+  const asDriver = (who, extra) => ({ googleIdToken: who, ...extra });
+  const owner = { googleIdToken: 'owner@example.com' };
+
+  store.set('profile:driver1@example.com', JSON.stringify({
+    username: 'driver1', displayName: 'Aziz', verified: true,
+    ratingCount: 4, ratingSum: 19, city: 'Toshkent', phone: '+998900000001',
+  }));
+  store.set('profile:driver2@example.com', JSON.stringify({
+    username: 'driver2', displayName: 'Bobur', ratingCount: 0, ratingSum: 0,
+  }));
+
+  seedOrder('OF1');
+  const anon = await post('offer', { code: 'OF1', price: 800000 });
+  check('an offer needs a signed-in driver', anon.statusCode === 401);
+
+  const own = await post('offer', { ...owner, code: 'OF1', price: 800000 });
+  check('you cannot bid on your own load', own.statusCode === 400);
+
+  const noPrice = await post('offer', asDriver('driver1@example.com', { code: 'OF1' }));
+  check('an offer without a price is refused', noPrice.statusCode === 400);
+
+  const first = await post('offer', asDriver('driver1@example.com',
+    { code: 'OF1', price: 850000, eta: 'ertaga ertalab', note: 'Furam bo\'sh' }));
+  check('a driver can send an offer', first.statusCode === 200);
+  check('the driver profile is copied onto the offer',
+    first.body.offer.driverName === 'Aziz' && first.body.offer.driverVerified === true);
+  check('the rating rides along', first.body.offer.driverRatingCount === 4);
+  check('it starts pending', first.body.offer.status === 'PENDING');
+
+  const again = await post('offer', asDriver('driver1@example.com', { code: 'OF1', price: 800000 }));
+  check('re-offering updates rather than duplicating',
+    again.statusCode === 200 && again.body.updated === true);
+  const afterUpdate = await get({ action: 'offers', code: 'OF1', ...owner });
+  check('so the owner sees one offer, not two', afterUpdate.body.offers.length === 1);
+  check('and it carries the new price', afterUpdate.body.offers[0].price === 800000);
+
+  await post('offer', asDriver('driver2@example.com', { code: 'OF1', price: 950000 }));
+  const bothSeen = await get({ action: 'offers', code: 'OF1', ...owner });
+  check('the owner sees every offer', bothSeen.body.offers.length === 2 && bothSeen.body.isOwner === true);
+
+  const driverView = await get({ action: 'offers', code: 'OF1', googleIdToken: 'driver1@example.com' });
+  check('a driver sees only their own offer', driverView.body.offers.length === 1);
+  check('and is not marked as the owner', driverView.body.isOwner === false);
+  check('a rival price stays hidden',
+    driverView.body.offers.every((o) => o.price !== 950000));
+
+  // The public shape must never leak the driver's identity or phone.
+  const shape = bothSeen.body.offers[0];
+  check('offers never expose an identity or phone',
+    !('driverIdentity' in shape) && !('driverPhone' in shape));
+
+  const strangerAccept = await post('accept-offer',
+    { googleIdToken: 'someone@else.com', id: shape.id });
+  check('only the owner can accept', strangerAccept.statusCode === 404);
+
+  const accepted = await post('accept-offer', { ...owner, id: shape.id });
+  check('the owner can accept an offer', accepted.statusCode === 200);
+  const order = JSON.parse(store.get('order:OF1'));
+  check('accepting assigns the driver', order.status === 'DRIVER_FOUND' && order.driver.name === shape.driverName);
+  check('the agreed price is recorded separately',
+    order.agreedAmount === shape.price && order.amount === 900000);
+
+  const others = bothSeen.body.offers.filter((o) => o.id !== shape.id);
+  const rival = JSON.parse(store.get(`offer:${others[0].id}`));
+  check('every other pending offer is auto-declined', rival.status === 'REJECTED');
+
+  const twice = await post('accept-offer', { ...owner, id: shape.id });
+  check('an offer cannot be accepted twice', twice.statusCode === 409);
+
+  const lateOffer = await post('offer', asDriver('driver1@example.com', { code: 'OF1', price: 700000 }));
+  check('a claimed load stops taking offers', lateOffer.statusCode === 409);
+
+  // Reject + withdraw, on a fresh load.
+  seedOrder('OF2');
+  const r1 = await post('offer', asDriver('driver1@example.com', { code: 'OF2', price: 600000 }));
+  const rejected = await post('reject-offer', { ...owner, id: r1.body.offer.id });
+  check('the owner can decline an offer',
+    rejected.statusCode === 200 && rejected.body.offer.status === 'REJECTED');
+  check('declining leaves the load open', JSON.parse(store.get('order:OF2')).status === 'NEW');
+
+  seedOrder('OF3');
+  const w1 = await post('offer', asDriver('driver1@example.com', { code: 'OF3', price: 600000 }));
+  const notMine = await post('withdraw-offer',
+    { googleIdToken: 'driver2@example.com', id: w1.body.offer.id });
+  check('a driver cannot withdraw someone else\'s offer', notMine.statusCode === 404);
+  const withdrawn = await post('withdraw-offer',
+    asDriver('driver1@example.com', { id: w1.body.offer.id }));
+  check('a driver can withdraw their own offer',
+    withdrawn.statusCode === 200 && withdrawn.body.offer.status === 'WITHDRAWN');
+}
+
+console.log('\n== home statistics ==');
+{
+  store.clear(); sets.clear(); lists.clear();
+  const get = async (query) => {
+    const res = mkRes();
+    await orderHandler({ method: 'GET', query, headers: {} }, res);
+    return res;
+  };
+  const seed = (code, status, from, to) => {
+    if (!lists.has('order_codes')) lists.set('order_codes', []);
+    lists.get('order_codes').push(code);
+    store.set(`order:${code}`, JSON.stringify({ code, status, fromCity: from, toCity: to, weightKg: 1, amount: 1 }));
+  };
+  seed('S1', 'NEW', 'Toshkent', 'Buxoro');
+  seed('S2', 'NEW', 'Toshkent', 'Nukus');
+  seed('S3', 'DELIVERED', 'Buxoro', 'Nukus');
+  seed('S4', 'CANCELLED', 'Toshkent', 'Buxoro');
+  sets.set('profile_emails', new Set(['d1@x.com', 'd2@x.com', 'o1@x.com']));
+  store.set('profile:d1@x.com', JSON.stringify({ role: 'DRIVER' }));
+  store.set('profile:d2@x.com', JSON.stringify({ role: 'BOTH' }));
+  store.set('profile:o1@x.com', JSON.stringify({ role: 'OWNER' }));
+
+  const stats = await get({ action: 'stats' });
+  check('only open loads count as active', stats.body.activeLoads === 2, stats.body.activeLoads);
+  check('delivered loads are counted', stats.body.delivered === 1);
+  check('drivers include BOTH but not OWNER', stats.body.drivers === 2, stats.body.drivers);
+  check('cities are counted distinctly', stats.body.cities === 3, stats.body.cities);
+  check('nothing is invented when a figure is zero',
+    Object.values(stats.body).every((v) => typeof v === 'number'));
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

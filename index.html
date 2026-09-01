@@ -786,6 +786,53 @@
   .route-pill .ic-svg{color:var(--muted);flex-shrink:0;font-size:16px;}
   .route-pill .arrow{color:var(--stamp);margin:0 4px;}
 
+  /* Takliflar — yuk egasi taqqoslab tanlaydigan kartochkalar. */
+  .offer-card{
+    border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4);
+    margin-bottom:var(--s3);background:var(--card);
+  }
+  .offer-card.mine{border-color:var(--route);}
+  .offer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);}
+  .offer-driver{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:5px;}
+  .offer-driver .ic-svg{font-size:15px;}
+  .offer-price{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;
+    color:var(--route);white-space:nowrap;letter-spacing:-0.01em;
+  }
+  /* Ataylab flex emas: flex element (svg) va matn bolalarini alohida
+     elementlarga ajratadi, natijada yulduz ikonkasi o'z qatoriga
+     tushib ketardi. Bu yerda hammasi bitta oqim bo'lishi kerak. */
+  .offer-meta{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.6;}
+  .offer-meta .ic-svg{color:#F59E0B;vertical-align:-0.15em;}
+  .offer-note{font-size:13.5px;color:var(--ink-soft);margin-top:var(--s3);line-height:1.55;}
+  .offer-actions{display:flex;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap;}
+  .offer-actions .btn{flex:1;min-width:120px;}
+  .offer-status{
+    display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--r-pill);
+  }
+  .offer-status.PENDING{background:rgba(245,158,11,0.14);color:#B45309;}
+  .offer-status.ACCEPTED{background:rgba(22,163,74,0.14);color:#15803D;}
+  .offer-status.REJECTED{background:rgba(220,38,38,0.12);color:#B91C1C;}
+  .offer-status.WITHDRAWN{background:var(--paper-dark);color:var(--muted);}
+
+  /* Saqlangan qidiruvlar — bosilsa filtr qo'llanadi, × o'chiradi. */
+  .saved-searches{display:flex;gap:var(--s2);flex-wrap:wrap;margin:var(--s4) 0 0;}
+  .ss-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-pill);
+    padding:7px 8px 7px 13px;font-size:13px;color:var(--ink);cursor:pointer;
+    font-family:inherit;
+  }
+  .ss-chip:hover{border-color:var(--route);color:var(--route);}
+  .ss-chip .ic-svg{font-size:14px;color:var(--route);}
+  .ss-del{
+    display:flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:50%;border:none;background:var(--paper-dark);
+    color:var(--muted);cursor:pointer;padding:0;flex-shrink:0;
+  }
+  .ss-del:hover{background:#FEE2E2;color:#DC2626;}
+  .ss-del .ic-svg{font-size:11px;}
+
   /* Narx maslahatchisi — haqiqiy buyurtmalardan olingan oraliq. */
   .price-hint{
     display:flex;gap:var(--s3);align-items:flex-start;
@@ -1770,7 +1817,7 @@
     <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.eyebrow">Yuk bozori · O'zbekiston</span></p>
     <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
     <h1 class="brand hero-seq">YO'LDA</h1>
-    <p class="tagline hero-seq" data-i18n="home.tagline">Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi platforma. Buyurtma joylashtiring yoki mavjud yuklarni oling.</p>
+    <p class="tagline hero-seq" data-i18n="home.tagline">Yukingizni kerakli haydovchi bilan bog'lang. O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan ishlang.</p>
     <div class="hero-ctas hero-seq">
       <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk joylash</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
       <a class="btn-secondary" href="#" data-tab-link="loads"><span data-i18n="home.ctaGet">Yuk topish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg></a>
@@ -1799,10 +1846,10 @@
     <div id="homeMatchList"></div>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat-cell reveal"><div class="v" data-count="13">13</div><div class="k" data-i18n="home.stat1k">Shahar</div><div class="kk" data-i18n="home.stat1kk">Butun O'zbekiston bo'ylab</div></div>
-    <div class="stat-cell reveal"><div class="v">24/7</div><div class="k" data-i18n="home.stat2k">Ish vaqti</div><div class="kk" data-i18n="home.stat2kk">Istalgan vaqtda buyurtma bering</div></div>
-  </div>
+  <!-- Raqamlar /api/order?action=stats dan keladi. Bazada hech narsa
+       bo'lmasa, blok umuman ko'rsatilmaydi — nol yoki o'ylab topilgan
+       raqamdan ko'ra hech narsa yaxshiroq. -->
+  <div class="stats-bar" id="homeStats" hidden></div>
 </section>
 
 <section class="tabview" id="tab-order" data-tab="order" hidden>
@@ -1872,7 +1919,13 @@
         <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
         <button type="button" class="chip" id="chipMatchOnly" hidden><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span data-i18n="loads.matchOnly">Faqat mos yuklar</span></button>
       </div>
-      <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
+      <div style="display:flex;gap:var(--s4);flex-wrap:wrap;align-items:center;">
+        <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
+        <button type="button" class="link-btn" id="btnSaveSearch" hidden>
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"></use></svg>
+          <span data-i18n="search.save">Bu qidiruvni saqlash va xabar olish</span>
+        </button>
+      </div>
       <!-- Lives here (not inline) so its <select>/<input> elements and their
            listeners are only ever wired up once by initLoadsFilters() — the
            filter Sheet just relocates this whole node into itself while
@@ -1904,6 +1957,8 @@
         </div>
       </div>
     </div>
+
+    <div id="savedSearches" hidden></div>
 
     <div id="backhaulBanner" hidden></div>
 
@@ -2273,6 +2328,23 @@
       "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
       "track.release": "Haydovchini bo'shatish", "track.cancel": "Buyurtmani bekor qilish",
       "track.cancelled": "Bu buyurtma bekor qilingan.",
+      "search.save": "Bu qidiruvni saqlash va xabar olish", "search.anyRoute": "Barcha yo'nalishlar",
+      "search.delete": "O'chirish", "search.saved": "Qidiruv saqlandi",
+      "search.savedSub": "Mos yuk chiqqanda Telegram orqali xabar beramiz",
+      "search.saveFailed": "Saqlanmadi",
+      "offer.incoming": "Kelgan takliflar", "offer.mine": "Sizning taklifingiz",
+      "offer.accept": "Qabul qilish", "offer.reject": "Rad etish",
+      "offer.withdraw": "Taklifni qaytarib olish",
+      "offer.emptyOwner": "Hozircha taklif kelmagan. Haydovchilar yukingizni ko'rgach taklif yuboradi.",
+      "offer.priceLabel": "Yakuniy narx (so'm)", "offer.etaLabel": "Yetib borish vaqti",
+      "offer.noteLabel": "Izoh (ixtiyoriy)", "offer.send": "Taklif yuborish",
+      "offer.sending": "Yuborilmoqda...", "offer.sent": "Taklifingiz yuborildi",
+      "offer.updated": "Taklifingiz yangilandi",
+      "offer.sentSub": "Yuk beruvchi javob berganda xabar beramiz",
+      "offer.priceRequired": "Narxni kiriting", "offer.needSignIn": "Avval tizimga kiring",
+      "offer.accepted": "Taklif qabul qilindi", "offer.acceptedSub": "Haydovchiga xabar berildi",
+      "offer.rejected": "Taklif rad etildi", "offer.withdrawn": "Taklif qaytarib olindi",
+      "offer.profile": "Profil",
       "loads.exactDate": "Sana", "loads.showResults": "Natijalarni ko'rsatish",
       "loads.groupTitle": "Yangi yuklarni birinchi bo'lib ko'rasizmi?",
       "loads.groupSub": "Telegram guruhimizga qo'shiling — har bir yangi yuk shu yerga darhol tushadi.",
@@ -2289,8 +2361,8 @@
       "chatTab.eyebrow": "Xabarlar", "chatTab.titleA": "To'g'ridan-to'g'ri", "chatTab.titleB": "yozishing",
       "chatTab.sub": "Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.",
       "profile.helpLink": "Yordam, savollar va sozlamalar",
-      "home.stat1k": "Shahar", "home.stat1kk": "Butun O'zbekiston bo'ylab",
-      "home.stat2k": "Ish vaqti", "home.stat2kk": "Istalgan vaqtda buyurtma bering",
+      "home.statLoads": "Faol yuk", "home.statDrivers": "Haydovchi",
+      "home.statDelivered": "Yetkazilgan", "home.statCities": "Shahar",
       "home.stat3k": "Ro'yxatdan o'tish narxi", "home.stat3kk": "Komissiya ham yo'q",
 
       "order.eyebrow": "Buyurtma", "order.titleA": "Hisoblang va", "order.titleB": "yuboring",
@@ -2415,6 +2487,7 @@
       "notif.tgOrders": "Buyurtmam holati", "notif.tgOrdersSub": "Haydovchi topildi, yo'lga chiqdi, yetkazildi",
       "notif.tgListings": "E'lonlarim", "notif.tgListingsSub": "E'lon tasdiqlandi yoki rad etildi",
       "notif.tgChat": "Yangi xabarlar", "notif.tgChatSub": "Suhbatga birinchi yangi xabar kelganda",
+      "notif.tgMatches": "Mos yuklar", "notif.tgMatchesSub": "Saqlangan qidiruvingizga mos yuk chiqqanda",
       "notif.tgSignIn": "Telegram bildirishnomalarini sozlash uchun avval tizimga kiring.",
       "notif.tgNotLinked": "Bu xabarlar Telegram orqali keladi. Ularni olish uchun ilovani Telegram'da oching yoki akkauntingizni Telegram bilan bog'lang.",
       "feedback.sub": "Yolda haqida fikringiz, taklifingiz yoki muammo bo'lsa — shu yerdan yozing.",
@@ -2525,6 +2598,23 @@
       "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
       "track.release": "Освободить водителя", "track.cancel": "Отменить заказ",
       "track.cancelled": "Этот заказ отменён.",
+      "search.save": "Сохранить поиск и получать уведомления", "search.anyRoute": "Все маршруты",
+      "search.delete": "Удалить", "search.saved": "Поиск сохранён",
+      "search.savedSub": "Сообщим в Telegram, когда появится подходящий груз",
+      "search.saveFailed": "Не сохранено",
+      "offer.incoming": "Полученные предложения", "offer.mine": "Ваше предложение",
+      "offer.accept": "Принять", "offer.reject": "Отклонить",
+      "offer.withdraw": "Отозвать предложение",
+      "offer.emptyOwner": "Предложений пока нет. Водители отправят их, увидев ваш груз.",
+      "offer.priceLabel": "Итоговая цена (сум)", "offer.etaLabel": "Время прибытия",
+      "offer.noteLabel": "Комментарий (необязательно)", "offer.send": "Отправить предложение",
+      "offer.sending": "Отправка...", "offer.sent": "Предложение отправлено",
+      "offer.updated": "Предложение обновлено",
+      "offer.sentSub": "Сообщим, когда заказчик ответит",
+      "offer.priceRequired": "Укажите цену", "offer.needSignIn": "Сначала войдите",
+      "offer.accepted": "Предложение принято", "offer.acceptedSub": "Водителю отправлено уведомление",
+      "offer.rejected": "Предложение отклонено", "offer.withdrawn": "Предложение отозвано",
+      "offer.profile": "Профиль",
       "loads.exactDate": "Дата", "loads.showResults": "Показать результаты",
       "loads.groupTitle": "Хотите видеть новые грузы первыми?",
       "loads.groupSub": "Присоединяйтесь к нашей группе в Telegram — каждый новый груз появляется там сразу.",
@@ -2541,8 +2631,8 @@
       "chatTab.eyebrow": "Сообщения", "chatTab.titleA": "Пишите", "chatTab.titleB": "напрямую",
       "chatTab.sub": "Найдите пользователя по username и свяжитесь с ним.",
       "profile.helpLink": "Помощь, вопросы и настройки",
-      "home.stat1k": "Городов", "home.stat1kk": "По всему Узбекистану",
-      "home.stat2k": "Режим работы", "home.stat2kk": "Оформляйте заказ в любое время",
+      "home.statLoads": "Активных грузов", "home.statDrivers": "Водителей",
+      "home.statDelivered": "Доставлено", "home.statCities": "Городов",
       "home.stat3k": "Стоимость регистрации", "home.stat3kk": "Без комиссии",
 
       "order.eyebrow": "Заказ", "order.titleA": "Рассчитайте и", "order.titleB": "отправьте",
@@ -2667,6 +2757,7 @@
       "notif.tgOrders": "Статус моего заказа", "notif.tgOrdersSub": "Водитель найден, выехал, доставил",
       "notif.tgListings": "Мои объявления", "notif.tgListingsSub": "Объявление одобрено или отклонено",
       "notif.tgChat": "Новые сообщения", "notif.tgChatSub": "При первом новом сообщении в переписке",
+      "notif.tgMatches": "Подходящие грузы", "notif.tgMatchesSub": "Когда появится груз по сохранённому поиску",
       "notif.tgSignIn": "Чтобы настроить уведомления в Telegram, сначала войдите.",
       "notif.tgNotLinked": "Эти сообщения приходят через Telegram. Откройте приложение в Telegram или привяжите аккаунт к Telegram.",
       "feedback.sub": "Есть отзыв, предложение или проблема — напишите нам здесь.",
@@ -2777,6 +2868,23 @@
       "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
       "track.release": "Release the driver", "track.cancel": "Cancel the order",
       "track.cancelled": "This order has been cancelled.",
+      "search.save": "Save this search and get alerts", "search.anyRoute": "All routes",
+      "search.delete": "Delete", "search.saved": "Search saved",
+      "search.savedSub": "We will message you on Telegram when a matching load appears",
+      "search.saveFailed": "Not saved",
+      "offer.incoming": "Offers received", "offer.mine": "Your offer",
+      "offer.accept": "Accept", "offer.reject": "Decline",
+      "offer.withdraw": "Withdraw offer",
+      "offer.emptyOwner": "No offers yet. Drivers will send one once they see your load.",
+      "offer.priceLabel": "Final price (UZS)", "offer.etaLabel": "Arrival time",
+      "offer.noteLabel": "Note (optional)", "offer.send": "Send offer",
+      "offer.sending": "Sending...", "offer.sent": "Offer sent",
+      "offer.updated": "Offer updated",
+      "offer.sentSub": "We will let you know when the shipper replies",
+      "offer.priceRequired": "Enter a price", "offer.needSignIn": "Sign in first",
+      "offer.accepted": "Offer accepted", "offer.acceptedSub": "The driver has been notified",
+      "offer.rejected": "Offer declined", "offer.withdrawn": "Offer withdrawn",
+      "offer.profile": "Profile",
       "loads.exactDate": "Date", "loads.showResults": "Show results",
       "loads.groupTitle": "Want to see new loads first?",
       "loads.groupSub": "Join our Telegram group — every new load lands there instantly.",
@@ -2793,8 +2901,8 @@
       "chatTab.eyebrow": "Messages", "chatTab.titleA": "Message people", "chatTab.titleB": "directly",
       "chatTab.sub": "Search by username and get in touch with anyone.",
       "profile.helpLink": "Help, questions and settings",
-      "home.stat1k": "Cities", "home.stat1kk": "Across all of Uzbekistan",
-      "home.stat2k": "Hours", "home.stat2kk": "Post an order any time",
+      "home.statLoads": "Active loads", "home.statDrivers": "Drivers",
+      "home.statDelivered": "Delivered", "home.statCities": "Cities",
       "home.stat3k": "Sign-up cost", "home.stat3kk": "No commission either",
 
       "order.eyebrow": "Order", "order.titleA": "Calculate and", "order.titleB": "send it",
@@ -2919,6 +3027,7 @@
       "notif.tgOrders": "My order status", "notif.tgOrdersSub": "Driver found, departed, delivered",
       "notif.tgListings": "My listings", "notif.tgListingsSub": "Listing approved or rejected",
       "notif.tgChat": "New messages", "notif.tgChatSub": "On the first new message in a conversation",
+      "notif.tgMatches": "Matching loads", "notif.tgMatchesSub": "When a load matches one of your saved searches",
       "notif.tgSignIn": "Sign in first to set up Telegram notifications.",
       "notif.tgNotLinked": "These arrive through Telegram. Open the app in Telegram, or link your account to Telegram.",
       "feedback.sub": "Have feedback, an idea, or ran into a problem? Write to us here.",
@@ -3302,7 +3411,9 @@
     { key: "listings", labelKey: "notif.tgListings", label: "E'lonlarim",
       subKey: "notif.tgListingsSub", sub: "E'lon tasdiqlandi yoki rad etildi" },
     { key: "chat",     labelKey: "notif.tgChat",     label: "Yangi xabarlar",
-      subKey: "notif.tgChatSub", sub: "Suhbatga birinchi yangi xabar kelganda" }
+      subKey: "notif.tgChatSub", sub: "Suhbatga birinchi yangi xabar kelganda" },
+    { key: "matches",  labelKey: "notif.tgMatches",  label: "Mos yuklar",
+      subKey: "notif.tgMatchesSub", sub: "Saqlangan qidiruvingizga mos yuk chiqqanda" }
   ];
 
   function renderTelegramNotifSection(profile){
@@ -6268,6 +6379,10 @@
       fetchLoads();
     });
 
+    var saveSearchBtn = document.getElementById("btnSaveSearch");
+    if(saveSearchBtn) saveSearchBtn.addEventListener("click", saveCurrentSearch);
+    loadSavedSearches();
+
     var matchChip = document.getElementById("chipMatchOnly");
     if(matchChip) matchChip.addEventListener("click", function(){
       loadsState.matchOnly = !loadsState.matchOnly;
@@ -6587,6 +6702,439 @@
       });
   }
 
+  /* ---------- Ommaviy profil ----------
+     Taklif kelganda yuk beruvchi haydovchining kimligini ko'rishi
+     kerak. Telefon va email bu yerda yo'q — ular aloqa boshlangandan
+     keyin ochiladi. */
+  function openPublicProfile(username){
+    if(!username) return;
+    Sheet.open({
+      title: "@" + username,
+      html: '<div class="skeleton sk-line" style="width:55%;"></div>'
+        + '<div class="skeleton sk-line" style="width:35%;margin-top:12px;"></div>'
+        + '<div class="skeleton sk-card" style="height:80px;margin-top:14px;"></div>',
+      onOpen: function(container){
+        fetch("/api/profile?action=public&username=" + encodeURIComponent(username))
+          .then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+          .then(function(res){
+            var body = container.querySelector(".sheet-body") || container;
+            if(!res.ok){
+              body.innerHTML = '<p class="note">' + escapeHtml(res.body.error || "Topilmadi") + '</p>';
+              return;
+            }
+            body.innerHTML = publicProfileHtml(res.body.profile);
+            applyLang();
+          })
+          .catch(function(){
+            var body = container.querySelector(".sheet-body") || container;
+            body.innerHTML = '<p class="note">Yuklab bo\'lmadi.</p>';
+          });
+      }
+    });
+  }
+
+  /* Ommaviy profildagi "Xabar yozish" — bitta delegatsiya, chunki
+     profil varag'i har safar qaytadan chiziladi. */
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-message-user]");
+    if(!btn) return;
+    var username = btn.getAttribute("data-message-user");
+    Sheet.close();
+    goToChatWith(username, "");
+  });
+
+  function publicProfileHtml(p){
+    var rating = p.ratingCount ? (p.ratingSum / p.ratingCount).toFixed(1) : null;
+    var stats = [];
+    if(rating) stats.push({ v: icon("iconStar","filled") + " " + rating, k: "Reyting" });
+    if(p.ratingCount) stats.push({ v: p.ratingCount, k: "Baho" });
+    if(p.deliveredCount) stats.push({ v: p.deliveredCount, k: "Yetkazilgan" });
+
+    var facts = [];
+    if(p.role) facts.push({ ic: "iconUser", v: PROFILE_ROLE_LABELS[p.role] || p.role });
+    if(p.city) facts.push({ ic: "iconMap", v: p.city });
+    if(p.vehicleType) facts.push({ ic: "iconTruck", v: VEHICLE_LABELS_PUBLIC[p.vehicleType] || p.vehicleType });
+    if(p.joinedAt) facts.push({ ic: "iconInfo",
+                                v: "A'zo: " + new Date(p.joinedAt).toLocaleDateString("uz-UZ",
+                                    { year:"numeric", month:"long" }) });
+
+    return '<div style="display:flex;gap:14px;align-items:center;margin-bottom:var(--s4);">'
+      + (p.avatarDataUrl
+          ? '<img src="'+escapeHtml(p.avatarDataUrl)+'" alt="" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">'
+          : '<div style="width:60px;height:60px;border-radius:50%;background:var(--paper-dark);'
+            + 'display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--route);">'
+            + escapeHtml((p.displayName || p.username || "?").charAt(0).toUpperCase()) + '</div>')
+      + '<div><div style="font-size:17px;font-weight:700;display:flex;align-items:center;gap:6px;">'
+      +   escapeHtml(p.displayName || p.username)
+      +   (p.verified ? icon("iconVerifiedBadge") : "") + '</div>'
+      +   '<div class="note" style="margin:2px 0 0;">@'+escapeHtml(p.username)+'</div></div>'
+      + '</div>'
+      + (stats.length
+          ? '<div class="profile-stats" style="margin-bottom:var(--s4);">' + stats.map(function(x){
+              return '<div class="profile-stat"><div class="v">'+x.v+'</div><div class="k">'+x.k+'</div></div>';
+            }).join("") + '</div>'
+          : "")
+      + (facts.length
+          ? '<div class="card" style="margin-bottom:var(--s3);">' + facts.map(function(f){
+              return '<p class="note" style="margin:0 0 6px;display:flex;align-items:center;gap:8px;">'
+                + icon(f.ic) + escapeHtml(f.v) + '</p>';
+            }).join("") + '</div>'
+          : "")
+      + (p.bio ? '<div class="card"><p class="note" style="margin:0;">'+escapeHtml(p.bio)+'</p></div>' : "")
+      + '<button type="button" class="btn ghost" style="margin-top:var(--s4);" '
+      +   'data-message-user="'+escapeHtml(p.username)+'">'+icon("iconChat")
+      +   ' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>';
+  }
+
+  var PROFILE_ROLE_LABELS = { DRIVER: "Haydovchi", OWNER: "Yuk beruvchi", BOTH: "Ikkalasi ham" };
+  var VEHICLE_LABELS_PUBLIC = {
+    ISUZU: "Isuzu", GAZEL: "Gazel", FURGON: "Furgon",
+    YARIM_TREYLER: "Yarim treyler", SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
+  };
+
+  /* ---------- Bosh sahifa statistikasi ----------
+     Faqat bazadagi haqiqiy raqamlar. Nol bo'lgan ko'rsatkich
+     ko'rsatilmaydi: "0 haydovchi" yozib qo'yish platformani bo'sh
+     ko'rsatadi va foydasi yo'q. Hech biri qolmasa, blok yashiriladi. */
+  function loadHomeStats(){
+    var box = document.getElementById("homeStats");
+    if(!box) return;
+    fetch("/api/order?action=stats")
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var cells = [
+          { value: data.activeLoads, key: "home.statLoads", label: "Faol yuk" },
+          { value: data.drivers,     key: "home.statDrivers", label: "Haydovchi" },
+          { value: data.delivered,   key: "home.statDelivered", label: "Yetkazilgan" },
+          { value: data.cities,      key: "home.statCities", label: "Shahar" }
+        ].filter(function(c){ return Number(c.value) > 0; });
+
+        if(!cells.length){ box.hidden = true; return; }
+        box.innerHTML = cells.map(function(c){
+          return '<div class="stat-cell reveal"><div class="v" data-count="'+c.value+'">'
+            + formatNum(c.value) + '</div>'
+            + '<div class="k" data-i18n="'+c.key+'">'+c.label+'</div></div>';
+        }).join("");
+        box.hidden = false;
+        applyLang();
+      })
+      .catch(function(){ /* statistika — majburiy emas, jim qolamiz */ });
+  }
+
+  /* ---------- Takliflar ----------
+     Haydovchi narx va yetib borish vaqtini taklif qiladi; yuk egasi
+     kelgan takliflarni taqqoslab tanlaydi. Ilgari yuk "kim tez bossa
+     o'shaniki" edi — bu tezlikni mukofotlardi, mosligini emas. */
+  var OFFER_STATUS_LABELS = {
+    PENDING: "Kutilmoqda", ACCEPTED: "Qabul qilindi",
+    REJECTED: "Rad etildi", WITHDRAWN: "Qaytarib olindi"
+  };
+
+  function offerRatingLabel(o){
+    if(!o.driverRatingCount) return "";
+    return (o.driverRatingSum / o.driverRatingCount).toFixed(1);
+  }
+
+  function offerCardHtml(o, isOwner){
+    var rating = offerRatingLabel(o);
+    var meta = [];
+    if(rating) meta.push(icon("iconStar","filled") + " " + rating + " (" + o.driverRatingCount + ")");
+    if(o.driverCity) meta.push(escapeHtml(o.driverCity));
+    if(o.eta) meta.push(escapeHtml(o.eta));
+    meta.push(truckRelativeTime(o.createdAt));
+
+    var actions = "";
+    if(isOwner && o.status === "PENDING"){
+      actions = '<div class="offer-actions">'
+        + '<button type="button" class="btn" data-offer-accept="'+escapeHtml(o.id)+'">'
+        +   icon("iconCheckLine")+' <span data-i18n="offer.accept">Qabul qilish</span></button>'
+        + '<button type="button" class="btn ghost" data-offer-reject="'+escapeHtml(o.id)+'">'
+        +   '<span data-i18n="offer.reject">Rad etish</span></button>'
+        + (o.driverUsername
+            ? '<button type="button" class="btn ghost" data-offer-profile="'+escapeHtml(o.driverUsername)+'">'
+              + '<span data-i18n="offer.profile">Profil</span></button>'
+            : "")
+        + '</div>';
+    } else if(!isOwner && o.status === "PENDING"){
+      actions = '<div class="offer-actions">'
+        + '<button type="button" class="btn ghost" data-offer-withdraw="'+escapeHtml(o.id)+'">'
+        +   '<span data-i18n="offer.withdraw">Taklifni qaytarib olish</span></button>'
+        + '</div>';
+    }
+
+    return '<div class="offer-card'+(isOwner ? "" : " mine")+'">'
+      + '<div class="offer-head">'
+      +   '<div><div class="offer-driver">'+escapeHtml(o.driverName || "Haydovchi")
+      +     (o.driverVerified ? icon("iconVerifiedBadge") : "")+'</div>'
+      +     '<div class="offer-meta">'+meta.join(" · ")+'</div></div>'
+      +   '<div style="text-align:right;">'
+      +     '<div class="offer-price">'+formatNum(o.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
+      +     '<span class="offer-status '+o.status+'">'+(OFFER_STATUS_LABELS[o.status] || o.status)+'</span>'
+      +   '</div>'
+      + '</div>'
+      + (o.note ? '<p class="offer-note">'+escapeHtml(o.note)+'</p>' : "")
+      + actions
+      + '</div>';
+  }
+
+  function loadOffers(d){
+    var box = document.getElementById("offersBox");
+    if(!box) return;
+    if(!isSignedIn()){ box.innerHTML = ""; return; }
+
+    fetch("/api/order?action=offers&code=" + encodeURIComponent(d.code)
+      + "&googleIdToken=" + encodeURIComponent(googleIdToken || "")
+      + "&telegramInitData=" + encodeURIComponent(telegramInitData || ""))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data || !data.ok) { box.innerHTML = ""; return; }
+        renderOffers(d, data.isOwner, data.offers || []);
+      })
+      .catch(function(){ box.innerHTML = ""; });
+  }
+
+  function renderOffers(d, isOwner, offers){
+    var box = document.getElementById("offersBox");
+    if(!box) return;
+
+    // Yuk egasi o'ziga taklif ham, xabar ham yubormaydi — tugmalarni
+    // butunlay olib tashlaymiz. Faqat `hidden` qo'yish yetarli emas:
+    // .row2 ichidagi .btn uchun author qoidasi brauzerning
+    // [hidden]{display:none} qoidasini yengadi va tugma ko'rinib qolardi.
+    if(isOwner){
+      var offerBtn = document.getElementById("btnDetailOffer");
+      var row = offerBtn && offerBtn.closest(".row2");
+      if(row) row.remove();
+      else if(offerBtn) offerBtn.remove();
+    }
+
+    if(!offers.length){
+      box.innerHTML = isOwner
+        ? '<div class="card" style="margin-top:var(--s4);"><p class="note" style="margin:0;" '
+          + 'data-i18n="offer.emptyOwner">Hozircha taklif kelmagan. Haydovchilar yukingizni '
+          + 'ko\'rgach taklif yuboradi.</p></div>'
+        : "";
+      applyLang();
+      return;
+    }
+
+    box.innerHTML = '<div class="card" style="margin-top:var(--s4);">'
+      + '<h3 class="card-title">'+icon("iconBox")+' '
+      +   '<span data-i18n="'+(isOwner ? "offer.incoming" : "offer.mine")+'">'
+      +   (isOwner ? "Kelgan takliflar" : "Sizning taklifingiz")+'</span>'
+      +   ' <span style="color:var(--muted);font-weight:500;">('+offers.length+')</span></h3>'
+      + offers.map(function(o){ return offerCardHtml(o, isOwner); }).join("")
+      + '</div>';
+
+    box.querySelectorAll("[data-offer-accept]").forEach(function(b){
+      b.addEventListener("click", function(){ decideOffer(d, b.getAttribute("data-offer-accept"), true, b); });
+    });
+    box.querySelectorAll("[data-offer-reject]").forEach(function(b){
+      b.addEventListener("click", function(){ decideOffer(d, b.getAttribute("data-offer-reject"), false, b); });
+    });
+    box.querySelectorAll("[data-offer-withdraw]").forEach(function(b){
+      b.addEventListener("click", function(){ withdrawOffer(d, b.getAttribute("data-offer-withdraw"), b); });
+    });
+    box.querySelectorAll("[data-offer-profile]").forEach(function(b){
+      b.addEventListener("click", function(){ openPublicProfile(b.getAttribute("data-offer-profile")); });
+    });
+    applyLang();
+  }
+
+  function offerRequest(action, payload){
+    return fetch("/api/order?action=" + action, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.assign({
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData
+      }, payload))
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.body.error || "Xato yuz berdi");
+        return res.body;
+      });
+  }
+
+  function decideOffer(d, id, accept, btn){
+    btn.disabled = true;
+    offerRequest(accept ? "accept-offer" : "reject-offer", { id: id })
+      .then(function(){
+        toast(accept ? (t("offer.accepted") || "Taklif qabul qilindi")
+                     : (t("offer.rejected") || "Taklif rad etildi"),
+              accept ? (t("offer.acceptedSub") || "Haydovchiga xabar berildi") : "", "success");
+        // Buyurtma holati o'zgardi — detalni qaytadan yuklaymiz.
+        openLoadDetail(d.code);
+      })
+      .catch(function(err){ btn.disabled = false; toast(err.message, "", "info"); });
+  }
+
+  function withdrawOffer(d, id, btn){
+    btn.disabled = true;
+    offerRequest("withdraw-offer", { id: id })
+      .then(function(){
+        toast(t("offer.withdrawn") || "Taklif qaytarib olindi", "", "success");
+        loadOffers(d);
+      })
+      .catch(function(err){ btn.disabled = false; toast(err.message, "", "info"); });
+  }
+
+  function openOfferSheet(d){
+    if(!isSignedIn()){
+      toast(t("offer.needSignIn") || "Avval tizimga kiring", "", "info");
+      return;
+    }
+    Sheet.open({
+      title: t("loads.sendOffer") || "Taklif yuborish",
+      html: '<p class="note" style="margin-top:0;">'
+        + escapeHtml(d.fromCity) + " → " + escapeHtml(d.toCity)
+        + ' · ' + formatNum(d.weightKg) + ' kg</p>'
+        + '<div class="field"><label for="fOfferPrice" data-i18n="offer.priceLabel">Yakuniy narx (so\'m)</label>'
+        +   '<input type="number" id="fOfferPrice" min="10000" step="10000" '
+        +   'placeholder="'+formatNum(d.amount || 0)+'" value="'+escapeHtml(d.amount || "")+'" data-autofocus></div>'
+        + '<div class="field"><label for="fOfferEta" data-i18n="offer.etaLabel">Yetib borish vaqti</label>'
+        +   '<input type="text" id="fOfferEta" maxlength="60" placeholder="Masalan: ertaga ertalab"></div>'
+        + '<div class="field"><label for="fOfferNote" data-i18n="offer.noteLabel">Izoh (ixtiyoriy)</label>'
+        +   '<input type="text" id="fOfferNote" maxlength="300"></div>'
+        + '<p class="note" id="offerNote"></p>',
+      footerHtml: '<button class="btn" id="btnSubmitOffer" data-i18n="offer.send">Taklif yuborish</button>',
+      onOpen: function(){
+        var btn = document.getElementById("btnSubmitOffer");
+        if(!btn) return;
+        btn.addEventListener("click", function(){
+          var priceEl = document.getElementById("fOfferPrice");
+          var noteEl = document.getElementById("offerNote");
+          var price = Number(priceEl.value);
+          if(!price || price <= 0){
+            noteEl.textContent = t("offer.priceRequired") || "Narxni kiriting";
+            noteEl.style.color = "#DC2626";
+            priceEl.focus();
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = t("offer.sending") || "Yuborilmoqda...";
+          offerRequest("offer", {
+            code: d.code, price: price,
+            eta: document.getElementById("fOfferEta").value,
+            note: document.getElementById("fOfferNote").value
+          }).then(function(body){
+            Sheet.close();
+            toast(body.updated ? (t("offer.updated") || "Taklifingiz yangilandi")
+                               : (t("offer.sent") || "Taklifingiz yuborildi"),
+                  t("offer.sentSub") || "Yuk beruvchi javob berganda xabar beramiz", "success");
+            loadOffers(d);
+          }).catch(function(err){
+            btn.disabled = false;
+            btn.textContent = t("offer.send") || "Taklif yuborish";
+            noteEl.textContent = err.message;
+            noteEl.style.color = "#DC2626";
+          });
+        });
+      }
+    });
+  }
+
+  /* ---------- Saqlangan qidiruvlar ----------
+     Haydovchi filtrni saqlab qo'yadi va mos yuk chiqqanda Telegram
+     orqali xabar oladi (api/order.js dagi notifyMatches). Faqat
+     tizimga kirganlar uchun — xabarni kimga yuborishni bilish kerak. */
+  var savedSearches = [];
+
+  function describeSearch(x){
+    var route = [x.fromCity, x.toCity].filter(Boolean).join(" → ");
+    var parts = [route || (t("search.anyRoute") || "Barcha yo'nalishlar")];
+    if(x.minWeight || x.maxWeight){
+      parts.push((x.minWeight || 0) + "–" + (x.maxWeight || "∞") + " kg");
+    }
+    return parts.join(" · ");
+  }
+
+  function renderSavedSearches(){
+    var box = document.getElementById("savedSearches");
+    var saveBtn = document.getElementById("btnSaveSearch");
+    if(saveBtn) saveBtn.hidden = !isSignedIn();
+    if(!box) return;
+    if(!savedSearches.length){ box.hidden = true; box.innerHTML = ""; return; }
+
+    box.hidden = false;
+    box.innerHTML = '<div class="saved-searches">' + savedSearches.map(function(x){
+      return '<span class="ss-chip" data-apply-search="'+escapeHtml(x.id)+'">'
+        + icon("iconBell") + escapeHtml(describeSearch(x))
+        + '<button type="button" class="ss-del" data-del-search="'+escapeHtml(x.id)+'" '
+        + 'aria-label="'+escapeHtml(t("search.delete") || "O'chirish")+'">'+icon("iconClose")+'</button>'
+        + '</span>';
+    }).join("") + '</div>';
+
+    box.querySelectorAll("[data-apply-search]").forEach(function(el){
+      el.addEventListener("click", function(e){
+        if(e.target.closest("[data-del-search]")) return;
+        var found = savedSearches.filter(function(x){ return x.id === el.getAttribute("data-apply-search"); })[0];
+        if(found) applySavedSearch(found);
+      });
+    });
+    box.querySelectorAll("[data-del-search]").forEach(function(el){
+      el.addEventListener("click", function(e){
+        e.stopPropagation();
+        searchRequest("delete-search", { id: el.getAttribute("data-del-search") });
+      });
+    });
+  }
+
+  function applySavedSearch(x){
+    loadsState.fromCity = x.fromCity || "";
+    loadsState.toCity = x.toCity || "";
+    loadsState.cargoType = x.cargoType || "";
+    loadsState.truckType = x.truckType || "";
+    loadsState.minWeight = x.minWeight || null;
+    loadsState.maxWeight = x.maxWeight || null;
+    // Filtr maydonlari init() ichidagi lokal o'zgaruvchilar, shuning
+    // uchun ularni id bo'yicha to'g'ridan-to'g'ri yangilaymiz.
+    var set = function(id, value){
+      var el = document.getElementById(id);
+      if(el) el.value = value == null ? "" : value;
+    };
+    set("fLoadsFrom", x.fromCity); set("fLoadsTo", x.toCity);
+    set("fLoadsCargo", x.cargoType); set("fLoadsTruck", x.truckType);
+    set("fLoadsMinWeight", x.minWeight); set("fLoadsMaxWeight", x.maxWeight);
+    fetchLoads();
+  }
+
+  /** Uchala amal ham bitta javob shaklini qaytaradi: {searches:[...]}. */
+  function searchRequest(action, extra){
+    if(!isSignedIn()) return Promise.resolve();
+    return fetch("/api/profile?action=" + action, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.assign({
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData
+      }, extra || {}))
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.body.error || "Xato yuz berdi");
+        savedSearches = res.body.searches || [];
+        renderSavedSearches();
+        return savedSearches;
+      });
+  }
+
+  function loadSavedSearches(){
+    searchRequest("searches").catch(function(){ /* ro'yxat — majburiy emas */ });
+  }
+
+  function saveCurrentSearch(){
+    searchRequest("save-search", {
+      search: {
+        fromCity: loadsState.fromCity, toCity: loadsState.toCity,
+        cargoType: loadsState.cargoType, truckType: loadsState.truckType,
+        minWeight: loadsState.minWeight, maxWeight: loadsState.maxWeight
+      }
+    }).then(function(){
+      toast(t("search.saved") || "Qidiruv saqlandi",
+        t("search.savedSub") || "Mos yuk chiqqanda Telegram orqali xabar beramiz", "success");
+    }).catch(function(err){
+      toast(t("search.saveFailed") || "Saqlanmadi", err.message, "info");
+    });
+  }
+
   /* ---------- Narx maslahatchisi ----------
      Faqat yo'nalish va og'irlik ma'lum bo'lgach chaqiriladi (4-qadam),
      har bir tugma bosilganda emas. Javob "yetarli ma'lumot yo'q" bo'lsa
@@ -6679,7 +7227,10 @@
   function closeLoadDetail(){
     var detailView = document.getElementById("loadDetailView");
     if(detailView) detailView.hidden = true;
-    ["loadsCount", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
+    // loadsDesktopGrid ham qaytarilishi shart: yuklar ro'yxatining o'zi
+    // shu konteynerda. Usiz detaldan orqaga qaytgan odam bo'sh sahifani
+    // ko'rardi — openLoadDetail uni yashiradi, bu esa qaytarmasdi.
+    ["loadsDesktopGrid", "loadsCount", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
       var el = document.getElementById(id);
       if(el) el.hidden = false;
     });
@@ -6731,7 +7282,9 @@
       + '</div>'
       + '<div class="card"><h3 class="card-title">'+icon("iconUser")+' Yuk beruvchi</h3>'
       +   '<p class="note" style="margin:0;">'+escapeHtml(d.name || "—")+(d.ownerUsername ? " · @"+escapeHtml(d.ownerUsername) : "")+'</p></div>'
-      + contactBtns;
+      + contactBtns
+      // Takliflar: yuk egasiga kelganlari, haydovchiga o'zinikini.
+      + '<div id="offersBox"></div>';
 
     applyLang();
 
@@ -6748,11 +7301,11 @@
     var shareBtn = document.getElementById("btnDetailShare");
     if(shareBtn) shareBtn.addEventListener("click", function(){ shareLoad(d); });
 
+    // Ilgari bu tugma shunchaki chat ochardi — "taklif" nomi bilan, lekin
+    // hech qanday taklif yuborilmasdi. Endi u haqiqiy taklif oynasini ochadi.
     var offerBtn = document.getElementById("btnDetailOffer");
-    if(offerBtn) offerBtn.addEventListener("click", function(){
-      var msg = "Salom! " + d.code + " raqamli yukingiz (" + d.fromCity + " → " + d.toCity + ") bo'yicha taklifim bor.";
-      goToChatWith(d.ownerUsername, msg);
-    });
+    if(offerBtn) offerBtn.addEventListener("click", function(){ openOfferSheet(d); });
+    loadOffers(d);
     var msgBtn = document.getElementById("btnDetailMessage");
     if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
 
@@ -7655,6 +8208,7 @@
   applyThemeButtons();
   applyMotionPref();
   populateCityDatalist();
+  loadHomeStats();
 
   var homeSearchBar = document.getElementById("homeSearchBar");
   if(homeSearchBar) homeSearchBar.addEventListener("click", openRouteSearch);
