@@ -310,7 +310,9 @@
   }
   th.sortable{cursor:pointer;}
   th.sortable:hover{color:#fff;}
-  th .sort-ar{opacity:0.3;margin-left:4px;font-size:9px;}
+  th .sort-ar{display:inline-block;opacity:0.3;margin-left:4px;line-height:0;vertical-align:-1px;transition:transform 0.15s ease;}
+  th .sort-ar svg{width:10px;height:10px;}
+  th .sort-ar.up{transform:rotate(180deg);}
   th.sorted .sort-ar{opacity:1;color:var(--accent);}
   td.dim{color:var(--text-soft);}
   td.wrap{white-space:normal;min-width:220px;}
@@ -408,6 +410,8 @@
     background:var(--card2);color:var(--text-soft);cursor:pointer;font-size:15px;
     line-height:1;flex-shrink:0;font-family:inherit;
   }
+  .modal-x{display:flex;align-items:center;justify-content:center;}
+  .modal-x svg{width:14px;height:14px;}
   .modal-x:hover{color:#fff;}
   .modal-body{padding:18px 20px;overflow-y:auto;}
   .modal-foot{display:flex;gap:10px;padding:15px 20px;border-top:1px solid var(--line);flex-shrink:0;}
@@ -537,7 +541,9 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-head">
       <h2 id="modalTitle"></h2>
-      <button type="button" class="modal-x" id="modalX" aria-label="Yopish">✕</button>
+      <button type="button" class="modal-x" id="modalX" aria-label="Yopish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-foot" id="modalFoot"></div>
@@ -677,11 +683,26 @@
   var TRUCK_PILL = {
     PENDING:"pill-warn", ACTIVE:"pill-ok", PAUSED:"pill-dim", SOLD:"pill-blue", REJECTED:"pill-bad"
   };
+  /* Yuk transporti turkumlari. Oxirgi to'rttasi — bozor yuk texnikasiga
+     qisqartirilgunga qadar joylangan eski e'lonlar uchun; yangi e'lon
+     ularda ochilmaydi, lekin admin ularni ko'ra olishi kerak. */
   var TRUCK_CAT_LABELS = {
-    YENGIL:"Yengil", YUK:"Yuk", MIKROAVTOBUS:"Mikroavtobus", FURGON:"Furgon",
-    AVTOBUS:"Avtobus", MAXSUS:"Maxsus texnika", MOTOSIKL:"Motosikl", BOSHQA:"Boshqa"
+    YUK:"Yuk mashinasi", FURGON:"Furgon", TIRKAMA:"Tirkama", SAMOSVAL:"Samosval",
+    REFRIJERATOR:"Refrijerator", EVAKUATOR:"Evakuator", MAXSUS:"Maxsus texnika",
+    BOSHQA:"Boshqa yuk texnikasi",
+    YENGIL:"Yengil avtomobil (eski)", MIKROAVTOBUS:"Mikroavtobus (eski)",
+    AVTOBUS:"Avtobus (eski)", MOTOSIKL:"Motosikl (eski)"
   };
   var ROLE_NAMES = { SUPER_ADMIN:"Super admin", ADMIN:"Admin", MODERATOR:"Moderator" };
+
+  /* Emoji o'rniga ishlatiladigan kichik belgilar — jadval kataklarida
+     matn bilan bir qatorda turadi, shuning uchun o'lchami inline berilgan. */
+  var CHECK_MARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" '
+    + 'stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;vertical-align:-1px;">'
+    + '<path d="m5 12.5 5 5 9-10"/></svg>';
+  var STAR_MARK = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" '
+    + 'style="width:12px;height:12px;vertical-align:-1.5px;">'
+    + '<path d="m12 3.2 2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 18.17l-5.88 3.14 1.12-6.55L2.48 10.1l6.58-.96L12 3.2Z"/></svg>';
 
   function pill(text, cls){ return '<span class="pill ' + cls + '">' + esc(text) + '</span>'; }
   function orderPill(s){ var k = s || "NEW"; return pill(ORDER_LABELS[k] || k, ORDER_PILL[k] || "pill-dim"); }
@@ -997,7 +1018,11 @@
       html += '<th' + (c.sortable ? ' class="sortable' + (sorted ? " sorted" : "") + '"'
               + ' data-act="table-sort" data-id="' + esc(cfg.id) + '" data-key="' + esc(c.key) + '"' : "")
         + '>' + esc(c.label)
-        + (c.sortable ? '<span class="sort-ar">' + (sorted ? (st.sortDir === "asc" ? "▲" : "▼") : "▼") + '</span>' : "")
+        + (c.sortable
+            ? '<span class="sort-ar' + (sorted && st.sortDir === "asc" ? " up" : "") + '">'
+              + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" '
+              + 'stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg></span>'
+            : "")
         + '</th>';
     });
     html += '</tr></thead><tbody>';
@@ -1643,7 +1668,7 @@
               render:function(o){ return orderPill(o.status); } },
             { key:"driver", label:"Haydovchi", cls:"dim",
               render:function(o){
-                return o.driver ? esc(o.driver.name) + (o.driver.verified ? " ✓" : "") : "—";
+                return o.driver ? esc(o.driver.name) + (o.driver.verified ? ' ' + CHECK_MARK : "") : "—";
               } }
           ]
         });
@@ -1739,7 +1764,7 @@
             { key:"driverName", label:"Haydovchi", sortable:true,
               value:function(o){ return (o.driver && o.driver.name) || ""; },
               render:function(o){
-                return esc(o.driver.name) + (o.driver.verified ? ' <span class="tag tag-blue">✓</span>' : "");
+                return esc(o.driver.name) + (o.driver.verified ? ' <span class="tag tag-blue">' + CHECK_MARK + '</span>' : "");
               } },
             { key:"driverPhone", label:"Telefon", cls:"dim",
               render:function(o){ return esc(o.driver.phone || "—"); } },
@@ -1806,7 +1831,7 @@
               value:function(t){ return t.brand || ""; },
               render:function(t){
                 return '<b>' + esc(t.brand) + '</b>'
-                  + (t.verified ? '<span class="tag tag-blue">✓</span>' : "")
+                  + (t.verified ? '<span class="tag tag-blue">' + CHECK_MARK + '</span>' : "")
                   + (t.promoted ? '<span class="tag" style="color:#FCD34D;background:rgba(245,158,11,0.15);">TOP</span>' : "");
               } },
             { key:"category", label:"Turkum", sortable:true, cls:"dim",
@@ -2036,7 +2061,7 @@
      22. Foydalanuvchilar
      ========================================================== */
   function ratingText(u){
-    return u.ratingCount ? "★ " + (u.ratingSum / u.ratingCount).toFixed(1) + " (" + u.ratingCount + ")" : "—";
+    return u.ratingCount ? STAR_MARK + " " + (u.ratingSum / u.ratingCount).toFixed(1) + " (" + u.ratingCount + ")" : "—";
   }
 
   function viewUsers(){
