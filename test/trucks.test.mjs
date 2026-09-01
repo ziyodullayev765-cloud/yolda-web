@@ -97,18 +97,57 @@ const c = await call('POST', {action:'create'}, {...VALID, phone:'901234567', mi
 check('create ok', c.statusCode === 200, c.body);
 const id = c.body?.truck?.id;
 check('phone normalised to +998', c.body?.truck?.phone === '+998901234567', c.body?.truck?.phone);
-check('defaults: status ACTIVE', c.body?.truck?.status === 'ACTIVE');
+check('new listing starts PENDING (not publishable)', c.body?.truck?.status === 'PENDING', c.body?.truck?.status);
 check('defaults: verified false', c.body?.truck?.verified === false);
 check('defaults: promoted false', c.body?.truck?.promoted === false);
 check('mileage coerced to number', c.body?.truck?.mileageKm === 150000);
+
+console.log('\n== moderation: nothing is public until an admin approves ==');
+// The seller-facing API must never be able to make a listing ACTIVE.
+const listWhilePending = await call('GET', {action:'list'}, null);
+check('PENDING listing hidden from public list', !(listWhilePending.body.trucks||[]).some(t => t.id === id));
+check('owner sees own PENDING listing in mine', (await call('GET', {action:'mine', googleIdToken:'alice@x.com'}, null)).body.trucks.some(t => t.id === id));
+check('seller CANNOT self-approve PENDING -> ACTIVE',
+  (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'ACTIVE'})).statusCode === 403);
+check('...and it really is still PENDING', JSON.parse(store.get(`truck:${id}`)).status === 'PENDING');
+
+// Simulate the admin approving it (api/admin-data.js writes the same key).
+const approve = (tid, status, reason) => {
+  const t = JSON.parse(store.get(`truck:${tid}`));
+  t.status = status;
+  if (reason) t.rejectionReason = reason; else delete t.rejectionReason;
+  store.set(`truck:${tid}`, JSON.stringify(t));
+};
+approve(id, 'ACTIVE');
+check('approved listing becomes publicly visible', (await call('GET', {action:'list'}, null)).body.trucks.some(t => t.id === id));
 
 console.log('\n== ownership ==');
 check('other user cannot update', (await call('POST', {action:'update'}, {googleIdToken:'mallory@x.com', id, price: 1})).statusCode === 403);
 check('other user cannot delete', (await call('POST', {action:'delete'}, {googleIdToken:'mallory@x.com', id})).statusCode === 403);
 check('other user cannot set-status', (await call('POST', {action:'set-status'}, {googleIdToken:'mallory@x.com', id, status:'SOLD'})).statusCode === 403);
-check('owner CAN update', (await call('POST', {action:'update'}, {googleIdToken:'alice@x.com', id, price: 600000000})).statusCode === 200);
-check('owner CAN set-status', (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'SOLD'})).statusCode === 200);
+check('owner CAN pause an approved listing', (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'PAUSED'})).statusCode === 200);
+check('owner CAN mark it sold', (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'SOLD'})).statusCode === 200);
 check('bad status rejected', (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'HACKED'})).statusCode === 400);
+check('seller cannot set PENDING via set-status', (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'PENDING'})).statusCode === 400);
+check('seller cannot set REJECTED via set-status', (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'REJECTED'})).statusCode === 400);
+
+console.log('\n== editing an approved listing sends it back for review ==');
+approve(id, 'ACTIVE');
+check('owner CAN update', (await call('POST', {action:'update'}, {googleIdToken:'alice@x.com', id, price: 600000000})).statusCode === 200);
+check('edit resets status to PENDING', JSON.parse(store.get(`truck:${id}`)).status === 'PENDING');
+check('edited listing drops out of the public list', !(await call('GET', {action:'list'}, null)).body.trucks.some(t => t.id === id));
+
+console.log('\n== rejection ==');
+approve(id, 'REJECTED', 'Rasmlar aniq emas');
+check('REJECTED listing hidden from public list', !(await call('GET', {action:'list'}, null)).body.trucks.some(t => t.id === id));
+const rejectedMine = (await call('GET', {action:'mine', googleIdToken:'alice@x.com'}, null)).body.trucks.find(t => t.id === id);
+check('owner sees the rejection reason', rejectedMine?.rejectionReason === 'Rasmlar aniq emas', rejectedMine?.rejectionReason);
+check('seller cannot revive a REJECTED listing',
+  (await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id, status:'ACTIVE'})).statusCode === 403);
+check('re-editing a rejected listing clears the reason and re-queues it',
+  (await call('POST', {action:'update'}, {googleIdToken:'alice@x.com', id, price: 610000000})).statusCode === 200
+  && JSON.parse(store.get(`truck:${id}`)).status === 'PENDING'
+  && JSON.parse(store.get(`truck:${id}`)).rejectionReason === undefined);
 
 console.log('\n== update cannot forge trust flags ==');
 await call('POST', {action:'update'}, {googleIdToken:'alice@x.com', id, verified:true, promoted:true, viewCount:99999, sellerIdentity:'mallory@x.com'});
@@ -116,8 +155,10 @@ const after = JSON.parse(store.get(`truck:${id}`));
 check('verified not settable by owner', after.verified === false, after.verified);
 check('promoted not settable by owner', after.promoted === false, after.promoted);
 check('sellerIdentity not reassignable', after.sellerIdentity === 'alice@x.com', after.sellerIdentity);
+check('status not settable to ACTIVE through update payload', after.status === 'PENDING', after.status);
 
 console.log('\n== list hides non-ACTIVE ==');
+approve(id, 'SOLD');
 const listAfterSold = await call('GET', {action:'list'}, null);
 check('SOLD listing hidden from public list', !(listAfterSold.body.trucks||[]).some(t => t.id === id));
 const mineRes = await call('GET', {action:'mine', googleIdToken:'alice@x.com'}, null);
