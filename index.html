@@ -1269,28 +1269,31 @@
      Asosiy sahifada faqat bo'lim nomlari va qisqa ko'rsatkichlar
      turadi; batafsil ma'lumot bosilgandan keyin varaqda ochiladi.
      ============================================================ */
-  .pf-menu{
-    display:flex;flex-direction:column;
-    background:var(--card);border:1px solid var(--border);
-    border-radius:16px;overflow:hidden;margin-top:var(--s4);
-  }
+  /* Har bir bo'lim — alohida kartochka, oralarida bo'shliq bilan. */
+  .pf-menu{display:flex;flex-direction:column;gap:10px;margin-top:var(--s5);}
   .pf-row{
-    display:flex;align-items:center;gap:12px;width:100%;
-    background:none;border:none;cursor:pointer;text-align:left;
-    padding:14px 14px;min-height:56px;
+    display:flex;align-items:center;gap:13px;width:100%;
+    background:var(--card);border:1px solid var(--border);border-radius:15px;
+    cursor:pointer;text-align:left;padding:13px 14px;min-height:68px;
     font-family:'Inter',sans-serif;color:var(--ink);
-    transition:background 0.15s var(--ease);
+    transition:border-color 0.15s var(--ease), transform 0.15s var(--ease);
   }
-  .pf-row + .pf-row{border-top:1px solid var(--border);}
-  .pf-row:hover{background:var(--tint);}
+  .pf-row:hover{border-color:var(--route);}
+  .pf-row:active{transform:scale(0.995);}
+  /* Rang har bir qatorda boshqacha — inline style bilan beriladi
+     (PROFILE_SECTIONS dagi `tint`). Bu yerda faqat shakli. */
   .pf-row-ico{
-    width:34px;height:34px;border-radius:10px;background:var(--tint);flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;color:var(--route);
+    width:44px;height:44px;border-radius:13px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;color:#fff;
   }
-  .pf-row-ico .ic-svg{font-size:17px;}
-  .pf-row-title{flex:1;min-width:0;font-size:14.5px;font-weight:600;}
-  .pf-row-tag{font-size:13px;color:var(--muted);flex-shrink:0;}
-  .pf-row-chev{font-size:17px;color:var(--muted);flex-shrink:0;}
+  .pf-row-ico .ic-svg{font-size:22px;stroke-width:2;}
+  .pf-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .pf-row-title{font-size:15px;font-weight:700;color:var(--ink);}
+  .pf-row-sub{
+    font-size:12.5px;color:var(--ink-soft);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .pf-row-chev{font-size:19px;color:var(--muted);flex-shrink:0;}
 
   /* ---------- Varaq ichidagi umumiy qismlar ---------- */
   .pf-facts{display:flex;flex-direction:column;}
@@ -2177,82 +2180,96 @@
      spacing value below is one of the existing design tokens, so this
      reads correctly in both light and dark theme, not just dark.
      ============================================================ */
-  /* Profil sarlavhasi: avatar chapda, ma'lumot o'ngda, pastda uchta
-     raqam. Ilgari hammasi markazda, ustma-ust turardi. */
+  /* Profil sarlavhasi: yuqorida sahifa nomi va sozlamalar, keyin
+     avatar bilan ism, pastda uchta raqam. */
   .profile-header{
     position:relative;
     display:flex;flex-direction:column;
-    /* Yuqoridagi bo'shliq uchta amal tugmasi uchun: ular o'ng
-       yuqorida turadi. Ilgari matn ustuniga o'ng tomondan joy
-       qoldirilgandi, lekin shunda baho va ishonchlilik belgisi bir
-       qatorga sig'may, belgi pastga tushib ketardi. */
-    padding:52px var(--s4) var(--s4);
+    padding:var(--s3) 0 var(--s4);
   }
-  .profile-top-actions{position:absolute;top:var(--s3);right:var(--s4);display:flex;gap:6px;}
-  .profile-top-actions .pta-btn{
-    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:var(--paper-dark);border:1px solid var(--border);color:var(--ink-soft);
-    cursor:pointer;padding:0;flex-shrink:0;
-    transition:background 0.15s var(--ease), color 0.15s var(--ease), transform 0.15s var(--ease);
+  .pf-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s5);}
+  .pf-page-title{
+    margin:0;font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:26px;letter-spacing:-0.02em;color:var(--ink);
   }
-  .profile-top-actions .pta-btn:hover{background:var(--card);color:var(--ink);transform:translateY(-1px);}
-  .profile-top-actions .pta-btn:active{transform:translateY(0);}
-  .profile-top-actions .pta-btn .ic-svg{font-size:16.5px;}
-  .pf-id{display:flex;align-items:center;gap:13px;min-height:72px;}
-  /* Avatar — doira emas, yumaloq qirrali to'rtburchak. */
-  .pf-id-face{
-    width:72px;height:72px;border-radius:21px;flex-shrink:0;overflow:hidden;
-    background:linear-gradient(135deg, var(--route), var(--stamp));
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:var(--sh-2);
+  .pf-gear{
+    width:42px;height:42px;border-radius:50%;border:none;background:none;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    color:var(--ink-soft);padding:0;flex-shrink:0;
+    transition:background 0.15s var(--ease), color 0.15s var(--ease);
   }
-  .pf-id-face img{width:100%;height:100%;object-fit:cover;display:block;}
-  .pf-id-face span{
-    color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;line-height:1;
-  }
-  .pf-id-main{flex:1;min-width:0;}
-  .profile-name{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;
-    letter-spacing:-0.015em;color:var(--ink);margin:0;line-height:1.2;
-    overflow-wrap:normal;word-break:normal;
-  }
-  .profile-name-badge{width:18px;height:18px;vertical-align:-3px;margin-right:1px;flex-shrink:0;}
-  .pf-id-username{font-size:13px;font-weight:500;color:var(--muted);font-family:'Inter',sans-serif;}
-  .pf-id-phone{
-    display:inline-flex;align-items:center;gap:5px;margin-top:4px;
-    font-size:13.5px;font-weight:600;color:var(--ink-soft);text-decoration:none;
+  .pf-gear:hover{background:var(--paper-dark);color:var(--ink);}
+  .pf-gear .ic-svg{font-size:23px;}
+  /* Butun blok bosiladi — profilni tahrirlash shu yerdan ochiladi. */
+  .pf-id{
+    display:flex;align-items:center;gap:16px;width:100%;text-align:left;
     background:none;border:none;padding:0;cursor:pointer;font-family:'Inter',sans-serif;
   }
-  .pf-id-phone .ic-svg{font-size:14px;color:var(--route);}
-  .pf-id-phone.muted{color:var(--muted);font-weight:500;}
-  .pf-id-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;margin-top:7px;}
-  .pf-id-rating{display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:var(--ink);}
-  .pf-id-rating .ic-svg{font-size:15px;color:#F59E0B;}
-  .pf-id-rating .ic-svg.star-off{color:var(--border);}
-  .pf-id-rating.muted{font-weight:500;font-size:13px;color:var(--muted);}
-  .pf-id-rating .muted{font-weight:500;color:var(--muted);}
-  .pf-trust-chip{
-    font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;
-    background:var(--paper-dark);color:var(--ink-soft);white-space:nowrap;
+  .pf-id:active{opacity:0.9;}
+  /* Avatar — doira emas, yumaloq qirrali to'rtburchak. */
+  .pf-id-face{
+    position:relative;width:88px;height:88px;border-radius:26px;flex-shrink:0;
+    background:linear-gradient(135deg, var(--route), var(--stamp));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 3px var(--card), 0 0 0 4px var(--border), var(--sh-2);
   }
-  .pf-trust-chip:empty{display:none;}
-  .pf-trust-chip.high,.pf-trust-chip.mid{background:var(--tint);color:var(--route-dark);}
-  :root[data-theme="dark"] .pf-trust-chip.high,
-  :root[data-theme="dark"] .pf-trust-chip.mid{color:var(--route);}
+  .pf-id-face img{
+    width:100%;height:100%;object-fit:cover;display:block;border-radius:26px;
+  }
+  .pf-id-initial{
+    color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:35px;line-height:1;
+  }
+  /* Tasdiq belgisi avatarning pastki o'ng burchagida turadi. */
+  .pf-id-badge{
+    position:absolute;right:-3px;bottom:-3px;width:28px;height:28px;border-radius:50%;
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+  }
+  .pf-id-badge .ic-svg{font-size:24px;}
+  .pf-id-main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .profile-name{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;
+    letter-spacing:-0.015em;color:var(--ink);margin:0;line-height:1.25;
+    overflow-wrap:normal;word-break:normal;
+  }
+  .pf-id-phone{
+    font-size:14px;color:var(--ink-soft);margin-top:3px;
+    font-variant-numeric:tabular-nums;
+  }
+  .pf-id-phone.muted{color:var(--muted);}
+  .pf-id-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .pf-chip{
+    display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+    font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px;
+  }
+  .pf-chip .ic-svg{font-size:13px;}
+  .pf-chip--rating{background:rgba(217,119,6,0.13);color:#B45309;}
+  .pf-chip--rating .ic-svg{color:#F59E0B;}
+  :root[data-theme="dark"] .pf-chip--rating{background:rgba(245,158,11,0.16);color:#FBBF24;}
+  .pf-chip--trust{background:var(--paper-dark);color:var(--ink-soft);}
+  .pf-chip--trust:empty{display:none;}
+  .pf-chip--trust.high,.pf-chip--trust.mid{background:var(--tint);color:var(--route-dark);}
+  :root[data-theme="dark"] .pf-chip--trust.high,
+  :root[data-theme="dark"] .pf-chip--trust.mid{color:var(--route);}
 
+  /* Uchta raqam bitta kartochkada, orasida ingichka ajratuvchi. */
   .pf-id-stats{
-    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
-    margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--border);
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:16px 8px;margin-top:var(--s5);
   }
-  .pf-idst{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;}
-  .pf-idst .v{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-0.02em;line-height:1.1;}
-  .pf-idst .k{font-size:11.5px;color:var(--ink-soft);}
+  .pf-idst{
+    display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;
+    min-width:0;
+  }
+  .pf-idst + .pf-idst{border-left:1px solid var(--border);}
+  .pf-idst .v{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-0.02em;line-height:1.1;}
+  .pf-idst .k{font-size:12px;color:var(--ink-soft);}
   .profile-edit-btn{margin-top:var(--s4);}
 
-  /* Uchta amal tugmasi avatarning yon tomonida turadi, shuning uchun
-     ism ular ostiga kirib ketmasin uchun .pf-id da o'ng bo'shliq bor. */
   @media(max-width:359px){
-    .pf-id{flex-direction:column;align-items:flex-start;}
+    .pf-id-face{width:80px;height:80px;border-radius:24px;}
+    .pf-id-initial{font-size:32px;}
+    .pf-page-title{font-size:23px;}
   }
 
   /* ---------- Verify-profile sheet (self-serve "get the blue badge" request) ---------- */
@@ -3507,6 +3524,15 @@
       "pf.verified": "Tasdiqlangan ma'lumotlar", "pf.settings": "Sozlamalar",
       "pf.notSet": "Kiritilmagan", "pf.noData": "Ma'lumot yo'q", "pf.tripsShort": "safar",
       "pf.success": "Muvaffaqiyat", "pf.noRating": "Baho yo'q", "profile.addPhone": "Telefon qo'shing",
+      "pf.trustSub": "Tasdiqlar va kelishuvlar", "pf.trustSubPct": "muvaffaqiyatli kelishuv",
+      "pf.vehiclesSub": "Mashina va e'lonlaringiz", "pf.vehicleWord": "ta transport",
+      "pf.driverSub": "Tajriba, yo'nalishlar va boshqalar",
+      "pf.loadsSub": "Faol va jarayondagi yuklar",
+      "pf.reviewsSub": "Baholar va sharhlar", "pf.ratingsWord": "ta baho",
+      "pf.activitySub": "Statistika va ko'rsatkichlar",
+      "pf.verifiedSub": "Hujjatlar va tasdiqlashlar", "pf.verifiedWord": "tasdiqlangan",
+      "pf.settingsSub": "Bildirishnomalar, til va boshqalar",
+      "pf.tripsWord": "Safar", "pf.loadWord": "Yuk",
       "trust.high": "Ishonchli foydalanuvchi", "trust.mid": "Tasdiqlangan foydalanuvchi",
       "trust.new": "Yangi foydalanuvchi", "trust.success": "Muvaffaqiyatli kelishuvlar",
       "trust.trips": "Safarlar soni", "trust.positive": "Ijobiy baholar",
@@ -3898,6 +3924,15 @@
       "pf.verified": "Подтверждённые данные", "pf.settings": "Настройки",
       "pf.notSet": "Не указано", "pf.noData": "Нет данных", "pf.tripsShort": "рейсов",
       "pf.success": "Успешность", "pf.noRating": "Нет оценок", "profile.addPhone": "Добавить телефон",
+      "pf.trustSub": "Подтверждения и сделки", "pf.trustSubPct": "успешных сделок",
+      "pf.vehiclesSub": "Машина и ваши объявления", "pf.vehicleWord": "транспорт",
+      "pf.driverSub": "Опыт, направления и другое",
+      "pf.loadsSub": "Активные и текущие грузы",
+      "pf.reviewsSub": "Оценки и отзывы", "pf.ratingsWord": "оценок",
+      "pf.activitySub": "Статистика и показатели",
+      "pf.verifiedSub": "Документы и подтверждения", "pf.verifiedWord": "подтверждено",
+      "pf.settingsSub": "Уведомления, язык и другое",
+      "pf.tripsWord": "Рейсов", "pf.loadWord": "Грузов",
       "trust.high": "Надёжный пользователь", "trust.mid": "Подтверждённый пользователь",
       "trust.new": "Новый пользователь", "trust.success": "Успешные сделки",
       "trust.trips": "Количество рейсов", "trust.positive": "Положительные оценки",
@@ -4289,6 +4324,15 @@
       "pf.verified": "Verified details", "pf.settings": "Settings",
       "pf.notSet": "Not set", "pf.noData": "No data", "pf.tripsShort": "trips",
       "pf.success": "Success rate", "pf.noRating": "No ratings", "profile.addPhone": "Add a phone number",
+      "pf.trustSub": "Verifications and deals", "pf.trustSubPct": "of deals completed",
+      "pf.vehiclesSub": "Your vehicle and listings", "pf.vehicleWord": "vehicles",
+      "pf.driverSub": "Experience, routes and more",
+      "pf.loadsSub": "Active and ongoing loads",
+      "pf.reviewsSub": "Ratings and reviews", "pf.ratingsWord": "ratings",
+      "pf.activitySub": "Statistics and figures",
+      "pf.verifiedSub": "Documents and verifications", "pf.verifiedWord": "verified",
+      "pf.settingsSub": "Notifications, language and more",
+      "pf.tripsWord": "Trips", "pf.loadWord": "Loads",
       "trust.high": "Trusted user", "trust.mid": "Verified user",
       "trust.new": "New user", "trust.success": "Successful deals",
       "trust.trips": "Trips completed", "trust.positive": "Positive ratings",
@@ -5344,6 +5388,10 @@
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
       +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       +   '<li><button type="button" class="settings-row" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      // Profilni ulashish ilgari sarlavhadagi uchta tugmadan biri edi.
+      // Sarlavhada endi bitta tishli g'ildirak turadi, shuning uchun
+      // ulashish shu ro'yxatga ko'chdi — yo'qolgani yo'q.
+      +   '<li><button type="button" class="settings-row" id="btnShareProfile">'+icon("iconShare")+'<span data-i18n="profile.shareAria">Profilni ulashish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       +   '<li><button type="button" class="settings-row" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       +   (showLinkTelegram ? '<li><button type="button" class="settings-row" data-settings-page="link-telegram">'+icon("iconTelegram")+'<span data-i18n="settings.linkTelegram">Telegram bilan bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
       +   (showLinkGoogle ? '<li><button type="button" class="settings-row" data-settings-page="link-google">'+icon("iconUser")+'<span data-i18n="settings.linkGoogle">Google akkauntga bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
@@ -5371,6 +5419,10 @@
         applyLang();
         var signOutBtn = container.querySelector("#btnSignOut");
         if(signOutBtn) signOutBtn.addEventListener("click", confirmSignOut);
+        var shareBtn = container.querySelector("#btnShareProfile");
+        if(shareBtn) shareBtn.addEventListener("click", function(){
+          shareProfile(lastLoadedProfile || {});
+        });
         var savedBtn = container.querySelector("#btnOpenSaved");
         if(savedBtn) savedBtn.addEventListener("click", openSavedSheet);
       }
@@ -6255,50 +6307,51 @@
     var avatarUrl = profileAvatarUrl(p);
     var initial = escapeHtml((name || "?").charAt(0).toUpperCase());
 
+    // Yuqorida sahifa nomi va bitta tishli g'ildirak — namunadagidek.
+    // Ulashish va tahrirlash yo'qolgani yo'q: tahrirlash uchun ism va
+    // rasm turgan blokning o'zi bosiladi, ulashish esa Sozlamalar
+    // ro'yxatiga ko'chdi.
     return '<div class="profile-header">'
-      + '<div class="profile-top-actions">'
-      +   '<button type="button" class="pta-btn" id="btnShareProfile" aria-label="Profilni ulashish" data-i18n-aria="profile.shareAria">'+icon("iconShare")+'</button>'
-      +   '<button type="button" class="pta-btn" id="btnEditProfile" aria-label="Profilni tahrirlash" data-i18n-aria="profile.editBtn">'+icon("iconEdit")+'</button>'
-      +   '<button type="button" class="pta-btn" id="btnOpenAccountMenu" aria-label="Sozlamalar" data-i18n-aria="profile.menuAria">'+icon("iconMenu")+'</button>'
+      + '<div class="pf-topbar">'
+      +   '<h1 class="pf-page-title" data-i18n="nav.profile">Profil</h1>'
+      +   '<button type="button" class="pf-gear" id="btnOpenAccountMenu" aria-label="Sozlamalar" data-i18n-aria="profile.menuAria">'+icon("iconSettings")+'</button>'
       + '</div>'
-      // Avatar chapda, o'ng tomonida ism — tagida telefon, uning
-      // tagida baho va baho yonida ishonchlilik belgisi. Ilgari
-      // hammasi markazda, ustma-ust turardi.
-      + '<div class="pf-id">'
-      +   '<div class="pf-id-face">'
+      // Avatar chapda (tasdiq belgisi uning burchagida), o'ngida ism,
+      // tagida telefon, uning tagida ikkita chip: baho va ishonchlilik.
+      // Blokning o'zi bosiladi — profilni tahrirlash shu yerdan.
+      + '<button type="button" class="pf-id" id="btnEditProfile" aria-label="Profilni tahrirlash" data-i18n-aria="profile.editBtn">'
+      +   '<span class="pf-id-face">'
       +     (avatarUrl
               ? '<img src="'+escapeHtml(avatarUrl)+'" alt="" referrerpolicy="no-referrer">'
-              : '<span>'+initial+'</span>')
-      +   '</div>'
-      +   '<div class="pf-id-main">'
-      +     '<h2 class="profile-name">'+(p.verified ? verifyBadgeSvg("profile-name-badge")+' ' : '')+escapeHtml(name)
-      +       (p.username ? ' <span class="pf-id-username">@'+escapeHtml(p.username)+'</span>' : '')
-      +     '</h2>'
+              : '<span class="pf-id-initial">'+initial+'</span>')
+      // Belgi shaxs hujjati tasdiqlanganini bildiradi — qolgan
+      // joylardagi bilan bir xil manba (eski `verified` bayrog'i ham
+      // shu yerga o'giriladi, verifyStateOf ga qarang).
+      +     (verifyStateOf(p, "IDENTITY").status === "VERIFIED"
+              ? '<span class="pf-id-badge">'+verifyBadgeSvg("")+'</span>' : '')
+      +   '</span>'
+      +   '<span class="pf-id-main">'
+      +     '<span class="profile-name">'+escapeHtml(name)+'</span>'
       +     (p.phone
-              ? '<a class="pf-id-phone" href="tel:'+escapeHtml(String(p.phone).replace(/[^\d+]/g, ""))+'">'
-                + icon("iconPhone")+escapeHtml(p.phone)+'</a>'
-              : '<button type="button" class="pf-id-phone muted" data-edit-profile data-i18n="profile.addPhone">Telefon qo\'shing</button>')
-      +     '<div class="pf-id-row">'
+              ? '<span class="pf-id-phone">'+escapeHtml(p.phone)+'</span>'
+              : '<span class="pf-id-phone muted" data-i18n="profile.addPhone">Telefon qo\'shing</span>')
+      +     '<span class="pf-id-row">'
       +       (p.ratingCount
-                // Baholar soni bu yerda yozilmaydi: u ishonchlilik
-                // belgisini bitta qatordan siqib chiqarardi. Soni
-                // "Reyting va sharhlar" bo'limida, bir bosishda.
-                ? '<span class="pf-id-rating">'+icon("iconStar", "filled")
+                ? '<span class="pf-chip pf-chip--rating">'+icon("iconStar", "filled")
                   + (p.ratingSum / p.ratingCount).toFixed(1) + '</span>'
-                : '<span class="pf-id-rating muted">'+icon("iconStar", "star-off")
-                  + '<span data-i18n="pf.noRating">Baho yo\'q</span></span>')
-      +       '<span class="pf-trust-chip" id="pfTrustChip"></span>'
-      +     '</div>'
-      +   '</div>'
-      + '</div>'
-      // Uchta raqam: nechta safar, nechta yuk, muvaffaqiyat foizi.
+                : '')
+      +       '<span class="pf-chip pf-chip--trust" id="pfTrustChip"></span>'
+      +     '</span>'
+      +   '</span>'
+      + '</button>'
+      // Uchta raqam bitta kartochkada, orasida ajratuvchi chiziq.
       // Boshida faqat safarlar soni ma'lum (u profilda turadi);
       // qolgan ikkitasi serverdan kelgach to'ldiriladi.
       + '<div class="pf-id-stats">'
       +   '<div class="pf-idst"><span class="v" id="pfStatTrips">'+(p.deliveredCount || 0)+'</span>'
-      +     '<span class="k" data-i18n="act.trips">Tashuvlar</span></div>'
+      +     '<span class="k" data-i18n="pf.tripsWord">Safar</span></div>'
       +   '<div class="pf-idst"><span class="v" id="pfStatLoads">—</span>'
-      +     '<span class="k" data-i18n="act.loads">Yuklar</span></div>'
+      +     '<span class="k" data-i18n="pf.loadWord">Yuk</span></div>'
       +   '<div class="pf-idst"><span class="v" id="pfStatSuccess">—</span>'
       +     '<span class="k" data-i18n="pf.success">Muvaffaqiyat</span></div>'
       + '</div>'
@@ -6463,8 +6516,6 @@
       + renderProfileCompletionCard(p)
       + '<div class="pf-menu" id="profileMenu">'+profileMenuHtml(p)+'</div>';
 
-    var shareBtn = document.getElementById("btnShareProfile");
-    if(shareBtn) shareBtn.addEventListener("click", function(){ shareProfile(p); });
     var editBtn = document.getElementById("btnEditProfile");
     if(editBtn) editBtn.addEventListener("click", function(){ openProfileEditSheet(p); });
     var menuBtn = document.getElementById("btnOpenAccountMenu");
@@ -6498,15 +6549,29 @@
      o'zini belgilamagan bo'lishi mumkin, va bo'sh profilni ko'rsatib
      turgandan ko'ra hamma yo'lni ochiq qoldirgan yaxshiroq.
      ============================================================ */
+  /* Har bir bo'limning o'z rangi bor — ro'yxatda ular bir-biridan
+     bir qarashda ajralib tursin. Bu ranglar bezak: brend rangi
+     emas, shuning uchun ular tokenlardan olinmaydi.
+
+     `sub` — qator tagidagi izoh. Ba'zilari o'zgarmas matn, ba'zilari
+     esa haqiqiy songa almashadi (loadProfileCounts). */
   var PROFILE_SECTIONS = [
-    { id: "trust",     icon: "iconShield",    titleKey: "pf.trust",     title: "Ishonchlilik darajasi", roles: "*" },
-    { id: "vehicles",  icon: "iconTruck",     titleKey: "pf.vehicles",  title: "Mening transportlarim", roles: "DRIVER" },
-    { id: "driver",    icon: "iconUser",      titleKey: "pf.driver",    title: "Haydovchi ma'lumotlari", roles: "DRIVER" },
-    { id: "loads",     icon: "iconBox",       titleKey: "pf.loads",     title: "Mening yuklarim", roles: "OWNER" },
-    { id: "reviews",   icon: "iconStar",      titleKey: "pf.reviews",   title: "Reyting va sharhlar", roles: "*" },
-    { id: "activity",  icon: "iconChart",     titleKey: "pf.activity",  title: "Faoliyat", roles: "*" },
-    { id: "verified",  icon: "iconShield",    titleKey: "pf.verified",  title: "Tasdiqlangan ma'lumotlar", roles: "*" },
-    { id: "settings",  icon: "iconSettings",  titleKey: "pf.settings",  title: "Sozlamalar", roles: "*" }
+    { id: "trust",    icon: "iconShield",   tint: "#16A34A", titleKey: "pf.trust",    title: "Ishonchlilik darajasi",
+      subKey: "pf.trustSub",    sub: "Tasdiqlar va kelishuvlar", roles: "*" },
+    { id: "vehicles", icon: "iconTruck",    tint: "#2563EB", titleKey: "pf.vehicles", title: "Mening transportlarim",
+      subKey: "pf.vehiclesSub", sub: "Mashina va e'lonlaringiz", roles: "DRIVER" },
+    { id: "driver",   icon: "iconUser",     tint: "#7C3AED", titleKey: "pf.driver",   title: "Haydovchi ma'lumotlari",
+      subKey: "pf.driverSub",   sub: "Tajriba, yo'nalishlar va boshqalar", roles: "DRIVER" },
+    { id: "loads",    icon: "iconBox",      tint: "#EA580C", titleKey: "pf.loads",    title: "Mening yuklarim",
+      subKey: "pf.loadsSub",    sub: "Faol va jarayondagi yuklar", roles: "OWNER" },
+    { id: "reviews",  icon: "iconStar",     tint: "#D97706", titleKey: "pf.reviews",  title: "Reyting va sharhlar",
+      subKey: "pf.reviewsSub",  sub: "Baholar va sharhlar", roles: "*" },
+    { id: "activity", icon: "iconChart",    tint: "#8B5CF6", titleKey: "pf.activity", title: "Faoliyat",
+      subKey: "pf.activitySub", sub: "Statistika va ko'rsatkichlar", roles: "*" },
+    { id: "verified", icon: "iconShield",   tint: "#0D9488", titleKey: "pf.verified", title: "Tasdiqlangan ma'lumotlar",
+      subKey: "pf.verifiedSub", sub: "Hujjatlar va tasdiqlashlar", roles: "*" },
+    { id: "settings", icon: "iconSettings", tint: "#64748B", titleKey: "pf.settings", title: "Sozlamalar",
+      subKey: "pf.settingsSub", sub: "Bildirishnomalar, til va boshqalar", roles: "*" }
   ];
 
   function sectionVisible(section, role){
@@ -6519,17 +6584,26 @@
     return PROFILE_SECTIONS.filter(function(sec){ return sectionVisible(sec, p.role); })
       .map(function(sec){
         return '<button type="button" class="pf-row" data-pf-section="'+sec.id+'">'
-          + '<span class="pf-row-ico">'+icon(sec.icon)+'</span>'
-          + '<span class="pf-row-title" data-i18n="'+sec.titleKey+'">'+escapeHtml(sec.title)+'</span>'
-          + '<span class="pf-row-tag" id="pfTag-'+sec.id+'"></span>'
+          + '<span class="pf-row-ico" style="background:'+sec.tint+';">'+icon(sec.icon)+'</span>'
+          + '<span class="pf-row-main">'
+          +   '<span class="pf-row-title" data-i18n="'+sec.titleKey+'">'+escapeHtml(sec.title)+'</span>'
+          +   '<span class="pf-row-sub" id="pfSub-'+sec.id+'" data-i18n="'+sec.subKey+'">'+escapeHtml(sec.sub)+'</span>'
+          + '</span>'
           + '<svg class="ic-svg pf-row-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>'
           + '</button>';
       }).join("");
   }
 
-  function setSectionTag(id, text){
-    var el = document.getElementById("pfTag-" + id);
-    if(el) el.textContent = text == null ? "" : String(text);
+  /**
+   * Qator tagidagi izohni haqiqiy songa almashtiradi.
+   * data-i18n olib tashlanadi — aks holda til almashganda applyLang()
+   * yozib qo'ygan sonimizni o'zgarmas matn bilan qoplab ketardi.
+   */
+  function setSectionSub(id, text){
+    var el = document.getElementById("pfSub-" + id);
+    if(!el || !text) return;
+    el.removeAttribute("data-i18n");
+    el.textContent = text;
   }
 
   /* ---------- Bo'limlarni ochish ----------
@@ -6967,8 +7041,11 @@
     var verifiedCount = VERIFY_KINDS.filter(function(k){
       return verifyStateOf(p, k).status === "VERIFIED";
     }).length;
-    setSectionTag("verified", verifiedCount + "/" + VERIFY_KINDS.length);
-    if(p.ratingCount) setSectionTag("reviews", (p.ratingSum / p.ratingCount).toFixed(1) + " ★");
+    setSectionSub("verified", verifiedCount + "/" + VERIFY_KINDS.length + " " + (t("pf.verifiedWord") || "tasdiqlangan"));
+    if(p.ratingCount){
+      setSectionSub("reviews", (p.ratingSum / p.ratingCount).toFixed(1)
+        + "  (" + p.ratingCount + " " + (t("pf.ratingsWord") || "ta baho") + ")");
+    }
 
     // Ishonchlilik belgisi darrov qo'yiladi — profilda bor
     // ma'lumotdan. Sharhlar kelgach yana bir marta aniqlashtiriladi:
@@ -6987,11 +7064,17 @@
         var closed = c.delivered + c.cancelled;
         // Yopilgan buyurtma bo'lmasa foiz ko'rsatilmaydi: nolni
         // nolga bo'lib ham, "100%" deb yozib qo'yib ham bo'lmaydi.
-        setText("pfStatSuccess", closed > 0 ? Math.round((c.delivered / closed) * 100) + "%" : "—");
-        if(sectionVisible({ roles: "OWNER" }, p.role)){
-          setSectionTag("loads", String(c.total));
+        var pct = closed > 0 ? Math.round((c.delivered / closed) * 100) : null;
+        setText("pfStatSuccess", pct != null ? pct + "%" : "—");
+        if(pct != null){
+          setSectionSub("trust", pct + "% " + (t("pf.trustSubPct") || "muvaffaqiyatli kelishuv"));
         }
-        setSectionTag("activity", String(c.total));
+        if(sectionVisible({ roles: "OWNER" }, p.role)){
+          setSectionSub("loads", c.active + " " + (t("loadgrp.active") || "faol") + " · "
+            + c.inProgress + " " + (t("loadgrp.inProgress") || "jarayonda"));
+        }
+        setSectionSub("activity", c.total + " " + (t("pf.loadWord") || "yuk") + " · "
+          + (p.deliveredCount || 0) + " " + (t("pf.tripsWord") || "safar"));
       })
       .catch(function(){ /* ko'rsatkich — majburiy emas */ });
 
@@ -7009,7 +7092,7 @@
         .then(function(d){
           if(!d || !d.trucks) return;
           var n = d.trucks.length + ((p.vehicleType || p.plateNumber) ? 1 : 0);
-          if(n) setSectionTag("vehicles", String(n));
+          if(n) setSectionSub("vehicles", n + " " + (t("pf.vehicleWord") || "ta transport"));
         })
         .catch(function(){ /* ko'rsatkich — majburiy emas */ });
     }
@@ -7024,7 +7107,9 @@
     var chip = document.getElementById("pfTrustChip");
     if(!chip) return;
     var lvl = trustLevel(p, delivered, positive);
-    chip.className = "pf-trust-chip " + lvl.cls;
+    // Klass to'liq yoziladi: faqat darajani yozib qo'yilsa, chipning
+    // o'z ko'rinishi (pf-chip) o'chib ketardi.
+    chip.className = "pf-chip pf-chip--trust " + lvl.cls;
     chip.setAttribute("data-i18n", lvl.key);
     chip.textContent = t(lvl.key) || lvl.txt;
   }
