@@ -25,7 +25,7 @@
      bo'yaydi, shuning uchun mavzuga qarab ikkitasi berilgan. -->
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="application-name" content="YO'LDA">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -90,6 +90,10 @@
        ishlayveradi. Hozirgisi chizma: menda litsenziyali yuk mashinasi
        surati yo'q, o'ylab topib qo'yish esa to'g'ri bo'lmasdi. */
     --hero-photo:url("/images/hero-truck.svg");
+    /* Hero suratining ustidagi parda rangi. Yorug'da oq, tunda qora —
+       ilgari qotirib qo'yilgan oq edi va qora fonda hero o'rtasidan
+       yorqin oq lenta o'tib ketardi. */
+    --hero-veil:255,255,255;
 
     /* spacing scale (8pt grid) */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
@@ -115,23 +119,28 @@
      though that's what picks the default the first time (see the bootstrap
      script in <head>). Every color elsewhere in this file is one of the
      tokens above, so overriding them here is enough to re-skin the whole app. */
+  /* Tungi rejim ataylab neytral qora: ilgari kartochkalar to'q ko'k
+     (#141F3B) edi va butun ilova ko'kimtir bo'lib ko'rinardi. Endi
+     faqat kulrangning to'q darajalari — rang bermaydi, shuning uchun
+     yashil brend rangi ham toza chiqadi. */
   :root[data-theme="dark"]{
     --paper:#000000;
-    --paper-dark:#111B31;
-    --card:#141F3B;
-    --ink:#E7ECF7;
-    --ink-soft:#A9B4CC;
-    --muted:#7C88A6;
+    --paper-dark:#141414;
+    --card:#0E0E0E;
+    --ink:#F2F2F2;
+    --ink-soft:#A8A8A8;
+    --muted:#767676;
     --route:#2DD480;
     --route-dark:#22B368;
     --stamp:#34D399;
     --stamp-dark:#10B981;
     --accepted:#34D399;
     --warn:#FBBF24;
-    --border:rgba(255,255,255,0.09);
-    --tint:rgba(45,212,128,0.12);
-    --skeleton-mid:#1C2847;
-    --glass:rgba(20,31,59,0.72);
+    --border:rgba(255,255,255,0.10);
+    --tint:rgba(45,212,128,0.13);
+    --skeleton-mid:#1B1B1B;
+    --hero-veil:14,14,14;
+    --glass:rgba(10,10,10,0.72);
     --glass-brd:rgba(255,255,255,0.12);
   }
   /* Qorong'i rejimda brend yashili ataylab ochiq (qora fonda ko'rinishi
@@ -275,7 +284,7 @@
     color:var(--ink);
   }
   .nav-logo .mark{width:28px;height:28px;flex-shrink:0;display:block;}
-  .nav-logo .word{color:var(--ink);}
+  .nav-logo .word{color:var(--route);}
   /* Qo'ng'iroq endi doira ichida emas — namunadagidek yalang'och
      ikonka, yonida avatar. Shuning uchun chegara va fon yo'q. */
   .nav-icon-btn{
@@ -300,6 +309,40 @@
     justify-content:center;font-weight:700;font-size:15px;line-height:1;
   }
   .nav-avatar-btn .chev{width:14px;height:14px;color:var(--muted);flex-shrink:0;}
+
+  /* Avatar + strelka + ochiladigan hisob menyusi. */
+  .nav-account{position:relative;display:flex;align-items:center;gap:1px;}
+  .nav-chev-btn{
+    border:none;background:none;padding:6px 2px;cursor:pointer;line-height:0;
+    color:var(--muted);border-radius:var(--r-sm);
+    transition:color 0.2s var(--ease);
+  }
+  .nav-chev-btn:hover,.nav-chev-btn[aria-expanded="true"]{color:var(--ink);}
+  .nav-chev-btn .chev{width:15px;height:15px;display:block;}
+  .nav-chev-btn[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .nav-chev-btn .chev{transition:transform 0.25s var(--ease);}
+  .nav-menu{
+    position:absolute;top:calc(100% + 8px);right:0;z-index:90;min-width:180px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--sh-3);padding:6px;
+    animation:navMenuIn 0.18s var(--ease) both;
+  }
+  .nav-menu[hidden]{display:none;}
+  @keyframes navMenuIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+  :root[data-reduce-motion="1"] .nav-menu{animation:none;}
+  .nav-menu-who{
+    padding:8px 10px 9px;font-size:12px;color:var(--muted);
+    border-bottom:1px solid var(--border);margin-bottom:5px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .nav-menu-item{
+    display:block;width:100%;text-align:left;border:none;background:none;
+    padding:11px 10px;border-radius:10px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--ink);
+  }
+  .nav-menu-item:hover{background:var(--tint);}
+  .nav-menu-item.danger{color:#EF4444;}
+  .nav-menu-item.danger:hover{background:rgba(239,68,68,0.1);}
   /* Brauzerning [hidden]{display:none} qoidasi yuqoridagi display:flex
      dan kuchsizroq, shuning uchun `el.hidden = true` o'z-o'zicha bu
      tugmani yashira olmasdi — qo'ng'iroq kirmagan odamga ham
@@ -353,12 +396,12 @@
     .bottom-nav{background:rgba(255,255,255,0.94);}
   }
   :root[data-theme="dark"] .bottom-nav{
-    background:rgba(20,31,59,0.62);
+    background:rgba(14,14,14,0.68);
     border-color:rgba(255,255,255,0.14);
     box-shadow:0 8px 30px rgba(0,0,0,0.45);
   }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    :root[data-theme="dark"] .bottom-nav{background:rgba(20,31,59,0.95);}
+    :root[data-theme="dark"] .bottom-nav{background:rgba(14,14,14,0.96);}
   }
 
   /* Tanlangan bo'lim ostidagi "tomchi". Bitta element bo'lib, joydan
@@ -405,7 +448,7 @@
     box-shadow:0 6px 18px rgba(10,159,91,0.4), 0 0 0 4px rgba(255,255,255,0.55);
     transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s var(--ease);
   }
-  :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 6px 18px rgba(10,159,91,0.5), 0 0 0 4px rgba(20,31,59,0.7);}
+  :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 6px 18px rgba(10,159,91,0.5), 0 0 0 4px rgba(10,10,10,0.8);}
   .bn-item--primary .bn-fab .ic-svg{font-size:26px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
   .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
   .bn-item--primary.active .bn-fab{transform:scale(1.06);}
@@ -1208,9 +1251,9 @@
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
     .welcome{background:#F4F8F6;}
   }
-  :root[data-theme="dark"] .welcome{background:rgba(6,10,20,0.82);}
+  :root[data-theme="dark"] .welcome{background:rgba(0,0,0,0.84);}
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    :root[data-theme="dark"] .welcome{background:#060A14;}
+    :root[data-theme="dark"] .welcome{background:#000000;}
   }
   .welcome[hidden]{display:none;}
   @keyframes welcomeIn{from{opacity:0;}to{opacity:1;}}
@@ -1231,7 +1274,7 @@
   .welcome-mark{width:52px;height:52px;display:block;margin:0 auto 12px;}
   .welcome-brand{
     font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:700;
-    letter-spacing:-0.02em;color:var(--ink);line-height:1;
+    letter-spacing:-0.02em;color:var(--route);line-height:1;
   }
   .welcome-title{margin:18px 0 4px;font-size:23px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);}
   .welcome-sub{margin:0 0 24px;font-size:14px;color:var(--ink-soft);line-height:1.5;}
@@ -1297,7 +1340,7 @@
   }
   .hero-card-photo::after{
     content:"";position:absolute;inset:0;
-    background:linear-gradient(96deg, var(--card) 0%, var(--card) 30%, rgba(255,255,255,0.72) 52%, rgba(255,255,255,0) 78%);
+    background:linear-gradient(96deg, var(--card) 0%, var(--card) 30%, rgba(var(--hero-veil),0.72) 52%, rgba(var(--hero-veil),0) 78%);
   }
   .hero-card-body{position:relative;z-index:1;padding:22px 18px 20px;max-width:74%;}
   .hero-card-title{
@@ -1502,6 +1545,11 @@
     display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
     -webkit-overflow-scrolling:touch;scrollbar-width:none;
     margin:0 -16px;padding:2px 16px 6px;
+    /* scroll-padding bo'lmasa `scroll-snap-align:start` kartochkani
+       konteynerning chekkasiga yopishtiradi va yon tomondagi 16px
+       joyni yeb qo'yadi: birinchi kartochka ekranning chap chetiga
+       tiqilib, burchagi kesilib qolardi. */
+    scroll-padding:0 16px;
   }
   .home-truck-rail::-webkit-scrollbar{display:none;}
   .home-truck-card{
@@ -1550,9 +1598,16 @@
   }
   /* Eng tor telefonlarda (320px) to'rtta ustun juda siqilib ketadi. */
   @media(max-width:359px){
-    .stats-card{grid-template-columns:repeat(2,1fr);gap:12px 10px;}
+    .stats-card{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;}
     .hero-card-body{max-width:100%;}
-    .hero-card-photo{inset:0 0 0 45%;opacity:0.55;}
+    /* Bu yerda ilgari `inset:0 0 0 45%; opacity:0.55` turardi — o'sha
+       paytda rasm faqat o'ng ustunda edi. Rasm butun kartochkani
+       egallaydigan bo'lgach, bu qoida qolib ketib, tor telefonda yuk
+       mashinasini tor yo'lakka siqib, xiralashtirib qo'yardi.
+       Endi faqat oq parda kengroq: matn uzunroq qatorlarga bo'linadi. */
+    .hero-card-photo::after{
+      background:linear-gradient(96deg, var(--card) 0%, var(--card) 38%, rgba(var(--hero-veil),0.78) 60%, rgba(var(--hero-veil),0) 84%);
+    }
     .hiw-sep{display:none;}
     .hiw-row{flex-wrap:wrap;gap:14px 10px;}
     .hiw-step{flex:0 0 calc(50% - 5px);}
@@ -2220,7 +2275,7 @@
     background:rgba(255,255,255,0.9);border:none;display:flex;align-items:center;justify-content:center;
     cursor:pointer;font-size:15px;color:#DC2626;box-shadow:var(--sh-1);
   }
-  :root[data-theme="dark"] .tc-fav{background:rgba(20,31,59,0.85);}
+  :root[data-theme="dark"] .tc-fav{background:rgba(14,14,14,0.88);}
 
   .spec-table{width:100%;border-collapse:collapse;margin:var(--s2) 0 var(--s4);}
   .spec-table tr{border-bottom:1px solid var(--border);}
@@ -2292,12 +2347,13 @@
     <circle cx="176" cy="86" r="16" fill="currentColor"/>
     <circle cx="176" cy="86" r="6" fill="var(--paper)"/>
   </symbol>
-  <!-- Sarlavhadagi yassi belgi: ikkita qiya lenta — biri to'q ko'k,
-       biri yashil. Yo'l va harakatni bildiradi. Doira ichidagi
-       #logoMark hero uchun qoladi. -->
+  <!-- Sarlavhadagi belgi: yashil kafel, ichida oq qiya lenta —
+       yo'l va harakat. Ilgari ikkita lenta edi, biri to'q ko'k; endi
+       faqat yashil va oq. Doira ichidagi #logoMark hero uchun qoladi. -->
   <symbol id="logoMarkFlat" viewBox="0 0 32 32">
-    <path d="M6.4 2h7.1L11 15.6 3.9 30 1.2 18.9z" fill="#14263D"/>
-    <path d="M18.5 2h7.1l4.4 12.7L23.1 30l-6.9-14.4z" fill="#0A9F5B"/>
+    <rect width="32" height="32" rx="9" fill="#0A9F5B"/>
+    <path d="M11.6 5.5h6.2l-3.4 9.1L9.2 26.5 6.6 17z" fill="#FFFFFF"/>
+    <path d="M21.4 5.5h4.2l1.4 7.6-5.2 13.4-2.6-9.6z" fill="#FFFFFF" opacity="0.55"/>
   </symbol>
 
   <symbol id="logoMark" viewBox="0 0 100 100">
@@ -3222,6 +3278,7 @@
       "home.heroSub": "O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.",
       "home.matchSub": "Sizning profilingizga mos yuklar", "home.seeAll": "Barchasini ko'rish",
       "contact.driverGroup": "Haydovchilar guruhi (Telegram)",
+      "nav.accountMenu": "Hisob menyusi",
       "welcome.title": "Xush kelibsiz!", "welcome.sub": "Davom etish uchun tizimga kiring",
       "welcome.telegram": "Telegram bilan davom etish",
       "welcome.inAppHint": "Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.",
@@ -3587,6 +3644,7 @@
       "home.heroSub": "Находите грузы по всему Узбекистану, размещайте свои и связывайтесь с надёжными водителями.",
       "home.matchSub": "Грузы, подходящие вашему профилю", "home.seeAll": "Смотреть все",
       "contact.driverGroup": "Группа водителей (Telegram)",
+      "nav.accountMenu": "Меню аккаунта",
       "welcome.title": "Добро пожаловать!", "welcome.sub": "Войдите, чтобы продолжить",
       "welcome.telegram": "Продолжить с Telegram",
       "welcome.inAppHint": "Google не работает в этом браузере. Скопируйте ссылку и откройте в Safari или Chrome.",
@@ -3952,6 +4010,7 @@
       "home.heroSub": "Find loads across Uzbekistan, post your own and connect with drivers you can trust.",
       "home.matchSub": "Loads that fit your profile", "home.seeAll": "See all",
       "contact.driverGroup": "Drivers group (Telegram)",
+      "nav.accountMenu": "Account menu",
       "welcome.title": "Welcome!", "welcome.sub": "Sign in to continue",
       "welcome.telegram": "Continue with Telegram",
       "welcome.inAppHint": "Google sign-in does not work in this browser. Copy the link and open it in Safari or Chrome.",
@@ -5423,10 +5482,56 @@
     var face = photoUrl
       ? '<img src="'+escapeHtml(photoUrl)+'" alt="" referrerpolicy="no-referrer">'
       : '<span class="nav-avatar-fallback">'+initial+'</span>';
-    gateHome.innerHTML = '<button type="button" class="nav-avatar-btn" id="navProfileBtn" aria-label="Profil" data-i18n-aria="nav.profile">'
-      + face + '<svg class="chev ic-svg" aria-hidden="true"><use href="#iconChevronDown"/></svg></button>';
+
+    // Avatarning o'zi Profilga olib boradi; yonidagi kichkina strelka
+    // esa hisob menyusini ochadi. Ikkitasi alohida tugma, chunki
+    // ikkalasi ikki xil ish qiladi.
+    gateHome.innerHTML =
+      '<div class="nav-account">'
+      +   '<button type="button" class="nav-avatar-btn" id="navProfileBtn" aria-label="Profil" data-i18n-aria="nav.profile">'+face+'</button>'
+      +   '<button type="button" class="nav-chev-btn" id="navAccountBtn" aria-haspopup="menu" aria-expanded="false"'
+      +     ' aria-label="Hisob menyusi" data-i18n-aria="nav.accountMenu">'
+      +     '<svg class="chev ic-svg" aria-hidden="true"><use href="#iconChevronDown"/></svg>'
+      +   '</button>'
+      +   '<div class="nav-menu" id="navAccountMenu" role="menu" hidden>'
+      +     '<div class="nav-menu-who">'+escapeHtml(label || "")+'</div>'
+      +     '<button type="button" class="nav-menu-item" role="menuitem" id="navMenuProfile" data-i18n="nav.profile">Profil</button>'
+      +     '<button type="button" class="nav-menu-item danger" role="menuitem" id="navMenuSignOut" data-i18n="profile.signOut">Chiqish</button>'
+      +   '</div>'
+      + '</div>';
+
     var navBtn = document.getElementById("navProfileBtn");
-    if(navBtn) navBtn.addEventListener("click", function(){ switchTab("profile"); });
+    if(navBtn) navBtn.addEventListener("click", function(){ closeAccountMenu(); switchTab("profile"); });
+
+    var chevBtn = document.getElementById("navAccountBtn");
+    if(chevBtn) chevBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var menu = document.getElementById("navAccountMenu");
+      if(!menu) return;
+      if(menu.hidden) openAccountMenu(); else closeAccountMenu();
+    });
+
+    var menuProfile = document.getElementById("navMenuProfile");
+    if(menuProfile) menuProfile.addEventListener("click", function(){ closeAccountMenu(); switchTab("profile"); });
+    var menuOut = document.getElementById("navMenuSignOut");
+    if(menuOut) menuOut.addEventListener("click", function(){ closeAccountMenu(); confirmSignOut(); });
+
+    applyLang();
+  }
+
+  function openAccountMenu(){
+    var menu = document.getElementById("navAccountMenu");
+    var btn = document.getElementById("navAccountBtn");
+    if(!menu) return;
+    menu.hidden = false;
+    if(btn) btn.setAttribute("aria-expanded", "true");
+  }
+
+  function closeAccountMenu(){
+    var menu = document.getElementById("navAccountMenu");
+    var btn = document.getElementById("navAccountBtn");
+    if(menu) menu.hidden = true;
+    if(btn) btn.setAttribute("aria-expanded", "false");
   }
 
   /**
@@ -10739,6 +10844,26 @@
     blob.style.opacity = "1";
   }
 
+  /**
+   * Turgan bo'limni manzil qatoriga yozadi, ya'ni sahifa yangilanganda
+   * odam o'sha yerda qoladi.
+   *
+   * Ilgari teskarisi qilingandi: manzildagi ?tab= o'qilgach darhol
+   * o'chirib tashlanardi, shuning uchun Profil yoki Mashinalarda turib
+   * F5 bosgan odam bosh sahifaga otilib ketardi.
+   *
+   * pushState emas, replaceState: har bir bo'lim almashinuvi brauzer
+   * tarixiga yangi yozuv qo'shsa, "orqaga" tugmasini o'nlab marta
+   * bosish kerak bo'lardi.
+   */
+  function rememberTab(name){
+    if(!window.history || !history.replaceState) return;
+    var url = name === "home"
+      ? location.pathname + location.hash
+      : location.pathname + "?tab=" + encodeURIComponent(name) + location.hash;
+    try{ history.replaceState(null, "", url); }catch(e){}
+  }
+
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
     TABS.forEach(function(t){
@@ -10749,6 +10874,7 @@
       b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
     });
     moveNavBlob();
+    rememberTab(name);
     var active = document.getElementById("tab-" + name);
     if(active){
       // IntersectionObserver never fires for content that was hidden —
@@ -10772,6 +10898,18 @@
   // replaces the innerHTML of an ancestor — like the "Aloqa" link inside
   // the order.how4 list item — which would otherwise swap in a fresh
   // button with no listener of its own.
+  // Hisob menyusi tashqariga bosilganda yopiladi — ochiq qolib
+  // ketmasin. Menyuning o'z ichidagi bosilishlar bundan mustasno.
+  document.addEventListener("click", function(e){
+    var menu = document.getElementById("navAccountMenu");
+    if(!menu || menu.hidden) return;
+    if(e.target.closest("#navAccountMenu") || e.target.closest("#navAccountBtn")) return;
+    closeAccountMenu();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape") closeAccountMenu();
+  });
+
   document.addEventListener("click", function(e){
     var el = e.target.closest("[data-tab-link]");
     if(!el) return;
@@ -11195,9 +11333,6 @@
     var wanted = match[1];
     if(TABS.indexOf(wanted) === -1 || wanted === "home") return;
     switchTab(wanted);
-    if(window.history && history.replaceState){
-      history.replaceState(null, "", location.pathname + location.hash);
-    }
   })();
 
   var homeSearchBar = document.getElementById("homeSearchBar");
