@@ -1156,6 +1156,67 @@ const listMyOffers = async (req, res) => {
 };
 
 /**
+ * GET ?action=my-loads — yuk beruvchining o'zi joylagan buyurtmalari.
+ *
+ * Profildagi "Mening yuklarim" shu yerdan oziqlanadi. Ro'yxat holat
+ * bo'yicha guruhlanadi, chunki interfeys aynan shu to'rt guruhni
+ * ko'rsatadi: faol, jarayonda, yakunlangan, bekor qilingan.
+ *
+ * Faqat o'z buyurtmalari qaytariladi — identity har so'rovda qaytadan
+ * tekshiriladi, ya'ni birovning kodini yozib qo'yish bilan boshqa
+ * odamning yuklarini ko'rib bo'lmaydi. Telefon va izoh bu yerda ham
+ * chiqmaydi: ular buyurtmaning o'z sahifasida, faqat egasiga va
+ * tanlangan haydovchiga ko'rinadi.
+ */
+const listMyLoads = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const codes = await kvRange('order_codes', 0, 299);
+  const raw = await Promise.all(codes.map((code) => kvGet(`order:${code}`)));
+
+  const mine = raw
+    .map((str) => {
+      if (!str) return null;
+      try {
+        return JSON.parse(str);
+      } catch {
+        return null;
+      }
+    })
+    .filter((o) => o && (o.ownerIdentity || o.googleEmail) === identity)
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .map((o) => ({
+      code: o.code,
+      fromCity: o.fromCity,
+      toCity: o.toCity,
+      weightKg: o.weightKg,
+      amount: o.amount,
+      truckType: o.truckType || '',
+      pickupDate: o.pickupDate || '',
+      createdAt: o.createdAt,
+      status: o.status || 'NEW',
+      statusLabel: STATUS_LABELS[o.status || 'NEW'] || '',
+      driverName: o.driver ? o.driver.name || '' : '',
+      rated: Boolean(o.rating),
+    }));
+
+  // Guruhlar interfeysdagi to'rt bo'limga to'g'ri keladi.
+  const counts = {
+    active: mine.filter((o) => o.status === 'NEW').length,
+    inProgress: mine.filter((o) => o.status !== 'NEW' && o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length,
+    delivered: mine.filter((o) => o.status === 'DELIVERED').length,
+    cancelled: mine.filter((o) => o.status === 'CANCELLED').length,
+    total: mine.length,
+  };
+
+  return res.status(200).json({ ok: true, loads: mine, counts });
+};
+
+/**
  * POST ?action=advance — biriktirilgan haydovchi buyurtmani bir bosqich
  * oldinga suradi.
  *
@@ -1505,6 +1566,7 @@ export default async function handler(req, res) {
     if (action === 'price-stats') return getPriceStats(req, res);
     if (action === 'offers') return listOffers(req, res);
     if (action === 'my-offers') return listMyOffers(req, res);
+    if (action === 'my-loads') return listMyLoads(req, res);
     if (action === 'stats') return getHomeStats(req, res);
     return getOrderStatus(req, res);
   }
