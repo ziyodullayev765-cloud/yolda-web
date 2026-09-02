@@ -1058,6 +1058,22 @@
   .review-route{font-size:12px;color:var(--muted);}
   .review-text{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:6px 0 0;}
 
+  /* Ilovani o'rnatish taklifi — hero tugmalari ostida. */
+  .install-row{
+    display:flex;align-items:center;gap:var(--s2);justify-content:center;
+    margin-top:var(--s3);animation:installIn 0.35s var(--ease) both;
+  }
+  @keyframes installIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  :root[data-reduce-motion="1"] .install-row{animation:none;}
+  .install-row[hidden]{display:none;}
+  .install-row .btn-secondary{margin:0;}
+  .install-dismiss{
+    background:none;border:none;padding:8px;cursor:pointer;color:var(--muted);
+    line-height:0;flex-shrink:0;border-radius:50%;
+  }
+  .install-dismiss:hover{color:var(--ink);background:var(--paper-dark);}
+  .install-dismiss .ic-svg{font-size:15px;}
+
   /* Aniq olib ketish/yetkazish nuqtasi. */
   .pick-point{
     display:inline-flex;align-items:center;gap:6px;margin-top:8px;
@@ -1812,6 +1828,7 @@
     <symbol id="iconSliders" viewBox="0 0 24 24"><path d="M4 7H14M18 7H20M4 17H10M14 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="12" cy="17" r="2.3"/></symbol>
     <symbol id="iconBadge" viewBox="0 0 24 24"><path d="M12 2 21.5 6V13C21.5 18 17.5 21 12 22.5C6.5 21 2.5 18 2.5 13V6Z"/><path d="M8.5 12 11 14.5 15.7 9.5"/></symbol>
     <symbol id="iconClose" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="iconDownload" viewBox="0 0 24 24"><path d="M12 3v11m0 0 4.5-4.5M12 14l-4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
     <symbol id="iconShare" viewBox="0 0 24 24"><path d="M12 15V4M12 4 8 8M12 4 16 8"/><path d="M5 13V19A2 2 0 0 0 7 21H17A2 2 0 0 0 19 19V13"/></symbol>
     <symbol id="iconMenu" viewBox="0 0 24 24"><path d="M4 6H20M4 12H20M4 18H20"/></symbol>
     <symbol id="iconEdit" viewBox="0 0 24 24"><path d="M4 20 4.8 16.2 16.2 4.8A2 2 0 0 1 19 4.8L19.2 5A2 2 0 0 1 19.2 7.8L7.8 19.2Z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
@@ -2002,6 +2019,24 @@
     <div class="hero-ctas hero-seq">
       <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk joylash</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
       <a class="btn-secondary" href="#" data-tab-link="loads"><span data-i18n="home.ctaGet">Yuk topish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg></a>
+    </div>
+    <!-- Ilovani telefonga o'rnatish taklifi. Brauzer o'rnatish mumkinligini
+         aytgandagina ko'rinadi (beforeinstallprompt), ya'ni bu yerda hech
+         qachon ishlamaydigan tugma turmaydi. initInstallPrompt() ga qarang. -->
+    <!-- Ataylab `hero-seq` emas: u elementni opacity:0 dan boshlaydi va
+         sahifa ochilishida bir marta animatsiya qiladi. Bu qator esa
+         keyinroq, brauzer ruxsat berganda paydo bo'ladi — o'sha
+         animatsiya allaqachon tugagan bo'lardi va qator ko'rinmay
+         qolardi. O'zining fade'i pastda. -->
+    <div class="install-row" id="installRow" hidden>
+      <button type="button" class="btn-secondary" id="btnInstallApp">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconDownload"/></svg>
+        <span data-i18n="install.cta">Ilovani o'rnatish</span>
+      </button>
+      <button type="button" class="install-dismiss" id="btnInstallDismiss"
+              aria-label="Yopish" data-i18n-aria="common.close">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconClose"/></svg>
+      </button>
     </div>
   </header>
 
@@ -2570,6 +2605,7 @@
       "wizard.publishTitle": "Tekshirib chiqing", "wizard.reviewRoute": "Yo'nalish", "wizard.reviewPrice": "Narx", "wizard.reviewContact": "Aloqa",
       "wizard.reviewIncomplete": "Avvalgi bosqichlarni to'ldirib chiqing.", "wizard.sending": "Yuborilmoqda…",
       "wizard.sendBtn": "Haydovchilarga yuborish", "wizard.back": "Orqaga", "wizard.next": "Davom etish",
+      "install.cta": "Ilovani o'rnatish", "install.done": "Ilova o'rnatildi", "common.close": "Yopish",
       "order.fromAddressLabel": "Olib ketish manzili (ixtiyoriy)", "order.toAddressLabel": "Yetkazish manzili (ixtiyoriy)",
       "order.addressPlaceholder": "Ko'cha, uy, mo'ljal",
       "order.pointPick": "Xaritada belgilash", "order.pointSet": "Xaritada belgilangan",
@@ -2910,6 +2946,7 @@
       "wizard.publishTitle": "Проверьте данные", "wizard.reviewRoute": "Маршрут", "wizard.reviewPrice": "Цена", "wizard.reviewContact": "Контакт",
       "wizard.reviewIncomplete": "Заполните предыдущие шаги.", "wizard.sending": "Отправляется…",
       "wizard.sendBtn": "Отправить водителям", "wizard.back": "Назад", "wizard.next": "Далее",
+      "install.cta": "Установить приложение", "install.done": "Приложение установлено", "common.close": "Закрыть",
       "order.fromAddressLabel": "Адрес загрузки (необязательно)", "order.toAddressLabel": "Адрес доставки (необязательно)",
       "order.addressPlaceholder": "Улица, дом, ориентир",
       "order.pointPick": "Отметить на карте", "order.pointSet": "Отмечено на карте",
@@ -3250,6 +3287,7 @@
       "wizard.publishTitle": "Review before sending", "wizard.reviewRoute": "Route", "wizard.reviewPrice": "Price", "wizard.reviewContact": "Contact",
       "wizard.reviewIncomplete": "Fill in the earlier steps first.", "wizard.sending": "Sending…",
       "wizard.sendBtn": "Send to drivers", "wizard.back": "Back", "wizard.next": "Continue",
+      "install.cta": "Install the app", "install.done": "App installed", "common.close": "Close",
       "order.fromAddressLabel": "Pickup address (optional)", "order.toAddressLabel": "Delivery address (optional)",
       "order.addressPlaceholder": "Street, building, landmark",
       "order.pointPick": "Mark on the map", "order.pointSet": "Marked on the map",
@@ -9617,6 +9655,96 @@
   var bellBtn = document.getElementById("btnNotifications");
   if(bellBtn) bellBtn.addEventListener("click", openNotifications);
   refreshNotifBadge();
+
+  /* ============================================================
+     Ilovani telefonga o'rnatish
+     ------------------------------------------------------------
+     Sayt allaqachon o'rnatiladigan holatda edi (manifest, service
+     worker, ikonkalar), lekin buni hech kim aytmasdi: foydalanuvchi
+     Chrome menyusidan "Ilovani o'rnatish" ni o'zi topishi kerak edi,
+     va deyarli hech kim topmaydi.
+
+     Tugma faqat brauzerning o'zi "buni o'rnatsa bo'ladi" deganda
+     ko'rinadi (beforeinstallprompt). Ya'ni bosilganda hech narsa
+     qilmaydigan tugma hech qachon turmaydi. O'rnatilgandan keyin
+     yoki Telegram ichida — umuman ko'rinmaydi.
+     ============================================================ */
+  var INSTALL_DISMISS_KEY = "yolda_install_dismissed";
+  var deferredInstall = null;
+
+  function installAlreadyDone(){
+    // Standalone rejimda ochilgan bo'lsa — allaqachon o'rnatilgan.
+    try{
+      if(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true;
+    }catch(e){}
+    return window.navigator.standalone === true;
+  }
+
+  function installDismissed(){
+    try{ return localStorage.getItem(INSTALL_DISMISS_KEY) === "1"; }catch(e){ return false; }
+  }
+
+  function showInstallRow(show){
+    var row = document.getElementById("installRow");
+    if(row) row.hidden = !show;
+  }
+
+  /* Taklifni ko'rsatsa bo'ladimi?
+
+     Bu init paytida emas, hodisa kelgan paytda tekshiriladi:
+     initTelegramWebApp() shu funksiyadan keyinroq ishga tushadi, ya'ni
+     init paytida isTelegramWebApp hali false bo'lib turadi va Telegram
+     ichida tugma chiqib qolardi — Mini App'da esa o'rnatadigan narsa
+     yo'q, u allaqachon ilova. */
+  function canOfferInstall(){
+    return !isTelegramWebApp && !installAlreadyDone() && !installDismissed();
+  }
+
+  function initInstallPrompt(){
+    window.addEventListener("beforeinstallprompt", function(e){
+      // Brauzerning o'z bannerini to'xtatib, o'z tugmamizni ko'rsatamiz.
+      e.preventDefault();
+      deferredInstall = e;
+      if(canOfferInstall()) showInstallRow(true);
+    });
+
+    window.addEventListener("appinstalled", function(){
+      deferredInstall = null;
+      showInstallRow(false);
+      toast(t("install.done") || "Ilova o'rnatildi", "", "success");
+    });
+
+    var btn = document.getElementById("btnInstallApp");
+    if(btn) btn.addEventListener("click", function(){
+      if(!deferredInstall) return;
+      var prompt = deferredInstall;
+      // Bitta hodisani ikki marta ishlatib bo'lmaydi.
+      deferredInstall = null;
+      btn.disabled = true;
+      prompt.prompt();
+      prompt.userChoice.then(function(choice){
+        btn.disabled = false;
+        if(choice && choice.outcome === "accepted"){
+          showInstallRow(false);
+        } else {
+          // Rad etdi — qayta taklif qilmaymiz, bezor qilmasin.
+          rememberInstallDismissed();
+        }
+      }).catch(function(){ btn.disabled = false; });
+    });
+
+    var closeBtn = document.getElementById("btnInstallDismiss");
+    if(closeBtn) closeBtn.addEventListener("click", function(){
+      rememberInstallDismissed();
+      showInstallRow(false);
+    });
+  }
+
+  function rememberInstallDismissed(){
+    try{ localStorage.setItem(INSTALL_DISMISS_KEY, "1"); }catch(e){}
+  }
+
+  initInstallPrompt();
 
   /* ---------- Ilova yorliqlari (?tab=) ----------
      manifest.webmanifest dagi uchta yorliq — ilova belgisini bosib
