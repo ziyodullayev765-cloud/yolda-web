@@ -325,41 +325,96 @@
   .nav-cta:active{transform:translateY(0);}
 
   /* ---------- BOTTOM NAV ---------- */
+  /* ---------- Pastki navigatsiya: shisha uslub ----------
+     iOS 26 dagi "suyuq shisha" ko'rinishi: ekran chetiga yopishmagan,
+     suzib turgan yumaloq panel. Orqasidagi sahifa xiralashib ko'rinib
+     turadi, tanlangan bo'lim ostida esa yumshoq "tomchi" sirg'alib
+     yuradi.
+
+     Xiralashtirish (backdrop-filter) ba'zi eski brauzerlarda yo'q —
+     o'sha yerda panel shunchaki yarim shaffof oq bo'lib qoladi, ya'ni
+     matn baribir o'qiladi. Shuning uchun rang ataylab yetarlicha
+     to'yingan qilib olindi. */
   .bottom-nav{
-    position:fixed;left:0;right:0;bottom:0;z-index:80;
-    display:flex;
-    background:var(--glass);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);
-    backdrop-filter:saturate(180%) blur(20px);
-    border-top:1px solid rgba(226,232,240,0.8);
-    box-shadow:0 -4px 16px rgba(15,23,42,0.06);
-    padding-bottom:env(safe-area-inset-bottom, 0);
+    position:fixed;left:14px;right:14px;z-index:80;
+    /* Telefonning eng pastiga yopishib qolmasin — ostida bo'shliq
+       qoladi, iPhone'ning o'z chizig'i uchun ham joy bor. */
+    bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    display:flex;align-items:center;
+    border-radius:999px;
+    background:rgba(255,255,255,0.72);
+    -webkit-backdrop-filter:saturate(180%) blur(24px);
+    backdrop-filter:saturate(180%) blur(24px);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:0 10px 34px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.06);
+    padding:0 6px;
   }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .bottom-nav{background:rgba(255,255,255,0.94);}
+  }
+  :root[data-theme="dark"] .bottom-nav{
+    background:rgba(20,31,59,0.62);
+    border-color:rgba(255,255,255,0.14);
+    box-shadow:0 8px 30px rgba(0,0,0,0.45);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    :root[data-theme="dark"] .bottom-nav{background:rgba(20,31,59,0.95);}
+  }
+
+  /* Tanlangan bo'lim ostidagi "tomchi". Bitta element bo'lib, joydan
+     joyga sirg'aladi — har bir tugmaga alohida fon berilganda bunday
+     harakat chiqmasdi. */
+  .bn-blob{
+    position:absolute;top:5px;bottom:5px;left:0;width:0;
+    border-radius:999px;background:var(--tint);
+    opacity:0;pointer-events:none;z-index:0;
+    transition:transform 0.42s cubic-bezier(0.34,1.32,0.5,1),
+               width 0.42s cubic-bezier(0.34,1.32,0.5,1),
+               opacity 0.25s var(--ease);
+  }
+  :root[data-theme="dark"] .bn-blob{background:rgba(45,212,128,0.16);}
+  :root[data-reduce-motion="1"] .bn-blob{transition:opacity 0.2s linear;}
+
   .bn-item{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     background:none;border:none;cursor:pointer;
-    padding:9px 4px 10px;
+    padding:9px 4px 10px;position:relative;z-index:1;
     font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.01em;
     color:var(--muted);
     transition:color 0.2s var(--ease);
+    -webkit-tap-highlight-color:transparent;
   }
-  .bn-item .ic-svg{font-size:21px;}
+  .bn-item .ic-svg{
+    font-size:21px;
+    transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);
+  }
   .bn-item.active{color:var(--route);}
+  /* Tanlanganda ikonka bir sakrab qo'yadi. */
+  .bn-item.active:not(.bn-item--primary) .ic-svg{transform:translateY(-2px) scale(1.12);}
   .bn-item:hover{color:var(--route-dark);}
+  .bn-item:active .ic-svg{transform:scale(0.9);}
+  :root[data-reduce-motion="1"] .bn-item .ic-svg{transition:none;transform:none;}
+
   /* "Yuk joylash" is the app's main action — a raised, filled circular
      icon in the middle of the bar, like a marketplace app's primary FAB. */
   .bn-item--primary{color:var(--route);}
   .bn-item--primary .bn-fab{
     display:flex;align-items:center;justify-content:center;
-    width:52px;height:52px;border-radius:50%;margin-top:-26px;
+    width:52px;height:52px;border-radius:50%;margin-top:-28px;
     background:var(--route);
-    box-shadow:0 6px 16px rgba(10,159,91,0.35);
-    transition:transform 0.2s var(--ease);
+    box-shadow:0 6px 18px rgba(10,159,91,0.4), 0 0 0 4px rgba(255,255,255,0.55);
+    transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s var(--ease);
   }
-  .bn-item--primary .bn-fab .ic-svg{font-size:26px;color:#fff;stroke-width:2.6;}
+  :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 6px 18px rgba(10,159,91,0.5), 0 0 0 4px rgba(20,31,59,0.7);}
+  .bn-item--primary .bn-fab .ic-svg{font-size:26px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
   .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
+  .bn-item--primary.active .bn-fab{transform:scale(1.06);}
+  .bn-item--primary:active .bn-fab{transform:scale(0.94);}
   .bn-item--primary.active{color:var(--route);}
-  body{padding-bottom:66px;}
+  :root[data-reduce-motion="1"] .bn-item--primary .bn-fab{transition:none;transform:none;}
+  /* Suzib turgan panel uchun ko'proq joy kerak: balandligi + pastdagi
+     bo'shliq + telefonning o'z chekkasi. */
+  body{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
 
   @media(max-width:760px){
     .nav{padding:var(--s3) var(--s4);}
@@ -1133,6 +1188,84 @@
   }
   .install-steps li{margin-bottom:10px;}
   .install-steps b{color:var(--ink);}
+
+  /* ============================================================
+     KIRISH EKRANI
+     ------------------------------------------------------------
+     Butun sahifani yopadigan ekran. Orqasida ilova turadi, lekin
+     xiralashgan — kirmagan odam nima borligini ko'radi-yu, ichiga
+     kira olmaydi.
+     ============================================================ */
+  .welcome{
+    position:fixed;inset:0;z-index:200;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px 20px;
+    background:rgba(244,248,246,0.72);
+    -webkit-backdrop-filter:saturate(160%) blur(22px);
+    backdrop-filter:saturate(160%) blur(22px);
+    animation:welcomeIn 0.4s var(--ease) both;
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .welcome{background:#F4F8F6;}
+  }
+  :root[data-theme="dark"] .welcome{background:rgba(6,10,20,0.82);}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    :root[data-theme="dark"] .welcome{background:#060A14;}
+  }
+  .welcome[hidden]{display:none;}
+  @keyframes welcomeIn{from{opacity:0;}to{opacity:1;}}
+  .welcome.leaving{animation:welcomeOut 0.32s var(--ease) both;}
+  @keyframes welcomeOut{from{opacity:1;}to{opacity:0;transform:scale(1.02);}}
+
+  .welcome-card{
+    width:100%;max-width:400px;text-align:center;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:26px;padding:34px 22px 26px;
+    box-shadow:0 20px 60px rgba(15,23,42,0.16);
+    animation:welcomeCardIn 0.5s cubic-bezier(0.34,1.32,0.5,1) 0.05s both;
+  }
+  @keyframes welcomeCardIn{from{opacity:0;transform:translateY(18px) scale(0.97);}to{opacity:1;transform:none;}}
+  :root[data-reduce-motion="1"] .welcome,
+  :root[data-reduce-motion="1"] .welcome-card{animation:none;}
+
+  .welcome-mark{width:52px;height:52px;display:block;margin:0 auto 12px;}
+  .welcome-brand{
+    font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:700;
+    letter-spacing:-0.02em;color:var(--ink);line-height:1;
+  }
+  .welcome-title{margin:18px 0 4px;font-size:23px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);}
+  .welcome-sub{margin:0 0 24px;font-size:14px;color:var(--ink-soft);line-height:1.5;}
+
+  /* Google o'z tugmasini iframe ichida chizadi — uni to'liq
+     bo'yash mumkin emas. Shuning uchun o'lchami va joyi shu yerda
+     boshqariladi, ko'rinishi esa Google'niki bo'lib qoladi. */
+  .welcome-google{display:flex;justify-content:center;min-height:44px;max-width:100%;}
+  /* Google iframe'i o'z enini o'zi belgilaydi — sig'masa ham
+     kartochkadan chiqib ketmasin. */
+  .welcome-google > *{max-width:100%;}
+  .welcome-google:not(:empty){margin-bottom:10px;}
+
+  .welcome-btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;min-height:50px;border-radius:14px;
+    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;
+    text-decoration:none;cursor:pointer;border:1px solid var(--border);
+    background:var(--card);color:var(--ink);
+    transition:transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .welcome-btn[hidden]{display:none;}
+  .welcome-btn:hover{box-shadow:var(--sh-2);transform:translateY(-1px);}
+  .welcome-btn:active{transform:scale(0.985);}
+  .welcome-btn .ic-svg{font-size:20px;}
+  .welcome-btn--tg{color:#fff;background:#229ED9;border-color:#229ED9;}
+  .welcome-btn--tg:hover{background:#1E8CC0;}
+
+  .welcome-hint{
+    margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--warn);
+    background:rgba(245,158,11,0.1);border-radius:12px;padding:10px 12px;
+  }
+  .welcome-hint[hidden]{display:none;}
+  .welcome-legal{margin:22px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5;}
 
   /* ============================================================
      BOSH SAHIFA
@@ -2369,6 +2502,34 @@
 
 <div id="toastHost" role="status" aria-live="polite" aria-atomic="false"></div>
 
+<!-- ============================================================
+     Kirish ekrani — platformaga kirgan odam birinchi shuni ko'radi.
+     Kirgan bo'lsa umuman chizilmaydi; chiqib ketsa qaytadan chiqadi.
+     Sahifa yangilanganda kirgan holat saqlanadi (restoreAuth), ya'ni
+     bu ekran har safar qayta so'ramaydi.
+     ============================================================ -->
+<div class="welcome" id="welcomeGate" hidden>
+  <div class="welcome-card" role="dialog" aria-labelledby="welcomeTitle" aria-modal="true">
+    <svg class="welcome-mark" aria-hidden="true"><use href="#logoMarkFlat"/></svg>
+    <div class="welcome-brand">YO'LDA</div>
+    <h1 class="welcome-title" id="welcomeTitle" data-i18n="welcome.title">Xush kelibsiz!</h1>
+    <p class="welcome-sub" data-i18n="welcome.sub">Davom etish uchun tizimga kiring</p>
+
+    <!-- Google o'z tugmasini o'zi chizadi (xavfsizlik talabi) —
+         initGoogleSignIn() shu joyga joylashtiradi. -->
+    <div class="welcome-google" id="welcomeGoogleGate"></div>
+
+    <a class="welcome-btn welcome-btn--tg" id="welcomeTelegramBtn" href="#" hidden target="_blank" rel="noopener">
+      <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+      <span data-i18n="welcome.telegram">Telegram bilan davom etish</span>
+    </a>
+
+    <p class="welcome-hint" id="welcomeHint" hidden data-i18n="welcome.inAppHint">Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.</p>
+
+    <p class="welcome-legal" data-i18n="welcome.legal">Davom etish orqali foydalanish shartlariga rozilik bildirasiz.</p>
+  </div>
+</div>
+
 <!-- Logotip chapda, qo'ng'iroq va avatar o'ngda. Haydovchilar guruhiga
      havola bu yerdan Aloqa bo'limiga ko'chdi — sarlavha tor joy, unda
      faqat ikkita eng kerakli narsa turadi. -->
@@ -2864,6 +3025,10 @@
 </main>
 
 <nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
+  <!-- Tanlangan bo'lim ostida sirg'aladigan "tomchi". O'lchami va
+       joyi JS'da hisoblanadi (moveNavBlob) — tugmalar eni tilga qarab
+       o'zgaradi, shuning uchun uni CSS'da qotirib qo'yib bo'lmaydi. -->
+  <span class="bn-blob" id="bnBlob" aria-hidden="true"></span>
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
@@ -3057,6 +3222,10 @@
       "home.heroSub": "O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.",
       "home.matchSub": "Sizning profilingizga mos yuklar", "home.seeAll": "Barchasini ko'rish",
       "contact.driverGroup": "Haydovchilar guruhi (Telegram)",
+      "welcome.title": "Xush kelibsiz!", "welcome.sub": "Davom etish uchun tizimga kiring",
+      "welcome.telegram": "Telegram bilan davom etish",
+      "welcome.inAppHint": "Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.",
+      "welcome.legal": "Davom etish orqali foydalanish shartlariga rozilik bildirasiz.",
       "home.detail": "Batafsil", "home.ton": "tonna",
       "home.legendPickup": "Yuklash nuqtasi", "home.legendDrop": "Yetkazish nuqtasi",
       "home.howTitle": "Qanday ishlaydi?", "home.howSub": "4 ta oddiy qadamda yukingiz yo'lga chiqadi",
@@ -3418,6 +3587,10 @@
       "home.heroSub": "Находите грузы по всему Узбекистану, размещайте свои и связывайтесь с надёжными водителями.",
       "home.matchSub": "Грузы, подходящие вашему профилю", "home.seeAll": "Смотреть все",
       "contact.driverGroup": "Группа водителей (Telegram)",
+      "welcome.title": "Добро пожаловать!", "welcome.sub": "Войдите, чтобы продолжить",
+      "welcome.telegram": "Продолжить с Telegram",
+      "welcome.inAppHint": "Google не работает в этом браузере. Скопируйте ссылку и откройте в Safari или Chrome.",
+      "welcome.legal": "Продолжая, вы соглашаетесь с условиями использования.",
       "home.detail": "Подробнее", "home.ton": "тонн",
       "home.legendPickup": "Точка погрузки", "home.legendDrop": "Точка доставки",
       "home.howTitle": "Как это работает?", "home.howSub": "Ваш груз выезжает за 4 простых шага",
@@ -3779,6 +3952,10 @@
       "home.heroSub": "Find loads across Uzbekistan, post your own and connect with drivers you can trust.",
       "home.matchSub": "Loads that fit your profile", "home.seeAll": "See all",
       "contact.driverGroup": "Drivers group (Telegram)",
+      "welcome.title": "Welcome!", "welcome.sub": "Sign in to continue",
+      "welcome.telegram": "Continue with Telegram",
+      "welcome.inAppHint": "Google sign-in does not work in this browser. Copy the link and open it in Safari or Chrome.",
+      "welcome.legal": "By continuing you agree to the terms of use.",
       "home.detail": "Details", "home.ton": "tonnes",
       "home.legendPickup": "Pickup point", "home.legendDrop": "Delivery point",
       "home.howTitle": "How does it work?", "home.howSub": "Your load is on the road in 4 simple steps",
@@ -5194,6 +5371,45 @@
     applyGoogleCredential(response && response.credential, "fresh");
   }
 
+  /* ============================================================
+     Kirish ekrani
+     ------------------------------------------------------------
+     Kirmagan odam ilovaning ichiga o'tolmaydi. Kirgan bo'lsa ekran
+     umuman chizilmaydi, chiqib ketsa qaytadan chiqadi.
+
+     Bu shunchaki ko'rinish qatlami: hech qanday tekshiruv bu yerda
+     bo'lmaydi. Xavfsizlik avvalgidek serverda — har bir so'rovda
+     token qaytadan tekshiriladi (lib/identity.js). Ya'ni bu ekranni
+     brauzer konsolidan yashirgan odam ham hech narsaga ega bo'lmaydi:
+     tokeni yo'q, demak API unga javob bermaydi.
+     ============================================================ */
+  function showWelcomeGate(){
+    var gate = document.getElementById("welcomeGate");
+    if(!gate) return;
+    gate.classList.remove("leaving");
+    gate.hidden = false;
+    document.body.style.overflow = "hidden";
+    applyLang();
+  }
+
+  function hideWelcomeGate(){
+    var gate = document.getElementById("welcomeGate");
+    if(!gate || gate.hidden) return;
+    document.body.style.overflow = "";
+    if(reduceMotion){ gate.hidden = true; return; }
+    gate.classList.add("leaving");
+    setTimeout(function(){
+      gate.hidden = true;
+      gate.classList.remove("leaving");
+    }, 320);
+  }
+
+  /** Kirgan bo'lsa yopadi, kirmagan bo'lsa ochadi — bitta joydan. */
+  function syncWelcomeGate(){
+    if(isSignedIn()) hideWelcomeGate();
+    else showWelcomeGate();
+  }
+
   /**
    * Sarlavhadagi avatar. Google ham, Telegram ham xuddi shu ko'rinishni
    * chizadi — ilgari ikki joyda deyarli bir xil kod turardi.
@@ -5242,6 +5458,7 @@
       // In the nav, the round button becomes the user's own avatar —
       // tapping it opens the Profil tab (that's "the profile").
       renderNavAvatar(payload.picture, payload.name || payload.email);
+      hideWelcomeGate();
 
       renderProfile();
       renderHomeMatch();
@@ -5295,6 +5512,7 @@
 
     // Same "round avatar becomes the profile shortcut" treatment as Google.
     renderNavAvatar(telegramUser && telegramUser.photoUrl, label);
+    hideWelcomeGate();
 
     if(!state.name && telegramUser){
       state.name = [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ");
@@ -5359,6 +5577,10 @@
   function showAppBrowserHint(){
     var hint = document.getElementById("appBrowserHint");
     if(hint) hint.style.display = "block";
+    // Kirish ekranida ham aytiladi: aks holda odam Google tugmasi
+    // chiqmaganini ko'radi-yu, sababini bilmaydi.
+    var welcomeHint = document.getElementById("welcomeHint");
+    if(welcomeHint) welcomeHint.hidden = false;
   }
 
   function initGoogleSignIn(){
@@ -5406,6 +5628,15 @@
           banner.hidden = false;
         }
       }
+      // Kirish ekranidagi Telegram tugmasi. Bot nomi sozlamalardan
+      // kelmasa tugma umuman chizilmaydi — bosilganda hech qayerga
+      // olib bormaydigan tugma turmasin.
+      var welcomeTg = document.getElementById("welcomeTelegramBtn");
+      if(welcomeTg && TELEGRAM_BOT_USERNAME && !isTelegramWebApp){
+        welcomeTg.href = "https://t.me/" + TELEGRAM_BOT_USERNAME + "?startapp=login";
+        welcomeTg.hidden = false;
+      }
+
       var tgRow = document.getElementById("telegramLoginRow");
       var tgBtn = document.getElementById("telegramLoginBtn");
       // Only worth offering from a normal browser tab, to a signed-out
@@ -5427,6 +5658,23 @@
       // yana kirishni taklif qilish bo'lardi.
       var gate = document.getElementById("googleGate");
       if(gate && !isSignedIn()) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
+
+      // Kirish ekranidagi tugma. Google o'z tugmasini o'zi chizishi
+      // shart — uni "Google bilan davom etish" deb yozilgan o'z
+      // tugmamiz bilan almashtirib bo'lmaydi, chunki kirish oynasini
+      // faqat Google'ning o'z tugmasi ocha oladi.
+      var welcomeGate = document.getElementById("welcomeGoogleGate");
+      if(welcomeGate && !isSignedIn()){
+        // Enini joyiga qarab beramiz. Qotirib qo'yilgan 320px tor
+        // telefonda (320px ekran, 280px kartochka) kartadan chiqib
+        // ketardi va sahifa yonlamasiga suriladigan bo'lib qolardi.
+        var avail = Math.round(welcomeGate.getBoundingClientRect().width) || 280;
+        google.accounts.id.renderButton(welcomeGate, {
+          theme: "outline", size: "large", text: "continue_with", shape: "pill",
+          width: Math.max(200, Math.min(360, avail)),
+          locale: currentLang === "ru" ? "ru" : (currentLang === "en" ? "en" : "uz")
+        });
+      }
 
       // Round, icon-only version in the top nav — same sign-in, just a
       // compact circular button instead of the full pill.
@@ -5966,6 +6214,7 @@
     initGoogleSignIn();
 
     if(!expired) switchTab("home");
+    showWelcomeGate();
     render();
     toast(
       expired ? (t("profile.sessionExpiredTitle") || "Sessiya muddati tugadi")
@@ -10465,6 +10714,31 @@
      switched here instead of scrolling through one long page.
      ============================================================ */
   var TABS = ["home", "order", "loads", "trucks", "chat", "profile", "contact"];
+  /**
+   * Tanlangan bo'lim ostidagi "tomchi"ni o'z joyiga sirg'atadi.
+   * O'lcham CSS'da emas, shu yerda hisoblanadi: tugmalar eni tilga
+   * qarab o'zgaradi (masalan ruschada "Разместить груз" uzunroq), va
+   * qurilma burilganda ham qayta hisoblash kerak bo'ladi.
+   *
+   * O'rtadagi "Yuk joylash" bundan mustasno — uning o'z dumaloq
+   * tugmasi bor, ostiga yana tomchi qo'yish ortiqcha bo'lardi.
+   */
+  function moveNavBlob(){
+    var blob = document.getElementById("bnBlob");
+    var nav = document.querySelector(".bottom-nav");
+    if(!blob || !nav) return;
+    var active = nav.querySelector(".bn-item.active:not(.bn-item--primary)");
+    if(!active){ blob.style.opacity = "0"; return; }
+    var navBox = nav.getBoundingClientRect();
+    var box = active.getBoundingClientRect();
+    // Eni nolga teng bo'lsa (panel hali chizilmagan) tegmaymiz —
+    // aks holda tomchi chap chekkada bir zumga ko'rinib ketardi.
+    if(!box.width) return;
+    blob.style.width = Math.round(box.width) + "px";
+    blob.style.transform = "translateX(" + Math.round(box.left - navBox.left) + "px)";
+    blob.style.opacity = "1";
+  }
+
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
     TABS.forEach(function(t){
@@ -10474,6 +10748,7 @@
     document.querySelectorAll(".bn-item").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
     });
+    moveNavBlob();
     var active = document.getElementById("tab-" + name);
     if(active){
       // IntersectionObserver never fires for content that was hidden —
@@ -10655,6 +10930,12 @@
   if(btnHomeMapIn) btnHomeMapIn.addEventListener("click", function(){ if(homeMapInstance) homeMapInstance.zoomIn(); });
   var btnHomeMapOut = document.getElementById("btnHomeMapOut");
   if(btnHomeMapOut) btnHomeMapOut.addEventListener("click", function(){ if(homeMapInstance) homeMapInstance.zoomOut(); });
+
+  // Tomchini boshlang'ich joyiga qo'yamiz va o'lcham o'zgarganda
+  // (burilish, tilni almashtirish) qayta hisoblaymiz.
+  moveNavBlob();
+  window.addEventListener("resize", moveNavBlob);
+  window.addEventListener("orientationchange", function(){ setTimeout(moveNavBlob, 250); });
 
   var bellBtn = document.getElementById("btnNotifications");
   if(bellBtn) bellBtn.addEventListener("click", openNotifications);
@@ -10929,6 +11210,9 @@
   // o'zidayoq odam kirgan holatda ko'rinsin, "kirmagansiz" ekrani
   // ko'rinib keyin almashmasin.
   restoreAuth();
+  // Saqlangan sessiya tiklangandan keyin qaraymiz: kirgan odamga
+  // kirish ekrani bir zumga ham ko'rinib ketmasin.
+  syncWelcomeGate();
   render();
   // Telegram then: it's synchronous (no network round trip) and sets
   // isTelegramWebApp, which initGoogleSignIn() reads to decide whether to
