@@ -95,6 +95,15 @@
        yorqin oq lenta o'tib ketardi. */
     --hero-veil:255,255,255;
 
+    /* Suzib turgan ikkita panel — yuqoridagi sarlavha va pastdagi
+       navigatsiya — uchun shisha. Ular bir xil ko'rinishda bo'lishi
+       kerak, shuning uchun rang bitta joydan olinadi.
+       --chrome-solid: xiralashtirishni qo'llab-quvvatlamaydigan
+       brauzer uchun zaxira, o'sha yerda shaffoflik kamayadi. */
+    --chrome-glass:rgba(255,255,255,0.62);
+    --chrome-solid:rgba(255,255,255,0.94);
+    --chrome-brd:rgba(255,255,255,0.55);
+
     /* spacing scale (8pt grid) */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
     --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:128px;
@@ -140,6 +149,9 @@
     --tint:rgba(45,212,128,0.13);
     --skeleton-mid:#1B1B1B;
     --hero-veil:14,14,14;
+    --chrome-glass:rgba(8,8,8,0.62);
+    --chrome-solid:rgba(8,8,8,0.96);
+    --chrome-brd:rgba(255,255,255,0.10);
     --glass:rgba(10,10,10,0.72);
     --glass-brd:rgba(255,255,255,0.12);
   }
@@ -262,21 +274,27 @@
   :root[data-reduce-motion="1"] .hero-seq{opacity:1;transform:none;filter:none;animation:none;}
 
   /* ---------- NAV ---------- */
+  /* Sarlavha hech qachon o'zgarmaydi: sahifa surilganda ham xuddi
+     shu ko'rinishda qoladi. Ilgari `.nav.scrolled` fonni
+     rgba(255,255,255,0.82) ga almashtirardi — qotirib qo'yilgan oq
+     edi, shuning uchun tungi rejimda sahifani surgan zahoti sarlavha
+     oqarib ketardi. Bir vaqtning o'zida ichki bo'shliq ham
+     o'zgarardi, ya'ni butun qator sakrab turardi.
+
+     Rang tokendan olinadi, ya'ni yorug'da oq, tunda qora shisha
+     bo'ladi — orqasidagi sahifa xiralashib ko'rinib turadi. */
   .nav{
     position:sticky;top:0;z-index:50;
     display:flex;align-items:center;justify-content:space-between;
     gap:var(--s4);
     padding:var(--s3) var(--s5);
-    background:var(--glass);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);
-    backdrop-filter:saturate(180%) blur(20px);
-    border-bottom:1px solid rgba(226,232,240,0.8);
-    transition:box-shadow 0.3s var(--ease), padding 0.3s var(--ease), background 0.3s var(--ease);
+    background:var(--chrome-glass);
+    -webkit-backdrop-filter:saturate(180%) blur(24px);
+    backdrop-filter:saturate(180%) blur(24px);
+    border-bottom:1px solid var(--border);
   }
-  .nav.scrolled{
-    box-shadow:var(--sh-2);
-    padding-top:var(--s2);padding-bottom:var(--s2);
-    background:rgba(255,255,255,0.82);
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .nav{background:var(--chrome-solid);}
   }
   .nav-logo{
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;
@@ -297,18 +315,15 @@
   .nav-icon-btn:hover{background:var(--tint);}
   .nav-actions{display:flex;align-items:center;gap:var(--s1);margin-left:auto;}
   /* Avatar + kichkina pastga strelka: bosilganda Profil ochiladi. */
-  .nav-avatar-btn{
-    display:flex;align-items:center;gap:3px;border:none;background:none;padding:2px;
-    cursor:pointer;line-height:0;border-radius:var(--r-pill);
-  }
-  .nav-avatar-btn img,.nav-avatar-btn .nav-avatar-fallback{
+  /* Avatar — rasm, tugma emas: bosilganda hech narsa bo'lmaydi. */
+  .nav-avatar-face{display:block;padding:2px;line-height:0;}
+  .nav-avatar-face img,.nav-avatar-face .nav-avatar-fallback{
     width:36px;height:36px;border-radius:50%;display:block;object-fit:cover;
   }
-  .nav-avatar-btn .nav-avatar-fallback{
+  .nav-avatar-face .nav-avatar-fallback{
     background:var(--route);color:#fff;display:flex;align-items:center;
     justify-content:center;font-weight:700;font-size:15px;line-height:1;
   }
-  .nav-avatar-btn .chev{width:14px;height:14px;color:var(--muted);flex-shrink:0;}
 
   /* Avatar + strelka + ochiladigan hisob menyusi. */
   .nav-account{position:relative;display:flex;align-items:center;gap:1px;}
@@ -385,24 +400,18 @@
     bottom:calc(20px + env(safe-area-inset-bottom, 0px));
     display:flex;align-items:center;
     border-radius:999px;
-    background:rgba(255,255,255,0.72);
+    background:var(--chrome-glass);
     -webkit-backdrop-filter:saturate(180%) blur(24px);
     backdrop-filter:saturate(180%) blur(24px);
-    border:1px solid rgba(255,255,255,0.7);
+    border:1px solid var(--chrome-brd);
     box-shadow:0 10px 34px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.06);
     padding:0 6px;
   }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .bottom-nav{background:rgba(255,255,255,0.94);}
+    .bottom-nav{background:var(--chrome-solid);}
   }
-  :root[data-theme="dark"] .bottom-nav{
-    background:rgba(14,14,14,0.68);
-    border-color:rgba(255,255,255,0.14);
-    box-shadow:0 8px 30px rgba(0,0,0,0.45);
-  }
-  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    :root[data-theme="dark"] .bottom-nav{background:rgba(14,14,14,0.96);}
-  }
+  /* Qora fonda oq soya ko'rinmaydi — tunda soya quyuqroq bo'ladi. */
+  :root[data-theme="dark"] .bottom-nav{box-shadow:0 10px 34px rgba(0,0,0,0.5);}
 
   /* Tanlangan bo'lim ostidagi "tomchi". Bitta element bo'lib, joydan
      joyga sirg'aladi — har bir tugmaga alohida fon berilganda bunday
@@ -5483,12 +5492,13 @@
       ? '<img src="'+escapeHtml(photoUrl)+'" alt="" referrerpolicy="no-referrer">'
       : '<span class="nav-avatar-fallback">'+initial+'</span>';
 
-    // Avatarning o'zi Profilga olib boradi; yonidagi kichkina strelka
-    // esa hisob menyusini ochadi. Ikkitasi alohida tugma, chunki
-    // ikkalasi ikki xil ish qiladi.
+    // Avatarning o'zi bosilmaydi — u shunchaki kim kirganini
+    // ko'rsatadigan rasm. Bosiladigan yagona narsa yonidagi strelka:
+    // u hisob menyusini ochadi, Profil ham o'sha menyudan (va pastki
+    // navigatsiyadan) ochiladi.
     gateHome.innerHTML =
       '<div class="nav-account">'
-      +   '<button type="button" class="nav-avatar-btn" id="navProfileBtn" aria-label="Profil" data-i18n-aria="nav.profile">'+face+'</button>'
+      +   '<span class="nav-avatar-face" id="navAvatarFace">'+face+'</span>'
       +   '<button type="button" class="nav-chev-btn" id="navAccountBtn" aria-haspopup="menu" aria-expanded="false"'
       +     ' aria-label="Hisob menyusi" data-i18n-aria="nav.accountMenu">'
       +     '<svg class="chev ic-svg" aria-hidden="true"><use href="#iconChevronDown"/></svg>'
@@ -5499,9 +5509,6 @@
       +     '<button type="button" class="nav-menu-item danger" role="menuitem" id="navMenuSignOut" data-i18n="profile.signOut">Chiqish</button>'
       +   '</div>'
       + '</div>';
-
-    var navBtn = document.getElementById("navProfileBtn");
-    if(navBtn) navBtn.addEventListener("click", function(){ closeAccountMenu(); switchTab("profile"); });
 
     var chevBtn = document.getElementById("navAccountBtn");
     if(chevBtn) chevBtn.addEventListener("click", function(e){
@@ -11381,8 +11388,6 @@
   function onScrollFrame(){
     var y = window.scrollY;
     var max = document.documentElement.scrollHeight - window.innerHeight;
-
-    nav.classList.toggle("scrolled", y > 12);
 
     if(progress){
       progress.style.transform = "scaleX(" + (max > 0 ? Math.min(1, y / max) : 0) + ")";
