@@ -30,6 +30,10 @@ import {
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
+// Yuk turlari ro'yxati bitta joydan olinadi — haydovchi "nima
+// tashiyman" deb tanlagan turlar buyurtmadagi turlar bilan bir xil
+// bo'lishi kerak, aks holda ular hech qachon mos kelmasdi.
+import { CARGO } from '../lib/orderMessage.js';
 import {
   KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
   publicVerifications, canSubmit, docKey,
@@ -286,7 +290,7 @@ const handleProfile = async (req, res) => {
   const profileKey = `profile:${email}`;
   const existing = parseProfile(await kvGet(profileKey));
 
-  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername', 'avatarDataUrl', 'notify']
+  const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername', 'avatarDataUrl', 'notify', 'experienceYears', 'routes', 'cargoKinds']
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
     return res.status(200).json({ ok: true, profile: withTelegramFlag(existing, await telegramReachable(email)) });
@@ -363,6 +367,48 @@ const handleProfile = async (req, res) => {
 
   if (body.plateNumber !== undefined && body.plateNumber !== null && body.plateNumber !== '') {
     next.plateNumber = String(body.plateNumber).trim().toUpperCase().slice(0, 12);
+  }
+
+  // Haydovchi profilining qolgan uchtasi: tajriba, doimiy yo'nalishlar
+  // va tashiydigan yuk turlari. Ilgari saqlanadigan joyi yo'q edi va
+  // profilda ko'rsatib bo'lmasdi. Uchalasi ham ixtiyoriy — bo'sh
+  // qoldirilsa profil "kiritilmagan" deb ko'rsatadi, o'ylab topilgan
+  // qiymat qo'yilmaydi.
+  if (body.experienceYears !== undefined) {
+    if (body.experienceYears === null || body.experienceYears === '') {
+      next.experienceYears = null;
+    } else {
+      const years = Math.round(Number(body.experienceYears));
+      if (!Number.isFinite(years) || years < 0 || years > 60) {
+        return res.status(400).json({ error: 'Tajriba 0 dan 60 yilgacha bo‘lsin' });
+      }
+      next.experienceYears = years;
+    }
+  }
+
+  // Yo'nalishlar shahar juftlari sifatida saqlanadi ("Toshkent>Buxoro"),
+  // ya'ni keyinchalik ular bo'yicha qidirish ham mumkin bo'ladi. Erkin
+  // matn bo'lganda buning iloji bo'lmasdi.
+  if (body.routes !== undefined) {
+    const list = Array.isArray(body.routes) ? body.routes : [];
+    const clean = [];
+    for (const item of list.slice(0, 10)) {
+      const parts = String(item).split('>');
+      if (parts.length !== 2) continue;
+      const from = parts[0].trim();
+      const to = parts[1].trim();
+      if (!CITIES.includes(from) || !CITIES.includes(to) || from === to) continue;
+      const key = `${from}>${to}`;
+      if (!clean.includes(key)) clean.push(key);
+    }
+    next.routes = clean;
+  }
+
+  if (body.cargoKinds !== undefined) {
+    const list = Array.isArray(body.cargoKinds) ? body.cargoKinds : [];
+    next.cargoKinds = [...new Set(
+      list.map((k) => String(k)).filter((k) => Object.prototype.hasOwnProperty.call(CARGO, k)),
+    )].slice(0, 12);
   }
 
   if (body.avatarDataUrl !== undefined && body.avatarDataUrl !== null && body.avatarDataUrl !== '') {
@@ -537,6 +583,62 @@ const handleSearches = async (req, res, action) => {
   return deleteSearch(req, res, identity, body);
 };
 
+/**
+ * GET ?action=reviews — o'ziga qoldirilgan sharhlar va yulduzlar
+ * taqsimoti.
+ *
+ * Taqsimot (5 ta necha, 4 ta necha ...) profilda saqlanmaydi — u yerda
+ * faqat yig'indi va soni bor, ya'ni o'rtachani hisoblash uchun yetadi.
+ * Shuning uchun taqsimot shu yerda, sharhlarning o'zidan sanaladi.
+ * Bu ham haqiqiy son: o'ylab topilgan ustunlar chizilmaydi.
+ *
+ * Sharh matni boshqa odam yozgan bo'lishi mumkin — u shundayligicha
+ * qaytariladi va frontendda matn sifatida chiziladi (escapeHtml).
+ */
+const listReviews = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const raw = await kvRange(reviewsKey(identity), 0, REVIEW_LIMIT - 1);
+  const reviews = raw
+    .map((str) => {
+      try {
+        return JSON.parse(str);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.ratedAt || 0) - (a.ratedAt || 0));
+
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  reviews.forEach((r) => {
+    const n = Number(r.stars);
+    if (n >= 1 && n <= 5) distribution[n] += 1;
+  });
+
+  return res.status(200).json({
+    ok: true,
+    reviews: reviews.map((r) => ({
+      stars: Number(r.stars) || 0,
+      comment: String(r.comment || ''),
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      tagLabels: (Array.isArray(r.tags) ? r.tags : []).map((t) => CRITERIA_LABELS[t] || t),
+      ratedAt: r.ratedAt || 0,
+      // "side" — bu baho qaysi rolda olingani: haydovchi sifatidami
+      // yoki yuk beruvchi sifatida. Interfeys shunga qarab ajratadi.
+      side: r.side === 'OWNER' ? 'OWNER' : 'DRIVER',
+      orderCode: String(r.orderCode || ''),
+    })),
+    distribution,
+    total: reviews.length,
+    positive: distribution[4] + distribution[5],
+  });
+};
+
 /* ============================================================
    Ommaviy profil
    ------------------------------------------------------------
@@ -603,9 +705,11 @@ const getPublicProfile = async (req, res) => {
 };
 
 export default async function handler(req, res) {
-  // Ommaviy profil — yagona GET yo'l; qolgani hamma vaqt POST.
-  if (req.method === 'GET' && String(req.query.action || '') === 'public') {
-    return getPublicProfile(req, res);
+  // Faqat o'qiydigan ikkita GET yo'l; qolgani hamma vaqt POST.
+  if (req.method === 'GET') {
+    const getAction = String(req.query.action || '');
+    if (getAction === 'public') return getPublicProfile(req, res);
+    if (getAction === 'reviews') return listReviews(req, res);
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const action = String(req.query.action || '');
