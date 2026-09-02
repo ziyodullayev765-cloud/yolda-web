@@ -28,6 +28,7 @@
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
 import { notifyUser, esc } from '../lib/notify.js';
+import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -351,13 +352,79 @@ const verifyDriver = async (req, res) => {
     return res.status(500).json({ error: 'Yozuv buzilgan' });
   }
 
-  profile.verified = verified;
-  // Reviewed either way — a pending self-serve request (see api/profile.js's
-  // request-verification) shouldn't keep showing as "waiting" once an admin
-  // has actually looked at it.
-  delete profile.verificationRequestedAt;
+  // Ko'k belgi — shaxs tasdig'i, shuning uchun bu tugma ham
+  // IDENTITY ni o'zgartiradi. `verified` va `verificationRequestedAt`
+  // ni setVerification o'zi moslab qo'yadi, ya'ni eski va yangi
+  // shakl bir-biriga qarama-qarshi tushib qolmaydi.
+  setVerification(profile, 'IDENTITY', {
+    status: verified ? 'VERIFIED' : 'REJECTED',
+    reviewedAt: Date.now(),
+    reason: '',
+  });
   const saved = await kvSet(`profile:${email}`, JSON.stringify(profile));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi' });
+  await kvDel(docKey(email, 'IDENTITY')).catch(() => {});
+  await kvSrem('verify_queue', `${email}|IDENTITY`).catch(() => {});
+
+  return res.status(200).json({ ok: true, profile });
+};
+
+/** GET ?resource=verifydoc&email=&kind= — moderator ko'radigan hujjat. */
+const getVerifyDoc = async (req, res) => {
+  const email = String(req.query.email || '').trim();
+  const kind = String(req.query.kind || '');
+  if (!email || !REVIEWED_KINDS.includes(kind)) {
+    return res.status(400).json({ error: 'Email va tur kerak' });
+  }
+  const doc = await kvGet(docKey(email, kind));
+  if (!doc) return res.status(404).json({ error: 'Hujjat topilmadi' });
+  return res.status(200).json({ ok: true, doc });
+};
+
+/**
+ * POST ?action=verify-review — moderator hujjatni ko'rib qaror qiladi.
+ *
+ * Qaror chiqishi bilan hujjat o'chiriladi. Ko'rib bo'lingan pasport
+ * rasmini saqlab turishning sababi yo'q, xavfi esa bor.
+ */
+const reviewVerification = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const email = String(body.email || '').trim();
+  const kind = String(body.kind || '');
+  const approve = Boolean(body.approve);
+  const reason = String(body.reason || '').trim().slice(0, 200);
+
+  if (!email) return res.status(400).json({ error: 'Email kerak' });
+  if (!REVIEWED_KINDS.includes(kind)) return res.status(400).json({ error: 'Noto‘g‘ri tur' });
+  if (!approve && !reason) return res.status(400).json({ error: 'Rad etish sababini yozing' });
+
+  const raw = await kvGet(`profile:${email}`);
+  if (!raw) return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+  let profile;
+  try {
+    profile = JSON.parse(raw);
+  } catch {
+    return res.status(500).json({ error: 'Yozuv buzilgan' });
+  }
+
+  setVerification(profile, kind, {
+    status: approve ? 'VERIFIED' : 'REJECTED',
+    reviewedAt: Date.now(),
+    reason: approve ? '' : reason,
+  });
+  if (!(await kvSet(`profile:${email}`, JSON.stringify(profile)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+  await kvDel(docKey(email, kind)).catch(() => {});
+  await kvSrem('verify_queue', `${email}|${kind}`).catch(() => {});
+
+  await notifyUser(email, {
+    category: 'listings',
+    text: approve
+      ? `<b>${esc(KIND_LABELS[kind])} tasdiqlandi</b>\n\nProfilingizda belgisi ko'rinadi.`
+      : `<b>${esc(KIND_LABELS[kind])} tasdiqlanmadi</b>\n\n${esc(reason)}\n\n`
+        + `Bir kundan keyin qaytadan yuborishingiz mumkin.`,
+  });
 
   return res.status(200).json({ ok: true, profile });
 };
@@ -472,10 +539,13 @@ const updateUser = async (req, res) => {
   }
 
   if (body.verified !== undefined) {
-    next.verified = Boolean(body.verified);
-    // Same reasoning as verifyDriver above — an admin touching this field
-    // at all counts as reviewing the pending request, if there was one.
-    delete next.verificationRequestedAt;
+    // verifyDriver bilan bir xil yo'l: ko'k belgi — shaxs tasdig'i,
+    // va admin bu maydonga tegishi so'rovni ko'rib chiqqani hisoblanadi.
+    setVerification(next, 'IDENTITY', {
+      status: body.verified ? 'VERIFIED' : 'REJECTED',
+      reviewedAt: Date.now(),
+      reason: '',
+    });
   }
 
   if (body.ratingCount !== undefined || body.ratingSum !== undefined) {
@@ -559,12 +629,14 @@ const READ_PERMISSIONS = {
   trucks: 'trucks:read',
   truck: 'trucks:read',
   settings: 'settings:read',
+  verifydoc: 'users:read',
 };
 
 /** Write permission required per POST action. */
 const WRITE_PERMISSIONS = {
   'update-report': 'reports:write',
   'verify-driver': 'users:write',
+  'verify-review': 'users:write',
   'update-user': 'users:write',
   'update-truck': 'trucks:write',
   'update-settings': 'settings:write',
@@ -589,6 +661,7 @@ export default async function handler(req, res) {
     if (resource === 'trucks') return getTrucks(res);
     if (resource === 'truck') return getTruck(req, res);
     if (resource === 'settings') return getSettings(res);
+    if (resource === 'verifydoc') return getVerifyDoc(req, res);
   }
 
   if (req.method === 'POST') {
@@ -602,6 +675,7 @@ export default async function handler(req, res) {
 
     if (action === 'update-report') return updateReport(req, res);
     if (action === 'verify-driver') return verifyDriver(req, res);
+    if (action === 'verify-review') return reviewVerification(req, res);
     if (action === 'update-user') return updateUser(req, res);
     if (action === 'update-truck') return updateTruck(req, res);
     if (action === 'update-settings') return updateSettings(req, res);

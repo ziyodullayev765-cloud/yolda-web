@@ -811,5 +811,106 @@ console.log('\n== both sides rate each other ==');
     profile('legacy@example.com').ratingCount === 1);
 }
 
+/* ---------------------------------------------------------- */
+console.log('\n== asking to be verified ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const call = async (body) => {
+    const res = mkRes();
+    await profileHandler({ method: 'POST', query: { action: 'request-verification' }, body, headers: {} }, res);
+    return res;
+  };
+  const me = 'aziz@example.com';
+  const IMG = 'data:image/jpeg;base64,' + 'A'.repeat(200);
+
+  check('a request needs a signed-in user',
+    (await call({ kind: 'IDENTITY', docDataUrl: IMG })).statusCode === 401);
+
+  // Telefonni bu yerdan tasdiqlab bo'lmaydi — u Telegram ishi.
+  const phone = await call({ googleIdToken: me, kind: 'PHONE' });
+  check('the phone is not verified from the site', phone.statusCode === 400);
+  check('and the answer says where it is done', phone.body.viaTelegram === true);
+
+  check('a document is required',
+    (await call({ googleIdToken: me, kind: 'IDENTITY' })).statusCode === 400);
+  check('and it has to be an image',
+    (await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: 'https://example.com/x.jpg' })).statusCode === 400);
+  check('an oversized image is refused',
+    (await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: 'data:image/jpeg;base64,' + 'A'.repeat(1_000_000) })).statusCode === 413);
+
+  const sent = await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: IMG });
+  check('a proper request is accepted', sent.statusCode === 200);
+  check('it comes back pending', sent.body.profile.verifications.IDENTITY.status === 'PENDING');
+  // Hujjat profil ichida emas: profil har xil joyda o'qiladi.
+  check('the document is not stored inside the profile',
+    !JSON.stringify(store.get(`profile:${me}`)).includes('base64'));
+  check('it is stored under its own key', store.get(`verifydoc:${me}:IDENTITY`) === IMG);
+  check('and queued for a moderator', sets.get('verify_queue').has(`${me}|IDENTITY`));
+
+  const again = await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: IMG });
+  check('asking again while pending is not an error', again.statusCode === 200);
+  check('but it stays the same one request', again.body.profile.verifications.IDENTITY.status === 'PENDING');
+
+  // Bir turdagi so'rov ikkinchisini to'smaydi.
+  const truck = await call({ googleIdToken: me, kind: 'TRANSPORT', docDataUrl: IMG });
+  check('a different kind can be asked for at the same time', truck.statusCode === 200);
+  check('and both sit in the queue', sets.get('verify_queue').size === 2);
+
+  // Eski mijoz `kind` yubormaydi — bu doim shaxs tasdig'i bo'lgan.
+  store.clear(); sets.clear();
+  const old = await call({ googleIdToken: me, docDataUrl: IMG });
+  check('a request with no kind is treated as identity',
+    old.statusCode === 200 && old.body.profile.verifications.IDENTITY.status === 'PENDING');
+}
+
+console.log('\n== the bot verifies a phone number ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const telegramMod = await load('api/telegram.js', 'telegram_phone_test');
+  const telegramHandler = telegramMod.default;
+
+  const send = async (message) => {
+    const res = mkRes();
+    await telegramHandler({ method: 'POST', headers: {}, body: { message } }, res);
+    return res;
+  };
+  const profileOf = (id) => JSON.parse(store.get(`profile:${id}`) || '{}');
+
+  await send({
+    chat: { id: 555 }, from: { id: 555, first_name: 'Aziz' },
+    contact: { user_id: 999, phone_number: '998901112233' },
+  });
+  check("someone else's contact verifies nobody", !store.has('profile:tg:555'));
+
+  await send({
+    chat: { id: 555 }, from: { id: 555, first_name: 'Aziz' },
+    contact: { user_id: 555, phone_number: '998901112233' },
+  });
+  const p = profileOf('tg:555');
+  check('sharing your own contact verifies the phone',
+    p.verifications.PHONE.status === 'VERIFIED');
+  check('and the number is stored in international form', p.phone === '+998901112233');
+  check('but it does not hand out the blue badge', p.verified === false);
+
+  // Google akkaunti bilan bog'langan odam o'sha profilga yozilishi kerak,
+  // yangi "tg:" profili yaratilmasin.
+  store.set('tgIdToEmail:777', 'aziz@example.com');
+  store.set('profile:aziz@example.com', JSON.stringify({ username: 'aziz' }));
+  await send({
+    chat: { id: 777 }, from: { id: 777, first_name: 'Aziz' },
+    contact: { user_id: 777, phone_number: '+998907776655' },
+  });
+  check('a linked account is verified on its own profile',
+    profileOf('aziz@example.com').verifications.PHONE.status === 'VERIFIED');
+  check('and no duplicate telegram profile appears', !store.has('profile:tg:777'));
+  check('the existing profile is not wiped', profileOf('aziz@example.com').username === 'aziz');
+
+  resetFetch();
+  await send({ chat: { id: 555 }, from: { id: 555 }, text: '/tasdiq' });
+  const ask = sentMessages.find((m) => m.url.endsWith('/sendMessage'));
+  check('/tasdiq offers the share-contact button',
+    Boolean(ask && ask.body.reply_markup && ask.body.reply_markup.keyboard[0][0].request_contact));
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

@@ -20,6 +20,7 @@ import {
   buildOrderMessage, escapeMd, STATUS_LABELS, nextStatus, NEXT_STATUS_BUTTON,
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
+import { setVerification } from '../lib/verification.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // Optional but recommended: set it in Vercel and pass the same value to setWebhook.
@@ -390,7 +391,75 @@ const handleAdvance = async (query, code) => {
   await answer(query, `Holat yangilandi: ${STATUS_LABELS[next] || next}`);
 };
 
+/* ============================================================
+   Telefon raqamini tasdiqlash
+   ------------------------------------------------------------
+   Bu yerda SMS xizmati yo'q va kerak ham emas: Telegram raqamni
+   o'zi tasdiqlab beradi. Odam «Raqamni ulashish» tugmasini bosadi,
+   Telegram esa `message.contact` ni yuboradi — undagi `user_id`
+   yuborgan odamning o'zi ekanini bildiradi. Boshqa odamning
+   kontaktini ilova qilib yuborish mumkin, shuning uchun `user_id`
+   tekshirilmasa bu tasdiq hech nimani anglatmasdi.
+   ============================================================ */
+const CONTACT_KEYBOARD = {
+  keyboard: [[{ text: '📱 Raqamni ulashish', request_contact: true }]],
+  resize_keyboard: true,
+  one_time_keyboard: true,
+};
+
+/** Telegram foydalanuvchisining sayt tomonidagi identity'si. */
+const identityForTelegram = async (tgId) =>
+  (await kvGet(`tgIdToEmail:${tgId}`)) || `tg:${tgId}`;
+
+const askForPhone = (chatId) =>
+  telegram('sendMessage', {
+    chat_id: chatId,
+    text: 'Raqamingizni tasdiqlash uchun pastdagi tugmani bosing. '
+      + 'Raqamni Telegramning o‘zi yuboradi — qo‘lda yozish shart emas.',
+    reply_markup: CONTACT_KEYBOARD,
+  }).catch(() => {});
+
+const handleContact = async (message) => {
+  const contact = message.contact;
+  // Boshqa odamning kontakti — bu o'zini tasdiqlash emas.
+  if (!contact || contact.user_id !== message.from.id) {
+    await telegram('sendMessage', {
+      chat_id: message.chat.id,
+      text: 'Bu boshqa odamning raqami. O‘z raqamingizni tugma orqali yuboring.',
+      reply_markup: CONTACT_KEYBOARD,
+    }).catch(() => {});
+    return;
+  }
+
+  const identity = await identityForTelegram(message.from.id);
+  const key = `profile:${identity}`;
+  let profile = {};
+  try {
+    profile = JSON.parse((await kvGet(key)) || '{}');
+  } catch {
+    profile = {};
+  }
+
+  const phone = String(contact.phone_number || '').replace(/[^\d+]/g, '');
+  profile.phone = phone.startsWith('+') ? phone : `+${phone}`;
+  setVerification(profile, 'PHONE', {
+    status: 'VERIFIED', at: Date.now(), reviewedAt: Date.now(), reason: '',
+  });
+  await kvSet(key, JSON.stringify(profile));
+
+  await telegram('sendMessage', {
+    chat_id: message.chat.id,
+    text: `✅ Raqam tasdiqlandi: ${profile.phone}\n\nProfilingizda «Telefon tasdiqlangan» belgisi ko‘rinadi.`,
+    reply_markup: { remove_keyboard: true },
+  }).catch(() => {});
+};
+
 const handleCommand = async (message) => {
+  if (message.contact) {
+    await handleContact(message);
+    return;
+  }
+
   const text = (message.text || '').trim();
 
   if (text.startsWith('/start')) {
@@ -402,9 +471,16 @@ const handleCommand = async (message) => {
         'Yangi yuklar haydovchilar guruhiga tushadi\\. Guruhda *«Men olaman»* tugmasini bosing — mijoz raqami sizga ko\\‘rinadi\\.',
         '',
         'Yuk yubormoqchimisiz? Saytga o\\‘ting va formani to\\‘ldiring\\.',
+        '',
+        'Raqamingizni tasdiqlash uchun: /tasdiq',
       ].join('\n'),
       parse_mode: 'MarkdownV2',
     }).catch(() => {});
+    return;
+  }
+
+  if (text.startsWith('/tasdiq')) {
+    await askForPhone(message.chat.id);
     return;
   }
 

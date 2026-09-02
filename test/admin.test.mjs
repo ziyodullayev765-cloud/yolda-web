@@ -278,5 +278,103 @@ console.log('\n== moderation stamp ==');
   check('approving stamps moderatedAt', typeof t.moderatedAt === 'number' && t.moderatedAt > 0);
 }
 
+console.log('\n== three kinds of verification ==');
+{
+  const {
+    readVerifications, setVerification, publicVerifications, canSubmit, docKey,
+  } = await import(join(repo, 'lib/verification.js'));
+
+  // Eski yozuv: bitta `verified` bayrog'i doim shaxsni bildirgan.
+  const legacy = readVerifications({ verified: true });
+  check('an old verified flag reads as an identity check', legacy.IDENTITY.status === 'VERIFIED');
+  check('and says nothing about the phone', legacy.PHONE.status === 'NONE');
+  check('or the vehicle', legacy.TRANSPORT.status === 'NONE');
+  check('an old pending request still reads as pending',
+    readVerifications({ verificationRequestedAt: 5 }).IDENTITY.status === 'PENDING');
+  check('an empty profile has three untouched kinds',
+    Object.values(readVerifications({})).every((v) => v.status === 'NONE'));
+
+  const p = {};
+  setVerification(p, 'PHONE', { status: 'VERIFIED', at: 1 });
+  check('a verified phone does not grant the blue badge', p.verified === false);
+  setVerification(p, 'IDENTITY', { status: 'VERIFIED', at: 2 });
+  check('a verified identity does', p.verified === true);
+  setVerification(p, 'IDENTITY', { status: 'REJECTED', reviewedAt: 3, reason: 'noaniq' });
+  check('and losing it takes the badge back', p.verified === false);
+  check('the phone check survives that', readVerifications(p).PHONE.status === 'VERIFIED');
+  check('a pending identity restores the old queue field', (() => {
+    const q = {};
+    setVerification(q, 'IDENTITY', { status: 'PENDING', at: 99 });
+    return q.verificationRequestedAt === 99;
+  })());
+
+  const pub = publicVerifications(p);
+  check('the public shape is booleans only',
+    Object.values(pub).every((v) => typeof v === 'boolean'));
+  check('a rejection is not published as anything', pub.IDENTITY === false);
+  check('a rejection reason never reaches the public shape',
+    !JSON.stringify(pub).includes('noaniq'));
+
+  check('a verified kind cannot be resubmitted', !canSubmit({ status: 'VERIFIED' }).ok);
+  check('nor can a pending one', !canSubmit({ status: 'PENDING' }).ok);
+  check('a fresh rejection waits out its cooldown',
+    !canSubmit({ status: 'REJECTED', reviewedAt: Date.now() }).ok);
+  check('an old rejection may try again',
+    canSubmit({ status: 'REJECTED', reviewedAt: Date.now() - 2 * 24 * 3600 * 1000 }).ok);
+  check('an untouched kind may be submitted', canSubmit({ status: 'NONE' }).ok);
+  check('documents are keyed per person and per kind',
+    docKey('a@b.c', 'IDENTITY') !== docKey('a@b.c', 'TRANSPORT'));
+}
+
+console.log('\n== the moderator decides, and the document goes ==');
+{
+  store.clear(); sets.clear();
+  store.set('profile:d@example.com', JSON.stringify({ username: 'aziz' }));
+  store.set('verifydoc:d@example.com:TRANSPORT', 'data:image/jpeg;base64,AAAA');
+  sets.set('verify_queue', new Set(['d@example.com|TRANSPORT']));
+
+  const noAuth = await call(adminData, 'POST', { action: 'verify-review' },
+    { email: 'd@example.com', kind: 'TRANSPORT', approve: true });
+  check('reviewing needs an admin session', noAuth.statusCode === 401);
+  check('a moderator lacks users:write for this',
+    (await call(adminData, 'POST', { action: 'verify-review' },
+      { email: 'd@example.com', kind: 'TRANSPORT', approve: true }, cookieFor('MODERATOR'))).statusCode === 403);
+
+  const noDoc = await call(adminData, 'GET',
+    { resource: 'verifydoc', email: 'd@example.com', kind: 'PHONE' }, null, cookieFor('ADMIN'));
+  check('there is no document to fetch for a phone check', noDoc.statusCode === 400);
+
+  const doc = await call(adminData, 'GET',
+    { resource: 'verifydoc', email: 'd@example.com', kind: 'TRANSPORT' }, null, cookieFor('ADMIN'));
+  check('an admin can open the document', doc.statusCode === 200 && doc.body.doc.startsWith('data:image/'));
+
+  const noReason = await call(adminData, 'POST', { action: 'verify-review' },
+    { email: 'd@example.com', kind: 'TRANSPORT', approve: false }, cookieFor('ADMIN'));
+  check('rejecting without a reason is refused', noReason.statusCode === 400);
+  check('and changes nothing', store.has('verifydoc:d@example.com:TRANSPORT'));
+
+  const ok = await call(adminData, 'POST', { action: 'verify-review' },
+    { email: 'd@example.com', kind: 'TRANSPORT', approve: true }, cookieFor('ADMIN'));
+  check('approving works', ok.statusCode === 200);
+  check('the profile records it',
+    JSON.parse(store.get('profile:d@example.com')).verifications.TRANSPORT.status === 'VERIFIED');
+  check('a vehicle check does not hand out the blue badge',
+    JSON.parse(store.get('profile:d@example.com')).verified === false);
+  // Ko'rib bo'lingan hujjatni saqlab turishning sababi yo'q.
+  check('the document is deleted once reviewed', !store.has('verifydoc:d@example.com:TRANSPORT'));
+  check('and the queue entry with it', !sets.get('verify_queue').has('d@example.com|TRANSPORT'));
+
+  // Eski tugma ishlashda davom etadi va yangi shakl bilan kelishadi.
+  store.set('verifydoc:d@example.com:IDENTITY', 'data:image/jpeg;base64,BBBB');
+  await call(adminData, 'POST', { action: 'verify-driver' },
+    { email: 'd@example.com', verified: true }, cookieFor('ADMIN'));
+  const after = JSON.parse(store.get('profile:d@example.com'));
+  check('the old verify button still grants the badge', after.verified === true);
+  check('and now writes the identity record too', after.verifications.IDENTITY.status === 'VERIFIED');
+  check('it clears the old pending field', after.verificationRequestedAt === undefined);
+  check('and drops that document as well', !store.has('verifydoc:d@example.com:IDENTITY'));
+  check('while leaving the vehicle check alone', after.verifications.TRANSPORT.status === 'VERIFIED');
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

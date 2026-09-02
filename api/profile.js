@@ -28,6 +28,10 @@ import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvRange
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
+import {
+  KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
+  publicVerifications, canSubmit, docKey,
+} from '../lib/verification.js';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const ROLES = ['DRIVER', 'OWNER', 'BOTH'];
@@ -67,7 +71,18 @@ const telegramReachable = async (identity) => {
   return Boolean(await kvGet(`tgChat:${identity}`));
 };
 
-const withTelegramFlag = (profile, reachable) => ({ ...profile, telegramReachable: reachable });
+/**
+ * O'z profilini qaytarish. Tasdiqlar har doim to'liq uchtalik holda
+ * beriladi — eski yozuvda `verifications` bo'lmasligi mumkin, va
+ * sayt tomonida "yo'q bo'lsa nima qilamiz" degan tekshiruvlar
+ * takrorlanmasligi kerak. Bu yerda kutilayotgan va rad etilgan
+ * holatlar ham bor: bu odamning o'z profili, hammasini ko'radi.
+ */
+const withTelegramFlag = (profile, reachable) => ({
+  ...profile,
+  verifications: readVerifications(profile),
+  telegramReachable: reachable,
+});
 
 const normalisePhone = (v) => {
   const d = String(v).replace(/\D/g, '');
@@ -92,39 +107,69 @@ const linkTelegramFinish = async (req, res) => {
   return res.status(200).json({ ok: true });
 };
 
-// A user can only ask again after this many ms — stops someone hammering
-// the button once a request is already sitting in the admin queue.
-const VERIFICATION_REQUEST_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
-
 /**
- * POST ?action=request-verification — the self-serve "get the blue badge"
- * request from the Profile page. No document upload here (this app has no
- * file storage at all yet) — this just timestamps the profile so it shows
- * up as pending in the admin panel; an admin collects the actual passport
- * photos out of band (Telegram) and flips `verified` from there, the same
- * as verifyDriver/updateUser already did before this existed.
+ * POST ?action=request-verification — tasdiqlash so'rovi.
+ *
+ * Ilgari bitta tugma edi va u faqat profilga vaqt belgisini qo'yardi;
+ * hujjatni admin Telegram orqali alohida so'rardi. Endi hujjat shu
+ * yerdan yuboriladi va uch xil tasdiq bor (lib/verification.js).
+ *
+ * Telefon bu yerdan tasdiqlanmaydi: uni Telegram boti o'zi qiladi
+ * (api/telegram.js), chunki raqamni Telegram'ning o'zi tasdiqlab
+ * beradi. Bu yerda "SMS yubordik" deb yozib qo'yish yolg'on bo'lardi.
+ *
+ * `kind` yuborilmasa — eski mijoz, IDENTITY deb qabul qilinadi.
  */
 const requestVerification = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
-  const profileKey = `profile:${email}`;
-  const existing = parseProfile(await kvGet(profileKey));
-  if (existing.verified) {
-    return res.status(400).json({ error: 'Profilingiz allaqachon tasdiqlangan' });
-  }
-  if (existing.verificationRequestedAt && Date.now() - existing.verificationRequestedAt < VERIFICATION_REQUEST_COOLDOWN_MS) {
-    // Not an error — the user just re-opened the page mid-review. Report
-    // the same pending state they'd already see instead of double-queuing.
-    return res.status(200).json({ ok: true, profile: existing });
+  const kind = KINDS.includes(body.kind) ? body.kind : 'IDENTITY';
+  if (!REVIEWED_KINDS.includes(kind)) {
+    return res.status(400).json({
+      error: 'Telefon raqami Telegram boti orqali tasdiqlanadi',
+      viaTelegram: true,
+    });
   }
 
-  const next = { ...existing, verificationRequestedAt: Date.now() };
-  const saved = await kvSet(profileKey, JSON.stringify(next));
-  if (!saved) return res.status(502).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
+  const profileKey = `profile:${email}`;
+  const existing = parseProfile(await kvGet(profileKey));
+  const current = readVerifications(existing)[kind];
+
+  const allowed = canSubmit(current);
+  if (!allowed.ok) {
+    // Kutilayotgan so'rov — xato emas, odam sahifani qayta ochgan.
+    if (current.status === 'PENDING') {
+      return res.status(200).json({ ok: true, profile: withTelegramFlag(existing, await telegramReachable(email)) });
+    }
+    return res.status(400).json({ error: allowed.error });
+  }
+
+  const doc = String(body.docDataUrl || '');
+  if (!doc.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'Hujjat rasmini biriktiring' });
+  }
+  if (doc.length > MAX_DOC_CHARS) {
+    return res.status(413).json({ error: 'Rasm juda katta, kichikroq suratga oling' });
+  }
+
+  // Hujjat profil ichida emas, alohida kalitda turadi: profil har xil
+  // joyda o'qiladi, hujjat esa faqat moderatorga kerak va qaror
+  // chiqishi bilan o'chib ketadi.
+  if (!(await kvSet(docKey(email, kind), doc))) {
+    return res.status(502).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
+  }
+
+  const next = setVerification({ ...existing }, kind, {
+    status: 'PENDING', at: Date.now(), reviewedAt: 0, reason: '',
+  });
+  if (!(await kvSet(profileKey, JSON.stringify(next)))) {
+    return res.status(502).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
+  }
   await kvSadd('profile_emails', email);
-  return res.status(200).json({ ok: true, profile: next });
+  await kvSadd('verify_queue', `${email}|${kind}`);
+  return res.status(200).json({ ok: true, profile: withTelegramFlag(next, await telegramReachable(email)) });
 };
 
 const handleProfile = async (req, res) => {
@@ -402,6 +447,9 @@ const publicProfileShape = (identity, profile) => ({
   displayName: profile.displayName || profile.username || '',
   avatarDataUrl: profile.avatarDataUrl || '',
   verified: Boolean(profile.verified),
+  // Uchta tasdiq alohida ko'rinadi: "tekshirilgan" degani nima ekani
+  // endi aniq. Kutilayotgani va rad etilgani begonaga chiqmaydi.
+  verifications: publicVerifications(profile),
   role: profile.role || '',
   city: profile.city || '',
   vehicleType: profile.vehicleType || '',

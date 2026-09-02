@@ -1046,6 +1046,11 @@
     background:var(--paper-dark);color:var(--ink-soft);
   }
   .crit-count{font-size:11.5px;font-weight:700;color:var(--muted);align-self:center;}
+  .crit-tag.ok{
+    background:rgba(22,163,74,0.12);color:#15803D;
+    display:inline-flex;align-items:center;gap:5px;
+  }
+  .crit-tag.ok .ic-svg{font-size:12px;}
   .review-item{padding:var(--s3) 0;border-top:1px solid var(--line);}
   .review-item:first-of-type{border-top:none;padding-top:var(--s2);}
   .review-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);}
@@ -1430,6 +1435,34 @@
   .verify-checklist li.good .vc-mark{color:var(--accepted);}
   .verify-checklist li.bad .vc-mark{color:#DC2626;}
   .verify-review-note{font-size:12px;color:var(--muted);text-align:center;margin:0;}
+
+  /* Uchta tasdiq — har biri o'z kartochkasida, o'z holati bilan. */
+  .verify-row{
+    border:1px solid var(--border);border-radius:var(--r-md);
+    padding:var(--s4);margin-bottom:var(--s3);background:var(--card);
+  }
+  .verify-row-head{display:flex;align-items:center;gap:var(--s3);}
+  .verify-row .vr-icon{
+    width:34px;height:34px;border-radius:var(--r-sm);background:var(--paper-dark);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--route);
+  }
+  .verify-row .vr-title{font-size:14.5px;font-weight:700;color:var(--ink);}
+  .verify-row .vr-status{
+    margin-left:auto;font-size:11px;font-weight:700;padding:3px 9px;
+    border-radius:var(--r-pill);white-space:nowrap;
+  }
+  .vr-status.ok{background:rgba(22,163,74,0.14);color:#15803D;}
+  .vr-status.wait{background:rgba(245,158,11,0.14);color:#B45309;}
+  .vr-status.bad{background:rgba(220,38,38,0.12);color:#B91C1C;}
+  .vr-status.none{background:var(--paper-dark);color:var(--muted);}
+  .verify-row-desc{font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin:var(--s3) 0 0;}
+  .verify-row-note{font-size:12px;color:var(--muted);line-height:1.55;margin:var(--s2) 0 0;}
+  .verify-row-note.bad{color:#DC2626;}
+  .verify-row .btn{margin-top:var(--s3);}
+  .settings-row .sr-tag{
+    margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap;
+  }
+  .settings-row .sr-tag + .sr-chev{margin-left:6px;}
 
   .profile-completion-card{
     display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
@@ -2572,21 +2605,23 @@
       "settings.verify": "Profilni tasdiqlash",
 
       "verify.pageTitle": "Profilni tasdiqlash", "verify.title": "Profilingizni tasdiqlang",
-      "verify.desc": "Ko'k belgi — siz haqiqiy va ishonchli haydovchi yoki yuk egasi ekaningizni bildiradi. Mijozlar tasdiqlangan profilga ko'proq ishonadi va tezroq murojaat qiladi.",
-      "verify.docsHeading": "Buning uchun quyidagi hujjatlar kerak bo'ladi:",
-      "verify.doc1": "Pasport (old tomoni)", "verify.doc2": "Pasport (orqa tomoni)", "verify.doc3": "Hujjatni ushlab turgan selfie",
-      "verify.docsNote": "So'rov yuborgach, operatorimiz hujjatlarni qanday yuborish kerakligini Telegram orqali yozadi.",
-      "verify.check1": "Yorug' joyda, matn aniq ko'rinsin", "verify.check2": "Yuzingiz va hujjat birga ko'rinsin",
-      "verify.check3": "Noaniq yoki chala rasmlar rad etiladi",
-      "verify.submitBtn": "Tasdiqlashni so'rash", "verify.submitting": "Yuborilmoqda…",
-      "verify.reviewNote": "So'rovingiz odatda 1-3 kun ichida ko'rib chiqiladi.",
+      "verify.publicTitle": "Tasdiqlangan",
+      "verify.desc3": "Uchta tasdiq bor va ularni alohida olasiz. Har biri profilingizda ko'rinadi — mijozlar sizga nima uchun ishonishini aniq biladi.",
+      "verify.kindPhone": "Telefon raqami", "verify.kindIdentity": "Shaxs hujjati", "verify.kindTransport": "Texnik pasport",
+      "verify.phoneDesc": "Telegram botida bitta tugma — raqamingizni Telegramning o'zi tasdiqlaydi.",
+      "verify.identityDesc": "Pasport yoki ID karta rasmi. Ismingiz yonida ko'k belgi paydo bo'ladi.",
+      "verify.transportDesc": "Mashina hujjati rasmi. Yuk beruvchilar transportingiz borligini ko'radi.",
+      "verify.phoneHow": "Botga <b>/tasdiq</b> deb yozing va «Raqamni ulashish» tugmasini bosing.",
+      "verify.openBot": "Botni ochish", "verify.pickDoc": "Hujjat rasmini tanlash",
+      "verify.uploading": "Yuborilmoqda...", "verify.badImage": "Rasmni o'qib bo'lmadi.",
+      "verify.netError": "Yuborilmadi, internetni tekshirib qayta urinib ko'ring.",
+      "verify.stVerified": "Tasdiqlangan", "verify.stPending": "Tekshirilmoqda",
+      "verify.stRejected": "Rad etilgan", "verify.stNone": "Tasdiqlanmagan",
+      "verify.check4": "Hujjat qaror chiqishi bilan o'chiriladi",
+      "verify.check1": "Yorug' joyda, matn aniq ko'rinsin", "verify.check3": "Noaniq yoki chala rasmlar rad etiladi",
       "verify.pendingTitle": "So'rovingiz qabul qilindi",
       "verify.pendingDesc": "Hujjatlaringizni tekshirib chiqmoqdamiz. Odatda 1-3 kun ichida javob beramiz.",
-      "verify.pendingSince": "So'ralgan sana",
-      "verify.doneTitle": "Profilingiz tasdiqlangan",
-      "verify.doneDesc": "Tabriklaymiz! Ismingiz yonidagi ko'k belgi endi barcha foydalanuvchilarga ko'rinadi.",
-      "verify.error": "Yuborilmadi, qayta urinib ko'ring", "verify.alreadyVerified": "Profilingiz allaqachon tasdiqlangan",
-      "verify.pendingTag": "kutilmoqda",
+      "verify.error": "Yuborilmadi, qayta urinib ko'ring", "verify.pendingTag": "kutilmoqda",
 
       "link.startTitle": "Telegram bilan bog'lash",
       "link.startIntro": "Google va Telegram hisobingizni bitta profilga birlashtirish uchun quyidagi kodni Telegram botiga kiriting.",
@@ -2864,21 +2899,23 @@
       "settings.verify": "Подтвердить профиль",
 
       "verify.pageTitle": "Подтверждение профиля", "verify.title": "Подтвердите свой профиль",
-      "verify.desc": "Синий значок означает, что вы настоящий и надёжный водитель или владелец груза. Клиенты больше доверяют подтверждённым профилям и быстрее обращаются.",
-      "verify.docsHeading": "Для этого понадобятся следующие документы:",
-      "verify.doc1": "Паспорт (лицевая сторона)", "verify.doc2": "Паспорт (обратная сторона)", "verify.doc3": "Селфи с документом в руках",
-      "verify.docsNote": "После отправки запроса наш оператор напишет вам в Telegram, как отправить документы.",
-      "verify.check1": "Снимайте при хорошем освещении, текст должен быть чётким", "verify.check2": "Лицо и документ должны быть видны вместе",
-      "verify.check3": "Нечёткие или неполные фото отклоняются",
-      "verify.submitBtn": "Запросить подтверждение", "verify.submitting": "Отправка…",
-      "verify.reviewNote": "Обычно запрос рассматривается в течение 1–3 дней.",
+      "verify.publicTitle": "Подтверждено",
+      "verify.desc3": "Есть три подтверждения, и каждое получается отдельно. Все они видны в профиле — клиент точно знает, почему вам можно доверять.",
+      "verify.kindPhone": "Номер телефона", "verify.kindIdentity": "Документ личности", "verify.kindTransport": "Техпаспорт",
+      "verify.phoneDesc": "Одна кнопка в Telegram-боте — номер подтверждает сам Telegram.",
+      "verify.identityDesc": "Фото паспорта или ID-карты. Рядом с именем появится синий значок.",
+      "verify.transportDesc": "Фото документа на машину. Отправители увидят, что транспорт у вас есть.",
+      "verify.phoneHow": "Напишите боту <b>/tasdiq</b> и нажмите «Поделиться номером».",
+      "verify.openBot": "Открыть бота", "verify.pickDoc": "Выбрать фото документа",
+      "verify.uploading": "Отправка...", "verify.badImage": "Не удалось прочитать изображение.",
+      "verify.netError": "Не отправлено, проверьте интернет и попробуйте ещё раз.",
+      "verify.stVerified": "Подтверждено", "verify.stPending": "На проверке",
+      "verify.stRejected": "Отклонено", "verify.stNone": "Не подтверждено",
+      "verify.check4": "Документ удаляется сразу после решения",
+      "verify.check1": "Снимайте при хорошем освещении, текст должен быть чётким", "verify.check3": "Нечёткие или неполные фото отклоняются",
       "verify.pendingTitle": "Запрос принят",
       "verify.pendingDesc": "Мы проверяем ваши документы. Обычно отвечаем в течение 1–3 дней.",
-      "verify.pendingSince": "Дата запроса",
-      "verify.doneTitle": "Профиль подтверждён",
-      "verify.doneDesc": "Поздравляем! Синий значок рядом с вашим именем теперь виден всем пользователям.",
-      "verify.error": "Не отправлено, попробуйте ещё раз", "verify.alreadyVerified": "Ваш профиль уже подтверждён",
-      "verify.pendingTag": "на рассмотрении",
+      "verify.error": "Не отправлено, попробуйте ещё раз", "verify.pendingTag": "на рассмотрении",
 
       "link.startTitle": "Привязать Telegram",
       "link.startIntro": "Чтобы объединить аккаунты Google и Telegram в один профиль, введите этот код в Telegram-боте.",
@@ -3156,21 +3193,23 @@
       "settings.verify": "Verify profile",
 
       "verify.pageTitle": "Verify profile", "verify.title": "Verify your profile",
-      "verify.desc": "The blue badge shows you're a real, trustworthy driver or cargo owner. Customers trust verified profiles more and reach out faster.",
-      "verify.docsHeading": "You'll need these documents:",
-      "verify.doc1": "Passport (front)", "verify.doc2": "Passport (back)", "verify.doc3": "A selfie holding the document",
-      "verify.docsNote": "After you submit the request, our team will message you on Telegram with how to send the documents.",
-      "verify.check1": "Shoot it somewhere bright, with the text clearly readable", "verify.check2": "Your face and the document should both be visible",
-      "verify.check3": "Blurry or partial photos will be rejected",
-      "verify.submitBtn": "Request verification", "verify.submitting": "Sending…",
-      "verify.reviewNote": "Requests are usually reviewed within 1-3 days.",
+      "verify.publicTitle": "Verified",
+      "verify.desc3": "There are three verifications, and you can get them one at a time. Each shows on your profile, so customers know exactly why they can trust you.",
+      "verify.kindPhone": "Phone number", "verify.kindIdentity": "Identity document", "verify.kindTransport": "Vehicle registration",
+      "verify.phoneDesc": "One button in the Telegram bot â Telegram itself confirms the number.",
+      "verify.identityDesc": "A photo of your passport or ID card. The blue badge appears next to your name.",
+      "verify.transportDesc": "A photo of the vehicle document. Shippers can see you actually have a truck.",
+      "verify.phoneHow": "Send <b>/tasdiq</b> to the bot and tap «Share phone number».",
+      "verify.openBot": "Open the bot", "verify.pickDoc": "Choose a document photo",
+      "verify.uploading": "Sending...", "verify.badImage": "Could not read that image.",
+      "verify.netError": "Not sent â check your connection and try again.",
+      "verify.stVerified": "Verified", "verify.stPending": "Under review",
+      "verify.stRejected": "Rejected", "verify.stNone": "Not verified",
+      "verify.check4": "The document is deleted as soon as it is reviewed",
+      "verify.check1": "Shoot it somewhere bright, with the text clearly readable", "verify.check3": "Blurry or partial photos will be rejected",
       "verify.pendingTitle": "Your request is in",
       "verify.pendingDesc": "We're reviewing your documents. We usually reply within 1-3 days.",
-      "verify.pendingSince": "Requested on",
-      "verify.doneTitle": "Your profile is verified",
-      "verify.doneDesc": "Congrats! The blue badge next to your name is now visible to everyone.",
-      "verify.error": "Couldn't send, please try again", "verify.alreadyVerified": "Your profile is already verified",
-      "verify.pendingTag": "pending",
+      "verify.error": "Couldn't send, please try again", "verify.pendingTag": "pending",
 
       "link.startTitle": "Link Telegram",
       "link.startIntro": "To merge your Google and Telegram accounts into one profile, enter this code in the Telegram bot.",
@@ -3833,84 +3872,164 @@
     });
   }
 
-  /* ---------- Verify-profile sheet: self-serve "get the blue badge"
-     request (see api/profile.js's request-verification action). No file
-     upload — this app has no storage for that — the button just files a
-     request an admin follows up on via Telegram; see the earlier note in
-     openAccountSettingsSheet for the reasoning. ---------- */
+  /* ---------- Tasdiqlash sahifasi ----------
+     Uchta alohida tasdiq (lib/verification.js):
+
+       Telefon   — Telegram boti orqali, avtomatik. Telegram raqamni
+                   o'zi tasdiqlab beradi, shuning uchun bu yerda
+                   "SMS yubordik" degan soxta oyna yo'q.
+       Shaxs     — hujjat rasmi, moderator ko'radi.
+       Transport — texnik pasport, xuddi shunday.
+
+     Hujjat qaror chiqishi bilan o'chiriladi (api/admin-data.js).
+     ---------- */
   function verifyBadgeSvg(extraClass){
     return '<svg class="ic-svg '+extraClass+'" aria-hidden="true"><use href="#iconVerifiedBadge"/></svg>';
   }
 
+  var VERIFY_KINDS = ["PHONE", "IDENTITY", "TRANSPORT"];
+  var VERIFY_META = {
+    PHONE:     { icon: "iconChat",      titleKey: "verify.kindPhone",     title: "Telefon raqami",
+                 descKey: "verify.phoneDesc",
+                 desc: "Telegram botida bitta tugma — raqamingizni Telegramning o'zi tasdiqlaydi." },
+    IDENTITY:  { icon: "iconClipboard", titleKey: "verify.kindIdentity",  title: "Shaxs hujjati",
+                 descKey: "verify.identityDesc",
+                 desc: "Pasport yoki ID karta rasmi. Ismingiz yonida ko'k belgi paydo bo'ladi." },
+    TRANSPORT: { icon: "iconTruck",     titleKey: "verify.kindTransport", title: "Texnik pasport",
+                 descKey: "verify.transportDesc",
+                 desc: "Mashina hujjati rasmi. Yuk beruvchilar transportingiz borligini ko'radi." }
+  };
+  var VERIFY_STATUS_TEXT = {
+    VERIFIED: { key: "verify.stVerified", txt: "Tasdiqlangan", cls: "ok" },
+    PENDING:  { key: "verify.stPending",  txt: "Tekshirilmoqda", cls: "wait" },
+    REJECTED: { key: "verify.stRejected", txt: "Rad etilgan", cls: "bad" },
+    NONE:     { key: "verify.stNone",     txt: "Tasdiqlanmagan", cls: "none" }
+  };
+
+  function verifyStateOf(p, kind){
+    var all = (p && p.verifications) || {};
+    var entry = all[kind];
+    if(entry && entry.status) return entry;
+    // Eski yozuv: bitta `verified` bayrog'i doim shaxsni bildirgan.
+    if(kind === "IDENTITY"){
+      if(p && p.verified) return { status: "VERIFIED", reason: "" };
+      if(p && p.verificationRequestedAt) return { status: "PENDING", at: p.verificationRequestedAt, reason: "" };
+    }
+    return { status: "NONE", reason: "" };
+  }
+
+  function verifyRowHtml(kind, state){
+    var meta = VERIFY_META[kind];
+    var st = VERIFY_STATUS_TEXT[state.status] || VERIFY_STATUS_TEXT.NONE;
+
+    var action = "";
+    if(state.status === "VERIFIED"){
+      action = "";
+    } else if(state.status === "PENDING"){
+      action = '<p class="verify-row-note" data-i18n="verify.pendingDesc">'
+        + 'Hujjatlaringizni tekshirib chiqmoqdamiz. Odatda 1-3 kun ichida javob beramiz.</p>';
+    } else if(kind === "PHONE"){
+      var botLink = TELEGRAM_BOT_USERNAME ? "https://t.me/" + TELEGRAM_BOT_USERNAME : "";
+      action = '<p class="verify-row-note" data-i18n="verify.phoneHow">'
+        +   'Botga <b>/tasdiq</b> deb yozing va «Raqamni ulashish» tugmasini bosing.</p>'
+        + (botLink
+            ? '<a class="btn ghost" href="'+escapeHtml(botLink)+'" target="_blank" rel="noopener">'
+              + icon("iconTelegram")+' <span data-i18n="verify.openBot">Botni ochish</span></a>'
+            : "");
+    } else {
+      action = '<input type="file" accept="image/*" id="fVerifyDoc'+kind+'" hidden>'
+        + '<button type="button" class="btn ghost" data-verify-pick="'+kind+'">'
+        +   icon("iconClipboard")+' <span data-i18n="verify.pickDoc">Hujjat rasmini tanlash</span></button>'
+        + '<p class="verify-row-note" id="verifyNote'+kind+'"></p>';
+    }
+
+    return '<div class="verify-row">'
+      + '<div class="verify-row-head">'
+      +   '<span class="vr-icon">'+icon(meta.icon)+'</span>'
+      +   '<span class="vr-title" data-i18n="'+meta.titleKey+'">'+escapeHtml(meta.title)+'</span>'
+      +   '<span class="vr-status '+st.cls+'" data-i18n="'+st.key+'">'+escapeHtml(st.txt)+'</span>'
+      + '</div>'
+      + '<p class="verify-row-desc" data-i18n="'+meta.descKey+'">'+escapeHtml(meta.desc)+'</p>'
+      + (state.status === "REJECTED" && state.reason
+          ? '<p class="verify-row-note bad">'+escapeHtml(state.reason)+'</p>'
+          : "")
+      + action
+      + '</div>';
+  }
+
   function renderVerifyPage(){
     var p = lastLoadedProfile || {};
-
-    if(p.verified){
-      return '<div class="verify-hero">'
-        + verifyBadgeSvg("verify-badge-lg")
-        + '<h3 class="verify-title" data-i18n="verify.doneTitle">Profilingiz tasdiqlangan</h3>'
-        + '<p class="verify-desc" style="margin-bottom:0;" data-i18n="verify.doneDesc">Tabriklaymiz! Ismingiz yonidagi ko\'k belgi endi barcha foydalanuvchilarga ko\'rinadi.</p>'
-        + '</div>';
-    }
-
-    if(p.verificationRequestedAt){
-      var dateStr = new Date(p.verificationRequestedAt).toLocaleDateString();
-      return '<div class="verify-hero">'
-        + verifyBadgeSvg("verify-badge-lg muted")
-        + '<h3 class="verify-title" data-i18n="verify.pendingTitle">So\'rovingiz qabul qilindi</h3>'
-        + '<p class="verify-desc" data-i18n="verify.pendingDesc">Hujjatlaringizni tekshirib chiqmoqdamiz. Odatda 1-3 kun ichida javob beramiz.</p>'
-        + '<p class="verify-review-note"><span data-i18n="verify.pendingSince">So\'ralgan sana</span>: '+escapeHtml(dateStr)+'</p>'
-        + '</div>';
-    }
+    var states = VERIFY_KINDS.map(function(k){ return verifyStateOf(p, k); });
+    var doneCount = states.filter(function(s){ return s.status === "VERIFIED"; }).length;
 
     return '<div class="verify-hero">'
-      + verifyBadgeSvg("verify-badge-lg")
+      + verifyBadgeSvg(doneCount ? "verify-badge-lg" : "verify-badge-lg muted")
       + '<h3 class="verify-title" data-i18n="verify.title">Profilingizni tasdiqlang</h3>'
-      + '<p class="verify-desc" data-i18n="verify.desc">Ko\'k belgi — siz haqiqiy va ishonchli haydovchi yoki yuk egasi ekaningizni bildiradi. Mijozlar tasdiqlangan profilga ko\'proq ishonadi va tezroq murojaat qiladi.</p>'
+      + '<p class="verify-desc" data-i18n="verify.desc3">Uchta tasdiq bor va ularni alohida olasiz. '
+      +   'Har biri profilingizda ko\'rinadi — mijozlar sizga nima uchun ishonishini aniq biladi.</p>'
+      + '<p class="verify-review-note">' + doneCount + ' / 3</p>'
       + '</div>'
-      + '<div class="verify-docs-heading" data-i18n="verify.docsHeading">Buning uchun quyidagi hujjatlar kerak bo\'ladi:</div>'
-      + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconClipboard")+'</span><span class="vd-label" data-i18n="verify.doc1">Pasport (old tomoni)</span></div>'
-      + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconClipboard")+'</span><span class="vd-label" data-i18n="verify.doc2">Pasport (orqa tomoni)</span></div>'
-      + '<div class="verify-doc-row"><span class="vd-icon">'+icon("iconUser")+'</span><span class="vd-label" data-i18n="verify.doc3">Hujjatni ushlab turgan selfie</span></div>'
-      + '<p class="verify-docs-note" data-i18n="verify.docsNote">So\'rov yuborgach, operatorimiz hujjatlarni qanday yuborish kerakligini Telegram orqali yozadi.</p>'
+      + VERIFY_KINDS.map(function(k, i){ return verifyRowHtml(k, states[i]); }).join("")
       + '<ul class="verify-checklist">'
       +   '<li class="good"><span class="vc-mark">'+icon("iconCheckLine")+'</span><span data-i18n="verify.check1">Yorug\' joyda, matn aniq ko\'rinsin</span></li>'
-      +   '<li class="good"><span class="vc-mark">'+icon("iconCheckLine")+'</span><span data-i18n="verify.check2">Yuzingiz va hujjat birga ko\'rinsin</span></li>'
+      +   '<li class="good"><span class="vc-mark">'+icon("iconCheckLine")+'</span><span data-i18n="verify.check4">Hujjat qaror chiqishi bilan o\'chiriladi</span></li>'
       +   '<li class="bad"><span class="vc-mark">'+icon("iconClose")+'</span><span data-i18n="verify.check3">Noaniq yoki chala rasmlar rad etiladi</span></li>'
-      + '</ul>'
-      + '<button type="button" class="btn" id="btnRequestVerification" data-i18n="verify.submitBtn">Tasdiqlashni so\'rash</button>'
-      + '<p class="verify-review-note" style="margin-top:var(--s3);" data-i18n="verify.reviewNote">So\'rovingiz odatda 1-3 kun ichida ko\'rib chiqiladi.</p>'
-      + '<p class="note" id="verifyRequestNote" style="text-align:center;"></p>';
+      + '</ul>';
   }
 
   function bindVerifyPage(container){
-    var btn = container.querySelector("#btnRequestVerification");
-    if(!btn) return;
-    btn.addEventListener("click", function(){
-      var note = document.getElementById("verifyRequestNote");
-      btn.disabled = true;
-      if(note){ note.textContent = ""; note.style.color = ""; }
-      fetch("/api/profile?action=request-verification", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
-      }).then(function(r){
-        return r.json().then(function(body){ return {ok: r.ok, body: body}; });
-      }).then(function(res){
-        btn.disabled = false;
-        if(!res.ok){
-          if(note){ note.textContent = res.body.error || t("verify.error") || ""; note.style.color = "#DC2626"; }
-          return;
-        }
-        lastLoadedProfile = res.body.profile || lastLoadedProfile;
-        toast(t("verify.pendingTitle") || "So'rovingiz qabul qilindi", "", "success");
-        // Re-render this same sheet in its new (pending) state rather than
-        // closing it — the person should immediately see their request landed.
-        openSettingsPage("verify", openAccountSettingsSheet);
-      }).catch(function(){
-        btn.disabled = false;
-        if(note){ note.textContent = "Yuborilmadi, internetni tekshirib qayta urinib ko'ring."; note.style.color = "#DC2626"; }
+    container.querySelectorAll("[data-verify-pick]").forEach(function(btn){
+      var kind = btn.getAttribute("data-verify-pick");
+      var input = container.querySelector("#fVerifyDoc" + kind);
+      if(!input) return;
+      btn.addEventListener("click", function(){ input.click(); });
+      input.addEventListener("change", function(){
+        var file = input.files && input.files[0];
+        if(!file) return;
+        var note = container.querySelector("#verifyNote" + kind);
+        if(note){ note.textContent = t("verify.uploading") || "Yuborilmoqda..."; note.style.color = ""; }
+        btn.disabled = true;
+        // Truck e'lonlaridagi bilan bir xil siqish — bu ilovada fayl
+        // ombori yo'q, rasm data: URL sifatida boradi.
+        fileToPhotoDataUrl(file, function(dataUrl){
+          if(!dataUrl){
+            btn.disabled = false;
+            if(note){ note.textContent = t("verify.badImage") || "Rasmni o'qib bo'lmadi."; note.style.color = "#DC2626"; }
+            return;
+          }
+          submitVerification(kind, dataUrl, btn, note);
+        });
       });
+    });
+  }
+
+  function submitVerification(kind, docDataUrl, btn, note){
+    fetch("/api/profile?action=request-verification", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        kind: kind, docDataUrl: docDataUrl,
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData
+      })
+    }).then(function(r){
+      return r.json().then(function(body){ return {ok: r.ok, body: body}; });
+    }).then(function(res){
+      if(btn) btn.disabled = false;
+      if(!res.ok){
+        if(note){ note.textContent = res.body.error || t("verify.error") || ""; note.style.color = "#DC2626"; }
+        return;
+      }
+      lastLoadedProfile = res.body.profile || lastLoadedProfile;
+      toast(t("verify.pendingTitle") || "So'rovingiz qabul qilindi", "", "success");
+      // Shu sahifani yangi holatida qayta chizamiz — odam so'rovi
+      // yetib borganini darrov ko'rsin.
+      openSettingsPage("verify", openAccountSettingsSheet);
+    }).catch(function(){
+      if(btn) btn.disabled = false;
+      if(note){
+        note.textContent = t("verify.netError") || "Yuborilmadi, internetni tekshirib qayta urinib ko'ring.";
+        note.style.color = "#DC2626";
+      }
     });
   }
 
@@ -3927,12 +4046,22 @@
     var showLinkTelegram = Boolean(googleIdToken && !isTelegramWebApp);
     var showLinkGoogle = Boolean(telegramInitData && isTelegramWebApp);
 
-    var verifyGroup = p.verified ? '' : (
+    // Uchta tasdiq bor, shuning uchun qator "hammasi tugadi" bo'lmaguncha
+    // ko'rinib turadi va yonida nechtasi olingani yozilib boradi.
+    var vDone = VERIFY_KINDS.filter(function(k){
+      return verifyStateOf(p, k).status === "VERIFIED";
+    }).length;
+    var vPending = VERIFY_KINDS.some(function(k){
+      return verifyStateOf(p, k).status === "PENDING";
+    });
+    var verifyGroup = (
       '<div class="info-card profile-settings-card"><ul class="settings-menu">'
       + '<li><button type="button" class="settings-row" data-settings-page="verify">'
-      +   verifyBadgeSvg("")
+      +   verifyBadgeSvg(vDone ? "" : "muted")
       +   '<span data-i18n="settings.verify">Profilni tasdiqlash</span>'
-      +   (p.verificationRequestedAt ? '<span style="font-size:11px;color:var(--muted);margin-left:auto;margin-right:6px;" data-i18n="verify.pendingTag">kutilmoqda</span>' : '')
+      +   '<span class="sr-tag">'
+      +     (vPending ? '<span data-i18n="verify.pendingTag">kutilmoqda</span> · ' : '')
+      +     vDone + '/3</span>'
       +   '<svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>'
       + '</button></li>'
       + '</ul></div>'
@@ -7076,6 +7205,7 @@
             }).join("") + '</div>'
           : "")
       + (p.bio ? '<div class="card"><p class="note" style="margin:0;">'+escapeHtml(p.bio)+'</p></div>' : "")
+      + publicVerifyHtml(p.verifications)
       + publicTagsHtml(p.topTags)
       + publicReviewsHtml(reviews)
       + '<button type="button" class="btn ghost" style="margin-top:var(--s4);" '
@@ -7099,6 +7229,23 @@
     var uz = MONTHS_UZ[d.getMonth()] + " " + d.getFullYear();
     // Kirill yozuvi t() dagi bilan bir xil yo'ldan o'tadi.
     return currentLang === "uz-cyrl" ? transliterateHtmlAware(uz) : uz;
+  }
+
+  /* Qaysi tasdiqlar olingani. Faqat olinganlari ko'rinadi:
+     "tasdiqlanmagan" degan qator begonaga hech narsa bermaydi,
+     odamning esa hali tugatmagan ishini ko'z-ko'z qiladi. */
+  function publicVerifyHtml(v){
+    if(!v) return "";
+    var got = VERIFY_KINDS.filter(function(k){ return v[k]; });
+    if(!got.length) return "";
+    return '<div class="card" style="margin-top:var(--s3);">'
+      + '<h3 class="card-title" style="font-size:14px;">'+verifyBadgeSvg("")+' '
+      +   '<span data-i18n="verify.publicTitle">Tasdiqlangan</span></h3>'
+      + '<div class="crit-tags">' + got.map(function(k){
+          return '<span class="crit-tag ok">'+icon("iconCheckLine")
+            + ' <span data-i18n="'+VERIFY_META[k].titleKey+'">'
+            + escapeHtml(VERIFY_META[k].title)+'</span></span>';
+        }).join("") + '</div></div>';
   }
 
   /* Eng ko'p takrorlangan maqtovlar. Server allaqachon kamida ikki

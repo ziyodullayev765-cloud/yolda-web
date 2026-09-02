@@ -1260,11 +1260,18 @@
     if(Store.state.reports !== "ready") return 0;
     return Store.list("reports").filter(function(r){ return (r.status || "NEW") === "NEW"; }).length;
   }
+  /* Nishondagi raqam — kutilayotgan so'rovlar, tur bo'yicha. Bitta
+     odamda ikkita kutilayotgan so'rov bo'lishi mumkin va ikkalasini
+     ham ko'rib chiqish kerak. */
   function pendingVerificationsCount(){
     if(Store.state.users !== "ready") return 0;
-    return Store.list("users").filter(function(u){
-      return !u.verified && u.verificationRequestedAt;
-    }).length;
+    var n = 0;
+    Store.list("users").forEach(function(u){
+      VERIFY_REVIEWED_KINDS.forEach(function(kind){
+        if(verifyStateOf(u, kind).status === "PENDING") n++;
+      });
+    });
+    return n;
   }
 
   /* ==========================================================
@@ -2007,92 +2014,217 @@
      (api/profile.js ?action=request-verification); approving it
      is the same verify-driver call the Users screen makes.
      ========================================================== */
+  /* Uch xil tasdiq (lib/verification.js). Jadval endi foydalanuvchi
+     bo'yicha emas, so'rov bo'yicha: bitta odamning shaxs hujjati
+     tasdiqlangan-u, texnik pasporti kutilayotgan bo'lishi mumkin, va
+     bitta qatorda bu ikkisini ko'rsatib bo'lmasdi. */
+  var VERIFY_KIND_LABELS = {
+    PHONE: "Telefon raqami", IDENTITY: "Shaxs hujjati", TRANSPORT: "Texnik pasport"
+  };
+  var VERIFY_REVIEWED_KINDS = ["IDENTITY", "TRANSPORT"];
+  var VERIFY_ALL_KINDS = ["PHONE", "IDENTITY", "TRANSPORT"];
+  var VERIFY_ST_PILL = {
+    VERIFIED: ["Tasdiqlangan", "pill-ok"], PENDING: ["Kutilmoqda", "pill-warn"],
+    REJECTED: ["Rad etilgan", "pill-bad"], NONE: ["Tasdiqlanmagan", "pill-dim"]
+  };
+
+  /** Eski yozuvlarni ham to'g'ri o'qiydi — serverdagi readVerifications bilan bir xil qoida. */
+  function verifyStateOf(u, kind){
+    var all = (u && u.verifications) || {};
+    var e = all[kind];
+    if(e && e.status) return e;
+    if(kind === "IDENTITY"){
+      if(u && u.verified) return { status:"VERIFIED", at:0, reviewedAt:0, reason:"" };
+      if(u && u.verificationRequestedAt) return { status:"PENDING", at:u.verificationRequestedAt, reviewedAt:0, reason:"" };
+    }
+    return { status:"NONE", at:0, reviewedAt:0, reason:"" };
+  }
+
+  /** Har bir foydalanuvchi × har bir tur = bitta qator. */
+  function verificationRows(users){
+    var rows = [];
+    users.forEach(function(u){
+      VERIFY_ALL_KINDS.forEach(function(kind){
+        var st = verifyStateOf(u, kind);
+        if(st.status === "NONE" && kind !== "IDENTITY") return;
+        rows.push({
+          id: u.email + "|" + kind,
+          user: u, kind: kind, status: st.status,
+          at: st.at || 0, reviewedAt: st.reviewedAt || 0, reason: st.reason || ""
+        });
+      });
+    });
+    return rows;
+  }
+
   function viewVerifications(){
     return pageHead("Tasdiqlashlar", "Foydalanuvchilarning tasdiqlash so'rovlari", refreshBtn("users"))
       + withData(["users"], function(){
         var users = Store.list("users");
-        var requested = users.filter(function(u){ return !u.verified && u.verificationRequestedAt; });
-        var verified = users.filter(function(u){ return u.verified; });
-        var drivers = users.filter(function(u){ return u.role === "DRIVER" || u.role === "BOTH"; });
+        var rows = verificationRows(users);
+        var pending = rows.filter(function(r){ return r.status === "PENDING"; });
+        var verified = rows.filter(function(r){ return r.status === "VERIFIED"; });
+        var phoneOk = rows.filter(function(r){ return r.kind === "PHONE" && r.status === "VERIFIED"; });
 
         var stats = '<div class="stat-grid">'
-          + stat("Kutilayotgan so'rovlar", fmt(requested.length),
-              requested.length ? "Ko'rib chiqish kerak" : "Navbat bo'sh", "clock", requested.length ? "warn" : "")
-          + stat("Tasdiqlangan", fmt(verified.length), pct(verified.length, users.length) + "% foydalanuvchidan", "shield", "ok")
-          + stat("Haydovchilar", fmt(drivers.length),
-              fmt(drivers.filter(function(u){ return u.verified; }).length) + " tasi tasdiqlangan", "users")
+          + stat("Kutilayotgan so'rovlar", fmt(pending.length),
+              pending.length ? "Ko'rib chiqish kerak" : "Navbat bo'sh", "clock", pending.length ? "warn" : "")
+          + stat("Berilgan tasdiqlar", fmt(verified.length),
+              fmt(users.length) + " profildan", "shield", "ok")
+          + stat("Raqami tasdiqlangan", fmt(phoneOk.length),
+              "Telegram orqali avtomatik", "users")
           + '</div>';
 
         return stats + dataTable({
           id: "verifications",
-          defaults: { sortKey:"requestedAt", sortDir:"desc", filter:"REQUESTED" },
-          rows: users.filter(function(u){
-            return u.verificationRequestedAt || u.verified || u.role === "DRIVER" || u.role === "BOTH";
-          }),
-          unit: "profil",
+          defaults: { sortKey:"at", sortDir:"desc", filter:"PENDING" },
+          rows: rows,
+          unit: "so'rov",
           searchPlaceholder: "Username, email, telefon…",
-          search: function(u, q){ return matches([u.username, u.email, u.displayName, u.phone, u.city, u.plateNumber], q); },
+          search: function(r, q){
+            return matches([r.user.username, r.user.email, r.user.displayName,
+                            r.user.phone, r.user.city, r.user.plateNumber,
+                            VERIFY_KIND_LABELS[r.kind]], q);
+          },
           filters: [
-            { key:"REQUESTED", label:"So'rov yuborilgan", count:requested.length },
+            { key:"PENDING", label:"Kutilmoqda", count:pending.length },
             { key:"VERIFIED", label:"Tasdiqlangan", count:verified.length },
+            { key:"REJECTED", label:"Rad etilgan",
+              count:rows.filter(function(r){ return r.status === "REJECTED"; }).length },
             { key:"ALL", label:"Barchasi" }
           ],
-          filterFn: function(u, f){
-            if(f === "REQUESTED") return !u.verified && Boolean(u.verificationRequestedAt);
-            if(f === "VERIFIED") return Boolean(u.verified);
-            return true;
-          },
+          filterFn: function(r, f){ return r.status === f; },
           emptyTitle: "So'rov yo'q",
           emptyText: "Foydalanuvchi profilidan tasdiqlash so'raganda so'rov shu yerga tushadi.",
           columns: [
             { key:"username", label:"Foydalanuvchi", sortable:true,
-              value:function(u){ return u.username || u.email || ""; },
-              render:function(u){
+              value:function(r){ return r.user.username || r.user.email || ""; },
+              render:function(r){
+                var u = r.user;
                 return '<b>' + esc(u.username ? "@" + u.username : u.email) + '</b>'
                   + (u.displayName ? '<br><span style="color:var(--text-dim);font-size:11.5px;">' + esc(u.displayName) + '</span>' : "");
               } },
+            { key:"kind", label:"Tur", sortable:true,
+              value:function(r){ return VERIFY_KIND_LABELS[r.kind] || r.kind; },
+              render:function(r){ return esc(VERIFY_KIND_LABELS[r.kind] || r.kind); } },
             { key:"role", label:"Rol", sortable:true, cls:"dim",
-              value:function(u){ return ROLE_LABELS[u.role] || ""; },
-              render:function(u){ return esc(ROLE_LABELS[u.role] || "—"); } },
-            { key:"city", label:"Shahar", sortable:true, cls:"dim",
-              value:function(u){ return u.city || ""; },
-              render:function(u){ return esc(u.city || "—"); } },
+              value:function(r){ return ROLE_LABELS[r.user.role] || ""; },
+              render:function(r){ return esc(ROLE_LABELS[r.user.role] || "—"); } },
             { key:"phone", label:"Telefon", cls:"dim",
-              render:function(u){ return esc(u.phone || "—"); } },
+              render:function(r){ return esc(r.user.phone || "—"); } },
             { key:"vehicle", label:"Mashina", cls:"dim",
-              render:function(u){
-                var v = VEHICLE_LABELS[u.vehicleType] || "";
-                return esc([v, u.plateNumber].filter(Boolean).join(" · ") || "—");
+              render:function(r){
+                var v = VEHICLE_LABELS[r.user.vehicleType] || "";
+                return esc([v, r.user.plateNumber].filter(Boolean).join(" · ") || "—");
               } },
-            { key:"requestedAt", label:"So'rov vaqti", sortable:true, cls:"dim",
-              value:function(u){ return u.verificationRequestedAt || 0; },
-              render:function(u){ return u.verificationRequestedAt ? esc(relTime(u.verificationRequestedAt)) : "—"; } },
-            { key:"verified", label:"Holat", sortable:true,
-              value:function(u){ return u.verified ? 1 : 0; },
-              render:function(u){
-                if(u.verified) return pill("Tasdiqlangan", "pill-ok");
-                if(u.verificationRequestedAt) return pill("Kutilmoqda", "pill-warn");
-                return pill("Tasdiqlanmagan", "pill-dim");
+            { key:"at", label:"So'rov vaqti", sortable:true, cls:"dim",
+              value:function(r){ return r.at; },
+              render:function(r){ return r.at ? esc(relTime(r.at)) : "—"; } },
+            { key:"status", label:"Holat", sortable:true,
+              value:function(r){ return r.status; },
+              render:function(r){
+                var p = VERIFY_ST_PILL[r.status] || VERIFY_ST_PILL.NONE;
+                return pill(p[0], p[1])
+                  + (r.reason ? '<br><span style="color:var(--text-dim);font-size:11.5px;">' + esc(r.reason) + '</span>' : "");
               } },
             { key:"actions", label:"Amal",
-              render:function(u){
+              render:function(r){
                 if(!can("users:write")) return "—";
                 var out = '<div class="cell-actions">';
-                if(!u.verified){
-                  out += '<button type="button" class="btn sm ok" data-act="verify" data-email="'
-                    + esc(u.email) + '" data-on="1">' + ico("check") + 'Tasdiqlash</button>';
-                }
-                if(u.verified || u.verificationRequestedAt){
-                  out += '<button type="button" class="btn sm bad" data-act="verify" data-email="'
-                    + esc(u.email) + '" data-on="0">' + (u.verified ? "Bekor qilish" : "Rad etish") + '</button>';
+                if(r.kind === "PHONE"){
+                  // Raqamni Telegram tasdiqlaydi — admin bu yerda hech
+                  // narsa qila olmaydi va soxta tugma qo'yilmaydi.
+                  out += '<span style="color:var(--text-dim);font-size:11.5px;">Telegram orqali</span>';
+                } else if(r.status === "PENDING"){
+                  out += '<button type="button" class="btn sm primary" data-act="verify-doc" data-email="'
+                    + esc(r.user.email) + '" data-kind="' + esc(r.kind) + '">'
+                    + ico("shield") + 'Hujjatni ko\'rish</button>';
+                } else if(r.status === "VERIFIED"){
+                  out += '<button type="button" class="btn sm bad" data-act="verify-set" data-email="'
+                    + esc(r.user.email) + '" data-kind="' + esc(r.kind) + '" data-on="0">Bekor qilish</button>';
+                } else {
+                  out += '<button type="button" class="btn sm ok" data-act="verify-set" data-email="'
+                    + esc(r.user.email) + '" data-kind="' + esc(r.kind) + '" data-on="1">'
+                    + ico("check") + 'Tasdiqlash</button>';
                 }
                 out += '<button type="button" class="btn sm" data-act="go" data-hash="#/users/'
-                  + esc(encodeURIComponent(u.email)) + '">Profil</button>';
+                  + esc(encodeURIComponent(r.user.email)) + '">Profil</button>';
                 return out + '</div>';
               } }
           ]
         });
       });
+  }
+
+  /**
+   * Hujjatni ochib, qaror qabul qilish oynasi.
+   *
+   * Hujjat alohida so'rov bilan olinadi — u foydalanuvchilar
+   * ro'yxatida yuborilmaydi, aks holda har bir jadval yuklanishida
+   * o'nlab pasport rasmi brauzerga oqib kelardi.
+   */
+  function openVerifyDoc(email, kind){
+    openModal({
+      title: (VERIFY_KIND_LABELS[kind] || kind) + " — " + email,
+      body: '<p class="dim">Yuklanmoqda…</p>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Yopish</button>'
+    });
+    Api.get("resource=verifydoc&email=" + encodeURIComponent(email) + "&kind=" + encodeURIComponent(kind))
+      .then(function(res){
+        byId("modalBody").innerHTML =
+          '<img src="' + esc(res.doc) + '" alt="" style="width:100%;border-radius:8px;display:block;">'
+          + '<div class="field" style="margin-top:14px;">'
+          +   '<label for="verifyReason">Rad etish sababi (rad etsangiz majburiy)</label>'
+          +   '<input type="text" id="verifyReason" maxlength="200" placeholder="Masalan: rasm noaniq">'
+          + '</div>'
+          + '<p class="dim" style="margin:8px 0 0;font-size:12px;">Qaror chiqqach hujjat o\'chiriladi.</p>';
+        byId("modalFoot").innerHTML =
+          '<button type="button" class="btn" data-act="modal-close">Yopish</button>'
+          + '<button type="button" class="btn bad" data-act="verify-decide" data-email="' + esc(email)
+          +   '" data-kind="' + esc(kind) + '" data-on="0">Rad etish</button>'
+          + '<button type="button" class="btn primary" data-act="verify-decide" data-email="' + esc(email)
+          +   '" data-kind="' + esc(kind) + '" data-on="1">Tasdiqlash</button>';
+      })
+      .catch(function(err){
+        byId("modalBody").innerHTML = '<p class="dim">' + esc(err.message) + '</p>';
+      });
+  }
+
+  function decideVerification(email, kind, approve){
+    var reasonEl = byId("verifyReason");
+    var reason = reasonEl ? reasonEl.value.trim() : "";
+    if(!approve && !reason){
+      toast("Rad etish sababini yozing", "bad");
+      if(reasonEl) reasonEl.focus();
+      return;
+    }
+    Api.post("verify-review", { email: email, kind: kind, approve: approve, reason: reason })
+      .then(function(){
+        closeModal();
+        toast(approve ? "Tasdiqlandi" : "Rad etildi");
+        Store.load("users", true);
+      })
+      .catch(function(err){
+        if(handleApiError(err)) return;
+        toast(err.message, "bad");
+      });
+  }
+
+  /**
+   * Hujjatsiz to'g'ridan-to'g'ri qo'yish/olib tashlash — allaqachon
+   * ko'rib chiqilgan tasdiqni qaytarish uchun.
+   */
+  function setVerificationKind(email, kind, approve){
+    Api.post("verify-review", {
+      email: email, kind: kind, approve: approve,
+      reason: approve ? "" : "Administrator bekor qildi"
+    }).then(function(){
+      toast(approve ? "Tasdiqlandi" : "Tasdiq bekor qilindi");
+      Store.load("users", true);
+    }).catch(function(err){
+      if(handleApiError(err)) return;
+      toast(err.message, "bad");
+    });
   }
 
   /* ==========================================================
@@ -2851,6 +2983,15 @@
     if(act === "truck-remove"){ confirmRemoveTruck(t.getAttribute("data-id")); return; }
 
     if(act === "verify"){ setVerified(t.getAttribute("data-email"), t.getAttribute("data-on") === "1"); return; }
+    if(act === "verify-doc"){ openVerifyDoc(t.getAttribute("data-email"), t.getAttribute("data-kind")); return; }
+    if(act === "verify-set"){
+      setVerificationKind(t.getAttribute("data-email"), t.getAttribute("data-kind"), t.getAttribute("data-on") === "1");
+      return;
+    }
+    if(act === "verify-decide"){
+      decideVerification(t.getAttribute("data-email"), t.getAttribute("data-kind"), t.getAttribute("data-on") === "1");
+      return;
+    }
     if(act === "user-edit"){ openUserModal(t.getAttribute("data-email")); return; }
     if(act === "settings-save"){ saveSettings(); return; }
     if(act === "requeue-legacy"){ confirmRequeueLegacy(); return; }
