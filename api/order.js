@@ -19,13 +19,16 @@
 
 import { kvPush, kvGet, kvSet, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
-import { CARGO, buildOrderMessage, STATUS_LABELS, formatNum } from '../lib/orderMessage.js';
+import {
+  CARGO, buildOrderMessage, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
+} from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { ANY_CITY, cityIndexKey, searchesKey, matchesSearch } from '../lib/savedSearch.js';
 import {
   OFFERABLE_ORDER_STATUSES, MAX_OFFERS_PER_ORDER, validateOffer,
   offerKey, orderOffersKey, driverOffersKey, publicOfferShape,
 } from '../lib/offers.js';
+import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
@@ -40,6 +43,9 @@ const CITIES = [
   'Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Nukus', 'Qarshi', 'Urganch',
   'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
+
+/** O'zbekiston chegarasining taxminiy to'rtburchagi — xarita nuqtalari uchun. */
+const UZ_BOUNDS = { minLat: 37.1, maxLat: 45.7, minLng: 55.9, maxLng: 73.2 };
 
 const DISTANCE = {
   'Andijon|Buxoro': 700, 'Andijon|Farg\'ona': 75, 'Andijon|Guliston': 350,
@@ -148,6 +154,64 @@ const validate = (body) => {
     pickupDate = '';
   }
 
+  /* Aniq olib ketish va yetkazish nuqtalari — ixtiyoriy.
+     Ilgari xaritada faqat shahar markazlari turardi: haydovchi
+     "Toshkent" ni ko'rardi-yu, shaharning qayeriga borishni bilmasdi
+     va telefon qilib so'rashga majbur bo'lardi. Endi manzilni yozish
+     va xaritada nuqta belgilash mumkin.
+
+     Chegaradan tashqaridagi koordinata qabul qilinmaydi — bunday
+     nuqta xatolikdan boshqa narsa emas, va uni saqlash haydovchini
+     yanglish joyga yuborishga olib kelardi. */
+  const readPoint = (raw, label) => {
+    if (!raw || typeof raw !== 'object') return null;
+    const lat = Number(raw.lat);
+    const lng = Number(raw.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat < UZ_BOUNDS.minLat || lat > UZ_BOUNDS.maxLat
+        || lng < UZ_BOUNDS.minLng || lng > UZ_BOUNDS.maxLng) {
+      errors.push(`${label} nuqtasi O‘zbekiston hududidan tashqarida`);
+      return null;
+    }
+    // Besh xona ≈ bir metr aniqlik. Undan ortig'i ma'nosiz.
+    return { lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 };
+  };
+  const fromPoint = readPoint(body.fromPoint, 'Olib ketish');
+  const toPoint = readPoint(body.toPoint, 'Yetkazish');
+  const fromAddress = String(body.fromAddress || '').trim().slice(0, 200);
+  const toAddress = String(body.toAddress || '').trim().slice(0, 200);
+
+  /* Hajm va joy soni — ikkalasi ham ixtiyoriy.
+     Og'irlik yolg'iz o'zi yetarli emas: bir tonna paxta bilan bir
+     tonna sement bir xil mashinaga sig'maydi. Haydovchi yukni
+     ko'rmasdan turib mashinasi to'g'ri kelishini bilishi kerak,
+     aks holda kelib, ortolmay qaytadi.
+
+     Majburiy qilinmadi: ko'p odam hajmini bilmaydi, va bilmagani
+     uchun yukni umuman joylay olmay qolishi kerak emas. */
+  let volumeM3 = null;
+  if (body.volumeM3 !== undefined && body.volumeM3 !== null && body.volumeM3 !== '') {
+    volumeM3 = Math.round(Number(body.volumeM3) * 10) / 10;
+    if (!Number.isFinite(volumeM3) || volumeM3 <= 0 || volumeM3 > 200) {
+      errors.push('Hajm 0.1 dan 200 m³ gacha bo‘lsin');
+      volumeM3 = null;
+    }
+  }
+
+  let quantity = null;
+  if (body.quantity !== undefined && body.quantity !== null && body.quantity !== '') {
+    quantity = Number(body.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100_000) {
+      errors.push('Joy soni 1 dan 100000 gacha bo‘lsin');
+      quantity = null;
+    }
+  }
+
+  const QUANTITY_UNITS = ['JOY', 'PALLET', 'QOP', 'QUTI', 'RULON'];
+  let quantityUnit = String(body.quantityUnit || '');
+  if (quantityUnit && !QUANTITY_UNITS.includes(quantityUnit)) quantityUnit = '';
+  if (quantity && !quantityUnit) quantityUnit = 'JOY';
+
   // Optional: the cargo owner can propose their own price instead of the
   // auto-calculated one. Empty/absent means "use the calculated price".
   let proposedAmount = null;
@@ -163,7 +227,8 @@ const validate = (body) => {
     errors,
     value: {
       fromCity, toCity, weightKg, cargoType, customCargoLabel, truckType, pickupDate,
-      name, phone, note, proposedAmount,
+      name, phone, note, proposedAmount, volumeM3, quantity, quantityUnit,
+      fromPoint, toPoint, fromAddress, toAddress,
     },
   };
 };
@@ -357,6 +422,9 @@ const getOrderStatus = async (req, res) => {
     updatedAt: order.updatedAt || order.createdAt,
     canRate: status === 'DELIVERED' && !order.rating,
     rating: order.rating || null,
+    // Mezonlar server tomondan keladi, shunda ro'yxat bir joyda turadi
+    // va sayt bilan tekshiruv qoidasi hech qachon ajralib ketmaydi.
+    criteria: CRITERIA.DRIVER,
   });
 };
 
@@ -603,6 +671,12 @@ const listLoads = async (req, res) => {
       cargoType: o.cargoType,
       customCargoLabel: o.customCargoLabel || '',
       weightKg: o.weightKg,
+      volumeM3: o.volumeM3 || null,
+      quantity: o.quantity || null,
+      quantityUnit: o.quantityUnit || '',
+      // Kartochkada nuqta ko'rsatilmaydi, lekin xaritada ko'rsatiladi.
+      fromPoint: o.fromPoint || null,
+      toPoint: o.toPoint || null,
       amount: o.amount,
       distanceKm: o.distanceKm,
       truckType: o.truckType || '',
@@ -663,6 +737,13 @@ const getLoadDetail = async (req, res) => {
     estimatedAmount: order.estimatedAmount,
     isProposed: Boolean(order.isProposed),
     distanceKm: order.distanceKm,
+    volumeM3: order.volumeM3 || null,
+    quantity: order.quantity || null,
+    quantityUnit: order.quantityUnit || '',
+    fromPoint: order.fromPoint || null,
+    toPoint: order.toPoint || null,
+    fromAddress: order.fromAddress || '',
+    toAddress: order.toAddress || '',
     truckType: order.truckType || '',
     pickupDate: order.pickupDate || '',
     status: order.status || 'NEW',
@@ -738,53 +819,115 @@ const getBackhaul = async (req, res) => {
  * driver's aggregate is rolled up onto their profile, but only if they
  * linked a Telegram username to a Google account.
  */
+/**
+ * Baho kimga tegishli ekanini topadi.
+ *
+ * Haydovchi taklif orqali kelgan bo'lsa uning identity'si buyurtmada
+ * turadi. Telegram guruhidan olgan bo'lsa faqat username bor —
+ * o'shanda teskari indeksdan qidiramiz. Ilgari faqat ikkinchi yo'l
+ * bor edi, ya'ni taklif orqali kelgan haydovchining bahosi
+ * profiliga umuman tushmasdi.
+ */
+const driverIdentityOf = async (order) => {
+  if (!order.driver) return null;
+  if (order.driver.identity) return order.driver.identity;
+  if (!order.driver.telegramUsername) return null;
+  return await kvGet(`tgToEmail:${order.driver.telegramUsername.toLowerCase()}`);
+};
+
+/** Bahoni profilga va odam o'qiydigan izohlar ro'yxatiga yozadi. */
+const recordReview = async (identity, review, side, meta) => {
+  if (!identity) return;
+  try {
+    const key = `profile:${identity}`;
+    const profile = await readJson(key, {});
+    await kvSet(key, JSON.stringify(applyReview(profile, review, side)));
+    // Izoh yoki teg bo'lmasa ro'yxatga yozadigan narsa yo'q —
+    // yulduzlar profil raqamlarida allaqachon hisoblangan.
+    if (review.comment || review.tags.length) {
+      await kvPush(reviewsKey(identity), JSON.stringify({ ...review, ...meta, side }));
+    }
+  } catch (err) {
+    // Baho buyurtmaning o'zida saqlangan; yig'indi keyin ham tiklanadi.
+    console.error('recordReview failed:', err.message);
+  }
+};
+
+/**
+ * POST ?action=rate — buyurtma yetkazilgach baho qoldirish.
+ *
+ * Ikki tomon, ikki yo'l bilan tanaladi:
+ *   - yuk beruvchi: kod + telefon (u ikkalasini ham biladi), yoki
+ *     kirgan bo'lsa o'z identity'si bilan;
+ *   - haydovchi: faqat identity — telefon raqami yuk beruvchiniki,
+ *     uni haydovchi ham biladi, demak u tanitish uchun yaramaydi.
+ */
 const rateOrder = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const code = String(body.code || '').trim().toUpperCase();
   const phone = normalisePhone(body.phone || '');
-  const stars = Number(body.stars);
-  const comment = String(body.comment || '').trim().slice(0, 300);
+  const side = body.side === 'OWNER' ? 'OWNER' : 'DRIVER';
 
-  if (!code || !phone) return res.status(400).json({ error: 'Kod va telefon kerak' });
-  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
-    return res.status(400).json({ error: 'Baho 1 dan 5 gacha bo‘lsin' });
-  }
+  if (!code) return res.status(400).json({ error: 'Buyurtma kodi kerak' });
 
-  const raw = await kvGet(`order:${code}`);
-  if (!raw) return res.status(404).json({ error: 'Topilmadi' });
-  let order;
-  try {
-    order = JSON.parse(raw);
-  } catch {
-    return res.status(500).json({ error: 'Xato yuz berdi' });
-  }
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
 
-  if (order.phone !== phone) return res.status(404).json({ error: 'Topilmadi' });
-  if (order.status !== 'DELIVERED') return res.status(400).json({ error: 'Buyurtma hali yetkazilmagan' });
-  if (order.rating) return res.status(409).json({ error: 'Bu buyurtma allaqachon baholangan' });
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Topilmadi' });
 
-  order.rating = { stars, comment, ratedAt: Date.now() };
-  const saved = await kvSet(`order:${code}`, JSON.stringify(order));
-  if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  const driverIdentity = await driverIdentityOf(order);
+  const ownerIdentity = order.ownerIdentity || order.googleEmail || null;
 
-  // Best-effort rollup onto the driver's profile — never blocks the rating
-  // itself, which is already safely stored on the order above.
-  if (order.driver && order.driver.telegramUsername) {
-    try {
-      const email = await kvGet(`tgToEmail:${order.driver.telegramUsername.toLowerCase()}`);
-      if (email) {
-        const praw = await kvGet(`profile:${email}`);
-        const profile = praw ? JSON.parse(praw) : {};
-        profile.ratingCount = (profile.ratingCount || 0) + 1;
-        profile.ratingSum = (profile.ratingSum || 0) + stars;
-        await kvSet(`profile:${email}`, JSON.stringify(profile));
-      }
-    } catch {
-      // Non-fatal.
+  if (side === 'OWNER') {
+    // Haydovchi yuk beruvchini baholaydi.
+    if (!identity || !driverIdentity || identity !== driverIdentity) {
+      return res.status(403).json({ error: 'Bu buyurtma sizga tegishli emas' });
     }
+  } else {
+    // Yuk beruvchi haydovchini baholaydi.
+    const byPhone = phone && order.phone === phone;
+    const bySignIn = identity && ownerIdentity && identity === ownerIdentity;
+    if (!byPhone && !bySignIn) return res.status(404).json({ error: 'Topilmadi' });
   }
 
-  return res.status(200).json({ ok: true });
+  if (order.status !== 'DELIVERED') return res.status(400).json({ error: 'Buyurtma hali yetkazilmagan' });
+
+  const field = side === 'OWNER' ? 'ownerRating' : 'rating';
+  if (order[field]) return res.status(409).json({ error: 'Bu buyurtma allaqachon baholangan' });
+
+  const { error, value } = validateReview(
+    { stars: body.stars, comment: body.comment, tags: body.tags },
+    side,
+  );
+  if (error) return res.status(400).json({ error });
+
+  order[field] = value;
+  if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
+    return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  }
+
+  // Profilga ko'chirish — buyurtmadagi baho allaqachon saqlangani
+  // uchun bu qadam muvaffaqiyatsiz bo'lsa ham javob 200 qoladi.
+  const target = side === 'OWNER' ? ownerIdentity : driverIdentity;
+  await recordReview(target, value, side, {
+    orderCode: code,
+    route: `${order.fromCity} → ${order.toCity}`,
+  });
+
+  if (target) {
+    await notifyUser(target, {
+      category: 'orders',
+      text: `<b>Sizga baho qoldirildi</b>\n\n`
+        + `<b>${esc(code)}</b>\n${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+        + `${'★'.repeat(value.stars)}${'☆'.repeat(5 - value.stars)}`
+        + (value.comment ? `\n\n«${esc(value.comment)}»` : ''),
+    });
+  }
+
+  return res.status(200).json({ ok: true, rating: value });
 };
 
 /* ============================================================
@@ -918,10 +1061,134 @@ const listOffers = async (req, res) => {
   // Egasi hammasini ko'radi; haydovchi faqat o'zinikini — boshqa
   // haydovchilarning narxi raqobat ma'lumoti, uni ochib bo'lmaydi.
   const visible = isOwner ? offers : offers.filter((o) => o.driverIdentity === identity);
+
+  // Taklifi qabul qilingan haydovchi bosqichni saytdan suradi — Telegram
+  // guruhidagi tugma unga tegishli emas (u yukni guruhdan olmagan).
+  const isDriver = Boolean(order.driver && order.driver.identity === identity);
+  const next = isDriver ? nextStatus(order.status) : null;
+
   return res.status(200).json({
     ok: true,
     isOwner,
+    isDriver,
+    orderStatus: order.status || 'NEW',
+    nextStatus: next,
+    nextLabel: next ? NEXT_STATUS_BUTTON[order.status] || '' : '',
+    // Yetkazib bo'lgach haydovchi ham yuk beruvchini baholaydi.
+    canRateOwner: isDriver && order.status === 'DELIVERED' && !order.ownerRating,
+    ownerRating: isDriver ? order.ownerRating || null : null,
+    ownerCriteria: CRITERIA.OWNER,
     offers: visible.map(publicOfferShape),
+  });
+};
+
+/**
+ * GET ?action=my-offers — haydovchi o'zi yuborgan takliflar ro'yxati.
+ *
+ * Busiz haydovchi taklif yuborgach yukni yo'qotib qo'yardi: yuklar
+ * ro'yxatida faqat NEW yuklar turadi, ya'ni taklifi qabul qilingan
+ * yukni u boshqa topa olmasdi — demak holatni ham yangilay olmasdi.
+ */
+const listMyOffers = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const ids = await kvRange(driverOffersKey(identity), 0, 49);
+  const offers = (await Promise.all(ids.map((id) => readOffer(id))))
+    .filter((o) => o && o.driverIdentity === identity);
+
+  const items = await Promise.all(offers.map(async (offer) => {
+    const order = await readJson(`order:${offer.orderCode}`, null);
+    const mine = Boolean(order && order.driver && order.driver.identity === identity);
+    const next = mine ? nextStatus(order.status) : null;
+    return {
+      ...publicOfferShape(offer),
+      fromCity: order ? order.fromCity : '',
+      toCity: order ? order.toCity : '',
+      weightKg: order ? order.weightKg : 0,
+      orderStatus: order ? order.status || 'NEW' : '',
+      orderStatusLabel: order ? STATUS_LABELS[order.status || 'NEW'] || '' : '',
+      // "Men shu yukning haydovchisiman" — taklif qabul qilingan bo'lsa ham,
+      // yuk beruvchi keyinchalik meni bo'shatgan bo'lishi mumkin.
+      isDriver: mine,
+      nextStatus: next,
+      nextLabel: next ? NEXT_STATUS_BUTTON[order.status] || '' : '',
+    };
+  }));
+
+  return res.status(200).json({ ok: true, offers: items });
+};
+
+/**
+ * POST ?action=advance — biriktirilgan haydovchi buyurtmani bir bosqich
+ * oldinga suradi.
+ *
+ * api/telegram.js dagi `next:` tugmasining sayt tomonidagi ayni o'zi.
+ * Ikkalasi ham lib/orderMessage.js dagi bitta zanjirdan foydalanadi.
+ */
+const advanceOrder = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const code = String(body.code || '').trim().toUpperCase();
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  // Faqat shu buyurtmaga biriktirilgan haydovchi. Kod yetarli emas:
+  // uni yukni ko'rgan har kim biladi.
+  if (!order.driver || order.driver.identity !== identity) {
+    return res.status(403).json({ error: 'Bu buyurtma sizga tegishli emas' });
+  }
+
+  const next = nextStatus(order.status);
+  if (!next) return res.status(409).json({ error: 'Bu amal endi mavjud emas' });
+
+  order.status = next;
+  order.updatedAt = Date.now();
+  if (next === 'DELIVERED') order.deliveredAt = Date.now();
+  if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+
+  if (next === 'DELIVERED') {
+    try {
+      const key = `profile:${identity}`;
+      const profile = JSON.parse((await kvGet(key)) || '{}');
+      profile.deliveredCount = (profile.deliveredCount || 0) + 1;
+      await kvSet(key, JSON.stringify(profile));
+    } catch (err) {
+      // Hisoblagich yetkazishning o'zidan muhim emas.
+      console.error('deliveredCount update failed:', err.message);
+    }
+  }
+
+  await editGroupMessage(order, []);
+
+  await notifyUser(order.ownerIdentity || order.googleEmail, {
+    category: 'orders',
+    text: `<b>${esc(STATUS_LABELS[next] || next)}</b>\n\n`
+      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+      + `Haydovchi: ${esc(order.driver.name)}`
+      + (next === 'DELIVERED'
+          ? `\n\nSaytdagi «Buyurtmani kuzatish» bo'limida haydovchiga baho qoldirishingiz mumkin.`
+          : ''),
+  });
+
+  const after = nextStatus(next);
+  return res.status(200).json({
+    ok: true,
+    status: next,
+    statusLabel: STATUS_LABELS[next] || next,
+    nextStatus: after,
+    nextLabel: after ? NEXT_STATUS_BUTTON[next] || '' : '',
   });
 };
 
@@ -1004,7 +1271,8 @@ const decideOffer = async (req, res, accept) => {
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
       + `<b>${esc(formatNum(offer.price))} so'm</b>\n\n`
       + (order.phone ? `Mijoz: ${esc(order.phone)}\n\n` : '')
-      + `Yukni olib, holatni saytda yangilab boring.`,
+      + `Saytdagi yuk sahifasida holatni bosqichma-bosqich yangilab boring — `
+      + `har bosqichda tugma keyingisining nomini yozib turadi.`,
   });
 
   await editGroupMessage(order, []);
@@ -1050,8 +1318,8 @@ const withdrawOffer = async (req, res) => {
    Ikkalasini ham yuk egasi qiladi; haydovchi o'zi voz kechishi
    api/telegram.js dagi tugma orqali.
    ============================================================ */
-const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'ON_THE_WAY'];
-const RELEASABLE = ['DRIVER_FOUND', 'ON_THE_WAY'];
+const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
+const RELEASABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
 
 /** Guruhdagi xabarni yangilaydi. Xabar id'si yo'q bo'lsa — jim o'tadi. */
 const editGroupMessage = async (order, keyboard) => {
@@ -1203,6 +1471,7 @@ export default async function handler(req, res) {
     if (action === 'backhaul') return getBackhaul(req, res);
     if (action === 'price-stats') return getPriceStats(req, res);
     if (action === 'offers') return listOffers(req, res);
+    if (action === 'my-offers') return listMyOffers(req, res);
     if (action === 'stats') return getHomeStats(req, res);
     return getOrderStatus(req, res);
   }
@@ -1215,6 +1484,7 @@ export default async function handler(req, res) {
     if (action === 'accept-offer') return decideOffer(req, res, true);
     if (action === 'reject-offer') return decideOffer(req, res, false);
     if (action === 'withdraw-offer') return withdrawOffer(req, res);
+    if (action === 'advance') return advanceOrder(req, res);
     return createOrder(req, res);
   }
   return res.status(405).json({ error: 'Method not allowed' });

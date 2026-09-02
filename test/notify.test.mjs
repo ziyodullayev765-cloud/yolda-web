@@ -95,9 +95,9 @@ const resetFetch = () => {
 };
 
 let pass = 0, fail = 0;
-const check = (label, ok) => {
+const check = (label, ok, detail) => {
   if (ok) { pass++; console.log('  PASS ' + label); }
-  else { fail++; console.log('  FAIL ' + label); }
+  else { fail++; console.log('  FAIL ' + label + (detail === undefined ? '' : '  → ' + detail)); }
 };
 
 /* ---------------------------------------------------------- */
@@ -537,6 +537,595 @@ console.log('\n== home statistics ==');
   check('cities are counted distinctly', stats.body.cities === 3, stats.body.cities);
   check('nothing is invented when a figure is zero',
     Object.values(stats.body).every((v) => typeof v === 'number'));
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== seven-stage tracking ==');
+{
+  const { nextStatus, STATUS_FLOW } = await import(join(repo, 'lib/orderMessage.js'));
+  check('the chain has six stages', STATUS_FLOW.length === 6);
+  check('a claimed load heads for pickup next', nextStatus('DRIVER_FOUND') === 'PICKING_UP');
+  check('loading comes before the road', nextStatus('PICKING_UP') === 'LOADED');
+  check('the road comes before delivery', nextStatus('ON_THE_WAY') === 'DELIVERED');
+  check('delivery is the end of the chain', nextStatus('DELIVERED') === null);
+  check('a cancelled order is off the chain', nextStatus('CANCELLED') === null);
+}
+
+console.log('\n== the driver advances the load from the site ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  const seed = (code, patch) => store.set(`order:${code}`, JSON.stringify({
+    code, ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, amount: 900000, status: 'DRIVER_FOUND', groupMessageId: 42,
+    driver: { name: 'Aziz', identity: 'driver1@example.com' }, ...patch,
+  }));
+  const post = async (action, body) => {
+    const res = mkRes();
+    await orderHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const statusOf = (code) => JSON.parse(store.get(`order:${code}`)).status;
+  const driver = (extra) => ({ googleIdToken: 'driver1@example.com', ...extra });
+
+  seed('AD1');
+  check('advancing needs a signed-in user',
+    (await post('advance', { code: 'AD1' })).statusCode === 401);
+  check("a stranger cannot advance someone else's load",
+    (await post('advance', { googleIdToken: 'nobody@example.com', code: 'AD1' })).statusCode === 403);
+  check('the owner is not the driver either',
+    (await post('advance', { googleIdToken: 'owner@example.com', code: 'AD1' })).statusCode === 403);
+  check('an unknown code is not found',
+    (await post('advance', driver({ code: 'NOPE' }))).statusCode === 404);
+
+  const step1 = await post('advance', driver({ code: 'AD1' }));
+  check('the driver moves one stage forward',
+    step1.statusCode === 200 && step1.body.status === 'PICKING_UP');
+  check('and the order record is what changed', statusOf('AD1') === 'PICKING_UP');
+  check('the response names the stage after this one', step1.body.nextStatus === 'LOADED');
+
+  await post('advance', driver({ code: 'AD1' }));
+  check('loading is its own stage', statusOf('AD1') === 'LOADED');
+  await post('advance', driver({ code: 'AD1' }));
+  check('then the road', statusOf('AD1') === 'ON_THE_WAY');
+
+  store.set('profile:driver1@example.com', JSON.stringify({ username: 'driver1', deliveredCount: 3 }));
+  const last = await post('advance', driver({ code: 'AD1' }));
+  check('and finally delivery', statusOf('AD1') === 'DELIVERED');
+  check('no stage is offered past delivery', last.body.nextStatus === null);
+  check('the delivered counter goes up once',
+    JSON.parse(store.get('profile:driver1@example.com')).deliveredCount === 4);
+  check('a delivered order cannot be advanced again',
+    (await post('advance', driver({ code: 'AD1' }))).statusCode === 409);
+  check('the counter did not move on the refused call',
+    JSON.parse(store.get('profile:driver1@example.com')).deliveredCount === 4);
+
+  const ownerNotes = (lists.get('notifs:owner@example.com') || []).map((s) => JSON.parse(s).title);
+  check('the owner hears about every stage', ownerNotes.length === 4, ownerNotes.length);
+  check('including the last one', ownerNotes[0] === 'Yetkazildi', ownerNotes[0]);
+
+  // Bekor qilingan buyurtma zanjirdan chiqib ketgan — uni surib bo'lmaydi.
+  seed('AD2', { status: 'CANCELLED' });
+  check('a cancelled load has nowhere to advance to',
+    (await post('advance', driver({ code: 'AD2' }))).statusCode === 409);
+}
+
+console.log('\n== a driver can find the load they were given ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  store.set('order:MY1', JSON.stringify({
+    code: 'MY1', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, status: 'LOADED', driver: { name: 'Aziz', identity: 'driver1@example.com' },
+  }));
+  store.set('order:MY2', JSON.stringify({
+    code: 'MY2', ownerIdentity: 'owner@example.com', fromCity: 'Buxoro', toCity: 'Nukus',
+    weightKg: 2000, status: 'NEW',
+  }));
+  store.set('offer:o1', JSON.stringify({
+    id: 'o1', orderCode: 'MY1', driverIdentity: 'driver1@example.com', price: 800000, status: 'ACCEPTED',
+  }));
+  store.set('offer:o2', JSON.stringify({
+    id: 'o2', orderCode: 'MY2', driverIdentity: 'driver1@example.com', price: 500000, status: 'PENDING',
+  }));
+  lists.set('driver_offers:driver1@example.com', ['o2', 'o1']);
+
+  const get = async (query) => {
+    const res = mkRes();
+    await orderHandler({ method: 'GET', query, headers: {} }, res);
+    return res;
+  };
+
+  check('the list needs a signed-in driver', (await get({ action: 'my-offers' })).statusCode === 401);
+
+  const mine = await get({ action: 'my-offers', googleIdToken: 'driver1@example.com' });
+  check('both offers come back', mine.body.offers.length === 2);
+  const byCode = Object.fromEntries(mine.body.offers.map((o) => [o.orderCode, o]));
+  check('the route rides along so the row can be read', byCode.MY1.fromCity === 'Toshkent');
+  check('the assigned load knows it is being driven', byCode.MY1.isDriver === true);
+  check('and carries the stage, not just the offer status', byCode.MY1.orderStatus === 'LOADED');
+  check('with the next step named', byCode.MY1.nextStatus === 'ON_THE_WAY');
+  check('a still-pending offer is not a trip', byCode.MY2.isDriver === false);
+  check('and offers no stage button', byCode.MY2.nextStatus === null);
+  check('no offer leaks a phone or identity',
+    mine.body.offers.every((o) => !('driverIdentity' in o) && !('driverPhone' in o)));
+
+  const other = await get({ action: 'my-offers', googleIdToken: 'driver2@example.com' });
+  check('another driver sees none of it', other.body.offers.length === 0);
+}
+
+console.log('\n== the same chain runs from the Telegram button ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const telegramMod = await load('api/telegram.js', 'telegram_under_test');
+  const telegramHandler = telegramMod.default;
+
+  store.set('order:TG1', JSON.stringify({
+    code: 'TG1', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, amount: 900000, cargoType: 'OTHER', phone: '+998901112233',
+    status: 'DRIVER_FOUND', driver: { name: 'Aziz', telegramId: 555 },
+  }));
+
+  const tap = async (data, fromId) => {
+    const res = mkRes();
+    await telegramHandler({
+      method: 'POST', headers: {},
+      body: { callback_query: {
+        id: 'q1', from: { id: fromId, first_name: 'Aziz' },
+        message: { chat: { id: -100 }, message_id: 42, text: '' },
+        data,
+      } },
+    }, res);
+    return res;
+  };
+  const statusOf = (code) => JSON.parse(store.get(`order:${code}`)).status;
+
+  await tap('next:TG1', 999);
+  check('a driver who does not own the load changes nothing', statusOf('TG1') === 'DRIVER_FOUND');
+
+  await tap('next:TG1', 555);
+  check('the assigned driver advances one stage', statusOf('TG1') === 'PICKING_UP');
+  const edits = sentMessages.filter((m) => m.url.endsWith('/editMessageText'));
+  const button = edits[edits.length - 1].body.reply_markup.inline_keyboard[0][0].text;
+  check('and the button now names the stage after that', button.includes('Yukladim'), button);
+
+  await tap('next:TG1', 555);
+  check('loading is a stage here too', statusOf('TG1') === 'LOADED');
+
+  // Ilgari voz kechish faqat DRIVER_FOUND va ON_THE_WAY da ishlardi —
+  // yangi oraliq bosqichlarda haydovchi qamalib qolardi.
+  await tap('giveup:TG1', 555);
+  check('a driver can still give up from a new middle stage', statusOf('TG1') === 'NEW');
+  check('and the load loses its driver', JSON.parse(store.get('order:TG1')).driver === null);
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== review criteria ==');
+{
+  const { validateReview, applyReview, topTags, CRITERIA } =
+    await import(join(repo, 'lib/reviews.js'));
+
+  check('a rating outside 1-5 is refused', Boolean(validateReview({ stars: 6 }, 'DRIVER').error));
+  check('a missing rating is refused', Boolean(validateReview({}, 'DRIVER').error));
+  check('half stars are refused', Boolean(validateReview({ stars: 4.5 }, 'DRIVER').error));
+
+  const ok = validateReview({ stars: 5, comment: '  yaxshi  ', tags: ['ONTIME', 'CARE'] }, 'DRIVER');
+  check('a valid review passes', !ok.error && ok.value.stars === 5);
+  check('the comment is trimmed', ok.value.comment === 'yaxshi');
+  check('the tags survive', ok.value.tags.join() === 'ONTIME,CARE');
+
+  const mixed = validateReview({ stars: 3, tags: ['ONTIME', 'MADE_UP', 'ONTIME'] }, 'DRIVER');
+  check('an unknown tag is dropped, not fatal', mixed.value.tags.join() === 'ONTIME');
+  check('a repeated tag counts once', mixed.value.tags.length === 1);
+  check("the other side's tags do not apply here",
+    validateReview({ stars: 3, tags: ['PAID_ONTIME'] }, 'DRIVER').value.tags.length === 0);
+  check('but they do on their own side',
+    validateReview({ stars: 3, tags: ['PAID_ONTIME'] }, 'OWNER').value.tags.length === 1);
+  check('the two sides ask different questions',
+    CRITERIA.DRIVER.join() !== CRITERIA.OWNER.join());
+
+  const p = {};
+  applyReview(p, { stars: 5, tags: ['ONTIME'] }, 'DRIVER');
+  applyReview(p, { stars: 3, tags: ['ONTIME', 'CARE'] }, 'DRIVER');
+  check('driver ratings add up', p.ratingCount === 2 && p.ratingSum === 8);
+  check('tags are tallied', p.tags.ONTIME === 2 && p.tags.CARE === 1);
+
+  applyReview(p, { stars: 4, tags: [] }, 'OWNER');
+  check('the shipper rating is kept apart', p.ownerRatingCount === 1 && p.ownerRatingSum === 4);
+  check('and does not pollute the driver average', p.ratingCount === 2 && p.ratingSum === 8);
+
+  const top = topTags(p.tags);
+  check('only tags said more than once are shown', top.length === 1 && top[0].tag === 'ONTIME');
+  check('and they carry a readable label', Boolean(top[0].label));
+}
+
+console.log('\n== both sides rate each other ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  const seed = (code, patch) => store.set(`order:${code}`, JSON.stringify({
+    code, ownerIdentity: 'owner@example.com', phone: '+998901112233',
+    fromCity: 'Toshkent', toCity: 'Buxoro', status: 'DELIVERED',
+    driver: { name: 'Aziz', identity: 'driver1@example.com' }, ...patch,
+  }));
+  const rate = async (body) => {
+    const res = mkRes();
+    await orderHandler({ method: 'POST', query: { action: 'rate' }, body, headers: {} }, res);
+    return res;
+  };
+  const profile = (id) => JSON.parse(store.get(`profile:${id}`) || '{}');
+
+  seed('RV1');
+  check('a stranger with the wrong phone is refused',
+    (await rate({ code: 'RV1', phone: '+998900000000', stars: 5 })).statusCode === 404);
+
+  const byPhone = await rate({ code: 'RV1', phone: '+998901112233', stars: 5, tags: ['ONTIME', 'CARE'] });
+  check('the shipper rates by code and phone, as before', byPhone.statusCode === 200);
+  check('the rating lands on the driver profile',
+    profile('driver1@example.com').ratingCount === 1 && profile('driver1@example.com').ratingSum === 5);
+  check('the tags land with it', profile('driver1@example.com').tags.ONTIME === 1);
+  check('rating twice is refused',
+    (await rate({ code: 'RV1', phone: '+998901112233', stars: 3 })).statusCode === 409);
+
+  // Bu ilgari ishlamasdi: taklif orqali kelgan haydovchining bahosi
+  // faqat telegramUsername orqali qidirilardi, ya'ni hech qayerga
+  // tushmasdi.
+  check('an offer-assigned driver is credited at all',
+    profile('driver1@example.com').ratingCount === 1);
+
+  seed('RV2');
+  check('the driver cannot rate the shipper without signing in',
+    (await rate({ code: 'RV2', side: 'OWNER', stars: 5 })).statusCode === 403);
+  check('and neither can the shipper rate themselves as one',
+    (await rate({ code: 'RV2', side: 'OWNER', googleIdToken: 'owner@example.com', stars: 5 })).statusCode === 403);
+
+  const back = await rate({
+    code: 'RV2', side: 'OWNER', googleIdToken: 'driver1@example.com',
+    stars: 4, tags: ['PAID_ONTIME'],
+  });
+  check('the driver rates the shipper', back.statusCode === 200);
+  check('it lands on the shipper as a shipper score',
+    profile('owner@example.com').ownerRatingCount === 1 && profile('owner@example.com').ownerRatingSum === 4);
+  check('and never on their driver score', !profile('owner@example.com').ratingCount);
+  check('the shipper can still be rated as a driver separately',
+    (await rate({ code: 'RV2', phone: '+998901112233', stars: 2 })).statusCode === 200);
+  check('the two directions are stored separately', (() => {
+    const o = JSON.parse(store.get('order:RV2'));
+    return o.rating.stars === 2 && o.ownerRating.stars === 4;
+  })());
+
+  seed('RV3', { status: 'ON_THE_WAY' });
+  check('an undelivered order cannot be rated',
+    (await rate({ code: 'RV3', phone: '+998901112233', stars: 5 })).statusCode === 400);
+
+  // Yulduzsiz baho bo'lmaydi — teg va izohning o'zi yetarli emas.
+  seed('RV4');
+  check('stars are still required',
+    (await rate({ code: 'RV4', phone: '+998901112233', tags: ['ONTIME'] })).statusCode === 400);
+
+  // Telegram guruhidan olgan haydovchi eski yo'l bilan topiladi.
+  store.set('tgToEmail:aziz_driver', 'legacy@example.com');
+  seed('RV5', { driver: { name: 'Aziz', telegramUsername: 'aziz_driver' } });
+  await rate({ code: 'RV5', phone: '+998901112233', stars: 5 });
+  check('a Telegram-claimed driver is still credited through the username index',
+    profile('legacy@example.com').ratingCount === 1);
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== asking to be verified ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const call = async (body) => {
+    const res = mkRes();
+    await profileHandler({ method: 'POST', query: { action: 'request-verification' }, body, headers: {} }, res);
+    return res;
+  };
+  const me = 'aziz@example.com';
+  const IMG = 'data:image/jpeg;base64,' + 'A'.repeat(200);
+
+  check('a request needs a signed-in user',
+    (await call({ kind: 'IDENTITY', docDataUrl: IMG })).statusCode === 401);
+
+  // Telefonni bu yerdan tasdiqlab bo'lmaydi — u Telegram ishi.
+  const phone = await call({ googleIdToken: me, kind: 'PHONE' });
+  check('the phone is not verified from the site', phone.statusCode === 400);
+  check('and the answer says where it is done', phone.body.viaTelegram === true);
+
+  check('a document is required',
+    (await call({ googleIdToken: me, kind: 'IDENTITY' })).statusCode === 400);
+  check('and it has to be an image',
+    (await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: 'https://example.com/x.jpg' })).statusCode === 400);
+  check('an oversized image is refused',
+    (await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: 'data:image/jpeg;base64,' + 'A'.repeat(1_000_000) })).statusCode === 413);
+
+  const sent = await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: IMG });
+  check('a proper request is accepted', sent.statusCode === 200);
+  check('it comes back pending', sent.body.profile.verifications.IDENTITY.status === 'PENDING');
+  // Hujjat profil ichida emas: profil har xil joyda o'qiladi.
+  check('the document is not stored inside the profile',
+    !JSON.stringify(store.get(`profile:${me}`)).includes('base64'));
+  check('it is stored under its own key', store.get(`verifydoc:${me}:IDENTITY`) === IMG);
+  check('and queued for a moderator', sets.get('verify_queue').has(`${me}|IDENTITY`));
+
+  const again = await call({ googleIdToken: me, kind: 'IDENTITY', docDataUrl: IMG });
+  check('asking again while pending is not an error', again.statusCode === 200);
+  check('but it stays the same one request', again.body.profile.verifications.IDENTITY.status === 'PENDING');
+
+  // Bir turdagi so'rov ikkinchisini to'smaydi.
+  const truck = await call({ googleIdToken: me, kind: 'TRANSPORT', docDataUrl: IMG });
+  check('a different kind can be asked for at the same time', truck.statusCode === 200);
+  check('and both sit in the queue', sets.get('verify_queue').size === 2);
+
+  // Eski mijoz `kind` yubormaydi — bu doim shaxs tasdig'i bo'lgan.
+  store.clear(); sets.clear();
+  const old = await call({ googleIdToken: me, docDataUrl: IMG });
+  check('a request with no kind is treated as identity',
+    old.statusCode === 200 && old.body.profile.verifications.IDENTITY.status === 'PENDING');
+}
+
+console.log('\n== the bot verifies a phone number ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const telegramMod = await load('api/telegram.js', 'telegram_phone_test');
+  const telegramHandler = telegramMod.default;
+
+  const send = async (message) => {
+    const res = mkRes();
+    await telegramHandler({ method: 'POST', headers: {}, body: { message } }, res);
+    return res;
+  };
+  const profileOf = (id) => JSON.parse(store.get(`profile:${id}`) || '{}');
+
+  await send({
+    chat: { id: 555 }, from: { id: 555, first_name: 'Aziz' },
+    contact: { user_id: 999, phone_number: '998901112233' },
+  });
+  check("someone else's contact verifies nobody", !store.has('profile:tg:555'));
+
+  await send({
+    chat: { id: 555 }, from: { id: 555, first_name: 'Aziz' },
+    contact: { user_id: 555, phone_number: '998901112233' },
+  });
+  const p = profileOf('tg:555');
+  check('sharing your own contact verifies the phone',
+    p.verifications.PHONE.status === 'VERIFIED');
+  check('and the number is stored in international form', p.phone === '+998901112233');
+  check('but it does not hand out the blue badge', p.verified === false);
+
+  // Google akkaunti bilan bog'langan odam o'sha profilga yozilishi kerak,
+  // yangi "tg:" profili yaratilmasin.
+  store.set('tgIdToEmail:777', 'aziz@example.com');
+  store.set('profile:aziz@example.com', JSON.stringify({ username: 'aziz' }));
+  await send({
+    chat: { id: 777 }, from: { id: 777, first_name: 'Aziz' },
+    contact: { user_id: 777, phone_number: '+998907776655' },
+  });
+  check('a linked account is verified on its own profile',
+    profileOf('aziz@example.com').verifications.PHONE.status === 'VERIFIED');
+  check('and no duplicate telegram profile appears', !store.has('profile:tg:777'));
+  check('the existing profile is not wiped', profileOf('aziz@example.com').username === 'aziz');
+
+  resetFetch();
+  await send({ chat: { id: 555 }, from: { id: 555 }, text: '/tasdiq' });
+  const ask = sentMessages.find((m) => m.url.endsWith('/sendMessage'));
+  check('/tasdiq offers the share-contact button',
+    Boolean(ask && ask.body.reply_markup && ask.body.reply_markup.keyboard[0][0].request_contact));
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== saved loads and drivers ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const call = async (action, body) => {
+    const res = mkRes();
+    await profileHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const me = { googleIdToken: 'me@example.com' };
+
+  store.set('order:L1', JSON.stringify({
+    code: 'L1', fromCity: 'Toshkent', toCity: 'Buxoro', cargoType: 'MEBEL',
+    weightKg: 5000, amount: 900000, status: 'NEW', createdAt: 200,
+  }));
+  store.set('order:L2', JSON.stringify({
+    code: 'L2', fromCity: 'Buxoro', toCity: 'Nukus', cargoType: 'MEBEL',
+    weightKg: 2000, amount: 500000, status: 'DELIVERED', createdAt: 100,
+  }));
+  store.set('username:aziz', 'aziz@example.com');
+  store.set('profile:aziz@example.com', JSON.stringify({
+    username: 'aziz', displayName: 'Aziz', ratingCount: 4, ratingSum: 19,
+    deliveredCount: 3, city: 'Toshkent', phone: '+998901112233', verified: true,
+  }));
+
+  check('saving needs a signed-in user',
+    (await call('save', { kind: 'load', id: 'L1' })).statusCode === 401);
+  check('an unknown kind is refused',
+    (await call('save', { ...me, kind: 'spaceship', id: 'L1' })).statusCode === 400);
+  check('an empty id is refused', (await call('save', { ...me, kind: 'load', id: '' })).statusCode === 400);
+
+  check('a load can be saved', (await call('save', { ...me, kind: 'load', id: 'L1' })).body.saved === true);
+  await call('save', { ...me, kind: 'load', id: 'L2' });
+  await call('save', { ...me, kind: 'driver', id: 'aziz' });
+
+  const saved = await call('saved', me);
+  check('the list comes back', saved.statusCode === 200);
+  check('both loads are there', saved.body.loads.length === 2);
+  check('newest first', saved.body.loads[0].code === 'L1');
+  // Faqat kodlar qaytsa, sayt har biri uchun alohida so'rov yuborardi.
+  check('a load carries enough to draw its card',
+    saved.body.loads[0].fromCity === 'Toshkent' && saved.body.loads[0].amount === 900000);
+  check('a taken load still shows, with its stage',
+    saved.body.loads.find((l) => l.code === 'L2').status === 'DELIVERED');
+  check('the driver comes back too', saved.body.drivers.length === 1);
+  check('with the public shape only', saved.body.drivers[0].displayName === 'Aziz');
+  check('and never a phone number', !JSON.stringify(saved.body.drivers).includes('998901112233'));
+
+  await call('save', { ...me, kind: 'load', id: 'L1', on: false });
+  const after = await call('saved', me);
+  check('unsaving removes it', after.body.loads.length === 1 && after.body.loads[0].code === 'L2');
+
+  // O'chib ketgan yuk ro'yxatni buzmasin.
+  store.delete('order:L2');
+  const gone = await call('saved', me);
+  check('a deleted load is dropped, not rendered as a hole', gone.body.loads.length === 0);
+  check('and the caller is told how many vanished', gone.body.missing === 1);
+
+  // Telefonda qolgan eski yurakchalar bir marta ko'chiriladi.
+  store.set('order:L3', JSON.stringify({
+    code: 'L3', fromCity: 'Nukus', toCity: 'Termiz', weightKg: 1, amount: 1, createdAt: 300,
+  }));
+  const migrated = await call('saved', { ...me, migrate: ['L3'] });
+  check('local favourites are migrated on first sync',
+    migrated.body.loads.some((l) => l.code === 'L3'));
+  const stillThere = await call('saved', me);
+  check('and they stay after that', stillThere.body.loads.some((l) => l.code === 'L3'));
+
+  const other = await call('saved', { googleIdToken: 'someone@else.com' });
+  check("another account sees none of it", other.body.loads.length === 0 && other.body.drivers.length === 0);
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== volume and item count ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  // Buyurtma yaratish telefon raqami bo'yicha cheklangan (isThrottled),
+  // shuning uchun har chaqiruv o'z raqamidan yuboradi.
+  let phoneSeq = 900000000;
+  const post = async (extra) => {
+    const res = mkRes();
+    phoneSeq += 1;
+    await orderHandler({
+      method: 'POST', query: {}, headers: {},
+      body: {
+        fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, cargoType: 'GENERAL',
+        name: 'Sardor', phone: String(phoneSeq), googleIdToken: 'owner@example.com', ...extra,
+      },
+    }, res);
+    return res;
+  };
+  const stored = (code) => JSON.parse(store.get(`order:${code}`));
+
+  const plain = await post({});
+  check('a load posts fine with neither field', plain.statusCode === 200);
+  check('and stores them as absent, not zero',
+    stored(plain.body.code).volumeM3 === null && stored(plain.body.code).quantity === null);
+
+  const both = await post({ volumeM3: 12.5, quantity: 20, quantityUnit: 'PALLET' });
+  check('both can be given', both.statusCode === 200, JSON.stringify(both.body));
+  check('the volume is kept', stored(both.body.code).volumeM3 === 12.5);
+  check('the count and its unit are kept',
+    stored(both.body.code).quantity === 20 && stored(both.body.code).quantityUnit === 'PALLET');
+
+  check('a volume is rounded to one decimal',
+    stored((await post({ volumeM3: 3.14159 })).body.code).volumeM3 === 3.1);
+  check('a zero volume is refused', (await post({ volumeM3: 0 })).statusCode === 400);
+  check('a negative volume is refused', (await post({ volumeM3: -5 })).statusCode === 400);
+  check('an absurd volume is refused', (await post({ volumeM3: 5000 })).statusCode === 400);
+  check('a fractional item count is refused', (await post({ quantity: 2.5 })).statusCode === 400);
+  check('a zero item count is refused', (await post({ quantity: 0 })).statusCode === 400);
+
+  // Birlik yozilmasa ham son ma'noli bo'lishi kerak.
+  check('a count with no unit gets the default one',
+    stored((await post({ quantity: 7 })).body.code).quantityUnit === 'JOY');
+  const oddUnit = await post({ quantity: 7, quantityUnit: 'ELEPHANTS' });
+  check('an unknown unit falls back rather than failing the post',
+    oddUnit.statusCode === 200 && stored(oddUnit.body.code).quantityUnit === 'JOY');
+
+  // Saytdagi forma to'ldirilmagan maydonni bo'sh satr qilib yuboradi.
+  const blanks = await post({ volumeM3: '', quantity: '', quantityUnit: '' });
+  check('blank fields are treated as absent, not as errors',
+    blanks.statusCode === 200 && stored(blanks.body.code).volumeM3 === null);
+
+  // Haydovchi guruh xabarida ham ko'rishi kerak.
+  const { buildOrderMessage } = await import(join(repo, 'lib/orderMessage.js'));
+  const msg = buildOrderMessage(stored(both.body.code));
+  check('the volume reaches the Telegram post', msg.includes('12\\.5 m³'), msg.slice(0, 200));
+  check('so does the item count', msg.includes('pallet'));
+  const bare = buildOrderMessage(stored(plain.body.code));
+  check('and neither line appears when they were not given',
+    !bare.includes('m³') && !bare.includes('joy'));
+
+  // Ro'yxat va tafsilot ham ularni tashiydi, aks holda haydovchi
+  // yukni ochmasdan turib bilmasdi.
+  const listRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'list' }, headers: {} }, listRes);
+  const inList = listRes.body.loads.find((l) => l.code === both.body.code);
+  check('the browse list carries the volume', inList && inList.volumeM3 === 12.5);
+  const detailRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'detail', code: both.body.code }, headers: {} }, detailRes);
+  check('so does the detail page', detailRes.body.quantity === 20 && detailRes.body.quantityUnit === 'PALLET');
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== exact pickup and delivery points ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  let phoneSeq = 900500000;
+  const post = async (extra) => {
+    const res = mkRes();
+    phoneSeq += 1;
+    await orderHandler({
+      method: 'POST', query: {}, headers: {},
+      body: {
+        fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, cargoType: 'GENERAL',
+        name: 'Sardor', phone: String(phoneSeq), googleIdToken: 'owner@example.com', ...extra,
+      },
+    }, res);
+    return res;
+  };
+  const stored = (code) => JSON.parse(store.get(`order:${code}`));
+
+  const plain = await post({});
+  check('a load still posts with no point at all', plain.statusCode === 200);
+  check('and the points read as absent',
+    stored(plain.body.code).fromPoint === null && stored(plain.body.code).toPoint === null);
+
+  const pinned = await post({
+    fromPoint: { lat: 41.31151, lng: 69.27978 },
+    toPoint: { lat: 39.77474, lng: 64.42862 },
+    fromAddress: 'Chilonzor, 12-uy', toAddress: 'Registon ko‘chasi 5',
+  });
+  check('a load can carry both points', pinned.statusCode === 200);
+  check('the pickup point is stored', stored(pinned.body.code).fromPoint.lat === 41.31151);
+  check('so is the delivery point', stored(pinned.body.code).toPoint.lng === 64.42862);
+  check('and the written addresses with them',
+    stored(pinned.body.code).fromAddress === 'Chilonzor, 12-uy');
+
+  // Chegaradan tashqaridagi nuqta — haydovchini yanglish joyga yuboradi.
+  const abroad = await post({ fromPoint: { lat: 48.85, lng: 2.35 } });
+  check('a point outside the country is refused', abroad.statusCode === 400);
+  check('and the message says which one', /Olib ketish/.test(abroad.body.error), abroad.body.error);
+  const junk = await post({ fromPoint: { lat: 'here', lng: 'there' } });
+  check('unreadable coordinates are dropped rather than failing the post',
+    junk.statusCode === 200 && stored(junk.body.code).fromPoint === null);
+
+  // Koordinata metrdan aniqroq bo'lishining ma'nosi yo'q.
+  const rounded = await post({ toPoint: { lat: 39.7747412345, lng: 64.4286298765 } });
+  check('coordinates are rounded to five decimals',
+    stored(rounded.body.code).toPoint.lat === 39.77474);
+
+  const longAddr = await post({ fromAddress: 'x'.repeat(400) });
+  check('an over-long address is trimmed, not rejected',
+    longAddr.statusCode === 200 && stored(longAddr.body.code).fromAddress.length === 200);
+
+  // Haydovchi guruh xabaridan qayerga borishini bilishi kerak.
+  const { buildOrderMessage, mapLink } = await import(join(repo, 'lib/orderMessage.js'));
+  const msg = buildOrderMessage(stored(pinned.body.code));
+  check('the address reaches the Telegram post', msg.includes('Chilonzor'));
+  check('and so does a tappable map link', msg.includes('maps.google.com/?q=41.31151,69.27978'));
+  const bare = buildOrderMessage(stored(plain.body.code));
+  check('neither line appears when nothing was given',
+    !bare.includes('maps.google.com') && !bare.includes('↗️'));
+  check('mapLink refuses a point that is not one', mapLink(null, 'x') === null);
+  check('and one with missing coordinates', mapLink({ lat: 1 }, 'x') === null);
+
+  // Sayt ham ularni ko'rsatishi kerak, aks holda faqat Telegram'da qoladi.
+  const detailRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'detail', code: pinned.body.code }, headers: {} }, detailRes);
+  check('the detail page carries the point', detailRes.body.fromPoint.lat === 41.31151);
+  check('and the address', detailRes.body.toAddress === 'Registon ko‘chasi 5');
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
