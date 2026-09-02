@@ -1073,6 +1073,12 @@
   }
   .install-dismiss:hover{color:var(--ink);background:var(--paper-dark);}
   .install-dismiss .ic-svg{font-size:15px;}
+  .install-steps{
+    margin:0 0 var(--s4);padding-left:22px;font-size:14px;color:var(--ink-soft);
+    line-height:1.65;
+  }
+  .install-steps li{margin-bottom:10px;}
+  .install-steps b{color:var(--ink);}
 
   /* Aniq olib ketish/yetkazish nuqtasi. */
   .pick-point{
@@ -2605,6 +2611,11 @@
       "wizard.publishTitle": "Tekshirib chiqing", "wizard.reviewRoute": "Yo'nalish", "wizard.reviewPrice": "Narx", "wizard.reviewContact": "Aloqa",
       "wizard.reviewIncomplete": "Avvalgi bosqichlarni to'ldirib chiqing.", "wizard.sending": "Yuborilmoqda…",
       "wizard.sendBtn": "Haydovchilarga yuborish", "wizard.back": "Orqaga", "wizard.next": "Davom etish",
+      "install.ios1": "Pastdagi <b>Ulashish</b> tugmasini bosing (yuqoriga qaragan strelkali kvadrat).",
+      "install.ios2": "Ro'yxatni pastga suring va <b>«Asosiy ekranga qo'shish»</b> ni tanlang.",
+      "install.ios3": "O'ng yuqoridagi <b>Qo'shish</b> ni bosing — YO'LDA ikonkasi ekranda paydo bo'ladi.",
+      "install.iosNote": "Shundan keyin ilova brauzer manzil qatorisiz, to'liq ekranda ochiladi.",
+      "install.inApp": "Bu oyna ilova ichidagi brauzer — undan o'rnatib bo'lmaydi. Havolani nusxalab, <b>Safari</b> yoki <b>Chrome</b>da oching, keyin shu tugmani qaytadan bosing.",
       "install.cta": "Ilovani o'rnatish", "install.done": "Ilova o'rnatildi", "common.close": "Yopish",
       "order.fromAddressLabel": "Olib ketish manzili (ixtiyoriy)", "order.toAddressLabel": "Yetkazish manzili (ixtiyoriy)",
       "order.addressPlaceholder": "Ko'cha, uy, mo'ljal",
@@ -2946,6 +2957,11 @@
       "wizard.publishTitle": "Проверьте данные", "wizard.reviewRoute": "Маршрут", "wizard.reviewPrice": "Цена", "wizard.reviewContact": "Контакт",
       "wizard.reviewIncomplete": "Заполните предыдущие шаги.", "wizard.sending": "Отправляется…",
       "wizard.sendBtn": "Отправить водителям", "wizard.back": "Назад", "wizard.next": "Далее",
+      "install.ios1": "Нажмите кнопку <b>Поделиться</b> внизу (квадрат со стрелкой вверх).",
+      "install.ios2": "Прокрутите список вниз и выберите <b>«На экран «Домой»»</b>.",
+      "install.ios3": "Нажмите <b>Добавить</b> справа вверху — значок YO'LDA появится на экране.",
+      "install.iosNote": "После этого приложение открывается на весь экран, без адресной строки браузера.",
+      "install.inApp": "Это встроенный браузер приложения — из него установить нельзя. Скопируйте ссылку, откройте её в <b>Safari</b> или <b>Chrome</b> и нажмите кнопку снова.",
       "install.cta": "Установить приложение", "install.done": "Приложение установлено", "common.close": "Закрыть",
       "order.fromAddressLabel": "Адрес загрузки (необязательно)", "order.toAddressLabel": "Адрес доставки (необязательно)",
       "order.addressPlaceholder": "Улица, дом, ориентир",
@@ -3287,6 +3303,11 @@
       "wizard.publishTitle": "Review before sending", "wizard.reviewRoute": "Route", "wizard.reviewPrice": "Price", "wizard.reviewContact": "Contact",
       "wizard.reviewIncomplete": "Fill in the earlier steps first.", "wizard.sending": "Sending…",
       "wizard.sendBtn": "Send to drivers", "wizard.back": "Back", "wizard.next": "Continue",
+      "install.ios1": "Tap the <b>Share</b> button at the bottom (the square with an arrow pointing up).",
+      "install.ios2": "Scroll down the list and choose <b>Add to Home Screen</b>.",
+      "install.ios3": "Tap <b>Add</b> at the top right — the YO'LDA icon appears on your home screen.",
+      "install.iosNote": "From then on the app opens full screen, with no browser address bar.",
+      "install.inApp": "This is an in-app browser and cannot install anything. Copy the link, open it in <b>Safari</b> or <b>Chrome</b>, then tap the button again.",
       "install.cta": "Install the app", "install.done": "App installed", "common.close": "Close",
       "order.fromAddressLabel": "Pickup address (optional)", "order.toAddressLabel": "Delivery address (optional)",
       "order.addressPlaceholder": "Street, building, landmark",
@@ -9700,12 +9721,60 @@
     return !isTelegramWebApp && !installAlreadyDone() && !installDismissed();
   }
 
+  /** iPhone/iPad. iPadOS o'zini Mac deb ko'rsatadi, shuning uchun ikkinchi shart. */
+  function isIOS(){
+    var ua = navigator.userAgent || "";
+    if(/iPad|iPhone|iPod/.test(ua)) return true;
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  }
+
+  /**
+   * Taklifni qanday ko'rsatish kerak:
+   *   "native" — brauzer o'zi o'rnatishni taklif qildi (Chrome, Edge);
+   *   "ios"    — Safari hech qachon bunday hodisa yubormaydi, shuning
+   *              uchun qo'lda qanday qilishni ko'rsatamiz;
+   *   null     — taklif qiladigan narsa yo'q, qator umuman chiqmaydi.
+   *
+   * Ilgari faqat birinchi holat bor edi — ya'ni iPhone'dagi odam hech
+   * qanday tugma ko'rmasdi va ilovani o'rnatib bo'lmaydi deb o'ylardi.
+   */
+  function installMode(){
+    if(!canOfferInstall()) return null;
+    if(deferredInstall) return "native";
+    if(isIOS()) return "ios";
+    return null;
+  }
+
+  function maybeShowInstallRow(){
+    showInstallRow(Boolean(installMode()));
+  }
+
+  /** Safari uchun qo'llanma. Ilova ichidagi brauzerda esa — avval uni ochish kerak. */
+  function openInstallHelp(){
+    var inApp = isInAppBrowser();
+    Sheet.open({
+      title: t("install.cta") || "Ilovani o'rnatish",
+      html: inApp
+        ? '<p class="note" style="margin-top:0;" data-i18n="install.inApp">Bu oyna ilova ichidagi '
+          + 'brauzer — undan o\'rnatib bo\'lmaydi. Havolani nusxalab, <b>Safari</b> yoki '
+          + '<b>Chrome</b>da oching, keyin shu tugmani qaytadan bosing.</p>'
+        : '<ol class="install-steps">'
+          + '<li data-i18n="install.ios1">Pastdagi <b>Ulashish</b> tugmasini bosing (yuqoriga qaragan strelkali kvadrat).</li>'
+          + '<li data-i18n="install.ios2">Ro\'yxatni pastga suring va <b>«Asosiy ekranga qo\'shish»</b> ni tanlang.</li>'
+          + '<li data-i18n="install.ios3">O\'ng yuqoridagi <b>Qo\'shish</b> ni bosing — YO\'LDA ikonkasi ekranda paydo bo\'ladi.</li>'
+          + '</ol>'
+          + '<p class="note" data-i18n="install.iosNote">Shundan keyin ilova brauzer manzil qatorisiz, '
+          + 'to\'liq ekranda ochiladi.</p>',
+      onOpen: function(){ applyLang(); }
+    });
+  }
+
   function initInstallPrompt(){
     window.addEventListener("beforeinstallprompt", function(e){
       // Brauzerning o'z bannerini to'xtatib, o'z tugmamizni ko'rsatamiz.
       e.preventDefault();
       deferredInstall = e;
-      if(canOfferInstall()) showInstallRow(true);
+      maybeShowInstallRow();
     });
 
     window.addEventListener("appinstalled", function(){
@@ -9716,7 +9785,13 @@
 
     var btn = document.getElementById("btnInstallApp");
     if(btn) btn.addEventListener("click", function(){
-      if(!deferredInstall) return;
+      // Safari'da o'rnatishni brauzer o'zi taklif qilmaydi — qo'llanma
+      // ko'rsatamiz. Bu yerda "hech narsa qilmaslik" noto'g'ri bo'lardi:
+      // tugma ko'rinib turibdi, demak bosilganda javob berishi kerak.
+      if(!deferredInstall){
+        openInstallHelp();
+        return;
+      }
       var prompt = deferredInstall;
       // Bitta hodisani ikki marta ishlatib bo'lmaydi.
       deferredInstall = null;
@@ -9778,6 +9853,9 @@
   // show the "open in Safari/Chrome" in-app-browser hint.
   initTelegramWebApp();
   initGoogleSignIn();
+  // Telegram aniqlangandan keyin: iOS'da o'rnatish taklifi brauzer
+  // hodisasisiz ham chiqadi, chunki Safari bunday hodisa yubormaydi.
+  maybeShowInstallRow();
 
   /* ============================================================
      Scroll: nav state, progress bar, background parallax
