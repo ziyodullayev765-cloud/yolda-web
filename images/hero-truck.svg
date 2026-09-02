@@ -1,0 +1,114 @@
+<!--
+  Bosh sahifadagi hero surati.
+
+  Bu chizma, surat emas: menda haqiqiy yuk mashinasining litsenziyali
+  fotosurati yo'q va o'ylab topib qo'yolmayman. Namunadagi kompozitsiya
+  saqlangan — o'ngda oq yuk mashinasi, orqada tog'lar, pastda yo'l.
+
+  Haqiqiy surat qo'ymoqchi bo'lsangiz: shu faylni o'sha suratga
+  almashtiring (yoki index.html dagi "hero-photo" o'zgaruvchisiga yangi
+  manzilni yozing). Boshqa hech narsani o'zgartirish shart emas.
+
+  Diqqat: XML izohi ichida ketma-ket ikkita chiziqcha bo'lishi mumkin
+  emas — shunday bo'lsa brauzer butun faylni rad etadi va rasm umuman
+  ko'rinmaydi.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#BFE0F5"/>
+      <stop offset="0.62" stop-color="#E4F2FA"/>
+      <stop offset="1" stop-color="#F2F8F4"/>
+    </linearGradient>
+    <linearGradient id="farHill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9FB6C7"/>
+      <stop offset="1" stop-color="#C3D4DF"/>
+    </linearGradient>
+    <linearGradient id="nearHill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4E9B6E"/>
+      <stop offset="1" stop-color="#2F7A51"/>
+    </linearGradient>
+    <linearGradient id="trailer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DFE6EC"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="400" fill="url(#sky)"/>
+
+  <!-- Bulutlar -->
+  <g fill="#FFFFFF" opacity="0.75">
+    <ellipse cx="118" cy="72" rx="52" ry="18"/>
+    <ellipse cx="158" cy="64" rx="36" ry="21"/>
+    <ellipse cx="432" cy="52" rx="60" ry="17"/>
+    <ellipse cx="472" cy="46" rx="34" ry="20"/>
+  </g>
+
+  <!-- Uzoqdagi tog'lar -->
+  <path d="M0 214 78 132l46 42 60-70 62 76 54-46 74 84 66-56 84 96 76-52v148H0z" fill="url(#farHill)"/>
+  <!-- Qorli cho'qqilar -->
+  <g fill="#FFFFFF" opacity="0.9">
+    <path d="M78 132l22 20-11 4-9-6-10 7-9-4z"/>
+    <path d="M184 104l20 24-12 3-8-6-10 7-8-4z"/>
+    <path d="M374 138l22 25-13 3-8-6-11 7-8-4z"/>
+    <path d="M524 154l20 23-12 3-8-6-10 7-9-4z"/>
+  </g>
+
+  <!-- Yaqindagi yashil tepaliklar -->
+  <path d="M0 252l70-30 82 22 76-32 92 30 88-26 96 34 96-22v162H0z" fill="url(#nearHill)"/>
+
+  <!-- Daraxtlar -->
+  <g fill="#276B46">
+    <path d="M44 250l11 22H33zM47 240l9 18H38z"/>
+    <path d="M470 246l12 24h-24zM473 236l10 19h-20z"/>
+    <path d="M556 240l11 22h-22zM559 231l9 18h-18z"/>
+  </g>
+
+  <!-- Yo'l -->
+  <path d="M0 306h600v94H0z" fill="#4B5563"/>
+  <path d="M0 300h600v10H0z" fill="#6B7280"/>
+  <g stroke="#F8D24B" stroke-width="5" stroke-linecap="round" stroke-dasharray="34 30">
+    <path d="M0 356h600"/>
+  </g>
+  <path d="M0 392h600v8H0z" fill="#3F4854"/>
+
+  <!-- Yuk mashinasi: tirkama + kabina -->
+  <g>
+    <!-- Tirkama -->
+    <rect x="196" y="176" width="212" height="118" rx="9" fill="url(#trailer)" stroke="#C3CDD6" stroke-width="2"/>
+    <rect x="206" y="188" width="192" height="8" rx="4" fill="#EDF1F5"/>
+    <rect x="206" y="272" width="192" height="8" rx="4" fill="#E3E9EF"/>
+    <!-- Yon panel chiziqlari -->
+    <g stroke="#D6DEE5" stroke-width="2">
+      <path d="M244 200v64M292 200v64M340 200v64"/>
+    </g>
+    <!-- Tirkama bo'sh qoldirildi. Ilgari bu yerda "YO'LDA" yozuvi, keyin
+         yashil lenta turardi — ikkalasi ham matn ortidagi oq parda
+         ostidan arang ko'rinib, sarlavha yozuvi bilan chalkashardi. -->
+
+    <!-- Kabina -->
+    <path d="M408 190h64l30 44v60h-94z" fill="#FFFFFF" stroke="#C3CDD6" stroke-width="2"/>
+    <path d="M416 198h50l24 34h-74z" fill="#22303F"/>
+    <path d="M420 202h44l18 26h-62z" fill="#4A6076"/>
+    <rect x="408" y="252" width="94" height="12" rx="4" fill="#0A9F5B"/>
+    <rect x="470" y="238" width="8" height="16" rx="3" fill="#9AA7B4"/>
+    <path d="M502 258h10v22h-10z" fill="#D8E0E7"/>
+    <!-- Old chiroq -->
+    <rect x="492" y="268" width="14" height="9" rx="3" fill="#FBBF24"/>
+
+    <!-- G'ildiraklar -->
+    <g fill="#1F2937">
+      <circle cx="236" cy="298" r="24"/>
+      <circle cx="292" cy="298" r="24"/>
+      <circle cx="452" cy="298" r="24"/>
+    </g>
+    <g fill="#9AA7B4">
+      <circle cx="236" cy="298" r="10"/>
+      <circle cx="292" cy="298" r="10"/>
+      <circle cx="452" cy="298" r="10"/>
+    </g>
+
+    <!-- Soya -->
+    <ellipse cx="350" cy="326" rx="172" ry="9" fill="#1F2937" opacity="0.16"/>
+  </g>
+</svg>

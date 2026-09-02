@@ -85,6 +85,12 @@
     --tint:#EFFAF5;
     --skeleton-mid:#F8FAFC;
 
+    /* Hero surati. Haqiqiy fotosuratga almashtirish uchun shu bitta
+       qatorni o'zgartirish kifoya — qolgan hamma narsa shundayligicha
+       ishlayveradi. Hozirgisi chizma: menda litsenziyali yuk mashinasi
+       surati yo'q, o'ylab topib qo'yish esa to'g'ri bo'lmasdi. */
+    --hero-photo:url("/images/hero-truck.svg");
+
     /* spacing scale (8pt grid) */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
     --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:128px;
@@ -264,22 +270,36 @@
     background:rgba(255,255,255,0.82);
   }
   .nav-logo{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;
-    letter-spacing:-0.01em;display:flex;align-items:center;gap:var(--s2);
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;
+    letter-spacing:-0.015em;display:flex;align-items:center;gap:9px;
+    color:var(--ink);
   }
-  .nav-logo .mark{width:30px;height:30px;flex-shrink:0;}
-  .nav-logo .word{
-    background:linear-gradient(90deg, var(--route), var(--stamp));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  .nav-logo .dot{color:var(--stamp);}
+  .nav-logo .mark{width:28px;height:28px;flex-shrink:0;display:block;}
+  .nav-logo .word{color:var(--ink);}
+  /* Qo'ng'iroq endi doira ichida emas — namunadagidek yalang'och
+     ikonka, yonida avatar. Shuning uchun chegara va fon yo'q. */
   .nav-icon-btn{
-    width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--route);
-    flex-shrink:0;position:relative;z-index:1;text-decoration:none;
-    transition:transform 0.2s var(--ease), border-color 0.2s var(--ease);
+    width:40px;height:40px;border-radius:50%;border:none;background:none;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink);
+    flex-shrink:0;position:relative;z-index:1;text-decoration:none;padding:0;
+    transition:background 0.2s var(--ease);
   }
-  .nav-actions{display:flex;align-items:center;gap:var(--s2);margin-left:auto;}
+  .nav-icon-btn .ic-svg{font-size:22px;}
+  .nav-icon-btn:hover{background:var(--tint);}
+  .nav-actions{display:flex;align-items:center;gap:var(--s1);margin-left:auto;}
+  /* Avatar + kichkina pastga strelka: bosilganda Profil ochiladi. */
+  .nav-avatar-btn{
+    display:flex;align-items:center;gap:3px;border:none;background:none;padding:2px;
+    cursor:pointer;line-height:0;border-radius:var(--r-pill);
+  }
+  .nav-avatar-btn img,.nav-avatar-btn .nav-avatar-fallback{
+    width:36px;height:36px;border-radius:50%;display:block;object-fit:cover;
+  }
+  .nav-avatar-btn .nav-avatar-fallback{
+    background:var(--route);color:#fff;display:flex;align-items:center;
+    justify-content:center;font-weight:700;font-size:15px;line-height:1;
+  }
+  .nav-avatar-btn .chev{width:14px;height:14px;color:var(--muted);flex-shrink:0;}
   /* Brauzerning [hidden]{display:none} qoidasi yuqoridagi display:flex
      dan kuchsizroq, shuning uchun `el.hidden = true` o'z-o'zicha bu
      tugmani yashira olmasdi — qo'ng'iroq kirmagan odamga ham
@@ -331,12 +351,12 @@
   .bn-item--primary{color:var(--route);}
   .bn-item--primary .bn-fab{
     display:flex;align-items:center;justify-content:center;
-    width:44px;height:44px;border-radius:50%;margin-top:-22px;
-    background:linear-gradient(135deg, var(--route), var(--route-dark));
-    box-shadow:var(--sh-brand);
+    width:52px;height:52px;border-radius:50%;margin-top:-26px;
+    background:var(--route);
+    box-shadow:0 6px 16px rgba(10,159,91,0.35);
     transition:transform 0.2s var(--ease);
   }
-  .bn-item--primary .bn-fab .ic-svg{font-size:20px;color:#fff;}
+  .bn-item--primary .bn-fab .ic-svg{font-size:26px;color:#fff;stroke-width:2.6;}
   .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
   .bn-item--primary.active{color:var(--route);}
   body{padding-bottom:66px;}
@@ -828,13 +848,13 @@
 
   /* Bildirishnoma qo'ng'irog'i va o'qilmaganlar nishoni. */
   .nav-bell{position:relative;}
-  .nav-bell-dot{
-    position:absolute;top:5px;right:5px;min-width:16px;height:16px;padding:0 4px;
-    border-radius:999px;background:#DC2626;color:#fff;
-    font-size:10px;font-weight:700;line-height:16px;text-align:center;
+  .nav-bell-count{
+    position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;
+    border-radius:999px;background:#EF4444;color:#fff;
+    font-size:11px;font-weight:700;line-height:18px;text-align:center;
     box-shadow:0 0 0 2px var(--paper);
   }
-  .nav-bell-dot[hidden]{display:none;}
+  .nav-bell-count[hidden]{display:none;}
   .notif-item{
     display:flex;gap:var(--s3);padding:var(--s3) 0;border-bottom:1px solid var(--line);
   }
@@ -1113,6 +1133,297 @@
   }
   .install-steps li{margin-bottom:10px;}
   .install-steps b{color:var(--ink);}
+
+  /* ============================================================
+     BOSH SAHIFA
+     ------------------------------------------------------------
+     Namunadagi tartib: hero → statistika → sizga mos yuklar →
+     xarita → qanday ishlaydi → yuk mashinalari.
+
+     Butun sahifa yon tomondan 16px joy qoldiradi va 640px dan
+     kengaymaydi: telefonda to'liq eni, planshet va kompyuterda esa
+     o'rtada bitta ustun bo'lib turadi — cho'zilib ketmaydi.
+     ============================================================ */
+  .home{max-width:640px;margin:0 auto;padding:12px 16px 28px;display:flex;flex-direction:column;gap:24px;}
+
+  /* ---------- 1. Hero ---------- */
+  .hero-card{
+    position:relative;overflow:hidden;border-radius:20px;
+    background:var(--card);border:1px solid var(--border);box-shadow:var(--sh-1);
+    min-height:300px;display:flex;align-items:stretch;
+  }
+  /* Rasm butun kartochkani egallaydi, ustidan chapdan o'ngga oqadigan
+     oq parda tushadi — matn shu parda ustida turadi. Ilgari rasm faqat
+     o'ng tomonda edi va tor ustunga "cover" qilinganda yuk mashinasi
+     kesilib ketardi; endi tabiiy nisbatida ko'rinadi.
+     "hero-photo" o'zgaruvchisini almashtirsangiz bu yerga haqiqiy
+     surat qo'yiladi, boshqa hech narsa tegmaydi. */
+  .hero-card-photo{
+    position:absolute;inset:0;
+    background:var(--hero-photo) 68% center / cover no-repeat;
+  }
+  .hero-card-photo::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(96deg, var(--card) 0%, var(--card) 30%, rgba(255,255,255,0.72) 52%, rgba(255,255,255,0) 78%);
+  }
+  .hero-card-body{position:relative;z-index:1;padding:22px 18px 20px;max-width:74%;}
+  .hero-card-title{
+    margin:0 0 10px;font-size:23px;line-height:1.24;font-weight:800;
+    letter-spacing:-0.02em;color:var(--ink);
+  }
+  .hero-card-title .accent{color:var(--stamp-dark);}
+  .hero-card-sub{
+    margin:0 0 18px;font-size:13.5px;line-height:1.5;color:var(--ink-soft);
+    max-width:30ch;
+  }
+  .hero-card-ctas{display:flex;gap:10px;flex-wrap:wrap;}
+  .hc-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    min-height:50px;padding:0 20px;border-radius:14px;
+    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;
+    text-decoration:none;cursor:pointer;border:1px solid transparent;
+    transition:transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  }
+  .hc-btn:active{transform:scale(0.98);}
+  .hc-btn .ic-svg{font-size:18px;}
+  .hc-btn--primary{background:var(--route);color:#fff;box-shadow:0 6px 16px rgba(10,159,91,0.28);}
+  .hc-btn--ghost{background:var(--card);color:var(--ink);border-color:var(--border);box-shadow:var(--sh-1);}
+  .hc-btn--ghost .ic-svg{color:var(--route);}
+
+  /* ---------- 2. Statistika ---------- */
+  /* minmax(0,1fr) muhim: oddiy `1fr` aslida minmax(auto,1fr) va uzun
+     so'z ustunni kengaytirib, qo'shnisining ustiga chiqib ketardi
+     ("Yakunlangan tashuv" shunday buzilgandi). */
+  .stats-card{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
+    background:var(--tint);border:1px solid var(--border);border-radius:16px;
+    padding:14px 11px;
+  }
+  .stats-card[hidden]{display:none;}
+  /* Ikonka chapda, raqam va izoh o'ngda — namunadagidek yonma-yon. */
+  .stat-item{display:flex;align-items:flex-start;gap:6px;min-width:0;}
+  .stat-ico{
+    width:24px;height:24px;border-radius:8px;background:var(--card);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;color:var(--route);
+  }
+  .stat-ico .ic-svg{font-size:14px;}
+  .stat-text{min-width:0;display:flex;flex-direction:column;}
+  .stat-v{font-size:16px;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-0.02em;}
+  /* Sahifada umumiy `overflow-wrap:anywhere` bor — u "Yakunlangan" ni
+     so'z o'rtasidan kesib tashlardi. Bu yerda so'z butunligicha
+     keyingi qatorga o'tadi. */
+  .stat-k{font-size:10px;color:var(--ink-soft);line-height:1.25;overflow-wrap:normal;word-break:normal;}
+
+  /* ---------- Bo'lim sarlavhasi ---------- */
+  .home-sec{display:flex;flex-direction:column;gap:12px;}
+  .home-sec[hidden]{display:none;}
+  .home-sec-head{display:flex;align-items:center;gap:10px;}
+  .home-sec-icon{
+    width:32px;height:32px;border-radius:50%;background:var(--tint);
+    display:flex;align-items:center;justify-content:center;color:var(--route);flex-shrink:0;
+  }
+  .home-sec-text{min-width:0;flex:1;}
+  .home-sec-text h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-0.01em;color:var(--ink);}
+  .home-sec-text p{margin:2px 0 0;font-size:12px;color:var(--ink-soft);line-height:1.35;}
+  .home-sec-all{
+    display:inline-flex;align-items:center;gap:5px;flex-shrink:0;
+    font-size:12.5px;font-weight:600;color:var(--route);text-decoration:none;
+    min-height:44px;padding-left:6px;white-space:nowrap;
+  }
+  .home-sec-all .ic-svg{font-size:15px;}
+
+  /* ---------- 3. Yuk kartochkasi ---------- */
+  .home-load-card{
+    display:flex;gap:12px;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:12px;box-shadow:var(--sh-1);position:relative;
+    cursor:pointer;transition:border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  }
+  .home-load-card + .home-load-card{margin-top:12px;}
+  .home-load-card:hover{border-color:var(--route);box-shadow:var(--sh-2);}
+  .hlc-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px;}
+  .hlc-match{
+    align-self:flex-start;background:var(--route);color:#fff;
+    border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;
+  }
+  /* Sahifadagi umumiy `overflow-wrap:anywhere` bu qatorlarda so'zni
+     o'rtasidan kesardi ("Yarim / treyler", "4- / sentabr"). Bu yerda
+     so'z butun qoladi va kerak bo'lsa qator bo'linadi. */
+  .hlc-line{
+    display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);
+    min-width:0;flex-wrap:wrap;overflow-wrap:normal;word-break:normal;
+  }
+  .hlc-line .ic-svg{font-size:15px;color:var(--route);flex-shrink:0;}
+  .hlc-line b{color:var(--ink);font-weight:600;}
+  .hlc-line .hl{background:var(--tint);border-radius:6px;padding:1px 6px;color:var(--ink);font-weight:600;}
+  .hlc-line .arrow{color:var(--route);font-weight:700;}
+  .hlc-price{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;margin-top:1px;}
+  .hlc-side{
+    width:132px;flex-shrink:0;border-left:1px solid var(--border);padding-left:12px;
+    display:flex;flex-direction:column;justify-content:space-between;gap:10px;
+  }
+  /* O'ng yuqorida yurakcha turadi — ism unga tegib ketmasin. */
+  .hlc-person{display:flex;align-items:center;gap:8px;min-width:0;padding-right:26px;}
+  .hlc-person-face{
+    width:32px;height:32px;border-radius:50%;flex-shrink:0;background:var(--route);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px;
+  }
+  /* Ism bitta qatorda qoladi; juda uzun bo'lsa uch nuqta bilan
+     qisqaradi — ikkiga bo'linib kartochkani cho'zib yubormasin. */
+  .hlc-person-name{
+    font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.2;
+    display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+  }
+  .hlc-person > span:last-child{min-width:0;}
+  .hlc-person-rating{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:3px;}
+  .hlc-person-rating .ic-svg{font-size:12px;color:#F59E0B;}
+  .hlc-detail{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-height:40px;border-radius:11px;background:var(--route);color:#fff;
+    font-size:13.5px;font-weight:600;border:none;cursor:pointer;
+    font-family:'Inter',sans-serif;width:100%;
+  }
+  .hlc-fav{
+    position:absolute;top:10px;right:10px;width:32px;height:32px;
+    border:none;background:none;cursor:pointer;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;padding:0;z-index:2;
+  }
+  .hlc-fav .ic-svg{font-size:19px;}
+  .hlc-fav.on{color:#EF4444;}
+  .hlc-fav.on .ic-svg{fill:currentColor;}
+
+  /* ---------- 4. Xarita ---------- */
+  .home-map-card{
+    position:relative;border-radius:16px;overflow:hidden;
+    border:1px solid var(--border);background:var(--paper-dark);height:250px;
+  }
+  .home-map{position:absolute;inset:0;}
+  .home-map-toggle{
+    position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:6px;
+  }
+  .hmt-btn{
+    min-height:38px;padding:0 16px;border-radius:11px;border:1px solid var(--border);
+    background:var(--card);color:var(--ink);font-family:'Inter',sans-serif;
+    font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:var(--sh-1);
+  }
+  .hmt-btn.active{background:var(--route);color:#fff;border-color:var(--route);}
+  .home-map-legend{
+    position:absolute;bottom:12px;left:12px;z-index:500;display:flex;gap:12px;
+    background:var(--card);border-radius:10px;padding:7px 11px;box-shadow:var(--sh-1);
+    font-size:11.5px;color:var(--ink);
+  }
+  .home-map-legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+  .home-map-legend .ic-svg{font-size:14px;}
+  .home-map-legend .pin-pickup{color:var(--route);}
+  .home-map-legend .pin-drop{color:#2563EB;}
+  .home-map-zoom{
+    position:absolute;right:12px;bottom:12px;z-index:500;display:flex;flex-direction:column;
+    background:var(--card);border-radius:10px;overflow:hidden;box-shadow:var(--sh-1);
+  }
+  .home-map-zoom button{
+    width:38px;height:38px;border:none;background:none;cursor:pointer;
+    font-size:19px;line-height:1;color:var(--ink);font-family:'Inter',sans-serif;
+  }
+  .home-map-zoom button + button{border-top:1px solid var(--border);}
+  .home-map-zoom button:hover{background:var(--tint);}
+  /* Shahar nomi nuqta yonida doim turadi — namunadagidek. Leaflet'ning
+     o'z uchburchagi va foni olib tashlandi. */
+  .home-map-label.leaflet-tooltip{
+    background:none;border:none;box-shadow:none;padding:0 0 0 3px;
+    font-family:'Inter',sans-serif;font-size:11.5px;font-weight:700;
+    color:var(--ink);text-shadow:0 1px 3px rgba(255,255,255,0.95),0 0 6px rgba(255,255,255,0.9);
+  }
+  .home-map-label.leaflet-tooltip::before{display:none;}
+
+  /* ---------- 5. Qanday ishlaydi ---------- */
+  .hiw-row{
+    display:flex;align-items:flex-start;gap:4px;list-style:none;margin:0;padding:0;
+  }
+  .hiw-step{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+  .hiw-icon{
+    position:relative;width:38px;height:38px;border-radius:50%;background:var(--tint);
+    display:flex;align-items:center;justify-content:center;color:var(--route);
+  }
+  .hiw-icon .ic-svg{font-size:19px;}
+  .hiw-icon b{
+    position:absolute;top:-4px;right:-6px;min-width:20px;height:18px;
+    border-radius:999px;background:var(--route);color:#fff;
+    font-size:10px;font-weight:700;line-height:18px;text-align:center;
+    box-shadow:0 0 0 2px var(--paper);
+  }
+  .hiw-step h3{margin:2px 0 0;font-size:12px;font-weight:700;color:var(--ink);line-height:1.25;}
+  .hiw-step p{margin:0;font-size:10.5px;color:var(--ink-soft);line-height:1.3;}
+  /* Strelka qadamlar orasida, aynan doiralar balandligida turadi —
+     matn qatoriga tushib qolmasin. */
+  .hiw-sep{
+    flex:0 0 auto;align-self:flex-start;color:var(--muted);margin-top:11px;
+    display:flex;align-items:center;
+  }
+  .hiw-sep .ic-svg{font-size:14px;}
+
+  /* ---------- 6. Yuk mashinalari ---------- */
+  /* Yonlamasiga suriladi: uchtasini tor ekranga tiqishtirib qo'yish
+     o'rniga, birinchisi to'liq, ikkinchisi yarim ko'rinib turadi —
+     surish mumkinligi shundan bilinadi. */
+  .home-truck-rail{
+    display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    margin:0 -16px;padding:2px 16px 6px;
+  }
+  .home-truck-rail::-webkit-scrollbar{display:none;}
+  .home-truck-card{
+    flex:0 0 62%;max-width:230px;scroll-snap-align:start;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    overflow:hidden;box-shadow:var(--sh-1);cursor:pointer;position:relative;
+  }
+  .htc-photo{
+    aspect-ratio:16/10;background:var(--paper-dark);display:flex;
+    align-items:center;justify-content:center;color:var(--muted);
+  }
+  .htc-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .htc-photo .ic-svg{font-size:34px;}
+  .htc-body{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px;}
+  .htc-name{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.25;}
+  .htc-meta{font-size:10.5px;color:var(--muted);}
+  .htc-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:3px;}
+  /* Narx so'mda — raqami uzun bo'ladi, shuning uchun o'z joyiga
+     sig'ishi uchun kichrayadi va yurakchani siqib chiqarmaydi. */
+  .htc-price{font-size:13px;font-weight:700;color:var(--route);letter-spacing:-0.02em;min-width:0;}
+  .htc-fav{
+    width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0;
+    color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .htc-fav .ic-svg{font-size:18px;}
+  .htc-fav.on{color:#EF4444;}
+  .htc-fav.on .ic-svg{fill:currentColor;}
+
+  /* ---------- Yuklanish / bo'sh / xato holatlari ---------- */
+  .home-skel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;}
+  .home-skel + .home-skel{margin-top:12px;}
+  .home-state{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:22px 16px;text-align:center;
+  }
+  .home-state p{margin:0 0 14px;font-size:13.5px;color:var(--ink-soft);line-height:1.5;}
+  .home-state .btn{max-width:230px;margin:0 auto;}
+
+  /* Kengroq ekranlarda ham bitta ustun bo'lib qoladi, lekin ichki
+     bloklar biroz kattaroq nafas oladi. */
+  @media(min-width:600px){
+    .home{padding:16px 20px 32px;gap:28px;}
+    .hero-card-title{font-size:26px;}
+    .hero-card-body{padding:26px 22px;}
+    .home-truck-card{flex-basis:200px;}
+  }
+  /* Eng tor telefonlarda (320px) to'rtta ustun juda siqilib ketadi. */
+  @media(max-width:359px){
+    .stats-card{grid-template-columns:repeat(2,1fr);gap:12px 10px;}
+    .hero-card-body{max-width:100%;}
+    .hero-card-photo{inset:0 0 0 45%;opacity:0.55;}
+    .hiw-sep{display:none;}
+    .hiw-row{flex-wrap:wrap;gap:14px 10px;}
+    .hiw-step{flex:0 0 calc(50% - 5px);}
+  }
 
   /* Yuqoridan pastga tortib yangilash — o'rnatilgan ilova uchun.
      Brauzerda buni Chrome/Safari o'zi qiladi, u yerda bu qo'shilmaydi. */
@@ -1848,6 +2159,14 @@
     <circle cx="176" cy="86" r="16" fill="currentColor"/>
     <circle cx="176" cy="86" r="6" fill="var(--paper)"/>
   </symbol>
+  <!-- Sarlavhadagi yassi belgi: ikkita qiya lenta — biri to'q ko'k,
+       biri yashil. Yo'l va harakatni bildiradi. Doira ichidagi
+       #logoMark hero uchun qoladi. -->
+  <symbol id="logoMarkFlat" viewBox="0 0 32 32">
+    <path d="M6.4 2h7.1L11 15.6 3.9 30 1.2 18.9z" fill="#14263D"/>
+    <path d="M18.5 2h7.1l4.4 12.7L23.1 30l-6.9-14.4z" fill="#0A9F5B"/>
+  </symbol>
+
   <symbol id="logoMark" viewBox="0 0 100 100">
     <circle cx="50" cy="50" r="47" fill="#14263D"/>
     <path d="M50 18 L50 50 M50 50 L28 82 M50 50 L72 82" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" fill="none"/>
@@ -1890,6 +2209,13 @@
     <symbol id="iconMenu" viewBox="0 0 24 24"><path d="M4 6H20M4 12H20M4 18H20"/></symbol>
     <symbol id="iconEdit" viewBox="0 0 24 24"><path d="M4 20 4.8 16.2 16.2 4.8A2 2 0 0 1 19 4.8L19.2 5A2 2 0 0 1 19.2 7.8L7.8 19.2Z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
     <symbol id="iconChevronRight" viewBox="0 0 24 24"><path d="M9 5 16 12 9 19"/></symbol>
+    <symbol id="iconChevronDown" viewBox="0 0 24 24"><path d="M5 9 12 16 19 9"/></symbol>
+    <!-- Bosh sahifa uchun qo'shilganlari -->
+    <symbol id="iconPlus" viewBox="0 0 24 24"><path d="M12 5V19M5 12H19"/></symbol>
+    <symbol id="iconTarget" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22"/></symbol>
+    <symbol id="iconHandshake" viewBox="0 0 24 24"><path d="M7.5 11.5 4 8l3.5-3 3 2.5"/><path d="M16.5 11.5 20 8l-3.5-3-3 2.5"/><path d="M10.5 7.5h3l4 4-2.2 2.2-2.3-2.1-2.3 2.1L8.5 13z"/><path d="M9 15.5 11 17.5M12.5 14.5 15 17"/></symbol>
+    <symbol id="iconPin" viewBox="0 0 24 24"><path d="M12 21.5C12 21.5 5 15.6 5 10.2A7 7 0 0 1 19 10.2C19 15.6 12 21.5 12 21.5Z"/><circle cx="12" cy="10.2" r="2.6"/></symbol>
+    <symbol id="iconCheckCircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2 11 14.7 15.8 9.9"/></symbol>
     <symbol id="iconBell" viewBox="0 0 24 24"><path d="M6 10.5C6 6.9 8.7 4 12 4C15.3 4 18 6.9 18 10.5V14.5L20 17.5H4L6 14.5Z"/><path d="M9.5 20A2.6 2.6 0 0 0 14.5 20"/></symbol>
     <symbol id="iconLogout" viewBox="0 0 24 24"><path d="M10 4H5C3.9 4 3 4.9 3 6V18C3 19.1 3.9 20 5 20H10"/><path d="M16 16L21 12L16 8"/><path d="M21 12H9"/></symbol>
     <!-- ===== Yuk transporti turkumlari =====
@@ -2043,48 +2369,58 @@
 
 <div id="toastHost" role="status" aria-live="polite" aria-atomic="false"></div>
 
-<nav class="nav" aria-label="Asosiy navigatsiya" style="position:relative;">
-  <div id="googleGateHome"></div>
-  <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);"><span class="word">YO'LDA</span></a>
-  <!-- O'ng tomondagi ikonkalar bitta guruhda turadi. Ilgari har biri
-       o'zi `margin-left:auto` olardi va ikkitasi bo'lgach bo'sh joyni
-       teng bo'lishib, qo'ng'iroq markazdagi logotip ustiga chiqib
-       qolgandi. -->
+<!-- Logotip chapda, qo'ng'iroq va avatar o'ngda. Haydovchilar guruhiga
+     havola bu yerdan Aloqa bo'limiga ko'chdi — sarlavha tor joy, unda
+     faqat ikkita eng kerakli narsa turadi. -->
+<nav class="nav" aria-label="Asosiy navigatsiya">
+  <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;"><svg class="mark" aria-hidden="true"><use href="#logoMarkFlat"/></svg><span class="word">YO'LDA</span></a>
   <div class="nav-actions">
     <button type="button" class="nav-icon-btn nav-bell" id="btnNotifications" hidden
             aria-label="Bildirishnomalar" data-i18n-aria="nav.notificationsAria">
       <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"/></svg>
-      <span class="nav-bell-dot" id="notifBadge" hidden></span>
+      <span class="nav-bell-count" id="notifBadge" hidden></span>
     </button>
-    <a class="nav-icon-btn" href="https://t.me/yoldaku" target="_blank" rel="noopener" aria-label="Haydovchilar guruhi (Telegram)" data-i18n-aria="nav.telegramGroupAria" title="Haydovchilar guruhi">
-      <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
-    </a>
+    <div id="googleGateHome"></div>
   </div>
 </nav>
 
 <main>
 
 <section class="tabview" id="tab-home" data-tab="home">
-  <!-- Brand hero first — logo, tagline, the two main CTAs. Quick filters/
-       FAB and the personalized "Sizga mos yuklar" list follow right after. -->
-  <header class="hero-wrap">
-    <svg class="bg-truck bg-truck--hero" aria-hidden="true"><use href="#truckIcon"/></svg>
-    <p class="eyebrow hero-seq"><span class="dot-live" aria-hidden="true"></span> <span data-i18n="home.eyebrow">Yuk bozori · O'zbekiston</span></p>
-    <svg class="hero-logo hero-seq" aria-hidden="true"><use href="#logoMark"/></svg>
-    <h1 class="brand hero-seq">YO'LDA</h1>
-    <p class="tagline hero-seq" data-i18n="home.tagline">Yukingizni kerakli haydovchi bilan bog'lang. O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan ishlang.</p>
-    <div class="hero-ctas hero-seq">
-      <a class="btn-primary" href="#" data-tab-link="order"><span data-i18n="home.ctaSend">Yuk joylash</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></a>
-      <a class="btn-secondary" href="#" data-tab-link="loads"><span data-i18n="home.ctaGet">Yuk topish</span> <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg></a>
-    </div>
-    <!-- Ilovani telefonga o'rnatish taklifi. Brauzer o'rnatish mumkinligini
-         aytgandagina ko'rinadi (beforeinstallprompt), ya'ni bu yerda hech
-         qachon ishlamaydigan tugma turmaydi. initInstallPrompt() ga qarang. -->
-    <!-- Ataylab `hero-seq` emas: u elementni opacity:0 dan boshlaydi va
-         sahifa ochilishida bir marta animatsiya qiladi. Bu qator esa
-         keyinroq, brauzer ruxsat berganda paydo bo'ladi — o'sha
-         animatsiya allaqachon tugagan bo'lardi va qator ko'rinmay
-         qolardi. O'zining fade'i pastda. -->
+  <!-- Bosh sahifa namunadagi tartibda: hero → statistika → sizga mos
+       yuklar → xarita → qanday ishlaydi → yuk mashinalari. Har bir blok
+       o'z ma'lumotini API dan oladi; ma'lumot bo'lmasa blok o'zini
+       yashiradi yoki bo'sh holat ko'rsatadi, o'ylab topilgan raqam
+       hech qayerda yozilmaydi. -->
+  <div class="home">
+
+    <!-- 1. HERO -->
+    <header class="hero-card">
+      <div class="hero-card-photo" aria-hidden="true"></div>
+      <div class="hero-card-body">
+        <h1 class="hero-card-title">
+          <span data-i18n="home.heroLine1">Yukingizni kerakli</span><br>
+          <span data-i18n="home.heroLine2">haydovchi bilan</span><br>
+          <span class="accent" data-i18n="home.heroLine3">bog'lang.</span>
+        </h1>
+        <p class="hero-card-sub" data-i18n="home.heroSub">O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.</p>
+        <div class="hero-card-ctas">
+          <a class="hc-btn hc-btn--primary" href="#" data-tab-link="order">
+            <svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg>
+            <span data-i18n="home.ctaSend">Yuk joylash</span>
+          </a>
+          <a class="hc-btn hc-btn--ghost" href="#" data-tab-link="loads">
+            <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg>
+            <span data-i18n="home.ctaGet">Yuk topish</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Ilovani telefonga o'rnatish taklifi. Brauzer o'rnatish mumkin
+         deganda (beforeinstallprompt) yoki iPhone'da ko'rinadi — ya'ni
+         bu yerda hech qachon ishlamaydigan tugma turmaydi.
+         initInstallPrompt() ga qarang. -->
     <div class="install-row" id="installRow" hidden>
       <button type="button" class="btn-secondary" id="btnInstallApp">
         <svg class="ic-svg" aria-hidden="true"><use href="#iconDownload"/></svg>
@@ -2095,34 +2431,98 @@
         <svg class="ic-svg" aria-hidden="true"><use href="#iconClose"/></svg>
       </button>
     </div>
-  </header>
 
-  <div class="section" style="padding-top:var(--s5);padding-bottom:var(--s2);max-width:640px;">
-    <div class="home-quick-row reveal">
-      <div class="chip-row" id="homeQuickFilters">
-        <button type="button" class="chip" data-quick="today" data-i18n="loads.qToday">Bugun</button>
-        <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
-        <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
-        <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
+    <!-- 2. STATISTIKA — /api/order?action=stats dan. Bazada hech narsa
+         bo'lmasa butun blok yashiriladi. -->
+    <div class="stats-card" id="homeStats" hidden></div>
+
+    <!-- 3. SIZGA MOS YUKLAR -->
+    <section class="home-sec" id="homeMatchWrap" hidden>
+      <div class="home-sec-head">
+        <span class="home-sec-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconTarget"/></svg></span>
+        <div class="home-sec-text">
+          <h2 data-i18n="home.matchTitle">Sizga mos yuklar</h2>
+          <p data-i18n="home.matchSub">Sizning profilingizga mos yuklar</p>
+        </div>
+        <a class="home-sec-all" href="#" data-tab-link="loads">
+          <span data-i18n="home.seeAll">Barchasini ko'rish</span>
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg>
+        </a>
       </div>
-      <a class="home-post-fab" href="#" data-tab-link="order" aria-label="Yuk joylash" title="Yuk joylash">
-        <svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg>
-      </a>
-    </div>
-  </div>
+      <div id="homeMatchList"></div>
+    </section>
 
-  <div class="section" id="homeMatchWrap" style="padding-top:var(--s5);padding-bottom:var(--s2);max-width:640px;" hidden>
-    <div class="section-head reveal" style="margin-bottom:var(--s4);text-align:left;">
-      <div class="section-eyebrow" data-i18n="home.matchEyebrow">Siz uchun</div>
-      <h2 class="section-title" style="font-size:clamp(20px,4vw,26px);"><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span class="accent" data-i18n="home.matchTitle">Sizga mos yuklar</span></h2>
-    </div>
-    <div id="homeMatchList"></div>
-  </div>
+    <!-- 4. XARITA — Yuklar bo'limidagi o'sha Leaflet/OSM xaritasi,
+         faqat bu yerda ochiq yuklarning yo'nalishlari ko'rsatiladi. -->
+    <section class="home-sec" id="homeMapWrap" hidden>
+      <div class="home-map-card">
+        <div class="home-map-toggle" role="tablist" aria-label="Ko'rinish">
+          <button type="button" class="hmt-btn active" id="btnHomeMapView" role="tab" aria-selected="true" data-i18n="loads.viewMap">Xarita</button>
+          <button type="button" class="hmt-btn" id="btnHomeListView" role="tab" aria-selected="false" data-i18n="loads.viewList">Ro'yxat</button>
+        </div>
+        <div class="home-map" id="homeMap"></div>
+        <div class="home-map-legend">
+          <span><svg class="ic-svg pin-pickup" aria-hidden="true"><use href="#iconPin"/></svg> <span data-i18n="home.legendPickup">Yuklash nuqtasi</span></span>
+          <span><svg class="ic-svg pin-drop" aria-hidden="true"><use href="#iconPin"/></svg> <span data-i18n="home.legendDrop">Yetkazish nuqtasi</span></span>
+        </div>
+        <div class="home-map-zoom">
+          <button type="button" id="btnHomeMapIn" aria-label="Kattalashtirish">+</button>
+          <button type="button" id="btnHomeMapOut" aria-label="Kichraytirish">−</button>
+        </div>
+      </div>
+    </section>
 
-  <!-- Raqamlar /api/order?action=stats dan keladi. Bazada hech narsa
-       bo'lmasa, blok umuman ko'rsatilmaydi — nol yoki o'ylab topilgan
-       raqamdan ko'ra hech narsa yaxshiroq. -->
-  <div class="stats-bar" id="homeStats" hidden></div>
+    <!-- 5. QANDAY ISHLAYDI? -->
+    <section class="home-sec">
+      <div class="home-sec-head plain">
+        <div class="home-sec-text">
+          <h2 data-i18n="home.howTitle">Qanday ishlaydi?</h2>
+          <p data-i18n="home.howSub">4 ta oddiy qadamda yukingiz yo'lga chiqadi</p>
+        </div>
+      </div>
+      <ol class="hiw-row">
+        <li class="hiw-step">
+          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><b>01</b></span>
+          <h3 data-i18n="home.how1">Yukni joylang</h3>
+          <p data-i18n="home.how1sub">Yuk ma'lumotlarini kiriting</p>
+        </li>
+        <li class="hiw-sep" aria-hidden="true"><svg class="ic-svg"><use href="#iconChevronRight"/></svg></li>
+        <li class="hiw-step">
+          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><b>02</b></span>
+          <h3 data-i18n="home.how2">Haydovchini toping</h3>
+          <p data-i18n="home.how2sub">Smart matching orqali</p>
+        </li>
+        <li class="hiw-sep" aria-hidden="true"><svg class="ic-svg"><use href="#iconChevronRight"/></svg></li>
+        <li class="hiw-step">
+          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconHandshake"/></svg><b>03</b></span>
+          <h3 data-i18n="home.how3">Kelishing</h3>
+          <p data-i18n="home.how3sub">Takliflarni ko'rib chiqing</p>
+        </li>
+        <li class="hiw-sep" aria-hidden="true"><svg class="ic-svg"><use href="#iconChevronRight"/></svg></li>
+        <li class="hiw-step">
+          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconPin"/></svg><b>04</b></span>
+          <h3 data-i18n="home.how4">Yukni kuzating</h3>
+          <p data-i18n="home.how4sub">Real-time tracking</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 6. YUK MASHINALARI — /api/trucks?action=list dan. -->
+    <section class="home-sec" id="homeTrucksWrap" hidden>
+      <div class="home-sec-head plain">
+        <div class="home-sec-text">
+          <h2 data-i18n="home.trucksTitle">Yuk mashinalari</h2>
+          <p data-i18n="home.trucksSub">Sizning biznesingiz uchun eng yaxshi texnika</p>
+        </div>
+        <a class="home-sec-all" href="#" data-tab-link="trucks">
+          <span data-i18n="home.seeAll">Barchasini ko'rish</span>
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg>
+        </a>
+      </div>
+      <div class="home-truck-rail" id="homeTruckRail"></div>
+    </section>
+
+  </div>
 </section>
 
 <section class="tabview" id="tab-order" data-tab="order" hidden>
@@ -2343,9 +2743,18 @@
         <svg class="ic-svg" aria-hidden="true"><use href="#iconPhone"/></svg> <span id="supportPhoneText">+998 94 440 20 90</span>
       </a>
     </div>
-    <div class="card reveal" style="margin:0 auto var(--s6);text-align:left;">
+    <div class="card reveal" style="margin:0 auto var(--s4);text-align:left;">
       <a class="btn ghost" id="supportTelegramLink" href="https://t.me/ziyodullayv" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
         <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg> <span id="supportTelegramText">@ziyodullayv</span>
+      </a>
+    </div>
+    <!-- Haydovchilar guruhi. Ilgari sarlavhada, logotip yonida turardi;
+         yangi sarlavhada faqat qo'ng'iroq va avatarga joy bor, shuning
+         uchun havola shu yerga — boshqa aloqa yo'llari yoniga ko'chdi. -->
+    <div class="card reveal" style="margin:0 auto var(--s6);text-align:left;">
+      <a class="btn ghost" id="driverGroupLink" href="https://t.me/yoldaku" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg>
+        <span data-i18n="contact.driverGroup">Haydovchilar guruhi (Telegram)</span>
       </a>
     </div>
 
@@ -2457,7 +2866,7 @@
 <nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
-  <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
+  <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
   <button type="button" class="bn-item" data-tab-link="trucks"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span data-i18n="nav.trucks">Mashinalar</span></button>
   <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
 </nav>
@@ -2643,7 +3052,21 @@
       "chatTab.sub": "Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.",
       "profile.helpLink": "Yordam, savollar va sozlamalar",
       "home.statLoads": "Faol yuk", "home.statDrivers": "Haydovchi",
-      "home.statDelivered": "Yetkazilgan", "home.statCities": "Shahar",
+      "home.statDelivered": "Yakunlangan tashuv", "home.statCities": "Faol yo'nalish",
+      "home.heroLine1": "Yukingizni kerakli", "home.heroLine2": "haydovchi bilan", "home.heroLine3": "bog'lang.",
+      "home.heroSub": "O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.",
+      "home.matchSub": "Sizning profilingizga mos yuklar", "home.seeAll": "Barchasini ko'rish",
+      "contact.driverGroup": "Haydovchilar guruhi (Telegram)",
+      "home.detail": "Batafsil", "home.ton": "tonna",
+      "home.legendPickup": "Yuklash nuqtasi", "home.legendDrop": "Yetkazish nuqtasi",
+      "home.howTitle": "Qanday ishlaydi?", "home.howSub": "4 ta oddiy qadamda yukingiz yo'lga chiqadi",
+      "home.how1": "Yukni joylang", "home.how1sub": "Yuk ma'lumotlarini kiriting",
+      "home.how2": "Haydovchini toping", "home.how2sub": "Smart matching orqali",
+      "home.how3": "Kelishing", "home.how3sub": "Takliflarni ko'rib chiqing",
+      "home.how4": "Yukni kuzating", "home.how4sub": "Real-time tracking",
+      "home.trucksTitle": "Yuk mashinalari", "home.trucksSub": "Sizning biznesingiz uchun eng yaxshi texnika",
+      "home.matchEmpty": "Hozircha sizga mos yuklar topilmadi.", "home.matchEmptyBtn": "Yuklarni ko'rish",
+      "home.loadError": "Ma'lumotlarni yuklashda xatolik yuz berdi.", "home.retry": "Qayta urinish",
       "home.stat3k": "Ro'yxatdan o'tish narxi", "home.stat3kk": "Komissiya ham yo'q",
 
       "order.eyebrow": "Buyurtma", "order.titleA": "Hisoblang va", "order.titleB": "yuboring",
@@ -2990,7 +3413,21 @@
       "chatTab.sub": "Найдите пользователя по username и свяжитесь с ним.",
       "profile.helpLink": "Помощь, вопросы и настройки",
       "home.statLoads": "Активных грузов", "home.statDrivers": "Водителей",
-      "home.statDelivered": "Доставлено", "home.statCities": "Городов",
+      "home.statDelivered": "Завершённых перевозок", "home.statCities": "Активных направлений",
+      "home.heroLine1": "Свяжите свой груз", "home.heroLine2": "с нужным", "home.heroLine3": "водителем.",
+      "home.heroSub": "Находите грузы по всему Узбекистану, размещайте свои и связывайтесь с надёжными водителями.",
+      "home.matchSub": "Грузы, подходящие вашему профилю", "home.seeAll": "Смотреть все",
+      "contact.driverGroup": "Группа водителей (Telegram)",
+      "home.detail": "Подробнее", "home.ton": "тонн",
+      "home.legendPickup": "Точка погрузки", "home.legendDrop": "Точка доставки",
+      "home.howTitle": "Как это работает?", "home.howSub": "Ваш груз выезжает за 4 простых шага",
+      "home.how1": "Разместите груз", "home.how1sub": "Укажите данные о грузе",
+      "home.how2": "Найдите водителя", "home.how2sub": "Через smart matching",
+      "home.how3": "Договоритесь", "home.how3sub": "Рассмотрите предложения",
+      "home.how4": "Следите за грузом", "home.how4sub": "Отслеживание в реальном времени",
+      "home.trucksTitle": "Грузовики", "home.trucksSub": "Лучшая техника для вашего бизнеса",
+      "home.matchEmpty": "Пока подходящих грузов не найдено.", "home.matchEmptyBtn": "Смотреть грузы",
+      "home.loadError": "Не удалось загрузить данные.", "home.retry": "Повторить",
       "home.stat3k": "Стоимость регистрации", "home.stat3kk": "Без комиссии",
 
       "order.eyebrow": "Заказ", "order.titleA": "Рассчитайте и", "order.titleB": "отправьте",
@@ -3337,7 +3774,21 @@
       "chatTab.sub": "Search by username and get in touch with anyone.",
       "profile.helpLink": "Help, questions and settings",
       "home.statLoads": "Active loads", "home.statDrivers": "Drivers",
-      "home.statDelivered": "Delivered", "home.statCities": "Cities",
+      "home.statDelivered": "Deliveries completed", "home.statCities": "Active routes",
+      "home.heroLine1": "Connect your load", "home.heroLine2": "with the right", "home.heroLine3": "driver.",
+      "home.heroSub": "Find loads across Uzbekistan, post your own and connect with drivers you can trust.",
+      "home.matchSub": "Loads that fit your profile", "home.seeAll": "See all",
+      "contact.driverGroup": "Drivers group (Telegram)",
+      "home.detail": "Details", "home.ton": "tonnes",
+      "home.legendPickup": "Pickup point", "home.legendDrop": "Delivery point",
+      "home.howTitle": "How does it work?", "home.howSub": "Your load is on the road in 4 simple steps",
+      "home.how1": "Post the load", "home.how1sub": "Enter the load details",
+      "home.how2": "Find a driver", "home.how2sub": "Through smart matching",
+      "home.how3": "Agree on terms", "home.how3sub": "Review the offers",
+      "home.how4": "Track the load", "home.how4sub": "Real-time tracking",
+      "home.trucksTitle": "Trucks", "home.trucksSub": "The best machines for your business",
+      "home.matchEmpty": "No matching loads just yet.", "home.matchEmptyBtn": "Browse loads",
+      "home.loadError": "Something went wrong while loading.", "home.retry": "Try again",
       "home.stat3k": "Sign-up cost", "home.stat3kk": "No commission either",
 
       "order.eyebrow": "Order", "order.titleA": "Calculate and", "order.titleB": "send it",
@@ -4744,6 +5195,25 @@
   }
 
   /**
+   * Sarlavhadagi avatar. Google ham, Telegram ham xuddi shu ko'rinishni
+   * chizadi — ilgari ikki joyda deyarli bir xil kod turardi.
+   * Bosilganda Profil bo'limi ochiladi; yonidagi kichkina strelka ham
+   * shuni bildiradi.
+   */
+  function renderNavAvatar(photoUrl, label){
+    var gateHome = document.getElementById("googleGateHome");
+    if(!gateHome) return;
+    var initial = escapeHtml((label || "?").charAt(0).toUpperCase());
+    var face = photoUrl
+      ? '<img src="'+escapeHtml(photoUrl)+'" alt="" referrerpolicy="no-referrer">'
+      : '<span class="nav-avatar-fallback">'+initial+'</span>';
+    gateHome.innerHTML = '<button type="button" class="nav-avatar-btn" id="navProfileBtn" aria-label="Profil" data-i18n-aria="nav.profile">'
+      + face + '<svg class="chev ic-svg" aria-hidden="true"><use href="#iconChevronDown"/></svg></button>';
+    var navBtn = document.getElementById("navProfileBtn");
+    if(navBtn) navBtn.addEventListener("click", function(){ switchTab("profile"); });
+  }
+
+  /**
    * Google tokeni qayerdan kelganidan qat'i nazar — hozir kirilganidan
    * ham, localStorage'dan tiklanganidan ham — interfeys shu bitta joyda
    * yangilanadi, ikki xil nusxa bo'lib ketmasin uchun.
@@ -4771,16 +5241,7 @@
 
       // In the nav, the round button becomes the user's own avatar —
       // tapping it opens the Profil tab (that's "the profile").
-      var gateHome = document.getElementById("googleGateHome");
-      if(gateHome){
-        var initial = escapeHtml((payload.name || payload.email || "?").charAt(0).toUpperCase());
-        var avatar = payload.picture
-          ? '<img src="'+escapeHtml(payload.picture)+'" alt="" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;display:block;">'
-          : '<span style="width:32px;height:32px;border-radius:50%;background:var(--route);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">'+initial+'</span>';
-        gateHome.innerHTML = '<button type="button" id="navProfileBtn" aria-label="Profil" style="border:none;background:none;padding:0;cursor:pointer;line-height:0;">'+avatar+'</button>';
-        var navBtn = document.getElementById("navProfileBtn");
-        if(navBtn) navBtn.addEventListener("click", function(){ switchTab("profile"); });
-      }
+      renderNavAvatar(payload.picture, payload.name || payload.email);
 
       renderProfile();
       renderHomeMatch();
@@ -4833,16 +5294,7 @@
     if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(label)+' (Telegram) orqali kirdingiz</span>';
 
     // Same "round avatar becomes the profile shortcut" treatment as Google.
-    var gateHome = document.getElementById("googleGateHome");
-    if(gateHome){
-      var initial = escapeHtml((label || "?").charAt(0).toUpperCase());
-      var avatar = (telegramUser && telegramUser.photoUrl)
-        ? '<img src="'+escapeHtml(telegramUser.photoUrl)+'" alt="" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;display:block;">'
-        : '<span style="width:32px;height:32px;border-radius:50%;background:var(--stamp);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">'+initial+'</span>';
-      gateHome.innerHTML = '<button type="button" id="navProfileBtn" aria-label="Profil" style="border:none;background:none;padding:0;cursor:pointer;line-height:0;">'+avatar+'</button>';
-      var navBtn = document.getElementById("navProfileBtn");
-      if(navBtn) navBtn.addEventListener("click", function(){ switchTab("profile"); });
-    }
+    renderNavAvatar(telegramUser && telegramUser.photoUrl, label);
 
     if(!state.name && telegramUser){
       state.name = [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ");
@@ -8155,6 +8607,10 @@
      Faqat bazadagi haqiqiy raqamlar. Nol bo'lgan ko'rsatkich
      ko'rsatilmaydi: "0 haydovchi" yozib qo'yish platformani bo'sh
      ko'rsatadi va foydasi yo'q. Hech biri qolmasa, blok yashiriladi. */
+  /* Raqamlar butunlay /api/order?action=stats dan keladi. Nolga teng
+     ustun ko'rsatilmaydi, hech biri qolmasa butun blok yashiriladi —
+     bo'sh bazada "0 haydovchi" deb turgandan ko'ra hech narsa
+     turmagani yaxshiroq. O'ylab topilgan raqam bu yerda yo'q. */
   function loadHomeStats(){
     var box = document.getElementById("homeStats");
     if(!box) return;
@@ -8162,17 +8618,21 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         var cells = [
-          { value: data.activeLoads, key: "home.statLoads", label: "Faol yuk" },
-          { value: data.drivers,     key: "home.statDrivers", label: "Haydovchi" },
-          { value: data.delivered,   key: "home.statDelivered", label: "Yetkazilgan" },
-          { value: data.cities,      key: "home.statCities", label: "Shahar" }
+          { value: data.activeLoads, icon: "iconBox",         key: "home.statLoads",     label: "Faol yuk" },
+          { value: data.drivers,     icon: "iconUser",        key: "home.statDrivers",   label: "Haydovchi" },
+          { value: data.delivered,   icon: "iconCheckCircle", key: "home.statDelivered", label: "Yakunlangan tashuv" },
+          { value: data.cities,      icon: "iconPin",         key: "home.statCities",    label: "Faol yo'nalish" }
         ].filter(function(c){ return Number(c.value) > 0; });
 
         if(!cells.length){ box.hidden = true; return; }
         box.innerHTML = cells.map(function(c){
-          return '<div class="stat-cell reveal"><div class="v" data-count="'+c.value+'">'
-            + formatNum(c.value) + '</div>'
-            + '<div class="k" data-i18n="'+c.key+'">'+c.label+'</div></div>';
+          return '<div class="stat-item">'
+            + '<span class="stat-ico">'+icon(c.icon)+'</span>'
+            + '<span class="stat-text">'
+            +   '<span class="stat-v">'+formatNum(c.value)+'</span>'
+            +   '<span class="stat-k" data-i18n="'+c.key+'">'+escapeHtml(c.label)+'</span>'
+            + '</span>'
+            + '</div>';
         }).join("");
         box.hidden = false;
         applyLang();
@@ -8697,24 +9157,251 @@
   }
 
   /* ---------- Home tab: "Siz uchun mos yuklar" ---------- */
+  /* ---------- Bosh sahifadagi "Sizga mos yuklar" kartochkasi ----------
+     Chapda yuk haqidagi ma'lumot, o'ngda yuk beruvchi va "Batafsil".
+     Yuk beruvchining ismi va reytingi serverdan keladi (api/order.js,
+     listLoads) — ikkalasi ham allaqachon ochiq ma'lumot. Rasm o'rniga
+     ism harfidan doiracha: avatar profilda data: URL bo'lib turadi va
+     uni ro'yxatga qo'shsak javob bir necha megabaytga chiqib ketardi.
+     Odam profilini to'ldirmagan bo'lsa, bu ustun umuman chizilmaydi —
+     "Noma'lum" degan bo'sh joy qoldirilmaydi. */
+  /* Bosh sahifada sana "Bugun"/"Ertaga" deb yoziladi — namunadagidek va
+     bir qarashda tushunarli. Qolgan kunlar avvalgi ko'rinishida
+     ("5-sentabr"). Yuklar bo'limidagi ro'yxatga tegilmadi: u yerda
+     to'liq sana kerak, chunki ro'yxat uzoq kunlarni ham qamraydi. */
+  function homeDateLabel(iso){
+    if(!iso) return "";
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var d = new Date(iso + "T00:00:00");
+    if(isNaN(d.getTime())) return "";
+    var days = Math.round((d - today) / 86400000);
+    if(days === 0) return t("loads.qToday") || "Bugun";
+    if(days === 1) return t("loads.qTomorrow") || "Ertaga";
+    return formatLoadDate(iso);
+  }
+
+  function homeLoadCardHtml(o){
+    var cargo = cargoById(o.cargoType);
+    var dateLabel = homeDateLabel(o.pickupDate);
+    var fav = isFavorite(o.code);
+    var owner = o.owner;
+    var rating = (owner && owner.ratingCount) ? (owner.ratingSum / owner.ratingCount).toFixed(1) : "";
+
+    var side = "";
+    if(owner){
+      side = '<div class="hlc-side">'
+        + '<div class="hlc-person">'
+        +   '<span class="hlc-person-face">'+escapeHtml(owner.name.charAt(0).toUpperCase())+'</span>'
+        +   '<span>'
+        +     '<span class="hlc-person-name">'+escapeHtml(owner.name)+'</span>'
+        +     (rating ? '<span class="hlc-person-rating">'+icon("iconStar")+rating+'</span>' : '')
+        +   '</span>'
+        + '</div>'
+        + '<button type="button" class="hlc-detail" data-i18n="home.detail">Batafsil</button>'
+        + '</div>';
+    } else {
+      side = '<div class="hlc-side" style="justify-content:flex-end;">'
+        + '<button type="button" class="hlc-detail" data-i18n="home.detail">Batafsil</button>'
+        + '</div>';
+    }
+
+    // data-code: butun kartochkani ochadigan hozirgi delegatsiya shu
+    // atributga qaraydi (pastdagi document click), ya'ni "Batafsil"
+    // tugmasiga alohida ishlov kerak emas — bosilishi kartochkaga
+    // ko'tariladi. Yurakcha esa [data-fav] orqali, u ham tayyor.
+    return '<div class="home-load-card" data-code="'+escapeHtml(o.code)+'">'
+      + '<button type="button" class="hlc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash" data-i18n-aria="loads.saveAria">'+icon("iconHeart")+'</button>'
+      + '<div class="hlc-main">'
+      +   (o._match != null ? '<span class="hlc-match">'+o._match+'% <span data-i18n="loads.matchShort">mos</span></span>' : '')
+      +   '<span class="hlc-line">'+icon(cargo ? cargo.icon : "iconBox")+'<span class="hl">'+formatNum(Math.round(o.weightKg / 100) / 10)+' <span data-i18n="home.ton">tonna</span></span></span>'
+      +   '<span class="hlc-line">'+icon("iconPin")+'<b>'+escapeHtml(o.fromCity)+'</b><span class="arrow">→</span><b>'+escapeHtml(o.toCity)+'</b></span>'
+      +   '<span class="hlc-line">'
+      +     (o.truckType ? icon("iconTruck")+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType) : "")
+      +     (dateLabel ? '<span style="display:inline-flex;align-items:center;gap:7px;margin-left:'+(o.truckType?'10px':'0')+';">'+icon("iconRoute")+escapeHtml(dateLabel)+'</span>' : "")
+      +   '</span>'
+      +   '<span class="hlc-price">'+formatNum(o.amount)+' <span data-i18n="loads.sum">so\'m</span></span>'
+      + '</div>'
+      + side
+      + '</div>';
+  }
+
+  function homeMatchSkeleton(){
+    var one = '<div class="home-skel">'
+      + '<div class="skeleton sk-line" style="width:32%;"></div>'
+      + '<div class="skeleton sk-line" style="width:62%;margin-top:10px;"></div>'
+      + '<div class="skeleton sk-line" style="width:48%;margin-top:8px;"></div>'
+      + '<div class="skeleton sk-line" style="width:40%;margin-top:8px;"></div>'
+      + '</div>';
+    return one + one;
+  }
+
   function renderHomeMatch(){
     var wrap = document.getElementById("homeMatchWrap");
     var list = document.getElementById("homeMatchList");
     if(!wrap || !list) return;
+    // Kirmagan odamga "sizga mos" degan gapning ma'nosi yo'q —
+    // moslikni hisoblash uchun uning profili kerak.
     if(!isSignedIn()){ wrap.hidden = true; return; }
+
+    wrap.hidden = false;
+    list.innerHTML = homeMatchSkeleton();
 
     loadDriverMatchProfile(function(){
       if(!driverMatchProfile){ wrap.hidden = true; return; }
-      fetch("/api/order?action=list").then(function(r){ return r.json(); }).then(function(data){
+      fetch("/api/order?action=list").then(function(r){
+        if(!r.ok) throw new Error("http");
+        return r.json();
+      }).then(function(data){
         var loads = (data.loads || []).map(function(o){ o._match = computeMatchScore(o); return o; })
           .filter(function(o){ return o._match >= 55; })
           .sort(function(a, b){ return b._match - a._match; })
           .slice(0, 3);
-        if(!loads.length){ wrap.hidden = true; return; }
-        wrap.hidden = false;
-        list.innerHTML = loads.map(loadCardHtml).join("");
+
+        if(!loads.length){
+          list.innerHTML = '<div class="home-state">'
+            + '<p data-i18n="home.matchEmpty">Hozircha sizga mos yuklar topilmadi.</p>'
+            + '<button type="button" class="btn ghost small" data-tab-link="loads" data-i18n="home.matchEmptyBtn">Yuklarni ko\'rish</button>'
+            + '</div>';
+          applyLang();
+          return;
+        }
+        list.innerHTML = loads.map(homeLoadCardHtml).join("");
         applyLang();
-      }).catch(function(){ wrap.hidden = true; });
+      }).catch(function(){
+        list.innerHTML = '<div class="home-state">'
+          + '<p data-i18n="home.loadError">Ma\'lumotlarni yuklashda xatolik yuz berdi.</p>'
+          + '<button type="button" class="btn ghost small" id="btnHomeMatchRetry" data-i18n="home.retry">Qayta urinish</button>'
+          + '</div>';
+        var retry = document.getElementById("btnHomeMatchRetry");
+        if(retry) retry.addEventListener("click", renderHomeMatch);
+        applyLang();
+      });
+    });
+  }
+
+  /* ---------- Bosh sahifadagi xarita ----------
+     Yuklar bo'limidagi o'sha Leaflet + OpenStreetMap. Ikkinchi xarita
+     kutubxonasi qo'shilmaydi va ikkinchi marta yozilmaydi: shu yerda
+     faqat ochiq yuklarning yo'nalishlari chiziladi.
+       yashil nuqta — yuklash joyi, ko'k nuqta — yetkazish joyi,
+       yashil chiziq — yo'nalish.
+     Nuqta bosilsa o'sha yukning sahifasi ochiladi. */
+  var homeMapInstance = null;
+  var homeMapLayers = [];
+
+  function homeMapPin(color){
+    return L.divIcon({
+      className: "",
+      html: '<span style="display:block;width:15px;height:15px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.4);"></span>',
+      iconSize: [15, 15], iconAnchor: [7, 7]
+    });
+  }
+
+  function renderHomeMap(){
+    var wrap = document.getElementById("homeMapWrap");
+    var box = document.getElementById("homeMap");
+    if(!wrap || !box || typeof L === "undefined") return;
+
+    fetch("/api/order?action=list").then(function(r){
+      if(!r.ok) throw new Error("http");
+      return r.json();
+    }).then(function(data){
+      var loads = (data.loads || []).slice(0, 25);
+      // Xaritada ko'rsatadigan narsa bo'lmasa, bo'sh xarita
+      // ko'rsatilmaydi — butun blok yashiriladi.
+      var usable = loads.filter(function(o){ return CITY_COORDS[o.fromCity] && CITY_COORDS[o.toCity]; });
+      if(!usable.length){ wrap.hidden = true; return; }
+      wrap.hidden = false;
+
+      if(!homeMapInstance){
+        homeMapInstance = L.map(box, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
+          .setView([41.3, 64.6], 5);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 12 }).addTo(homeMapInstance);
+      }
+
+      homeMapLayers.forEach(function(l){ homeMapInstance.removeLayer(l); });
+      homeMapLayers = [];
+
+      var bounds = [];
+      var seen = {};
+      usable.forEach(function(o){
+        var a = CITY_COORDS[o.fromCity];
+        var b = CITY_COORDS[o.toCity];
+        bounds.push(a, b);
+
+        var line = L.polyline([a, b], { color: "#0A9F5B", weight: 3, opacity: 0.85 }).addTo(homeMapInstance);
+        homeMapLayers.push(line);
+
+        [[a, o.fromCity, "#0A9F5B"], [b, o.toCity, "#2563EB"]].forEach(function(pair){
+          var key = pair[1] + pair[2];
+          if(seen[key]) return;
+          seen[key] = true;
+          var m = L.marker(pair[0], { icon: homeMapPin(pair[2]), title: pair[1] }).addTo(homeMapInstance);
+          m.bindTooltip(pair[1], { permanent: true, direction: "right", className: "home-map-label" });
+          m.on("click", function(){ openLoadDetail(o.code); });
+          homeMapLayers.push(m);
+        });
+      });
+
+      if(bounds.length) homeMapInstance.fitBounds(bounds, { padding: [46, 46], maxZoom: 8 });
+      setTimeout(function(){ homeMapInstance.invalidateSize(); }, 200);
+    }).catch(function(){ wrap.hidden = true; });
+  }
+
+  /* ---------- Bosh sahifadagi yuk mashinalari ----------
+     Narx bazada qanday bo'lsa shunday ko'rsatiladi — so'mda. Boshqa
+     valyutaga aylantirilmaydi: kursni o'ylab topib qo'yish sotuvchi
+     yozgan narxni buzgan bo'lardi. */
+  function homeTruckCardHtml(tk){
+    var photo = tk.photos && tk.photos[0];
+    var fav = isTruckFav(tk.id);
+    var meta = [String(tk.year)];
+    if(tk.mileageKm != null) meta.push(formatNum(tk.mileageKm) + " km");
+    // data-truck-id: mashina sahifasini ochadigan delegatsiya ham,
+    // yurakcha ham (data-truck-fav) allaqachon mavjud — qayta yozilmadi.
+    return '<article class="home-truck-card" data-truck-id="'+escapeHtml(tk.id)+'">'
+      + '<div class="htc-photo">'+(photo ? '<img src="'+photo+'" alt="" loading="lazy">' : icon("iconTruck"))+'</div>'
+      + '<div class="htc-body">'
+      +   '<span class="htc-name">'+escapeHtml(tk.brand)+'</span>'
+      +   '<span class="htc-meta">'+escapeHtml(meta.join(" · "))+'</span>'
+      +   '<div class="htc-foot">'
+      +     '<span class="htc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></span>'
+      +     '<button type="button" class="htc-fav'+(fav?' on':'')+'" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash" data-i18n-aria="loads.saveAria">'+icon("iconHeart")+'</button>'
+      +   '</div>'
+      + '</div>'
+      + '</article>';
+  }
+
+  function renderHomeTrucks(){
+    var wrap = document.getElementById("homeTrucksWrap");
+    var rail = document.getElementById("homeTruckRail");
+    if(!wrap || !rail) return;
+
+    wrap.hidden = false;
+    rail.innerHTML = '<div class="home-truck-card" style="cursor:default;"><div class="htc-photo skeleton"></div>'
+      + '<div class="htc-body"><div class="skeleton sk-line" style="width:70%;"></div>'
+      + '<div class="skeleton sk-line" style="width:45%;margin-top:8px;"></div></div></div>'
+      + '<div class="home-truck-card" style="cursor:default;"><div class="htc-photo skeleton"></div>'
+      + '<div class="htc-body"><div class="skeleton sk-line" style="width:70%;"></div>'
+      + '<div class="skeleton sk-line" style="width:45%;margin-top:8px;"></div></div></div>';
+
+    fetch("/api/trucks?action=list").then(function(r){
+      if(!r.ok) throw new Error("http");
+      return r.json();
+    }).then(function(data){
+      var trucks = (data.trucks || []).slice(0, 8);
+      // E'lon bo'lmasa bo'sh karusel ko'rsatilmaydi.
+      if(!trucks.length){ wrap.hidden = true; return; }
+      rail.innerHTML = trucks.map(homeTruckCardHtml).join("");
+      applyLang();
+    }).catch(function(){
+      rail.innerHTML = '<div class="home-state" style="flex:1;">'
+        + '<p data-i18n="home.loadError">Ma\'lumotlarni yuklashda xatolik yuz berdi.</p>'
+        + '<button type="button" class="btn ghost small" id="btnHomeTrucksRetry" data-i18n="home.retry">Qayta urinish</button>'
+        + '</div>';
+      var retry = document.getElementById("btnHomeTrucksRetry");
+      if(retry) retry.addEventListener("click", renderHomeTrucks);
+      applyLang();
     });
   }
 
@@ -9828,7 +10515,7 @@
       favBtn.innerHTML = icon("iconHeart", nowFav ? "filled" : "");
       return;
     }
-    var card = e.target.closest(".load-card[data-code]");
+    var card = e.target.closest(".load-card[data-code], .home-load-card[data-code]");
     if(card) openLoadDetail(card.getAttribute("data-code"));
   });
   var btnSendSupport = document.getElementById("btnSendSupport");
@@ -9951,6 +10638,23 @@
   applyMotionPref();
   populateCityDatalist();
   loadHomeStats();
+  renderHomeTrucks();
+
+  /* Xarita: Leaflet <script defer> bilan yuklanadi, ya'ni shu yerga
+     yetganda hali tayyor bo'lmasligi mumkin. Tayyor bo'lsa darhol,
+     bo'lmasa yuklangach chizamiz — "L is not defined" bo'lmasin. */
+  if(typeof L !== "undefined") renderHomeMap();
+  else window.addEventListener("load", function(){ if(typeof L !== "undefined") renderHomeMap(); });
+
+  /* Xarita ustidagi ikkita tugma. "Ro'yxat" — Yuklar bo'limining
+     ro'yxat ko'rinishiga o'tkazadi: bu yerda ikkinchi ro'yxat
+     yasalmaydi, bittasi allaqachon bor. */
+  var btnHomeListView = document.getElementById("btnHomeListView");
+  if(btnHomeListView) btnHomeListView.addEventListener("click", function(){ switchTab("loads"); });
+  var btnHomeMapIn = document.getElementById("btnHomeMapIn");
+  if(btnHomeMapIn) btnHomeMapIn.addEventListener("click", function(){ if(homeMapInstance) homeMapInstance.zoomIn(); });
+  var btnHomeMapOut = document.getElementById("btnHomeMapOut");
+  if(btnHomeMapOut) btnHomeMapOut.addEventListener("click", function(){ if(homeMapInstance) homeMapInstance.zoomOut(); });
 
   var bellBtn = document.getElementById("btnNotifications");
   if(bellBtn) bellBtn.addEventListener("click", openNotifications);

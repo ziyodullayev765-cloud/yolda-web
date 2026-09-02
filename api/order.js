@@ -663,28 +663,61 @@ const listLoads = async (req, res) => {
       if (when === 'tomorrow') return o.pickupDate === tomorrowIso;
       return true;
     })
-    .slice(0, 60)
-    .map((o) => ({
-      code: o.code,
-      fromCity: o.fromCity,
-      toCity: o.toCity,
-      cargoType: o.cargoType,
-      customCargoLabel: o.customCargoLabel || '',
-      weightKg: o.weightKg,
-      volumeM3: o.volumeM3 || null,
-      quantity: o.quantity || null,
-      quantityUnit: o.quantityUnit || '',
-      // Kartochkada nuqta ko'rsatilmaydi, lekin xaritada ko'rsatiladi.
-      fromPoint: o.fromPoint || null,
-      toPoint: o.toPoint || null,
-      amount: o.amount,
-      distanceKm: o.distanceKm,
-      truckType: o.truckType || '',
-      pickupDate: o.pickupDate || '',
-      createdAt: o.createdAt,
-    }));
+    .slice(0, 60);
 
-  return res.status(200).json({ loads });
+  // Yuk kartochkasida yuk beruvchining ismi va reytingi ko'rsatiladi:
+  // haydovchi taklif yuborishdan oldin kim e'lon qilganini bilishi
+  // kerak. Bu yangi ma'lumot ochish emas — ism ?action=detail javobida
+  // ham, Telegram guruhidagi e'londa ham allaqachon ochiq, reyting esa
+  // har kimning ommaviy profilida ko'rinadi. Telefon, pochta va izoh
+  // avvalgidek yopiq: ularni faqat yukni olgan haydovchi ko'radi.
+  //
+  // Avatar ataylab yuborilmaydi: u profilda data: URL ko'rinishida
+  // turadi (alohida fayl ombori yo'q), oltmishta kartochkaga qo'shilsa
+  // javob bir necha megabaytga chiqib ketardi. Frontend ism harfidan
+  // doiracha yasaydi.
+  const ownerKeys = [...new Set(loads.map((o) => o.ownerIdentity || o.googleEmail).filter(Boolean))];
+  const owners = new Map();
+  await Promise.all(ownerKeys.map(async (key) => {
+    const raw = await kvGet(`profile:${key}`);
+    if (!raw) return;
+    try {
+      const p = JSON.parse(raw);
+      const name = p.displayName || p.username || '';
+      if (!name) return;
+      owners.set(key, {
+        name,
+        ratingCount: p.ratingCount || 0,
+        ratingSum: p.ratingSum || 0,
+        verified: Boolean(p.verified),
+      });
+    } catch {
+      /* buzuq yozuv — kartochka shunchaki ismsiz chiqadi */
+    }
+  }));
+
+  const shaped = loads.map((o) => ({
+    code: o.code,
+    fromCity: o.fromCity,
+    toCity: o.toCity,
+    cargoType: o.cargoType,
+    customCargoLabel: o.customCargoLabel || '',
+    weightKg: o.weightKg,
+    volumeM3: o.volumeM3 || null,
+    quantity: o.quantity || null,
+    quantityUnit: o.quantityUnit || '',
+    // Kartochkada nuqta ko'rsatilmaydi, lekin xaritada ko'rsatiladi.
+    fromPoint: o.fromPoint || null,
+    toPoint: o.toPoint || null,
+    amount: o.amount,
+    distanceKm: o.distanceKm,
+    truckType: o.truckType || '',
+    pickupDate: o.pickupDate || '',
+    createdAt: o.createdAt,
+    owner: owners.get(o.ownerIdentity || o.googleEmail) || null,
+  }));
+
+  return res.status(200).json({ loads: shaped });
 };
 
 /**
