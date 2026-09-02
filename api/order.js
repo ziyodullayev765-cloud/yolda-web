@@ -151,6 +151,37 @@ const validate = (body) => {
     pickupDate = '';
   }
 
+  /* Hajm va joy soni — ikkalasi ham ixtiyoriy.
+     Og'irlik yolg'iz o'zi yetarli emas: bir tonna paxta bilan bir
+     tonna sement bir xil mashinaga sig'maydi. Haydovchi yukni
+     ko'rmasdan turib mashinasi to'g'ri kelishini bilishi kerak,
+     aks holda kelib, ortolmay qaytadi.
+
+     Majburiy qilinmadi: ko'p odam hajmini bilmaydi, va bilmagani
+     uchun yukni umuman joylay olmay qolishi kerak emas. */
+  let volumeM3 = null;
+  if (body.volumeM3 !== undefined && body.volumeM3 !== null && body.volumeM3 !== '') {
+    volumeM3 = Math.round(Number(body.volumeM3) * 10) / 10;
+    if (!Number.isFinite(volumeM3) || volumeM3 <= 0 || volumeM3 > 200) {
+      errors.push('Hajm 0.1 dan 200 m³ gacha bo‘lsin');
+      volumeM3 = null;
+    }
+  }
+
+  let quantity = null;
+  if (body.quantity !== undefined && body.quantity !== null && body.quantity !== '') {
+    quantity = Number(body.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100_000) {
+      errors.push('Joy soni 1 dan 100000 gacha bo‘lsin');
+      quantity = null;
+    }
+  }
+
+  const QUANTITY_UNITS = ['JOY', 'PALLET', 'QOP', 'QUTI', 'RULON'];
+  let quantityUnit = String(body.quantityUnit || '');
+  if (quantityUnit && !QUANTITY_UNITS.includes(quantityUnit)) quantityUnit = '';
+  if (quantity && !quantityUnit) quantityUnit = 'JOY';
+
   // Optional: the cargo owner can propose their own price instead of the
   // auto-calculated one. Empty/absent means "use the calculated price".
   let proposedAmount = null;
@@ -166,7 +197,7 @@ const validate = (body) => {
     errors,
     value: {
       fromCity, toCity, weightKg, cargoType, customCargoLabel, truckType, pickupDate,
-      name, phone, note, proposedAmount,
+      name, phone, note, proposedAmount, volumeM3, quantity, quantityUnit,
     },
   };
 };
@@ -609,6 +640,9 @@ const listLoads = async (req, res) => {
       cargoType: o.cargoType,
       customCargoLabel: o.customCargoLabel || '',
       weightKg: o.weightKg,
+      volumeM3: o.volumeM3 || null,
+      quantity: o.quantity || null,
+      quantityUnit: o.quantityUnit || '',
       amount: o.amount,
       distanceKm: o.distanceKm,
       truckType: o.truckType || '',
@@ -669,6 +703,9 @@ const getLoadDetail = async (req, res) => {
     estimatedAmount: order.estimatedAmount,
     isProposed: Boolean(order.isProposed),
     distanceKm: order.distanceKm,
+    volumeM3: order.volumeM3 || null,
+    quantity: order.quantity || null,
+    quantityUnit: order.quantityUnit || '',
     truckType: order.truckType || '',
     pickupDate: order.pickupDate || '',
     status: order.status || 'NEW',

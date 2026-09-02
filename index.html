@@ -2549,6 +2549,8 @@
       "wizard.publishTitle": "Tekshirib chiqing", "wizard.reviewRoute": "Yo'nalish", "wizard.reviewPrice": "Narx", "wizard.reviewContact": "Aloqa",
       "wizard.reviewIncomplete": "Avvalgi bosqichlarni to'ldirib chiqing.", "wizard.sending": "Yuborilmoqda…",
       "wizard.sendBtn": "Haydovchilarga yuborish", "wizard.back": "Orqaga", "wizard.next": "Davom etish",
+      "order.volumeLabel": "Hajm, m³ (ixtiyoriy)", "order.quantityLabel": "Joy soni (ixtiyoriy)",
+      "order.quantityUnitLabel": "O'lchov birligi", "order.volumeShort": "Hajm", "order.quantityShort": "Joy soni",
       "order.weightLabel": "Yuk og'irligi (kg)", "order.cargoTypeLabel": "Yuk turi",
       "order.cargoCustomLabel": "Yuk turini o'zingiz yozing", "order.noteLabel": "Izoh (ixtiyoriy)",
       "order.truckTypeLabel": "Mashina turi (ixtiyoriy)", "order.anyTruck": "Farqi yo'q",
@@ -2879,6 +2881,8 @@
       "wizard.publishTitle": "Проверьте данные", "wizard.reviewRoute": "Маршрут", "wizard.reviewPrice": "Цена", "wizard.reviewContact": "Контакт",
       "wizard.reviewIncomplete": "Заполните предыдущие шаги.", "wizard.sending": "Отправляется…",
       "wizard.sendBtn": "Отправить водителям", "wizard.back": "Назад", "wizard.next": "Далее",
+      "order.volumeLabel": "Объём, м³ (необязательно)", "order.quantityLabel": "Количество мест (необязательно)",
+      "order.quantityUnitLabel": "Единица измерения", "order.volumeShort": "Объём", "order.quantityShort": "Мест",
       "order.weightLabel": "Вес груза (кг)", "order.cargoTypeLabel": "Тип груза",
       "order.cargoCustomLabel": "Впишите тип груза сами", "order.noteLabel": "Комментарий (необязательно)",
       "order.truckTypeLabel": "Тип машины (необязательно)", "order.anyTruck": "Не важно",
@@ -3209,6 +3213,8 @@
       "wizard.publishTitle": "Review before sending", "wizard.reviewRoute": "Route", "wizard.reviewPrice": "Price", "wizard.reviewContact": "Contact",
       "wizard.reviewIncomplete": "Fill in the earlier steps first.", "wizard.sending": "Sending…",
       "wizard.sendBtn": "Send to drivers", "wizard.back": "Back", "wizard.next": "Continue",
+      "order.volumeLabel": "Volume, m³ (optional)", "order.quantityLabel": "Number of items (optional)",
+      "order.quantityUnitLabel": "Unit", "order.volumeShort": "Volume", "order.quantityShort": "Items",
       "order.weightLabel": "Cargo weight (kg)", "order.cargoTypeLabel": "Cargo type",
       "order.cargoCustomLabel": "Describe the cargo type", "order.noteLabel": "Note (optional)",
       "order.truckTypeLabel": "Truck type (optional)", "order.anyTruck": "No preference",
@@ -4400,10 +4406,17 @@
 
   var state = {
     from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL", customCargoLabel: "",
+    // Ixtiyoriy: bo'sh satr — "kiritilmagan" degani, nol emas.
+    volume: "", quantity: "", quantityUnit: "JOY",
     truckType: "", pickupDate: "",
     name: "", phone: "", note: "", customPrice: "",
     submitting: false, sent: null,
     step: 1 // 1 Yo'nalish, 2 Yuk, 3 Mashina, 4 Narx, 5 Yuborish — see WIZARD_STEPS
+  };
+  /* Joy sonining birligi. Serverdagi ro'yxat bilan bir xil
+     (api/order.js QUANTITY_UNITS) — noma'lum qiymat rad etiladi. */
+  var QUANTITY_UNITS = {
+    JOY: "joy", PALLET: "pallet", QOP: "qop", QUTI: "quti", RULON: "rulon"
   };
   var WIZARD_STEPS = [
     { key: "route", labelKey: "wizard.route", label: "Yo'nalish" },
@@ -7134,6 +7147,9 @@
       + '<div class="lc-meta">'
       +   '<span>'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</span>'
       +   '<span>'+icon("iconWeight")+' '+formatNum(o.weightKg)+' kg</span>'
+      +   (o.volumeM3 ? '<span>'+icon("iconBox")+' '+escapeHtml(String(o.volumeM3))+' m³</span>' : '')
+      +   (o.quantity ? '<span>'+icon("iconClipboard")+' '+formatNum(o.quantity)+' '
+      +     escapeHtml(QUANTITY_UNITS[o.quantityUnit] || QUANTITY_UNITS.JOY)+'</span>' : '')
       +   (o.truckType ? '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType)+'</span>' : '')
       +   (dateLabel ? '<span>'+icon("iconRoute")+' '+escapeHtml(dateLabel)+'</span>' : '')
       + '</div>'
@@ -8406,6 +8422,17 @@
       + '<div class="detail-grid">'
       +   '<div class="dg-item"><div class="lbl" data-i18n="loads.cargoType">Yuk turi</div><div class="val">'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</div></div>'
       +   '<div class="dg-item"><div class="lbl">Og\'irlik</div><div class="val">'+formatNum(d.weightKg)+' kg</div></div>'
+      // Hajm va joy soni ixtiyoriy — kiritilmagan bo'lsa katak ham
+      // chiqmaydi, "—" bilan to'ldirilgan bo'sh katak ma'lumot emas.
+      +   (d.volumeM3
+            ? '<div class="dg-item"><div class="lbl" data-i18n="order.volumeShort">Hajm</div>'
+              + '<div class="val">'+escapeHtml(String(d.volumeM3))+' m³</div></div>'
+            : '')
+      +   (d.quantity
+            ? '<div class="dg-item"><div class="lbl" data-i18n="order.quantityShort">Joy soni</div>'
+              + '<div class="val">'+formatNum(d.quantity)+' '
+              + escapeHtml(QUANTITY_UNITS[d.quantityUnit] || QUANTITY_UNITS.JOY)+'</div></div>'
+            : '')
       +   '<div class="dg-item"><div class="lbl" data-i18n="loads.truckType">Mashina turi</div><div class="val">'+(d.truckType ? escapeHtml(VEHICLE_LABELS[d.truckType] || d.truckType) : "Farqi yo'q")+'</div></div>'
       +   '<div class="dg-item"><div class="lbl">Masofa</div><div class="val">'+formatNum(d.distanceKm)+' km</div></div>'
       +   '<div class="dg-item"><div class="lbl" data-i18n="order.trackCodeLabel">Buyurtma kodi</div><div class="val">'+escapeHtml(d.code)+'</div></div>'
@@ -8699,6 +8726,26 @@
       + '<h3 class="card-title">'+icon("iconClipboard")+' <span data-i18n="wizard.cargoTitle">Yukingiz haqida</span></h3>'
       + '<div class="field"><label for="fWeight" data-i18n="order.weightLabel">Yuk og\'irligi (kg)</label>'
       +   '<input type="number" id="fWeight" min="1" max="50000" inputmode="numeric" value="'+state.weight+'"></div>'
+      /* Hajm va joy soni — ixtiyoriy. Og'irlik yolg'iz o'zi yetarli
+         emas: haydovchi yuk mashinasiga sig'adimi-yo'qmi shundan
+         biladi. Lekin ko'p odam hajmini bilmaydi, shuning uchun
+         majburiy emas. */
+      + '<div class="row2">'
+      +   '<div class="field"><label for="fVolume" data-i18n="order.volumeLabel">Hajm, m³ (ixtiyoriy)</label>'
+      +     '<input type="number" id="fVolume" min="0.1" max="200" step="0.1" inputmode="decimal" '
+      +       'placeholder="masalan: 12" value="'+escapeHtml(state.volume)+'"></div>'
+      +   '<div class="field"><label for="fQuantity" data-i18n="order.quantityLabel">Joy soni (ixtiyoriy)</label>'
+      +     '<input type="number" id="fQuantity" min="1" max="100000" inputmode="numeric" '
+      +       'placeholder="masalan: 20" value="'+escapeHtml(state.quantity)+'"></div>'
+      + '</div>'
+      + (state.quantity
+          ? '<div class="field"><label for="fQuantityUnit" data-i18n="order.quantityUnitLabel">O\'lchov birligi</label>'
+            + '<select id="fQuantityUnit">'
+            + Object.keys(QUANTITY_UNITS).map(function(k){
+                return '<option value="'+k+'"'+(state.quantityUnit===k?' selected':'')+'>'+QUANTITY_UNITS[k]+'</option>';
+              }).join("")
+            + '</select></div>'
+          : '')
       + '<div class="field"><label for="fCargo" data-i18n="order.cargoTypeLabel">Yuk turi</label>'
       +   '<select id="fCargo">'
       +   CARGO.map(function(c){
@@ -8773,6 +8820,8 @@
       + '<h3 class="card-title">'+icon("iconCheck")+' <span data-i18n="wizard.publishTitle">Tekshirib chiqing</span></h3>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewRoute">Yo\'nalish</span><span class="wr-v">'+escapeHtml(state.from)+' → '+escapeHtml(state.to)+'</span></div>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.weightLabel">Og\'irlik</span><span class="wr-v">'+formatNum(state.weight)+' kg</span></div>'
+      + (state.volume ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.volumeShort">Hajm</span><span class="wr-v">'+escapeHtml(state.volume)+' m³</span></div>' : '')
+      + (state.quantity ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.quantityShort">Joy soni</span><span class="wr-v">'+escapeHtml(state.quantity)+' '+escapeHtml(QUANTITY_UNITS[state.quantityUnit] || QUANTITY_UNITS.JOY)+'</span></div>' : '')
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.cargoTypeLabel">Yuk turi</span><span class="wr-v">'+escapeHtml(cargoLabel)+'</span></div>'
       + (state.truckType ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.truckTypeLabel">Mashina turi</span><span class="wr-v">'+escapeHtml(VEHICLE_LABELS[state.truckType]||state.truckType)+'</span></div>' : '')
       + (state.pickupDate ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.pickupDateLabel">Sana</span><span class="wr-v">'+escapeHtml(state.pickupDate)+'</span></div>' : '')
@@ -9060,6 +9109,20 @@
       refreshButton();
     });
 
+    var fVolume = document.getElementById("fVolume");
+    if(fVolume) fVolume.addEventListener("input", function(e){ state.volume = e.target.value; });
+    var fQuantity = document.getElementById("fQuantity");
+    if(fQuantity) fQuantity.addEventListener("input", function(e){
+      var was = state.quantity;
+      state.quantity = e.target.value;
+      // Birlik tanlash faqat son kiritilganda kerak — qatorni paydo
+      // qilish yoki olib tashlash uchun qaytadan chizamiz. Har harfda
+      // emas: faqat "bo'shdan to'lganga" yoki teskarisiga o'tganda.
+      if(Boolean(was) !== Boolean(state.quantity)) render();
+    });
+    var fQuantityUnit = document.getElementById("fQuantityUnit");
+    if(fQuantityUnit) fQuantityUnit.addEventListener("change", function(e){ state.quantityUnit = e.target.value; });
+
     var fCargo = document.getElementById("fCargo");
     if(fCargo) fCargo.addEventListener("change", function(e){ state.cargo = e.target.value; render(); });
     var cargoCustom = document.getElementById("fCargoCustom");
@@ -9120,6 +9183,10 @@
           fromCity: state.from,
           toCity: state.to,
           weightKg: state.weight,
+          // Bo'sh satr — "kiritilmagan"; server uni null deb qabul qiladi.
+          volumeM3: state.volume === "" ? null : Number(state.volume),
+          quantity: state.quantity === "" ? null : parseInt(state.quantity, 10),
+          quantityUnit: state.quantity === "" ? "" : state.quantityUnit,
           cargoType: state.cargo,
           customCargoLabel: state.customCargoLabel.trim(),
           truckType: state.truckType,

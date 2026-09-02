@@ -95,9 +95,9 @@ const resetFetch = () => {
 };
 
 let pass = 0, fail = 0;
-const check = (label, ok) => {
+const check = (label, ok, detail) => {
   if (ok) { pass++; console.log('  PASS ' + label); }
-  else { fail++; console.log('  FAIL ' + label); }
+  else { fail++; console.log('  FAIL ' + label + (detail === undefined ? '' : '  → ' + detail)); }
 };
 
 /* ---------------------------------------------------------- */
@@ -982,6 +982,79 @@ console.log('\n== saved loads and drivers ==');
 
   const other = await call('saved', { googleIdToken: 'someone@else.com' });
   check("another account sees none of it", other.body.loads.length === 0 && other.body.drivers.length === 0);
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== volume and item count ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  // Buyurtma yaratish telefon raqami bo'yicha cheklangan (isThrottled),
+  // shuning uchun har chaqiruv o'z raqamidan yuboradi.
+  let phoneSeq = 900000000;
+  const post = async (extra) => {
+    const res = mkRes();
+    phoneSeq += 1;
+    await orderHandler({
+      method: 'POST', query: {}, headers: {},
+      body: {
+        fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, cargoType: 'GENERAL',
+        name: 'Sardor', phone: String(phoneSeq), googleIdToken: 'owner@example.com', ...extra,
+      },
+    }, res);
+    return res;
+  };
+  const stored = (code) => JSON.parse(store.get(`order:${code}`));
+
+  const plain = await post({});
+  check('a load posts fine with neither field', plain.statusCode === 200);
+  check('and stores them as absent, not zero',
+    stored(plain.body.code).volumeM3 === null && stored(plain.body.code).quantity === null);
+
+  const both = await post({ volumeM3: 12.5, quantity: 20, quantityUnit: 'PALLET' });
+  check('both can be given', both.statusCode === 200, JSON.stringify(both.body));
+  check('the volume is kept', stored(both.body.code).volumeM3 === 12.5);
+  check('the count and its unit are kept',
+    stored(both.body.code).quantity === 20 && stored(both.body.code).quantityUnit === 'PALLET');
+
+  check('a volume is rounded to one decimal',
+    stored((await post({ volumeM3: 3.14159 })).body.code).volumeM3 === 3.1);
+  check('a zero volume is refused', (await post({ volumeM3: 0 })).statusCode === 400);
+  check('a negative volume is refused', (await post({ volumeM3: -5 })).statusCode === 400);
+  check('an absurd volume is refused', (await post({ volumeM3: 5000 })).statusCode === 400);
+  check('a fractional item count is refused', (await post({ quantity: 2.5 })).statusCode === 400);
+  check('a zero item count is refused', (await post({ quantity: 0 })).statusCode === 400);
+
+  // Birlik yozilmasa ham son ma'noli bo'lishi kerak.
+  check('a count with no unit gets the default one',
+    stored((await post({ quantity: 7 })).body.code).quantityUnit === 'JOY');
+  const oddUnit = await post({ quantity: 7, quantityUnit: 'ELEPHANTS' });
+  check('an unknown unit falls back rather than failing the post',
+    oddUnit.statusCode === 200 && stored(oddUnit.body.code).quantityUnit === 'JOY');
+
+  // Saytdagi forma to'ldirilmagan maydonni bo'sh satr qilib yuboradi.
+  const blanks = await post({ volumeM3: '', quantity: '', quantityUnit: '' });
+  check('blank fields are treated as absent, not as errors',
+    blanks.statusCode === 200 && stored(blanks.body.code).volumeM3 === null);
+
+  // Haydovchi guruh xabarida ham ko'rishi kerak.
+  const { buildOrderMessage } = await import(join(repo, 'lib/orderMessage.js'));
+  const msg = buildOrderMessage(stored(both.body.code));
+  check('the volume reaches the Telegram post', msg.includes('12\\.5 m³'), msg.slice(0, 200));
+  check('so does the item count', msg.includes('pallet'));
+  const bare = buildOrderMessage(stored(plain.body.code));
+  check('and neither line appears when they were not given',
+    !bare.includes('m³') && !bare.includes('joy'));
+
+  // Ro'yxat va tafsilot ham ularni tashiydi, aks holda haydovchi
+  // yukni ochmasdan turib bilmasdi.
+  const listRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'list' }, headers: {} }, listRes);
+  const inList = listRes.body.loads.find((l) => l.code === both.body.code);
+  check('the browse list carries the volume', inList && inList.volumeM3 === 12.5);
+  const detailRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'detail', code: both.body.code }, headers: {} }, detailRes);
+  check('so does the detail page', detailRes.body.quantity === 20 && detailRes.body.quantityUnit === 'PALLET');
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

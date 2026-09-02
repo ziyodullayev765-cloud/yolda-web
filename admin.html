@@ -682,6 +682,10 @@
     LOADED:"pill-blue", ON_THE_WAY:"pill-blue",
     DELIVERED:"pill-ok", CANCELLED:"pill-bad"
   };
+  /* Joy sonining birligi — lib/orderMessage.js dagi ro'yxat bilan bir xil. */
+  var QUANTITY_UNIT_LABELS = {
+    JOY:"joy", PALLET:"pallet", QOP:"qop", QUTI:"quti", RULON:"rulon"
+  };
   var TRUCK_STATUSES = ["PENDING","ACTIVE","PAUSED","SOLD","REJECTED"];
   var TRUCK_LABELS = {
     PENDING:"Tekshiruvda", ACTIVE:"Faol", PAUSED:"To'xtatilgan", SOLD:"Sotilgan", REJECTED:"Rad etilgan"
@@ -1728,6 +1732,12 @@
               : "")
           + kvRow("Yo'nalish", esc(order.fromCity) + " → " + esc(order.toCity))
           + kvRow("Og'irlik", fmt(order.weightKg) + " kg")
+          // Ixtiyoriy maydonlar — kiritilmagan bo'lsa qator ham chiqmaydi.
+          + (order.volumeM3 ? kvRow("Hajm", esc(String(order.volumeM3)) + " m³") : "")
+          + (order.quantity
+              ? kvRow("Joy soni", fmt(order.quantity) + " "
+                  + esc(QUANTITY_UNIT_LABELS[order.quantityUnit] || "joy"))
+              : "")
           + kvRow("Yuk turi", esc(cargoLabel(order)))
           + kvRow("Narx", '<b>' + esc(money(order.amount)) + '</b>')
           + (order.note ? kvRow("Izoh", esc(order.note)) : "")
