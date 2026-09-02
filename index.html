@@ -9618,6 +9618,26 @@
   if(bellBtn) bellBtn.addEventListener("click", openNotifications);
   refreshNotifBadge();
 
+  /* ---------- Ilova yorliqlari (?tab=) ----------
+     manifest.webmanifest dagi uchta yorliq — ilova belgisini bosib
+     turganda chiqadigan "Yuk joylash", "Yuklar", "Mashinalar" —
+     /?tab=... ga o'tadi. Bu parametrni hech kim o'qimasdi, ya'ni
+     uchalasi ham bosh sahifaga olib borardi: yorliq bor edi-yu, va'da
+     qilgan joyiga eltmasdi.
+
+     O'qib bo'lgach parametr manzil qatoridan olib tashlanadi — sahifa
+     yangilanganda odam boshqa joyga sakrab qolmasin. */
+  (function openTabFromUrl(){
+    var match = /[?&]tab=([a-z]+)/.exec(location.search);
+    if(!match) return;
+    var wanted = match[1];
+    if(TABS.indexOf(wanted) === -1 || wanted === "home") return;
+    switchTab(wanted);
+    if(window.history && history.replaceState){
+      history.replaceState(null, "", location.pathname + location.hash);
+    }
+  })();
+
   var homeSearchBar = document.getElementById("homeSearchBar");
   if(homeSearchBar) homeSearchBar.addEventListener("click", openRouteSearch);
   document.querySelectorAll("#homeQuickFilters .chip").forEach(function(chip){
