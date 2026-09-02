@@ -1057,6 +1057,31 @@
   .review-stars{color:#F59E0B;line-height:1;}
   .review-route{font-size:12px;color:var(--muted);}
   .review-text{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:6px 0 0;}
+
+  /* Saqlanganlar oynasi: uchta bo'lim, uchta ro'yxat. */
+  .saved-tabs{display:flex;gap:var(--s2);margin-bottom:var(--s4);overflow-x:auto;padding-bottom:2px;}
+  .saved-tabs .chip{white-space:nowrap;flex-shrink:0;}
+  .saved-tabs .st-count{opacity:0.6;font-weight:700;}
+  .saved-list.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);}
+  .saved-driver{
+    display:flex;align-items:center;gap:var(--s3);padding:var(--s3) 0;
+    border-bottom:1px solid var(--line);cursor:pointer;
+  }
+  .saved-driver:last-child{border-bottom:none;}
+  .saved-driver img, .saved-driver .sd-initial{
+    width:42px;height:42px;border-radius:50%;flex-shrink:0;object-fit:cover;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--paper-dark);color:var(--route);font-weight:700;font-size:17px;
+  }
+  .saved-driver .sd-main{min-width:0;flex:1;}
+  .saved-driver .sd-name{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:5px;}
+  .saved-driver .sd-meta{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .saved-driver .sd-meta .ic-svg{color:#F59E0B;vertical-align:-0.15em;}
+  .saved-driver .sd-remove{
+    background:none;border:none;padding:6px;cursor:pointer;color:var(--muted);
+    line-height:0;flex-shrink:0;
+  }
+  .saved-driver .sd-remove:hover{color:#DC2626;}
   .chat-row{
     display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
     padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;
@@ -2406,6 +2431,14 @@
       "trucks.recentSearches": "So'nggi qidiruvlar", "trucks.popularSearches": "Mashhur qidiruvlar",
       "trucks.filtersBtn": "Filtrlar", "trucks.applyFilters": "Ko'rsatish", "trucks.resetFilters": "Tozalash",
       "trucks.moreFilters": "Qo'shimcha", "trucks.favorites": "Saqlanganlar",
+      "saved.title": "Saqlanganlar", "saved.drivers": "Haydovchilar",
+      "saved.save": "Saqlash", "saved.added": "Saqlandi", "saved.removed": "Olib tashlandi",
+      "saved.delivered": "yetkazilgan",
+      "saved.signIn": "Saqlanganlar ro'yxati uchun Google yoki Telegram orqali kiring — shunda ular boshqa qurilmada ham ko'rinadi.",
+      "saved.failed": "Yuklab bo'lmadi, qayta urinib ko'ring.",
+      "saved.emptyLoads": "Saqlangan yuk yo'q. Yuk sahifasidagi yurakchani bosing.",
+      "saved.emptyDrivers": "Saqlangan haydovchi yo'q. Profilidagi yurakchani bosing.",
+      "saved.emptyTrucks": "Saqlangan e'lon yo'q. Mashina sahifasidagi yurakchani bosing.",
       "trucks.bodyLabel": "Kuzov turi", "trucks.fuelLabel": "Yoqilg'i", "trucks.transmissionLabel": "Transmissiya",
       "trucks.conditionLabel": "Holati", "trucks.steeringLabel": "Rul", "trucks.sellerTypeLabel": "Sotuvchi turi",
       "trucks.docsReady": "Hujjatlari joyida", "trucks.credit": "Kredit", "trucks.exchange": "Almashtirish",
@@ -2700,6 +2733,14 @@
       "trucks.recentSearches": "Недавние запросы", "trucks.popularSearches": "Популярные запросы",
       "trucks.filtersBtn": "Фильтры", "trucks.applyFilters": "Показать", "trucks.resetFilters": "Сбросить",
       "trucks.moreFilters": "Дополнительно", "trucks.favorites": "Сохранённые",
+      "saved.title": "Сохранённые", "saved.drivers": "Водители",
+      "saved.save": "Сохранить", "saved.added": "Сохранено", "saved.removed": "Убрано",
+      "saved.delivered": "доставлено",
+      "saved.signIn": "Войдите через Google или Telegram — тогда сохранённое будет видно и на другом устройстве.",
+      "saved.failed": "Не удалось загрузить, попробуйте ещё раз.",
+      "saved.emptyLoads": "Сохранённых грузов нет. Нажмите сердечко на странице груза.",
+      "saved.emptyDrivers": "Сохранённых водителей нет. Нажмите сердечко в его профиле.",
+      "saved.emptyTrucks": "Сохранённых объявлений нет. Нажмите сердечко на странице машины.",
       "trucks.bodyLabel": "Тип кузова", "trucks.fuelLabel": "Топливо", "trucks.transmissionLabel": "Трансмиссия",
       "trucks.conditionLabel": "Состояние", "trucks.steeringLabel": "Руль", "trucks.sellerTypeLabel": "Тип продавца",
       "trucks.docsReady": "Документы в порядке", "trucks.credit": "Кредит", "trucks.exchange": "Обмен",
@@ -2994,6 +3035,14 @@
       "trucks.recentSearches": "Recent searches", "trucks.popularSearches": "Popular searches",
       "trucks.filtersBtn": "Filters", "trucks.applyFilters": "Show results", "trucks.resetFilters": "Reset",
       "trucks.moreFilters": "More", "trucks.favorites": "Saved",
+      "saved.title": "Saved", "saved.drivers": "Drivers",
+      "saved.save": "Save", "saved.added": "Saved", "saved.removed": "Removed",
+      "saved.delivered": "delivered",
+      "saved.signIn": "Sign in with Google or Telegram and your saved items will follow you to any device.",
+      "saved.failed": "Could not load — please try again.",
+      "saved.emptyLoads": "Nothing saved yet. Tap the heart on a load.",
+      "saved.emptyDrivers": "No saved drivers yet. Tap the heart on their profile.",
+      "saved.emptyTrucks": "No saved listings yet. Tap the heart on a vehicle.",
       "trucks.bodyLabel": "Body type", "trucks.fuelLabel": "Fuel", "trucks.transmissionLabel": "Transmission",
       "trucks.conditionLabel": "Condition", "trucks.steeringLabel": "Steering", "trucks.sellerTypeLabel": "Seller type",
       "trucks.docsReady": "Documents in order", "trucks.credit": "Credit", "trucks.exchange": "Exchange",
@@ -4070,6 +4119,7 @@
     return verifyGroup
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
       +   '<li><button type="button" class="settings-row" data-tab-link="chat">'+icon("iconChat")+'<span data-i18n="nav.chat">Xabarlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row" id="btnOpenSaved">'+icon("iconHeart")+'<span data-i18n="saved.title">Saqlanganlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       + '</ul></div>'
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
       +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
@@ -4101,6 +4151,8 @@
         applyLang();
         var signOutBtn = container.querySelector("#btnSignOut");
         if(signOutBtn) signOutBtn.addEventListener("click", confirmSignOut);
+        var savedBtn = container.querySelector("#btnOpenSaved");
+        if(savedBtn) savedBtn.addEventListener("click", openSavedSheet);
       }
     });
   }
@@ -6616,7 +6668,11 @@
     return Math.max(30, Math.min(97, score));
   }
 
-  /* ---------- Favorites — per-device, localStorage only (no backend). ---------- */
+  /* ---------- Saqlangan yuklar ----------
+     localStorage har doim yozib boriladi: kirmagan odam uchun u
+     yagona joy, kirgan odam uchun esa tez javob beradigan nusxa —
+     yurakcha serverdan javob kutib turmasin. Kirgan bo'lsa xuddi shu
+     narsa serverga ham yoziladi, ya'ni telefon almashsa yo'qolmaydi. */
   function getFavorites(){
     try{ return JSON.parse(localStorage.getItem("yolda_favorites") || "[]"); }catch(e){ return []; }
   }
@@ -6626,6 +6682,33 @@
     var idx = favs.indexOf(code);
     if(idx === -1) favs.push(code); else favs.splice(idx, 1);
     try{ localStorage.setItem("yolda_favorites", JSON.stringify(favs)); }catch(e){}
+    if(isSignedIn()) saveRequest("load", code, idx === -1);
+    return idx === -1;
+  }
+
+  /** Saqlash/olib tashlashni serverga yuboradi. */
+  function saveRequest(kind, id, on){
+    return fetch("/api/profile?action=save", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        kind: kind, id: id, on: on,
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData
+      })
+    }).then(function(r){ return r.json(); }).catch(function(){ return null; });
+  }
+
+  /* Saqlangan haydovchilar — faqat serverda: ularni ko'rsatish uchun
+     profilini o'qish kerak, demak offline nusxadan foyda yo'q. */
+  var savedDrivers = [];
+  function isDriverSaved(username){
+    return savedDrivers.indexOf(String(username || "").toLowerCase()) !== -1;
+  }
+  function toggleDriverSaved(username){
+    var u = String(username || "").toLowerCase();
+    var idx = savedDrivers.indexOf(u);
+    if(idx === -1) savedDrivers.push(u); else savedDrivers.splice(idx, 1);
+    saveRequest("driver", u, idx === -1);
     return idx === -1;
   }
 
@@ -7161,10 +7244,23 @@
      profil varag'i har safar qaytadan chiziladi. */
   document.addEventListener("click", function(e){
     var btn = e.target.closest("[data-message-user]");
-    if(!btn) return;
-    var username = btn.getAttribute("data-message-user");
-    Sheet.close();
-    goToChatWith(username, "");
+    if(btn){
+      var username = btn.getAttribute("data-message-user");
+      Sheet.close();
+      goToChatWith(username, "");
+      return;
+    }
+
+    var saveBtn = e.target.closest("[data-save-driver]");
+    if(!saveBtn) return;
+    if(!isSignedIn()){
+      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      return;
+    }
+    var now = toggleDriverSaved(saveBtn.getAttribute("data-save-driver"));
+    saveBtn.innerHTML = icon("iconHeart", now ? "filled" : "")
+      + ' <span data-i18n="saved.save">' + escapeHtml(t("saved.save") || "Saqlash") + '</span>';
+    toast(now ? (t("saved.added") || "Saqlandi") : (t("saved.removed") || "Olib tashlandi"), "", "success");
   });
 
   function publicProfileHtml(p, reviews){
@@ -7208,9 +7304,15 @@
       + publicVerifyHtml(p.verifications)
       + publicTagsHtml(p.topTags)
       + publicReviewsHtml(reviews)
-      + '<button type="button" class="btn ghost" style="margin-top:var(--s4);" '
-      +   'data-message-user="'+escapeHtml(p.username)+'">'+icon("iconChat")
-      +   ' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>';
+      + '<div class="row2" style="margin-top:var(--s4);">'
+      +   '<button type="button" class="btn ghost" '
+      +     'data-message-user="'+escapeHtml(p.username)+'">'+icon("iconChat")
+      +     ' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
+      +   '<button type="button" class="btn ghost" id="btnSaveDriver" '
+      +     'data-save-driver="'+escapeHtml(p.username)+'">'
+      +     icon("iconHeart", isDriverSaved(p.username) ? "filled" : "")
+      +     ' <span data-i18n="saved.save">Saqlash</span></button>'
+      + '</div>';
   }
 
   /* Oy nomini o'zimiz yozamiz: Chromium'da uz-UZ uchun `month:"long"`
@@ -7229,6 +7331,194 @@
     var uz = MONTHS_UZ[d.getMonth()] + " " + d.getFullYear();
     // Kirill yozuvi t() dagi bilan bir xil yo'ldan o'tadi.
     return currentLang === "uz-cyrl" ? transliterateHtmlAware(uz) : uz;
+  }
+
+  /* ============================================================
+     Saqlanganlar — yuklar, haydovchilar, mashinalar bir joyda
+     ------------------------------------------------------------
+     Uchtasi uch xil joyda turardi: yuk yurakchasi faqat shu
+     telefonda, mashina e'lonlari «Mashinalar» bo'limidagi chipda,
+     haydovchini esa saqlab bo'lmasdi. Endi bitta oyna, uchta bo'lim.
+     Kartochkalar bor renderlardan olinadi — ikkinchi nusxa yo'q.
+     ============================================================ */
+  var savedTab = "loads";
+  var savedData = { loads: [], drivers: [], trucks: [] };
+
+  function openSavedSheet(){
+    savedTab = "loads";
+    Sheet.open({
+      title: t("saved.title") || "Saqlanganlar",
+      html: '<div class="skeleton sk-line" style="width:60%;"></div>'
+        + '<div class="skeleton sk-card" style="height:90px;margin-top:14px;"></div>',
+      onOpen: function(container){ loadSaved(container); }
+    });
+  }
+
+  function loadSaved(container){
+    var body = container.querySelector(".sheet-body") || container;
+    // Kirmagan odamga serverdan so'raydigan narsa yo'q — u ko'rgan
+    // yuklar shu telefonning o'zida turadi.
+    if(!isSignedIn()){
+      savedData = { loads: [], drivers: [], trucks: [] };
+      body.innerHTML = '<p class="note" data-i18n="saved.signIn">Saqlanganlar ro\'yxati uchun Google '
+        + 'yoki Telegram orqali kiring — shunda ular boshqa qurilmada ham ko\'rinadi.</p>';
+      applyLang();
+      return;
+    }
+
+    var creds = { googleIdToken: googleIdToken, telegramInitData: telegramInitData };
+    Promise.all([
+      // Eski, faqat shu telefonda turgan yuk kodlarini bir yo'la ko'chiramiz.
+      fetch("/api/profile?action=saved", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(Object.assign({ migrate: getFavorites() }, creds))
+      }).then(function(r){ return r.json(); }),
+      fetch("/api/trucks?action=favorites"
+        + "&googleIdToken=" + encodeURIComponent(googleIdToken || "")
+        + "&telegramInitData=" + encodeURIComponent(telegramInitData || ""))
+        .then(function(r){ return r.json(); }).catch(function(){ return {}; })
+    ]).then(function(res){
+      var mine = res[0] || {}, trucksRes = res[1] || {};
+      savedData = {
+        loads: mine.loads || [],
+        drivers: mine.drivers || [],
+        trucks: trucksRes.trucks || []
+      };
+      // Server endi haqiqat manbai — mahalliy nusxani unga tenglaymiz,
+      // aks holda o'chirilgan yuk yurakchasi shu telefonda qolib ketardi.
+      try{
+        localStorage.setItem("yolda_favorites",
+          JSON.stringify(savedData.loads.map(function(o){ return o.code; })));
+      }catch(e){}
+      savedDrivers = savedData.drivers.map(function(d){ return String(d.username).toLowerCase(); });
+      truckFavIds = savedData.trucks.map(function(tk){ return tk.id; });
+      renderSaved(container);
+    }).catch(function(){
+      body.innerHTML = '<p class="note" data-i18n="saved.failed">Yuklab bo\'lmadi, qayta urinib ko\'ring.</p>';
+      applyLang();
+    });
+  }
+
+  function savedDriverCardHtml(d){
+    var rating = d.ratingCount ? (d.ratingSum / d.ratingCount).toFixed(1) : null;
+    var bits = [];
+    if(rating) bits.push(icon("iconStar","filled") + " " + rating);
+    if(d.deliveredCount) bits.push(d.deliveredCount + " " + (t("saved.delivered") || "yetkazilgan"));
+    if(d.city) bits.push(escapeHtml(d.city));
+    return '<div class="saved-driver" data-saved-driver="'+escapeHtml(d.username)+'">'
+      + (d.avatarDataUrl
+          ? '<img src="'+escapeHtml(d.avatarDataUrl)+'" alt="">'
+          : '<span class="sd-initial">'+escapeHtml((d.displayName || d.username || "?").charAt(0).toUpperCase())+'</span>')
+      + '<div class="sd-main">'
+      +   '<div class="sd-name">'+escapeHtml(d.displayName || d.username)
+      +     (d.verified ? icon("iconVerifiedBadge") : "")+'</div>'
+      +   '<div class="sd-meta">'+(bits.join(" · ") || "@"+escapeHtml(d.username))+'</div>'
+      + '</div>'
+      + '<button type="button" class="sd-remove" data-unsave-driver="'+escapeHtml(d.username)+'" '
+      +   'aria-label="O\'chirish">'+icon("iconClose")+'</button>'
+      + '</div>';
+  }
+
+  function renderSaved(container){
+    var body = container.querySelector(".sheet-body") || container;
+    var counts = {
+      loads: savedData.loads.length,
+      drivers: savedData.drivers.length,
+      trucks: savedData.trucks.length
+    };
+    var tabs = [
+      { key: "loads", i18n: "nav.loads", label: "Yuklar" },
+      { key: "drivers", i18n: "saved.drivers", label: "Haydovchilar" },
+      { key: "trucks", i18n: "nav.trucks", label: "Mashinalar" }
+    ];
+
+    var list;
+    if(savedTab === "loads"){
+      list = counts.loads
+        ? savedData.loads.map(loadCardHtml).join("")
+        : savedEmptyHtml("saved.emptyLoads", "Saqlangan yuk yo'q. Yuk sahifasidagi yurakchani bosing.");
+    } else if(savedTab === "drivers"){
+      list = counts.drivers
+        ? savedData.drivers.map(savedDriverCardHtml).join("")
+        : savedEmptyHtml("saved.emptyDrivers", "Saqlangan haydovchi yo'q. Profilidagi yurakchani bosing.");
+    } else {
+      list = counts.trucks
+        ? savedData.trucks.map(truckCardHtml).join("")
+        : savedEmptyHtml("saved.emptyTrucks", "Saqlangan e'lon yo'q. Mashina sahifasidagi yurakchani bosing.");
+    }
+
+    body.innerHTML = '<div class="saved-tabs">'
+      + tabs.map(function(tb){
+          return '<button type="button" class="chip'+(savedTab === tb.key ? " active" : "")+'" '
+            + 'data-saved-tab="'+tb.key+'"><span data-i18n="'+tb.i18n+'">'+tb.label+'</span> '
+            + '<span class="st-count">'+counts[tb.key]+'</span></button>';
+        }).join("")
+      + '</div>'
+      + '<div class="saved-list'+(savedTab === "trucks" ? " grid" : "")+'">'+list+'</div>';
+
+    body.querySelectorAll("[data-saved-tab]").forEach(function(b){
+      b.addEventListener("click", function(){
+        savedTab = b.getAttribute("data-saved-tab");
+        renderSaved(container);
+      });
+    });
+    // Yuk va mashina kartochkalari o'z sahifasini ochadi; oyna yopiladi,
+    // aks holda sahifa oynaning ostida qolib ketardi.
+    body.querySelectorAll(".load-card").forEach(function(card){
+      card.addEventListener("click", function(e){
+        if(e.target.closest("[data-fav]")) return;
+        Sheet.close();
+        openLoadDetail(card.getAttribute("data-code"));
+      });
+    });
+    // Mashina tafsiloti ham oyna — yopib o'tirmaymiz, ustiga ochiladi.
+    body.querySelectorAll(".truck-card").forEach(function(card){
+      card.addEventListener("click", function(e){
+        if(e.target.closest("[data-truck-fav]")) return;
+        openTruckDetailSheet(card.getAttribute("data-truck-id"));
+      });
+    });
+    body.querySelectorAll("[data-saved-driver]").forEach(function(row){
+      row.addEventListener("click", function(e){
+        if(e.target.closest("[data-unsave-driver]")) return;
+        openPublicProfile(row.getAttribute("data-saved-driver"));
+      });
+    });
+    // Yurakchani bosish ro'yxatdan darrov olib tashlaydi — saqlangan
+    // narsalar ro'yxatida "saqlanmagan" kartochka turishi g'alati.
+    body.querySelectorAll("[data-fav]").forEach(function(b){
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        var code = b.getAttribute("data-fav");
+        toggleFavorite(code);
+        savedData.loads = savedData.loads.filter(function(o){ return o.code !== code; });
+        renderSaved(container);
+      });
+    });
+    body.querySelectorAll("[data-truck-fav]").forEach(function(b){
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        var id = b.getAttribute("data-truck-fav");
+        toggleTruckFavorite(id);
+        savedData.trucks = savedData.trucks.filter(function(tk){ return tk.id !== id; });
+        renderSaved(container);
+      });
+    });
+    body.querySelectorAll("[data-unsave-driver]").forEach(function(b){
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        var u = b.getAttribute("data-unsave-driver");
+        toggleDriverSaved(u);
+        savedData.drivers = savedData.drivers.filter(function(d){ return d.username !== u; });
+        renderSaved(container);
+      });
+    });
+    applyLang();
+  }
+
+  function savedEmptyHtml(key, fallback){
+    return '<div class="empty-state">'+icon("iconHeart")
+      + '<p data-i18n="'+key+'">'+escapeHtml(fallback)+'</p></div>';
   }
 
   /* Qaysi tasdiqlar olingani. Faqat olinganlari ko'rinadi:

@@ -912,5 +912,77 @@ console.log('\n== the bot verifies a phone number ==');
     Boolean(ask && ask.body.reply_markup && ask.body.reply_markup.keyboard[0][0].request_contact));
 }
 
+/* ---------------------------------------------------------- */
+console.log('\n== saved loads and drivers ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const call = async (action, body) => {
+    const res = mkRes();
+    await profileHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
+    return res;
+  };
+  const me = { googleIdToken: 'me@example.com' };
+
+  store.set('order:L1', JSON.stringify({
+    code: 'L1', fromCity: 'Toshkent', toCity: 'Buxoro', cargoType: 'MEBEL',
+    weightKg: 5000, amount: 900000, status: 'NEW', createdAt: 200,
+  }));
+  store.set('order:L2', JSON.stringify({
+    code: 'L2', fromCity: 'Buxoro', toCity: 'Nukus', cargoType: 'MEBEL',
+    weightKg: 2000, amount: 500000, status: 'DELIVERED', createdAt: 100,
+  }));
+  store.set('username:aziz', 'aziz@example.com');
+  store.set('profile:aziz@example.com', JSON.stringify({
+    username: 'aziz', displayName: 'Aziz', ratingCount: 4, ratingSum: 19,
+    deliveredCount: 3, city: 'Toshkent', phone: '+998901112233', verified: true,
+  }));
+
+  check('saving needs a signed-in user',
+    (await call('save', { kind: 'load', id: 'L1' })).statusCode === 401);
+  check('an unknown kind is refused',
+    (await call('save', { ...me, kind: 'spaceship', id: 'L1' })).statusCode === 400);
+  check('an empty id is refused', (await call('save', { ...me, kind: 'load', id: '' })).statusCode === 400);
+
+  check('a load can be saved', (await call('save', { ...me, kind: 'load', id: 'L1' })).body.saved === true);
+  await call('save', { ...me, kind: 'load', id: 'L2' });
+  await call('save', { ...me, kind: 'driver', id: 'aziz' });
+
+  const saved = await call('saved', me);
+  check('the list comes back', saved.statusCode === 200);
+  check('both loads are there', saved.body.loads.length === 2);
+  check('newest first', saved.body.loads[0].code === 'L1');
+  // Faqat kodlar qaytsa, sayt har biri uchun alohida so'rov yuborardi.
+  check('a load carries enough to draw its card',
+    saved.body.loads[0].fromCity === 'Toshkent' && saved.body.loads[0].amount === 900000);
+  check('a taken load still shows, with its stage',
+    saved.body.loads.find((l) => l.code === 'L2').status === 'DELIVERED');
+  check('the driver comes back too', saved.body.drivers.length === 1);
+  check('with the public shape only', saved.body.drivers[0].displayName === 'Aziz');
+  check('and never a phone number', !JSON.stringify(saved.body.drivers).includes('998901112233'));
+
+  await call('save', { ...me, kind: 'load', id: 'L1', on: false });
+  const after = await call('saved', me);
+  check('unsaving removes it', after.body.loads.length === 1 && after.body.loads[0].code === 'L2');
+
+  // O'chib ketgan yuk ro'yxatni buzmasin.
+  store.delete('order:L2');
+  const gone = await call('saved', me);
+  check('a deleted load is dropped, not rendered as a hole', gone.body.loads.length === 0);
+  check('and the caller is told how many vanished', gone.body.missing === 1);
+
+  // Telefonda qolgan eski yurakchalar bir marta ko'chiriladi.
+  store.set('order:L3', JSON.stringify({
+    code: 'L3', fromCity: 'Nukus', toCity: 'Termiz', weightKg: 1, amount: 1, createdAt: 300,
+  }));
+  const migrated = await call('saved', { ...me, migrate: ['L3'] });
+  check('local favourites are migrated on first sync',
+    migrated.body.loads.some((l) => l.code === 'L3'));
+  const stillThere = await call('saved', me);
+  check('and they stay after that', stillThere.body.loads.some((l) => l.code === 'L3'));
+
+  const other = await call('saved', { googleIdToken: 'someone@else.com' });
+  check("another account sees none of it", other.body.loads.length === 0 && other.body.drivers.length === 0);
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

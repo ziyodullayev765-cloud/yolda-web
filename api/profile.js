@@ -24,7 +24,9 @@
  *   profile:<identity>     -> JSON blob { username, displayName, role, city, bio, phone, avatarUrl, ... }
  */
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
-import { kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvRange } from '../lib/kv.js';
+import {
+  kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvSmembers, kvRange,
+} from '../lib/kv.js';
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
@@ -170,6 +172,106 @@ const requestVerification = async (req, res) => {
   await kvSadd('profile_emails', email);
   await kvSadd('verify_queue', `${email}|${kind}`);
   return res.status(200).json({ ok: true, profile: withTelegramFlag(next, await telegramReachable(email)) });
+};
+
+/* ============================================================
+   Saqlanganlar
+   ------------------------------------------------------------
+   Ilgari saqlash uch xil ishlardi: mashina e'lonlari serverda
+   (api/trucks.js), yuklar faqat shu telefonning localStorage'ida,
+   haydovchini esa umuman saqlab bo'lmasdi. Telefonini almashtirgan
+   odam saqlagan yuklarini yo'qotardi va buni hech kim aytmasdi.
+
+   Yuk va haydovchi endi serverda, mashina e'lonlari esa o'z joyida
+   qoladi — u allaqachon serverda va uni ko'chirishning sababi yo'q.
+   ============================================================ */
+const SAVED_KINDS = { load: 'saved_loads', driver: 'saved_drivers' };
+const MAX_SAVED = 100;
+
+const savedKey = (kind, identity) => `${SAVED_KINDS[kind]}:${identity}`;
+
+/** POST ?action=save — { kind, id, on } */
+const toggleSaved = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const kind = String(body.kind || '');
+  if (!SAVED_KINDS[kind]) return res.status(400).json({ error: 'Noto‘g‘ri tur' });
+
+  const id = String(body.id || '').trim().slice(0, 64);
+  if (!id) return res.status(400).json({ error: 'Id kerak' });
+
+  const key = savedKey(kind, identity);
+  if (body.on === false) {
+    await kvSrem(key, id);
+    return res.status(200).json({ ok: true, saved: false });
+  }
+
+  const current = await kvSmembers(key);
+  if (current.length >= MAX_SAVED && !current.includes(id)) {
+    return res.status(400).json({ error: `Ko‘pi bilan ${MAX_SAVED} ta saqlash mumkin` });
+  }
+  await kvSadd(key, id);
+  return res.status(200).json({ ok: true, saved: true });
+};
+
+/**
+ * POST ?action=saved — saqlangan yuk va haydovchilar, to'liq
+ * ma'lumoti bilan. Faqat id ro'yxatini qaytarish sayt tomonida
+ * o'nlab qo'shimcha so'rov degani bo'lardi.
+ *
+ * `migrate` — eski, faqat shu telefonda turgan yuk kodlari. Odam
+ * kirgach ular bir marta serverga ko'chiriladi, aks holda saqlangan
+ * yuklari birdan yo'qolib qolgandek ko'rinardi.
+ */
+const listSaved = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const migrate = Array.isArray(body.migrate) ? body.migrate.slice(0, MAX_SAVED) : [];
+  for (const code of migrate) {
+    const clean = String(code || '').trim().toUpperCase().slice(0, 32);
+    if (clean) await kvSadd(savedKey('load', identity), clean);
+  }
+
+  const codes = await kvSmembers(savedKey('load', identity));
+  const loads = (await Promise.all(codes.map(async (code) => {
+    const raw = await kvGet(`order:${code}`);
+    if (!raw) return null;
+    try {
+      const o = JSON.parse(raw);
+      return {
+        code: o.code, fromCity: o.fromCity, toCity: o.toCity,
+        cargoType: o.cargoType, customCargoLabel: o.customCargoLabel || '',
+        weightKg: o.weightKg, amount: o.amount, truckType: o.truckType || '',
+        pickupDate: o.pickupDate || '', createdAt: o.createdAt,
+        // Olingan yuk ham ro'yxatda qoladi, lekin holati ko'rinib tursin —
+        // "bosdim, ochilmadi" degan holat bo'lmasin.
+        status: o.status || 'NEW',
+      };
+    } catch {
+      return null;
+    }
+  }))).filter(Boolean);
+
+  const usernames = await kvSmembers(savedKey('driver', identity));
+  const drivers = (await Promise.all(usernames.map(async (username) => {
+    const who = await kvGet(`username:${String(username).toLowerCase()}`);
+    if (!who) return null;
+    const p = parseProfile(await kvGet(`profile:${who}`));
+    if (!p || !p.username) return null;
+    return publicProfileShape(who, p);
+  }))).filter(Boolean);
+
+  loads.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  drivers.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+  return res.status(200).json({ ok: true, loads, drivers, missing: codes.length - loads.length });
 };
 
 const handleProfile = async (req, res) => {
@@ -516,5 +618,7 @@ export default async function handler(req, res) {
   if (action === 'link-telegram-start') return linkTelegramStart(req, res);
   if (action === 'link-telegram-finish') return linkTelegramFinish(req, res);
   if (action === 'request-verification') return requestVerification(req, res);
+  if (action === 'save') return toggleSaved(req, res);
+  if (action === 'saved') return listSaved(req, res);
   return handleProfile(req, res);
 }
