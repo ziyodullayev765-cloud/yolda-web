@@ -682,6 +682,14 @@
     LOADED:"pill-blue", ON_THE_WAY:"pill-blue",
     DELIVERED:"pill-ok", CANCELLED:"pill-bad"
   };
+  /** Xaritadagi nuqtaga havola — koordinatani ko'chirib yurish shart emas. */
+  function mapAnchor(p){
+    if(!p || typeof p.lat !== "number" || typeof p.lng !== "number") return "—";
+    var q = p.lat + "," + p.lng;
+    return '<a href="https://maps.google.com/?q=' + esc(q) + '" target="_blank" rel="noopener" '
+      + 'style="color:#9DC0FF;">' + esc(q) + '</a>';
+  }
+
   /* Joy sonining birligi — lib/orderMessage.js dagi ro'yxat bilan bir xil. */
   var QUANTITY_UNIT_LABELS = {
     JOY:"joy", PALLET:"pallet", QOP:"qop", QUTI:"quti", RULON:"rulon"
@@ -1731,6 +1739,12 @@
                   }).join("<br>"))
               : "")
           + kvRow("Yo'nalish", esc(order.fromCity) + " → " + esc(order.toCity))
+          // Aniq manzil va nuqta — shikoyat kelganda "qayerga bordi?"
+          // degan savolga javob shu yerda turadi.
+          + (order.fromAddress ? kvRow("Olib ketish manzili", esc(order.fromAddress)) : "")
+          + (order.toAddress ? kvRow("Yetkazish manzili", esc(order.toAddress)) : "")
+          + (order.fromPoint ? kvRow("Olib ketish nuqtasi", mapAnchor(order.fromPoint)) : "")
+          + (order.toPoint ? kvRow("Yetkazish nuqtasi", mapAnchor(order.toPoint)) : "")
           + kvRow("Og'irlik", fmt(order.weightKg) + " kg")
           // Ixtiyoriy maydonlar — kiritilmagan bo'lsa qator ham chiqmaydi.
           + (order.volumeM3 ? kvRow("Hajm", esc(String(order.volumeM3)) + " m³") : "")

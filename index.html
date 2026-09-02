@@ -1058,6 +1058,27 @@
   .review-route{font-size:12px;color:var(--muted);}
   .review-text{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:6px 0 0;}
 
+  /* Aniq olib ketish/yetkazish nuqtasi. */
+  .pick-point{
+    display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+    background:none;border:1px dashed var(--border);border-radius:var(--r-pill);
+    padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    font-family:inherit;
+  }
+  .pick-point:hover{border-color:var(--route);color:var(--route);}
+  .pick-point.set{border-style:solid;border-color:var(--accepted);color:var(--accepted);}
+  .addr-line{
+    display:flex;gap:var(--s3);align-items:baseline;
+    font-size:13px;margin-bottom:6px;
+  }
+  .addr-line .addr-k{color:var(--muted);flex-shrink:0;min-width:70px;}
+  .addr-line .addr-v{color:var(--ink);}
+  .addr-map{
+    display:inline-flex;align-items:center;gap:4px;margin-left:8px;
+    color:var(--route);text-decoration:none;font-weight:600;font-size:12.5px;
+  }
+  .addr-map .ic-svg{font-size:13px;}
+
   /* Yordam markazi turkumlari — tor ekranda yon tomonga suriladi. */
   .help-cats{
     display:flex;gap:var(--s2);margin-bottom:var(--s4);overflow-x:auto;
@@ -2018,7 +2039,7 @@
     <div class="section-head reveal" style="margin-bottom:var(--s5);">
       <div class="section-eyebrow" data-i18n="order.eyebrow">Buyurtma</div>
       <h2 class="section-title"><span data-i18n="order.titleA">Hisoblang va</span> <span class="accent" data-i18n="order.titleB">yuboring</span></h2>
-      <p class="section-sub" data-i18n="order.sub">Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.</p>
+      <p class="section-sub" data-i18n="order.sub">Buyurtmangiz haydovchilarga chiqadi. Ular narx bilan taklif yuboradi, siz esa taqqoslab tanlaysiz.</p>
     </div>
 
     <div id="appBrowserHint" class="app-browser-hint" style="display:none;">
@@ -2534,11 +2555,11 @@
       "home.stat3k": "Ro'yxatdan o'tish narxi", "home.stat3kk": "Komissiya ham yo'q",
 
       "order.eyebrow": "Buyurtma", "order.titleA": "Hisoblang va", "order.titleB": "yuboring",
-      "order.sub": "Buyurtmangiz to'g'ridan-to'g'ri haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi siz bilan bog'lanadi.",
+      "order.sub": "Buyurtmangiz haydovchilarga chiqadi. Ular narx bilan taklif yuboradi, siz esa taqqoslab tanlaysiz.",
       "order.howTitle": "Qanday ishlaydi?",
       "order.how1": "Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.",
-      "order.how2": "Birinchi bo'lib <strong>\"Men olaman\"</strong> tugmasini bosgan haydovchi buyurtmani oladi.",
-      "order.how3": "Haydovchi sizga qo'ng'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.",
+      "order.how2": "Haydovchilar sizga <strong>taklif</strong> yuboradi — narx va yetib borish vaqti bilan.",
+      "order.how3": "Siz takliflarni taqqoslab, <strong>haydovchini o'zingiz tanlaysiz</strong> — undan keyin raqamlaringiz ochiladi.",
       "order.how4": "Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Aloqa</button> bo'limidan yozing.",
       "order.trackTitle": "Buyurtmani kuzatish", "order.trackNote": "Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.",
       "order.trackCodeLabel": "Buyurtma kodi", "order.trackPhoneLabel": "Telefon", "order.trackBtn": "Holatni tekshirish",
@@ -2549,6 +2570,14 @@
       "wizard.publishTitle": "Tekshirib chiqing", "wizard.reviewRoute": "Yo'nalish", "wizard.reviewPrice": "Narx", "wizard.reviewContact": "Aloqa",
       "wizard.reviewIncomplete": "Avvalgi bosqichlarni to'ldirib chiqing.", "wizard.sending": "Yuborilmoqda…",
       "wizard.sendBtn": "Haydovchilarga yuborish", "wizard.back": "Orqaga", "wizard.next": "Davom etish",
+      "order.fromAddressLabel": "Olib ketish manzili (ixtiyoriy)", "order.toAddressLabel": "Yetkazish manzili (ixtiyoriy)",
+      "order.addressPlaceholder": "Ko'cha, uy, mo'ljal",
+      "order.pointPick": "Xaritada belgilash", "order.pointSet": "Xaritada belgilangan",
+      "order.pickFrom": "Olib ketish nuqtasi", "order.pickTo": "Yetkazish nuqtasi",
+      "order.pointHelp": "Belgini kerakli joyga suring yoki xaritani bosing. Haydovchi shu nuqtaga yo'l oladi.",
+      "order.pointSave": "Saqlash", "order.pointClear": "Olib tashlash",
+      "order.pointNoCity": "Bu shahar uchun xarita yo'q", "order.pointNoMap": "Xarita yuklanmadi, keyinroq urinib ko'ring",
+      "order.openInMaps": "Xaritada ochish",
       "order.volumeLabel": "Hajm, m³ (ixtiyoriy)", "order.quantityLabel": "Joy soni (ixtiyoriy)",
       "order.quantityUnitLabel": "O'lchov birligi", "order.volumeShort": "Hajm", "order.quantityShort": "Joy soni",
       "order.weightLabel": "Yuk og'irligi (kg)", "order.cargoTypeLabel": "Yuk turi",
@@ -2696,7 +2725,7 @@
       "about.title": "Yolda haqida",
       "about.body":
         "<h4>YO'LDA nima?</h4><p>YO'LDA — O'zbekiston bo'ylab yuk jo'natuvchi va haydovchilarni bir-biri bilan to'g'ridan-to'g'ri bog'laydigan bozor. Vositachisiz, ortiqcha to'lovlarsiz.</p>"
-        + "<h4>Qanday ishlaydi?</h4><p>Yuk beruvchi buyurtma joylashtiradi — u darhol haydovchilar guruhiga tushadi. Birinchi bo'lib javob bergan haydovchi buyurtmani oladi va mijozga qo'ng'iroq qiladi. Yakuniy narx va vaqtni tomonlar telefon orqali o'zaro kelishadi.</p>"
+        + "<h4>Qanday ishlaydi?</h4><p>Yuk beruvchi buyurtma joylashtiradi — u saytdagi yuklar ro'yxatida va haydovchilar guruhida ko'rinadi. Haydovchilar narx va yetib borish vaqti bilan taklif yuboradi; yuk beruvchi ularni taqqoslab, o'zi tanlaydi. Tanlangandan keyin tomonlar bir-birining raqamini ko'radi.</p>"
         + "<h4>Nega bepul?</h4><p>Hozircha ro'yxatdan o'tish ham, e'lon joylashtirish ham to'liq bepul — hech qanday komissiya yo'q.</p>"
         + "<h4>Qamrov</h4><p>Toshkent, Samarqand, Buxoro va O'zbekistonning boshqa 10 ta yirik shahri o'rtasida.</p>"
         + "<h4>Aloqa</h4><p>+998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>",
@@ -2866,11 +2895,11 @@
       "home.stat3k": "Стоимость регистрации", "home.stat3kk": "Без комиссии",
 
       "order.eyebrow": "Заказ", "order.titleA": "Рассчитайте и", "order.titleB": "отправьте",
-      "order.sub": "Ваш заказ сразу попадает в группу водителей. Первый ответивший водитель свяжется с вами.",
+      "order.sub": "Ваш заказ видят водители. Они присылают предложения с ценой, а вы сравниваете и выбираете.",
       "order.howTitle": "Как это работает?",
       "order.how1": "Вы заполняете форму — заказ сразу появляется в группе водителей.",
-      "order.how2": "Водитель, первым нажавший <strong>«Я беру»</strong>, получает заказ.",
-      "order.how3": "Водитель звонит вам — <strong>окончательная цена и время согласовываются напрямую</strong>.",
+      "order.how2": "Водители присылают вам <strong>предложения</strong> — с ценой и временем прибытия.",
+      "order.how3": "Вы сравниваете предложения и <strong>сами выбираете водителя</strong> — после этого открываются номера.",
       "order.how4": "Если возникла проблема (водитель не приехал, не сошлись в цене) — напишите нам в разделе <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Контакты</button>.",
       "order.trackTitle": "Отследить заказ", "order.trackNote": "Проверьте статус по коду заказа и номеру телефона.",
       "order.trackCodeLabel": "Код заказа", "order.trackPhoneLabel": "Телефон", "order.trackBtn": "Проверить статус",
@@ -2881,6 +2910,14 @@
       "wizard.publishTitle": "Проверьте данные", "wizard.reviewRoute": "Маршрут", "wizard.reviewPrice": "Цена", "wizard.reviewContact": "Контакт",
       "wizard.reviewIncomplete": "Заполните предыдущие шаги.", "wizard.sending": "Отправляется…",
       "wizard.sendBtn": "Отправить водителям", "wizard.back": "Назад", "wizard.next": "Далее",
+      "order.fromAddressLabel": "Адрес загрузки (необязательно)", "order.toAddressLabel": "Адрес доставки (необязательно)",
+      "order.addressPlaceholder": "Улица, дом, ориентир",
+      "order.pointPick": "Отметить на карте", "order.pointSet": "Отмечено на карте",
+      "order.pickFrom": "Точка загрузки", "order.pickTo": "Точка доставки",
+      "order.pointHelp": "Перетащите метку или нажмите на карту. Водитель поедет именно в эту точку.",
+      "order.pointSave": "Сохранить", "order.pointClear": "Убрать",
+      "order.pointNoCity": "Для этого города нет карты", "order.pointNoMap": "Карта не загрузилась, попробуйте позже",
+      "order.openInMaps": "Открыть на карте",
       "order.volumeLabel": "Объём, м³ (необязательно)", "order.quantityLabel": "Количество мест (необязательно)",
       "order.quantityUnitLabel": "Единица измерения", "order.volumeShort": "Объём", "order.quantityShort": "Мест",
       "order.weightLabel": "Вес груза (кг)", "order.cargoTypeLabel": "Тип груза",
@@ -3028,7 +3065,7 @@
       "about.title": "О Yolda",
       "about.body":
         "<h4>Что такое YO'LDA?</h4><p>YO'LDA — рынок, который напрямую соединяет грузоотправителей и водителей по всему Узбекистану. Без посредников и лишних платежей.</p>"
-        + "<h4>Как это работает?</h4><p>Отправитель размещает заказ — он сразу появляется в группе водителей. Первый ответивший водитель получает заказ и звонит клиенту. Окончательная цена и время согласовываются напрямую по телефону.</p>"
+        + "<h4>Как это работает?</h4><p>Отправитель размещает заказ — он появляется в списке грузов и в группе водителей. Водители присылают предложения с ценой и временем прибытия; отправитель сравнивает их и выбирает сам. После выбора стороны видят номера друг друга.</p>"
         + "<h4>Почему бесплатно?</h4><p>Пока и регистрация, и размещение заказов полностью бесплатны — без комиссии.</p>"
         + "<h4>География</h4><p>Ташкент, Самарканд, Бухара и ещё 10 крупных городов Узбекистана.</p>"
         + "<h4>Контакты</h4><p>+998 94 440 20 90 или @ziyodullayv (Telegram).</p>",
@@ -3198,11 +3235,11 @@
       "home.stat3k": "Sign-up cost", "home.stat3kk": "No commission either",
 
       "order.eyebrow": "Order", "order.titleA": "Calculate and", "order.titleB": "send it",
-      "order.sub": "Your order goes straight to the drivers' group. Whoever responds first will contact you.",
+      "order.sub": "Drivers see your load and send offers with a price. You compare them and choose.",
       "order.howTitle": "How it works",
       "order.how1": "You fill out the form — the order appears in the drivers' group immediately.",
-      "order.how2": "The first driver to tap <strong>\"I'll take it\"</strong> gets the order.",
-      "order.how3": "The driver calls you — <strong>the final price and time are agreed there</strong>.",
+      "order.how2": "Drivers send you <strong>offers</strong> — a price and when they can be there.",
+      "order.how3": "You compare the offers and <strong>choose the driver yourself</strong> — then your numbers are shared.",
       "order.how4": "If something goes wrong (driver didn't show, couldn't agree on price) — let us know in the <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Contact</button> section.",
       "order.trackTitle": "Track your order", "order.trackNote": "Check the status with your order code and phone number.",
       "order.trackCodeLabel": "Order code", "order.trackPhoneLabel": "Phone", "order.trackBtn": "Check status",
@@ -3213,6 +3250,14 @@
       "wizard.publishTitle": "Review before sending", "wizard.reviewRoute": "Route", "wizard.reviewPrice": "Price", "wizard.reviewContact": "Contact",
       "wizard.reviewIncomplete": "Fill in the earlier steps first.", "wizard.sending": "Sending…",
       "wizard.sendBtn": "Send to drivers", "wizard.back": "Back", "wizard.next": "Continue",
+      "order.fromAddressLabel": "Pickup address (optional)", "order.toAddressLabel": "Delivery address (optional)",
+      "order.addressPlaceholder": "Street, building, landmark",
+      "order.pointPick": "Mark on the map", "order.pointSet": "Marked on the map",
+      "order.pickFrom": "Pickup point", "order.pickTo": "Delivery point",
+      "order.pointHelp": "Drag the pin or tap the map. This is the exact spot the driver will head for.",
+      "order.pointSave": "Save", "order.pointClear": "Remove",
+      "order.pointNoCity": "No map for this city", "order.pointNoMap": "The map did not load — try again later",
+      "order.openInMaps": "Open in Maps",
       "order.volumeLabel": "Volume, m³ (optional)", "order.quantityLabel": "Number of items (optional)",
       "order.quantityUnitLabel": "Unit", "order.volumeShort": "Volume", "order.quantityShort": "Items",
       "order.weightLabel": "Cargo weight (kg)", "order.cargoTypeLabel": "Cargo type",
@@ -3360,7 +3405,7 @@
       "about.title": "About Yolda",
       "about.body":
         "<h4>What is YO'LDA?</h4><p>YO'LDA is a marketplace that connects cargo owners and truck drivers directly, across Uzbekistan — no middleman, no extra fees.</p>"
-        + "<h4>How it works</h4><p>A cargo owner posts an order — it appears in the drivers' group instantly. The first driver to respond takes the order and calls the customer. The final price and timing are agreed directly by phone.</p>"
+        + "<h4>How it works</h4><p>A shipper posts a load — it appears in the loads list and in the drivers' group. Drivers send offers with a price and an arrival time; the shipper compares them and chooses. Once chosen, the two sides can see each other's numbers.</p>"
         + "<h4>Why free?</h4><p>Right now, both signing up and posting orders are completely free — no commission.</p>"
         + "<h4>Coverage</h4><p>Tashkent, Samarkand, Bukhara, and 10 other major cities across Uzbekistan.</p>"
         + "<h4>Contact</h4><p>+998 94 440 20 90 or @ziyodullayv (Telegram).</p>",
@@ -4408,6 +4453,8 @@
     from: "Toshkent", to: "Samarqand", weight: 500, cargo: "GENERAL", customCargoLabel: "",
     // Ixtiyoriy: bo'sh satr — "kiritilmagan" degani, nol emas.
     volume: "", quantity: "", quantityUnit: "JOY",
+    // Aniq nuqtalar: null — belgilanmagan, shahar markazi ishlatiladi.
+    fromAddress: "", toAddress: "", fromPoint: null, toPoint: null,
     truckType: "", pickupDate: "",
     name: "", phone: "", note: "", customPrice: "",
     submitting: false, sent: null,
@@ -8416,7 +8463,12 @@
       +   '</div>'
       + '</div>'
       + '<div class="detail-route-big">'+escapeHtml(d.fromCity)+' <span class="arrow">→</span> '+escapeHtml(d.toCity)+'</div>'
-      + (CITY_COORDS[d.fromCity] && CITY_COORDS[d.toCity] ? '<div id="detailMap" class="loads-map" style="height:200px;"></div>' : '')
+      // Manzil va nuqtaga havola — haydovchi shu ikkisidan qayerga
+      // borishini biladi; ikkalasi ham ixtiyoriy.
+      + addressLineHtml("iconArrowRight", d.fromAddress, d.fromPoint, "loads.from", "Qayerdan")
+      + addressLineHtml("iconArrowRight", d.toAddress, d.toPoint, "loads.to", "Qayerga")
+      + (orderPoint(d.fromPoint, d.fromCity) && orderPoint(d.toPoint, d.toCity)
+          ? '<div id="detailMap" class="loads-map" style="height:200px;"></div>' : '')
       + '<div class="detail-price"><div class="amt">'+formatNum(d.amount)+' so\'m</div>'
       +   '<p class="note" style="margin:4px 0 0;">'+(d.isProposed ? "Yuk beruvchi taklifi" : "Taxminiy narx")+'</p></div>'
       + '<div class="detail-grid">'
@@ -8467,15 +8519,51 @@
     var msgBtn = document.getElementById("btnDetailMessage");
     if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
 
-    if(CITY_COORDS[d.fromCity] && CITY_COORDS[d.toCity] && typeof L !== "undefined"){
+    // Yuk beruvchi aniq nuqta belgilagan bo'lsa, xarita shaharning
+    // markazini emas, o'sha nuqtani ko'rsatadi — haydovchi qayerga
+    // borishini shu yerda ko'rishi kerak. Belgilanmagan bo'lsa
+    // avvalgidek shahar markazi qoladi.
+    var fromLL = orderPoint(d.fromPoint, d.fromCity);
+    var toLL = orderPoint(d.toPoint, d.toCity);
+    if(fromLL && toLL && typeof L !== "undefined"){
+      // Aniq nuqta bo'lsa yaqinroq ko'rsatish mumkin; ikkalasi ham
+      // shahar markazi bo'lsa eski cheklov (12) o'z joyida qoladi.
+      var exact = Boolean(d.fromPoint || d.toPoint);
       var m = L.map("detailMap", { scrollWheelZoom: false, zoomControl: false })
-        .fitBounds([CITY_COORDS[d.fromCity], CITY_COORDS[d.toCity]], { padding: [30, 30] });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap", maxZoom: 12 }).addTo(m);
-      L.marker(CITY_COORDS[d.fromCity]).addTo(m);
-      L.marker(CITY_COORDS[d.toCity]).addTo(m);
-      L.polyline([CITY_COORDS[d.fromCity], CITY_COORDS[d.toCity]], { color: "#0EA5B7", weight: 3, dashArray: "6 6" }).addTo(m);
+        .fitBounds([fromLL, toLL], { padding: [30, 30] });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap", maxZoom: exact ? 17 : 12
+      }).addTo(m);
+      L.marker(fromLL).addTo(m);
+      L.marker(toLL).addTo(m);
+      L.polyline([fromLL, toLL], { color: "#0EA5B7", weight: 3, dashArray: "6 6" }).addTo(m);
       setTimeout(function(){ m.invalidateSize(); }, 150);
     }
+  }
+
+  /**
+   * Manzil qatori. Yozilgan manzil ham, xaritadagi nuqta ham
+   * bo'lmasa hech narsa chiqmaydi — bo'sh qator ma'lumot emas.
+   */
+  function addressLineHtml(ic, address, point, labelKey, labelText){
+    if(!address && !point) return "";
+    var link = point
+      ? '<a href="https://maps.google.com/?q='+point.lat+','+point.lng+'" target="_blank" '
+        + 'rel="noopener" class="addr-map">'+icon("iconMap")
+        + ' <span data-i18n="order.openInMaps">Xaritada ochish</span></a>'
+      : "";
+    return '<div class="addr-line">'
+      + '<span class="addr-k" data-i18n="'+labelKey+'">'+escapeHtml(labelText)+'</span>'
+      + '<span class="addr-v">'+(address ? escapeHtml(address) : "")+link+'</span>'
+      + '</div>';
+  }
+
+  /** Aniq nuqta, yoki bo'lmasa shahar markazi, yoki null. */
+  function orderPoint(point, city){
+    if(point && typeof point.lat === "number" && typeof point.lng === "number"){
+      return [point.lat, point.lng];
+    }
+    return CITY_COORDS[city] || null;
   }
 
   function shareLoad(d){
@@ -8718,7 +8806,110 @@
       + (sameCity
           ? '<p class="note" data-i18n="wizard.sameCity">Qayerdan va qayerga turli shaharlarni tanlang.</p>'
           : '<p class="note">'+icon("iconRoute")+' '+formatNum(distance)+' km</p>')
+      /* Aniq nuqtalar — ixtiyoriy. Shahar nomi haydovchiga yetarli
+         emas: u shaharning qayeriga borishni bilmaydi va telefon
+         qilishga majbur bo'ladi. */
+      + pointFieldHtml("from")
+      + pointFieldHtml("to")
       + '</div>';
+  }
+
+  function pointFieldHtml(which){
+    var addr = which === "from" ? state.fromAddress : state.toAddress;
+    var point = which === "from" ? state.fromPoint : state.toPoint;
+    var labelKey = which === "from" ? "order.fromAddressLabel" : "order.toAddressLabel";
+    var labelText = which === "from"
+      ? "Olib ketish manzili (ixtiyoriy)"
+      : "Yetkazish manzili (ixtiyoriy)";
+    return '<div class="field">'
+      + '<label for="fAddr'+which+'" data-i18n="'+labelKey+'">'+escapeHtml(labelText)+'</label>'
+      + '<input type="text" id="fAddr'+which+'" maxlength="200" '
+      +   'placeholder="Ko\'cha, uy, mo\'ljal" data-i18n-placeholder="order.addressPlaceholder" '
+      +   'value="'+escapeHtml(addr)+'">'
+      + '<button type="button" class="pick-point'+(point ? " set" : "")+'" data-pick-point="'+which+'">'
+      +   icon(point ? "iconCheckLine" : "iconMap")
+      +   ' <span data-i18n="'+(point ? "order.pointSet" : "order.pointPick")+'">'
+      +   (point ? "Xaritada belgilangan" : "Xaritada belgilash") + '</span></button>'
+      + '</div>';
+  }
+
+  /* Xaritali oyna: nuqtani surib belgilash. Manzil qidiruvi yo'q —
+     u tashqi xizmatga bog'lanishni talab qilardi; nuqtani surish esa
+     bor kutubxona bilan ishlaydi va aniqroq natija beradi. */
+  function openPointPicker(which){
+    var city = which === "from" ? state.from : state.to;
+    var current = which === "from" ? state.fromPoint : state.toPoint;
+    var centre = CITY_COORDS[city];
+    if(!current && !centre){
+      toast(t("order.pointNoCity") || "Bu shahar uchun xarita yo'q", "", "info");
+      return;
+    }
+    if(typeof L === "undefined"){
+      toast(t("order.pointNoMap") || "Xarita yuklanmadi, keyinroq urinib ko'ring", "", "info");
+      return;
+    }
+    var chosen = current
+      ? { lat: current.lat, lng: current.lng }
+      : { lat: centre[0], lng: centre[1] };
+
+    Sheet.open({
+      title: which === "from"
+        ? (t("order.pickFrom") || "Olib ketish nuqtasi")
+        : (t("order.pickTo") || "Yetkazish nuqtasi"),
+      html: '<p class="note" style="margin-top:0;" data-i18n="order.pointHelp">Belgini kerakli '
+        + 'joyga suring yoki xaritani bosing. Haydovchi shu nuqtaga yo\'l oladi.</p>'
+        + '<div id="pointMap" style="height:260px;border-radius:var(--r-md);overflow:hidden;"></div>'
+        + '<p class="note" id="pointCoords" style="text-align:center;"></p>',
+      footerHtml: '<div class="row2">'
+        + '<button type="button" class="btn ghost" id="btnPointClear" data-i18n="order.pointClear">Olib tashlash</button>'
+        + '<button type="button" class="btn" id="btnPointSave" data-i18n="order.pointSave">Saqlash</button>'
+        + '</div>',
+      onOpen: function(){
+        var map = L.map("pointMap", { zoomControl: true })
+          .setView([chosen.lat, chosen.lng], current ? 15 : 12);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap", maxZoom: 18
+        }).addTo(map);
+        var marker = L.marker([chosen.lat, chosen.lng], { draggable: true }).addTo(map);
+
+        function show(){
+          var el = document.getElementById("pointCoords");
+          if(el) el.textContent = chosen.lat.toFixed(5) + ", " + chosen.lng.toFixed(5);
+        }
+        show();
+        marker.on("dragend", function(){
+          var p = marker.getLatLng();
+          chosen = { lat: p.lat, lng: p.lng };
+          show();
+        });
+        map.on("click", function(e){
+          chosen = { lat: e.latlng.lat, lng: e.latlng.lng };
+          marker.setLatLng(e.latlng);
+          show();
+        });
+        // Oyna ochilish animatsiyasi tugagach o'lchamni qayta hisoblaydi,
+        // aks holda xarita yarim bo'sh chiziladi.
+        setTimeout(function(){ map.invalidateSize(); }, 280);
+
+        var saveBtn = document.getElementById("btnPointSave");
+        if(saveBtn) saveBtn.addEventListener("click", function(){
+          var value = {
+            lat: Math.round(chosen.lat * 1e5) / 1e5,
+            lng: Math.round(chosen.lng * 1e5) / 1e5
+          };
+          if(which === "from") state.fromPoint = value; else state.toPoint = value;
+          Sheet.close();
+          render();
+        });
+        var clearBtn = document.getElementById("btnPointClear");
+        if(clearBtn) clearBtn.addEventListener("click", function(){
+          if(which === "from") state.fromPoint = null; else state.toPoint = null;
+          Sheet.close();
+          render();
+        });
+        applyLang();
+      }
+    });
   }
 
   function stepCargoHtml(){
@@ -9109,6 +9300,14 @@
       refreshButton();
     });
 
+    var fAddrFrom = document.getElementById("fAddrfrom");
+    if(fAddrFrom) fAddrFrom.addEventListener("input", function(e){ state.fromAddress = e.target.value; });
+    var fAddrTo = document.getElementById("fAddrto");
+    if(fAddrTo) fAddrTo.addEventListener("input", function(e){ state.toAddress = e.target.value; });
+    document.querySelectorAll("[data-pick-point]").forEach(function(b){
+      b.addEventListener("click", function(){ openPointPicker(b.getAttribute("data-pick-point")); });
+    });
+
     var fVolume = document.getElementById("fVolume");
     if(fVolume) fVolume.addEventListener("input", function(e){ state.volume = e.target.value; });
     var fQuantity = document.getElementById("fQuantity");
@@ -9183,6 +9382,10 @@
           fromCity: state.from,
           toCity: state.to,
           weightKg: state.weight,
+          fromAddress: state.fromAddress.trim(),
+          toAddress: state.toAddress.trim(),
+          fromPoint: state.fromPoint,
+          toPoint: state.toPoint,
           // Bo'sh satr — "kiritilmagan"; server uni null deb qabul qiladi.
           volumeM3: state.volume === "" ? null : Number(state.volume),
           quantity: state.quantity === "" ? null : parseInt(state.quantity, 10),
@@ -9302,8 +9505,8 @@
       title: t("order.howTitle") || "Qanday ishlaydi?",
       html: '<ol class="how-steps">'
         + '<li data-i18n="order.how1">Formani to\'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>'
-        + '<li data-i18n="order.how2">Birinchi bo\'lib <strong>"Men olaman"</strong> tugmasini bosgan haydovchi buyurtmani oladi.</li>'
-        + '<li data-i18n="order.how3">Haydovchi sizga qo\'ng\'iroq qiladi — <strong>yakuniy narx va vaqt shu yerda kelishiladi</strong>.</li>'
+        + '<li data-i18n="order.how2">Haydovchilar sizga <strong>taklif</strong> yuboradi — narx va yetib borish vaqti bilan.</li>'
+        + '<li data-i18n="order.how3">Siz takliflarni taqqoslab, <strong>haydovchini o\'zingiz tanlaysiz</strong> — undan keyin raqamlaringiz ochiladi.</li>'
         + '<li data-i18n="order.how4">Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo\'limidan yozing.</li>'
         + '</ol>',
       onOpen: function(){ applyLang(); }

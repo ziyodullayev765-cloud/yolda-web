@@ -44,6 +44,9 @@ const CITIES = [
   'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
 
+/** O'zbekiston chegarasining taxminiy to'rtburchagi — xarita nuqtalari uchun. */
+const UZ_BOUNDS = { minLat: 37.1, maxLat: 45.7, minLng: 55.9, maxLng: 73.2 };
+
 const DISTANCE = {
   'Andijon|Buxoro': 700, 'Andijon|Farg\'ona': 75, 'Andijon|Guliston': 350,
   'Andijon|Jizzax': 420, 'Andijon|Namangan': 90, 'Andijon|Navoiy': 600,
@@ -151,6 +154,33 @@ const validate = (body) => {
     pickupDate = '';
   }
 
+  /* Aniq olib ketish va yetkazish nuqtalari — ixtiyoriy.
+     Ilgari xaritada faqat shahar markazlari turardi: haydovchi
+     "Toshkent" ni ko'rardi-yu, shaharning qayeriga borishni bilmasdi
+     va telefon qilib so'rashga majbur bo'lardi. Endi manzilni yozish
+     va xaritada nuqta belgilash mumkin.
+
+     Chegaradan tashqaridagi koordinata qabul qilinmaydi — bunday
+     nuqta xatolikdan boshqa narsa emas, va uni saqlash haydovchini
+     yanglish joyga yuborishga olib kelardi. */
+  const readPoint = (raw, label) => {
+    if (!raw || typeof raw !== 'object') return null;
+    const lat = Number(raw.lat);
+    const lng = Number(raw.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat < UZ_BOUNDS.minLat || lat > UZ_BOUNDS.maxLat
+        || lng < UZ_BOUNDS.minLng || lng > UZ_BOUNDS.maxLng) {
+      errors.push(`${label} nuqtasi O‘zbekiston hududidan tashqarida`);
+      return null;
+    }
+    // Besh xona ≈ bir metr aniqlik. Undan ortig'i ma'nosiz.
+    return { lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 };
+  };
+  const fromPoint = readPoint(body.fromPoint, 'Olib ketish');
+  const toPoint = readPoint(body.toPoint, 'Yetkazish');
+  const fromAddress = String(body.fromAddress || '').trim().slice(0, 200);
+  const toAddress = String(body.toAddress || '').trim().slice(0, 200);
+
   /* Hajm va joy soni — ikkalasi ham ixtiyoriy.
      Og'irlik yolg'iz o'zi yetarli emas: bir tonna paxta bilan bir
      tonna sement bir xil mashinaga sig'maydi. Haydovchi yukni
@@ -198,6 +228,7 @@ const validate = (body) => {
     value: {
       fromCity, toCity, weightKg, cargoType, customCargoLabel, truckType, pickupDate,
       name, phone, note, proposedAmount, volumeM3, quantity, quantityUnit,
+      fromPoint, toPoint, fromAddress, toAddress,
     },
   };
 };
@@ -643,6 +674,9 @@ const listLoads = async (req, res) => {
       volumeM3: o.volumeM3 || null,
       quantity: o.quantity || null,
       quantityUnit: o.quantityUnit || '',
+      // Kartochkada nuqta ko'rsatilmaydi, lekin xaritada ko'rsatiladi.
+      fromPoint: o.fromPoint || null,
+      toPoint: o.toPoint || null,
       amount: o.amount,
       distanceKm: o.distanceKm,
       truckType: o.truckType || '',
@@ -706,6 +740,10 @@ const getLoadDetail = async (req, res) => {
     volumeM3: order.volumeM3 || null,
     quantity: order.quantity || null,
     quantityUnit: order.quantityUnit || '',
+    fromPoint: order.fromPoint || null,
+    toPoint: order.toPoint || null,
+    fromAddress: order.fromAddress || '',
+    toAddress: order.toAddress || '',
     truckType: order.truckType || '',
     pickupDate: order.pickupDate || '',
     status: order.status || 'NEW',

@@ -1057,5 +1057,76 @@ console.log('\n== volume and item count ==');
   check('so does the detail page', detailRes.body.quantity === 20 && detailRes.body.quantityUnit === 'PALLET');
 }
 
+/* ---------------------------------------------------------- */
+console.log('\n== exact pickup and delivery points ==');
+{
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+
+  let phoneSeq = 900500000;
+  const post = async (extra) => {
+    const res = mkRes();
+    phoneSeq += 1;
+    await orderHandler({
+      method: 'POST', query: {}, headers: {},
+      body: {
+        fromCity: 'Toshkent', toCity: 'Buxoro', weightKg: 5000, cargoType: 'GENERAL',
+        name: 'Sardor', phone: String(phoneSeq), googleIdToken: 'owner@example.com', ...extra,
+      },
+    }, res);
+    return res;
+  };
+  const stored = (code) => JSON.parse(store.get(`order:${code}`));
+
+  const plain = await post({});
+  check('a load still posts with no point at all', plain.statusCode === 200);
+  check('and the points read as absent',
+    stored(plain.body.code).fromPoint === null && stored(plain.body.code).toPoint === null);
+
+  const pinned = await post({
+    fromPoint: { lat: 41.31151, lng: 69.27978 },
+    toPoint: { lat: 39.77474, lng: 64.42862 },
+    fromAddress: 'Chilonzor, 12-uy', toAddress: 'Registon ko‘chasi 5',
+  });
+  check('a load can carry both points', pinned.statusCode === 200);
+  check('the pickup point is stored', stored(pinned.body.code).fromPoint.lat === 41.31151);
+  check('so is the delivery point', stored(pinned.body.code).toPoint.lng === 64.42862);
+  check('and the written addresses with them',
+    stored(pinned.body.code).fromAddress === 'Chilonzor, 12-uy');
+
+  // Chegaradan tashqaridagi nuqta — haydovchini yanglish joyga yuboradi.
+  const abroad = await post({ fromPoint: { lat: 48.85, lng: 2.35 } });
+  check('a point outside the country is refused', abroad.statusCode === 400);
+  check('and the message says which one', /Olib ketish/.test(abroad.body.error), abroad.body.error);
+  const junk = await post({ fromPoint: { lat: 'here', lng: 'there' } });
+  check('unreadable coordinates are dropped rather than failing the post',
+    junk.statusCode === 200 && stored(junk.body.code).fromPoint === null);
+
+  // Koordinata metrdan aniqroq bo'lishining ma'nosi yo'q.
+  const rounded = await post({ toPoint: { lat: 39.7747412345, lng: 64.4286298765 } });
+  check('coordinates are rounded to five decimals',
+    stored(rounded.body.code).toPoint.lat === 39.77474);
+
+  const longAddr = await post({ fromAddress: 'x'.repeat(400) });
+  check('an over-long address is trimmed, not rejected',
+    longAddr.statusCode === 200 && stored(longAddr.body.code).fromAddress.length === 200);
+
+  // Haydovchi guruh xabaridan qayerga borishini bilishi kerak.
+  const { buildOrderMessage, mapLink } = await import(join(repo, 'lib/orderMessage.js'));
+  const msg = buildOrderMessage(stored(pinned.body.code));
+  check('the address reaches the Telegram post', msg.includes('Chilonzor'));
+  check('and so does a tappable map link', msg.includes('maps.google.com/?q=41.31151,69.27978'));
+  const bare = buildOrderMessage(stored(plain.body.code));
+  check('neither line appears when nothing was given',
+    !bare.includes('maps.google.com') && !bare.includes('↗️'));
+  check('mapLink refuses a point that is not one', mapLink(null, 'x') === null);
+  check('and one with missing coordinates', mapLink({ lat: 1 }, 'x') === null);
+
+  // Sayt ham ularni ko'rsatishi kerak, aks holda faqat Telegram'da qoladi.
+  const detailRes = mkRes();
+  await orderHandler({ method: 'GET', query: { action: 'detail', code: pinned.body.code }, headers: {} }, detailRes);
+  check('the detail page carries the point', detailRes.body.fromPoint.lat === 41.31151);
+  check('and the address', detailRes.body.toAddress === 'Registon ko‘chasi 5');
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);
