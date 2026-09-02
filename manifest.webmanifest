@@ -10,7 +10,7 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "theme_color": "#1D4ED8",
+  "theme_color": "#0A9F5B",
   "background_color": "#0B1220",
   "categories": ["business", "travel", "productivity"],
   "prefer_related_applications": false,
