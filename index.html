@@ -1080,6 +1080,23 @@
   .install-steps li{margin-bottom:10px;}
   .install-steps b{color:var(--ink);}
 
+  /* Yuqoridan pastga tortib yangilash — o'rnatilgan ilova uchun.
+     Brauzerda buni Chrome/Safari o'zi qiladi, u yerda bu qo'shilmaydi. */
+  .ptr{
+    position:fixed;top:0;left:50%;z-index:120;width:36px;height:36px;margin-left:-18px;
+    border-radius:50%;background:var(--card);color:var(--route);
+    box-shadow:0 4px 16px rgba(15,23,42,.18);
+    display:flex;align-items:center;justify-content:center;
+    transform:translateY(-52px);opacity:0;pointer-events:none;
+  }
+  .ptr svg{width:19px;height:19px;display:block;}
+  .ptr-spin svg{animation:ptrSpin 0.8s linear infinite;}
+  @keyframes ptrSpin{to{transform:rotate(360deg);}}
+  :root[data-reduce-motion="1"] .ptr-spin svg{animation:none;}
+  /* Ikki marta yangilash bo'lmasin: o'zimiznikini qo'shgan joyda
+     brauzerning o'z overscroll harakati o'chiriladi. */
+  html.ptr-on,html.ptr-on body{overscroll-behavior-y:contain;}
+
   /* Aniq olib ketish/yetkazish nuqtasi. */
   .pick-point{
     display:inline-flex;align-items:center;gap:6px;margin-top:8px;
@@ -2653,6 +2670,7 @@
       "profile.saveBtn": "Saqlash", "profile.signOutTitle": "Chiqishni tasdiqlang",
       "profile.signOutConfirm": "Hisobingizdan chiqmoqchimisiz? Qayta kirish uchun Google yoki Telegram orqali qaytadan login qilishingiz kerak bo'ladi.",
       "profile.signedOutTitle": "Chiqdingiz", "profile.signedOutTelegramNote": "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.",
+      "profile.sessionExpiredTitle": "Sessiya muddati tugadi", "profile.sessionExpiredNote": "Xavfsizlik uchun qaytadan kiring.",
       "profile.shareAria": "Profilni ulashish", "profile.menuAria": "Sozlamalar",
       "profile.shareText": "Mening YO'LDA profilim", "profile.shareTextNoUsername": "Men YO'LDA'da — yuk va haydovchilarni osongina topish mumkin!",
       "profile.shareCopied": "Nusxalandi", "profile.changePhotoAria": "Rasmni o'zgartirish",
@@ -2999,6 +3017,7 @@
       "profile.saveBtn": "Сохранить", "profile.signOutTitle": "Подтвердите выход",
       "profile.signOutConfirm": "Хотите выйти из аккаунта? Для повторного входа понадобится снова войти через Google или Telegram.",
       "profile.signedOutTitle": "Вы вышли", "profile.signedOutTelegramNote": "При повторном открытии в Telegram вход произойдёт автоматически.",
+      "profile.sessionExpiredTitle": "Срок сессии истёк", "profile.sessionExpiredNote": "Ради безопасности войдите снова.",
       "profile.shareAria": "Поделиться профилем", "profile.menuAria": "Настройки",
       "profile.shareText": "Мой профиль на YO'LDA", "profile.shareTextNoUsername": "Я на YO'LDA — легко находить грузы и водителей!",
       "profile.shareCopied": "Скопировано", "profile.changePhotoAria": "Изменить фото",
@@ -3345,6 +3364,7 @@
       "profile.saveBtn": "Save", "profile.signOutTitle": "Confirm sign out",
       "profile.signOutConfirm": "Sign out of your account? You'll need to sign in again with Google or Telegram to come back.",
       "profile.signedOutTitle": "Signed out", "profile.signedOutTelegramNote": "Opening this again inside Telegram will sign you back in automatically.",
+      "profile.sessionExpiredTitle": "Session expired", "profile.sessionExpiredNote": "Please sign in again for security.",
       "profile.shareAria": "Share profile", "profile.menuAria": "Settings",
       "profile.shareText": "My profile on YO'LDA", "profile.shareTextNoUsername": "I'm on YO'LDA — easy to find loads and drivers!",
       "profile.shareCopied": "Copied", "profile.changePhotoAria": "Change photo",
@@ -4533,6 +4553,152 @@
   ];
 
   /* ============================================================
+     Kirgan holatni saqlash — refreshdan keyin ham qolishi uchun.
+
+     Muammo shunda edi: googleIdToken ham, telegramInitData ham faqat
+     xotirada — oddiy JS o'zgaruvchisida — turardi. F5 bosilganda sahifa
+     boshidan yuklanib, ikkalasi ham qaytadan null bo'lardi, ya'ni odam
+     go'yo chiqib ketgandek ko'rinardi. Telegram ichida bu sezilmasdi,
+     chunki Mini App har ochilganda initData'ni o'zi qaytadan beradi;
+     oddiy brauzerda va o'rnatilgan ilovada esa hech kim bermaydi.
+
+     Endi tokenning o'zi localStorage'ga yoziladi va yuklanishda
+     qaytariladi. Serverda hech narsa o'zgargani yo'q: har bir so'rovda
+     token avvalgidek qaytadan tekshiriladi (lib/identity.js), ya'ni
+     saqlangan qiymat o'z-o'zidan hech kimni kirita olmaydi — u faqat
+     brauzer uni qayta yubora olishi uchun kerak.
+
+     Muddat qat'iy hisobga olinadi va serverdagi chegara bilan bir xil:
+       - Google ID token — o'zining "exp" da'vosi bo'yicha (~1 soat);
+       - Telegram initData — auth_date + 24 soat, ya'ni
+         lib/telegramAuth.js dagi MAX_AGE_SECONDS bilan bir xil.
+     Muddati o'tgan qiymat umuman tiklanmaydi, o'chirib yuboriladi.
+     ============================================================ */
+  var AUTH_KEY = "yolda_auth";
+  // Faqat "bu qurilmada Google bilan kirilgan edi" degan belgi — token
+  // emas. Token eskirgandan keyin ham qoladi: shu belgi borligi uchun
+  // Google jimgina yangi token bera oladi (pastdagi initGoogleSignIn).
+  var AUTH_HINT_KEY = "yolda_auth_hint";
+  var TELEGRAM_INITDATA_MAX_AGE_MS = 24 * 60 * 60 * 1000; // lib/telegramAuth.js: MAX_AGE_SECONDS
+  var AUTH_RENEW_LEAD_MS = 5 * 60 * 1000;                 // tugashiga 5 daqiqa qolganda yangilashga urinamiz
+  var MAX_TIMER_MS = 2147483647;                           // setTimeout bundan oshsa darhol ishga tushib ketadi
+  var authRenewTimer = null;
+  var authExpiryTimer = null;
+
+  /** JWT'ning o'rtasidagi ma'lumotni o'qiydi. Imzoni tekshirmaydi — buni server qiladi. */
+  function jwtPayload(token){
+    try{
+      var part = String(token).split(".")[1];
+      if(!part) return null;
+      return JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    }catch(e){ return null; }
+  }
+
+  function googleTokenExpiry(token){
+    var payload = jwtPayload(token);
+    return payload && payload.exp ? Number(payload.exp) * 1000 : 0;
+  }
+
+  function telegramInitDataExpiry(initData){
+    try{
+      var authDate = Number(new URLSearchParams(initData).get("auth_date"));
+      return authDate ? authDate * 1000 + TELEGRAM_INITDATA_MAX_AGE_MS : 0;
+    }catch(e){ return 0; }
+  }
+
+  /** Telegram initData ichidagi "user" — faqat ism/rasm ko'rsatish uchun, hech qachon dalil emas. */
+  function telegramUserFromInitData(initData){
+    try{
+      var raw = new URLSearchParams(initData).get("user");
+      if(!raw) return null;
+      var u = JSON.parse(raw);
+      if(!u || !u.id) return null;
+      return { id: u.id, firstName: u.first_name || "", lastName: u.last_name || "", username: u.username || "", photoUrl: u.photo_url || "" };
+    }catch(e){ return null; }
+  }
+
+  function storeAuth(kind, token, expiresAt){
+    if(!token) return;
+    try{ localStorage.setItem(AUTH_HINT_KEY, kind); }catch(e){}
+    // Muddati noma'lum yoki o'tib ketgan bo'lsa saqlamaymiz — bunday
+    // qiymatni keyin tiklash baribir foydasiz, faqat xotirada qoladi.
+    if(Number(expiresAt) > Date.now()){
+      try{ localStorage.setItem(AUTH_KEY, JSON.stringify({ kind: kind, token: token, expiresAt: Number(expiresAt) })); }catch(e){}
+    }
+    scheduleAuthTimers(expiresAt);
+  }
+
+  function readStoredAuth(){
+    var raw = null;
+    try{ raw = localStorage.getItem(AUTH_KEY); }catch(e){ return null; }
+    if(!raw) return null;
+    var saved = null;
+    try{ saved = JSON.parse(raw); }catch(e){}
+    if(!saved || !saved.token || (saved.kind !== "google" && saved.kind !== "telegram")){ clearStoredAuth(); return null; }
+    if(!(Number(saved.expiresAt) > Date.now())){ clearStoredAuth(); return null; }
+    return saved;
+  }
+
+  function clearStoredAuth(){
+    try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+    if(authRenewTimer){ clearTimeout(authRenewTimer); authRenewTimer = null; }
+    if(authExpiryTimer){ clearTimeout(authExpiryTimer); authExpiryTimer = null; }
+  }
+
+  function authHint(){
+    try{ return localStorage.getItem(AUTH_HINT_KEY) || ""; }catch(e){ return ""; }
+  }
+
+  /**
+   * Muddat tugaganda odamni kirgan holatda qoldirib ketish eng yomon
+   * variant bo'lardi: ekranda profil turadi, lekin har bir so'rov 401
+   * qaytaradi va hech narsa ishlamaydi. Shuning uchun tugash payti
+   * oldindan belgilab qo'yiladi — avval jimgina yangilashga urinamiz,
+   * bo'lmasa ochiq aytamiz.
+   */
+  function scheduleAuthTimers(expiresAt){
+    if(authRenewTimer){ clearTimeout(authRenewTimer); authRenewTimer = null; }
+    if(authExpiryTimer){ clearTimeout(authExpiryTimer); authExpiryTimer = null; }
+
+    var left = Number(expiresAt) - Date.now();
+    // Qiymat noto'g'ri bo'lsa (masalan qurilma soati adashgan) hech
+    // qanday taymer qo'ymaymiz — ishlayotgan sessiyani o'zimiz uzib
+    // qo'yishdan ko'ra, hech narsa qilmagan yaxshiroq.
+    if(!(left > 0) || left > MAX_TIMER_MS) return;
+
+    // Yangilashga urinish payti — tugashiga 5 daqiqa qolganda. Agar u
+    // payt allaqachon o'tib ketgan bo'lsa (deyarli eskirgan token
+    // tiklandi), darhol emas, bir necha soniyadan keyin: Google
+    // kutubxonasi initGoogleSignIn() ichida hali sozlanmagan bo'ladi.
+    var renewIn = left - AUTH_RENEW_LEAD_MS;
+    authRenewTimer = setTimeout(renewAuth, renewIn > 0 ? renewIn : Math.min(4000, left));
+    authExpiryTimer = setTimeout(handleAuthExpired, left);
+  }
+
+  /**
+   * Google tokeni bir soatda eskiradi. Odam Google'da hali ham kirgan
+   * bo'lsa, One Tap uni so'ramasdan yangisini beradi (auto_select) —
+   * shunda sessiya cheksiz davom etadi va hech narsa so'ralmaydi.
+   * Telegram Mini App'da esa urinishning hojati yo'q: u qayta
+   * ochilganda initData'ni o'zi yangilab beradi.
+   */
+  function renewAuth(){
+    if(!googleIdToken || isTelegramWebApp) return;
+    try{
+      if(window.google && google.accounts && google.accounts.id) google.accounts.id.prompt();
+    }catch(e){}
+  }
+
+  function handleAuthExpired(){
+    if(!isSignedIn()) return;
+    // Yangilanish yetib kelgan bo'lsa token allaqachon boshqa — tegmaymiz.
+    if(googleIdToken && googleTokenExpiry(googleIdToken) > Date.now()) return;
+    if(telegramInitData && telegramInitDataExpiry(telegramInitData) > Date.now()) return;
+    if(isTelegramWebApp) return;
+    performSignOut("expired");
+  }
+
+  /* ============================================================
      Google Sign-In — required before an order can be submitted.
      The ID token is verified again server-side in /api/order.
      ============================================================ */
@@ -4540,10 +4706,30 @@
   var googleProfile = null;
 
   function onGoogleSignIn(response){
-    googleIdToken = response.credential;
+    applyGoogleCredential(response && response.credential, "fresh");
+  }
+
+  /**
+   * Google tokeni qayerdan kelganidan qat'i nazar — hozir kirilganidan
+   * ham, localStorage'dan tiklanganidan ham — interfeys shu bitta joyda
+   * yangilanadi, ikki xil nusxa bo'lib ketmasin uchun.
+   *
+   * `source` "restored" bo'lsa muddat tekshiriladi. Yangi kelgan token
+   * esa hech qachon rad etilmaydi: qurilma soati oldinga ketib qolgan
+   * odamda "exp" o'tib ketgandek ko'rinadi va tekshirsak, ishlaydigan
+   * loginni o'zimiz to'sib qo'ygan bo'lardik. Haqiqiy hakam baribir
+   * server (lib/google.js), bu yerdagisi shunchaki tozalash.
+   */
+  function applyGoogleCredential(credential, source){
+    if(!credential) return false;
+    var payload = jwtPayload(credential);
+    var expiresAt = payload && payload.exp ? Number(payload.exp) * 1000 : 0;
+    if(source === "restored" && !(expiresAt > Date.now())) return false;
+
+    googleIdToken = credential;
     try{
-      var payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
       googleProfile = payload;
+      if(!payload) throw new Error("payload");
       if(!state.name) state.name = payload.name || "";
 
       var gate = document.getElementById("googleGate");
@@ -4569,7 +4755,9 @@
       // hech kim kirmagan bo'ladi. Kirish tugagach qaytadan so'raymiz.
       refreshNotifBadge();
     }catch(e){}
+    storeAuth("google", credential, expiresAt);
     render();
+    return true;
   }
 
   /**
@@ -4649,13 +4837,37 @@
     try{ tg.ready(); }catch(e){}
     try{ tg.expand(); }catch(e){}
 
-    telegramInitData = tg.initData;
     var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
-    if(u){
-      telegramUser = { id: u.id, firstName: u.first_name || "", lastName: u.last_name || "", username: u.username || "", photoUrl: u.photo_url || "" };
-    }
+    applyTelegramCredential(tg.initData, u
+      ? { id: u.id, firstName: u.first_name || "", lastName: u.last_name || "", username: u.username || "", photoUrl: u.photo_url || "" }
+      : telegramUserFromInitData(tg.initData));
+  }
 
+  /** Telegram tomonining applyGoogleCredential'i — bitta joyda saqlaydi ham, chizadi ham. */
+  function applyTelegramCredential(initData, user){
+    if(!initData) return false;
+    telegramInitData = initData;
+    if(user) telegramUser = user;
+    storeAuth("telegram", initData, telegramInitDataExpiry(initData));
     onTelegramSignIn();
+    return true;
+  }
+
+  /**
+   * Sahifa yuklanganda saqlangan sessiyani qaytaradi. initTelegramWebApp()
+   * dan OLDIN chaqiriladi: Telegram ichida bo'lsak, o'sha yerdan kelgan
+   * yangi initData saqlangan eskisidan ustun turishi kerak.
+   *
+   * Bu yerda hech qanday "ishonch" yo'q: tiklanadigan narsa — o'sha
+   * tokenning o'zi, va u har bir so'rovda serverda qaytadan tekshiriladi.
+   * Ya'ni localStorage'ni qo'lda tahrirlash hech kimni hech qayerga
+   * kirita olmaydi — noto'g'ri token bilan API oddiygina rad javob beradi.
+   */
+  function restoreAuth(){
+    var saved = readStoredAuth();
+    if(!saved) return false;
+    if(saved.kind === "google") return applyGoogleCredential(saved.token, "restored");
+    return applyTelegramCredential(saved.token, telegramUserFromInitData(saved.token));
   }
 
   function showAppBrowserHint(){
@@ -4718,20 +4930,38 @@
       }
 
       if(!cfg.googleClientId || !window.google || !google.accounts) return;
-      google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn });
+      // auto_select: qaytib kelgan odamga Google jimgina yangi token
+      // beradi — hech narsa so'ralmaydi va hech qanday oyna chiqmaydi.
+      // Faqat pastdagi prompt() chaqirilganda ishlaydi, ya'ni tugmalar
+      // ko'rinishiga ta'sir qilmaydi.
+      google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn, auto_select: true });
+
+      // Saqlangan sessiya allaqachon tiklangan bo'lsa, uning ustidan
+      // "Google bilan kirish" tugmasini chizib qo'yish — kirgan odamga
+      // yana kirishni taklif qilish bo'lardi.
       var gate = document.getElementById("googleGate");
-      if(gate) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
+      if(gate && !isSignedIn()) google.accounts.id.renderButton(gate, { theme:"outline", size:"large", text:"continue_with", width:320 });
 
       // Round, icon-only version in the top nav — same sign-in, just a
       // compact circular button instead of the full pill.
       var gateHome = document.getElementById("googleGateHome");
-      if(gateHome) google.accounts.id.renderButton(gateHome, { theme:"filled_blue", size:"medium", shape:"circle", type:"icon" });
+      if(gateHome && !isSignedIn()) google.accounts.id.renderButton(gateHome, { theme:"filled_blue", size:"medium", shape:"circle", type:"icon" });
+
+      // Bu qurilmada avval Google bilan kirilgan, lekin saqlangan token
+      // eskirgan (masalan ertasi kuni ochildi) — shu holatda Google'dan
+      // jimgina yangi token so'raymiz. Odam Google'da hali kirgan bo'lsa,
+      // hech narsa sezmaydi va o'z profilida qoladi. Chiqib ketgan odamga
+      // bu chaqiruv umuman tegmaydi: performSignOut() disableAutoSelect()
+      // ni chaqiradi va belgini o'chiradi.
+      if(!isSignedIn() && !isTelegramWebApp && authHint() === "google"){
+        try{ google.accounts.id.prompt(); }catch(e){}
+      }
 
       // Belt and braces: if the button never actually renders (some in-app
       // browsers we didn't think to name above), show the hint anyway —
       // unless Telegram's own login already covered this visitor.
       setTimeout(function(){
-        if(gate && !gate.querySelector("iframe") && !isTelegramWebApp) showAppBrowserHint();
+        if(gate && !gate.querySelector("iframe") && !isTelegramWebApp && !isSignedIn()) showAppBrowserHint();
       }, 2500);
     }).catch(function(){});
   }
@@ -5222,12 +5452,24 @@
     });
   }
 
-  function performSignOut(){
+  /**
+   * @param {string} [reason] "expired" bo'lsa — odam o'zi chiqmadi,
+   *   tokenning muddati tugadi. Farqi ikkita: xabar boshqacha bo'ladi
+   *   va odam turgan bo'limidan uydirilib yuborilmaydi (o'rtada ish
+   *   qilayotgan bo'lishi mumkin). "Google bilan kirilgan edi" belgisi
+   *   ham saqlanib qoladi — keyingi ochilishda jimgina qayta kirsin.
+   */
+  function performSignOut(reason){
+    var expired = reason === "expired";
     googleIdToken = null;
     googleProfile = null;
     telegramInitData = null;
     telegramUser = null;
-    try{ if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){}
+    clearStoredAuth();
+    if(!expired){
+      try{ localStorage.removeItem(AUTH_HINT_KEY); }catch(e){}
+      try{ if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){}
+    }
 
     var gate = document.getElementById("googleGate");
     if(gate) gate.innerHTML = "";
@@ -5237,10 +5479,13 @@
     refreshNotifBadge();
     initGoogleSignIn();
 
-    switchTab("home");
+    if(!expired) switchTab("home");
+    render();
     toast(
-      t("profile.signedOutTitle") || "Chiqdingiz",
-      isTelegramWebApp ? (t("profile.signedOutTelegramNote") || "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.") : "",
+      expired ? (t("profile.sessionExpiredTitle") || "Sessiya muddati tugadi")
+              : (t("profile.signedOutTitle") || "Chiqdingiz"),
+      expired ? (t("profile.sessionExpiredNote") || "Xavfsizlik uchun qaytadan kiring.")
+              : (isTelegramWebApp ? (t("profile.signedOutTelegramNote") || "Telegram ichida qayta ochsangiz, avtomatik qayta kirasiz.") : ""),
       "info"
     );
   }
@@ -9821,6 +10066,101 @@
 
   initInstallPrompt();
 
+  /* ============================================================
+     Yuqoridan pastga tortib yangilash (pull to refresh)
+     ------------------------------------------------------------
+     Brauzerda buni Chrome ham, Safari ham o'zi qiladi. O'rnatilgan
+     ilovada esa manzil qatori yo'q, yangilash tugmasi ham yo'q —
+     sahifani yangilash uchun ilovadan butunlay chiqib, qaytadan
+     kirishdan boshqa yo'l qolmagan edi.
+
+     Shuning uchun faqat o'sha holatda o'zimiznikini qo'shamiz:
+       - brauzerda qo'shilmaydi (u yerda ikkitasi urishib ketardi);
+       - Telegram ichida qo'shilmaydi — u yerda pastga tortish
+         Telegram'ning o'z harakati, ya'ni ilovani yopish;
+       - varaq (Sheet) ochiq turganda ishlamaydi;
+       - faqat sahifa eng tepasida turganda va harakat aniq pastga
+         qaratilgan bo'lsa ishlaydi, yonlamasiga surishga tegmaydi.
+     ============================================================ */
+  function initPullToRefresh(){
+    if(!installAlreadyDone() || isTelegramWebApp) return;
+    document.documentElement.classList.add("ptr-on");
+
+    var indicator = document.createElement("div");
+    indicator.className = "ptr";
+    indicator.setAttribute("aria-hidden", "true");
+    indicator.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
+      + 'stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/>'
+      + '<polyline points="20.5 3.5 20.5 10 14 10"/></svg>';
+    document.body.appendChild(indicator);
+
+    var THRESHOLD = 70;   // shuncha tortilsa yangilanadi
+    var MAX = 112;        // undan nariga cho'zilmaydi
+    var startX = 0, startY = 0, pulling = false, refreshing = false;
+
+    function sheetOpen(){
+      var sheet = document.getElementById("sheetRoot");
+      return !!(sheet && !sheet.hidden);
+    }
+
+    function draw(dist){
+      var eased = Math.min(dist, MAX);
+      indicator.style.transform = "translateY(" + (eased - 52) + "px) rotate(" + Math.round(eased * 3) + "deg)";
+      indicator.style.opacity = String(Math.min(1, eased / THRESHOLD));
+    }
+
+    function reset(){
+      indicator.classList.remove("ptr-spin");
+      indicator.style.transition = "transform .25s ease, opacity .25s ease";
+      indicator.style.transform = "translateY(-52px)";
+      indicator.style.opacity = "0";
+      setTimeout(function(){ indicator.style.transition = ""; }, 280);
+    }
+
+    window.addEventListener("touchstart", function(e){
+      if(refreshing || pulling || sheetOpen() || e.touches.length !== 1) return;
+      if(window.scrollY > 0) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+
+    window.addEventListener("touchmove", function(e){
+      if(!pulling || refreshing) return;
+      var dy = e.touches[0].clientY - startY;
+      var dx = Math.abs(e.touches[0].clientX - startX);
+      // Yuqoriga surish, yonlamasiga surish yoki sahifa allaqachon
+      // pastga tushib ketgan bo'lsa — bu bizning harakatimiz emas.
+      if(dy <= 0 || dx > dy || window.scrollY > 0){ pulling = false; reset(); return; }
+      if(dy > 8 && e.cancelable) e.preventDefault();
+      draw(dy);
+    }, { passive: false });
+
+    function finish(e){
+      if(!pulling || refreshing) return;
+      pulling = false;
+      var touch = e.changedTouches && e.changedTouches[0];
+      var dy = touch ? touch.clientY - startY : 0;
+      if(dy < THRESHOLD){ reset(); return; }
+
+      refreshing = true;
+      indicator.style.transition = "transform .2s ease";
+      indicator.style.transform = "translateY(22px)";
+      indicator.style.opacity = "1";
+      indicator.classList.add("ptr-spin");
+      // Kirgan holat saqlanadi (restoreAuth) — yangilangandan keyin
+      // odam yana o'z profilida qoladi, qaytadan kirish so'ralmaydi.
+      setTimeout(function(){ location.reload(); }, 220);
+    }
+
+    window.addEventListener("touchend", finish, { passive: true });
+    window.addEventListener("touchcancel", function(){
+      if(!pulling || refreshing) return;
+      pulling = false;
+      reset();
+    }, { passive: true });
+  }
+
   /* ---------- Ilova yorliqlari (?tab=) ----------
      manifest.webmanifest dagi uchta yorliq — ilova belgisini bosib
      turganda chiqadigan "Yuk joylash", "Yuklar", "Mashinalar" —
@@ -9847,15 +10187,23 @@
     chip.addEventListener("click", function(){ goToLoadsWithQuick(chip.getAttribute("data-quick")); });
   });
 
+  // Saqlangan sessiya birinchi bo'lib tiklanadi — birinchi chizishning
+  // o'zidayoq odam kirgan holatda ko'rinsin, "kirmagansiz" ekrani
+  // ko'rinib keyin almashmasin.
+  restoreAuth();
   render();
-  // Telegram first: it's synchronous (no network round trip) and sets
+  // Telegram then: it's synchronous (no network round trip) and sets
   // isTelegramWebApp, which initGoogleSignIn() reads to decide whether to
-  // show the "open in Safari/Chrome" in-app-browser hint.
+  // show the "open in Safari/Chrome" in-app-browser hint. Telegram ichida
+  // bo'lsak, undan kelgan yangi initData saqlangan eskisini almashtiradi.
   initTelegramWebApp();
   initGoogleSignIn();
   // Telegram aniqlangandan keyin: iOS'da o'rnatish taklifi brauzer
   // hodisasisiz ham chiqadi, chunki Safari bunday hodisa yubormaydi.
   maybeShowInstallRow();
+  // Shu yerda ham Telegram aniqlangan bo'lishi kerak — Telegram ichida
+  // pastga tortish uning o'z harakati bilan urishib ketadi.
+  initPullToRefresh();
 
   /* ============================================================
      Scroll: nav state, progress bar, background parallax
