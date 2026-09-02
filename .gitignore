@@ -1,0 +1,13 @@
+# Android imzo kalitlari. Bular hech qachon repozitoriyga tushmasligi
+# kerak: kalit qo'lga tushsa, boshqa odam sizning nomingizdan Play'ga
+# yangilanish chiqara oladi. Ularni offline, xavfsiz joyda saqlang.
+*.keystore
+*.jks
+signing-key-info.txt
+
+# Play uchun yig'ilgan paketlar — reponing ishi emas.
+*.aab
+*.apk
+
+node_modules/
+.DS_Store
