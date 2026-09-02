@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "uz.yolda.app",
+      "sha256_cert_fingerprints": [
+        "50:52:5F:42:F3:8E:FE:DA:A9:2D:C8:5F:EF:59:5D:3C:3F:AF:1E:AC:16:BA:8F:B8:53:B8:FC:2B:95:39:71:22"
+      ]
+    }
+  }
+]
