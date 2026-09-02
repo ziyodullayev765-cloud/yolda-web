@@ -1058,6 +1058,13 @@
   .review-route{font-size:12px;color:var(--muted);}
   .review-text{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:6px 0 0;}
 
+  /* Yordam markazi turkumlari — tor ekranda yon tomonga suriladi. */
+  .help-cats{
+    display:flex;gap:var(--s2);margin-bottom:var(--s4);overflow-x:auto;
+    padding-bottom:2px;-webkit-overflow-scrolling:touch;
+  }
+  .help-cats .chip{white-space:nowrap;flex-shrink:0;}
+
   /* Saqlanganlar oynasi: uchta bo'lim, uchta ro'yxat. */
   .saved-tabs{display:flex;gap:var(--s2);margin-bottom:var(--s4);overflow-x:auto;padding-bottom:2px;}
   .saved-tabs .chip{white-space:nowrap;flex-shrink:0;}
@@ -2229,33 +2236,11 @@
       </a>
     </div>
 
-    <div class="card reveal" style="text-align:left;margin-bottom:var(--s4);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg> <span data-i18n="contact.faqTitle">Ko'p so'raladigan savollar</span></h3>
-      <details class="faq-item">
-        <summary data-i18n="contact.faq1q">Xizmat pullikmi?</summary>
-        <p data-i18n="contact.faq1a">Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.</p>
-      </details>
-      <details class="faq-item">
-        <summary data-i18n="contact.faq2q">Buyurtmam qanday tasdiqlanadi?</summary>
-        <p data-i18n="contact.faq2a">Guruhda birinchi bo'lib <strong>«Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.</p>
-      </details>
-      <details class="faq-item">
-        <summary data-i18n="contact.faq3q">Narx qanday kelishiladi?</summary>
-        <p data-i18n="contact.faq3a">Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.</p>
-      </details>
-      <details class="faq-item">
-        <summary data-i18n="contact.faq4q">Haydovchi kelmasa yoki javob bermasa nima qilaman?</summary>
-        <p data-i18n="contact.faq4a">Saytga qaytib, yangi buyurtma joylashtiring — u yana barcha haydovchilarga ko'rinadi. Takrorlanadigan bo'lsa, pastdagi forma orqali bizga xabar bering.</p>
-      </details>
-      <details class="faq-item">
-        <summary data-i18n="contact.faq5q">Buyurtmani bekor qila olamanmi?</summary>
-        <p data-i18n="contact.faq5a">Ha. Agar hali hech kim olmagan bo'lsa, guruhda yozib qo'ying yoki pastdagi forma orqali bizga ayting — biz yordam beramiz.</p>
-      </details>
-      <details class="faq-item">
-        <summary data-i18n="contact.faq6q">Telefon raqamim kimga ko'rinadi?</summary>
-        <p data-i18n="contact.faq6a">Faqat yukingizni «olgan» haydovchiga — u ham buyurtmani qabul qilgandan keyingina. Boshqa hech kimga oshkor qilinmaydi.</p>
-      </details>
-    </div>
+    <!-- Yordam markazi — kartochkalar JS'da chiziladi (renderHelpCenter).
+         Ilgari bu yerda oltita qo'lda yozilgan savol turardi va ularning
+         yarmi eski oqimni tasvirlardi ("guruhda birinchi bosgan oladi"),
+         ya'ni odamga noto'g'ri javob berardi. -->
+    <div class="card reveal" id="helpCenter" style="text-align:left;margin-bottom:var(--s4);"></div>
 
     <div class="card reveal" style="text-align:left;margin-bottom:var(--s4);">
       <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg> <span data-i18n="contact.reportTitle">Shikoyat qilish</span></h3>
@@ -2599,19 +2584,47 @@
       "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
 
       "contact.sub": "Savol yoki yordam kerakmi? Biz bilan bog'laning.",
-      "contact.faqTitle": "Ko'p so'raladigan savollar",
-      "contact.faq1q": "Xizmat pullikmi?",
-      "contact.faq1a": "Hozircha butunlay bepul — ro'yxatdan o'tish ham, e'lon joylashtirish ham komissiyasiz. Kelajakda o'zgarish bo'lsa, foydalanuvchilarga oldindan xabar beriladi.",
-      "contact.faq2q": "Buyurtmam qanday tasdiqlanadi?",
-      "contact.faq2a": "Guruhda birinchi bo'lib <strong>«Men olaman»</strong> tugmasini bosgan haydovchi buyurtmani oladi. Shundan keyin u sizga to'g'ridan-to'g'ri qo'ng'iroq qiladi.",
-      "contact.faq3q": "Narx qanday kelishiladi?",
-      "contact.faq3a": "Saytda ko'rsatilgan narx — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narxni haydovchi bilan telefon orqali kelishib olasiz.",
-      "contact.faq4q": "Haydovchi kelmasa yoki javob bermasa nima qilaman?",
-      "contact.faq4a": "Saytga qaytib, yangi buyurtma joylashtiring — u yana barcha haydovchilarga ko'rinadi. Takrorlanadigan bo'lsa, pastdagi forma orqali bizga xabar bering.",
-      "contact.faq5q": "Buyurtmani bekor qila olamanmi?",
-      "contact.faq5a": "Ha. Agar hali hech kim olmagan bo'lsa, guruhda yozib qo'ying yoki pastdagi forma orqali bizga ayting — biz yordam beramiz.",
-      "contact.faq6q": "Telefon raqamim kimga ko'rinadi?",
-      "contact.faq6a": "Faqat yukingizni «olgan» haydovchiga — u ham buyurtmani qabul qilgandan keyingina. Boshqa hech kimga oshkor qilinmaydi.",
+      "help.title": "Yordam markazi",
+      "help.searchPlaceholder": "Savolingizni yozing",
+      "help.noResults": "Bunday savol topilmadi. Pastdagi forma orqali bizga yozing.",
+      "help.catAll": "Hammasi",
+      "help.catStart": "Boshlash",
+      "help.catShipper": "Yuk beruvchilar",
+      "help.catDriver": "Haydovchilar",
+      "help.catMoney": "Narx va to'lov",
+      "help.catSafety": "Xavfsizlik",
+      "help.free.q": "Xizmat pullikmi?",
+      "help.free.a": "Yo'q. Hozircha butunlay bepul — ro'yxatdan o'tish ham, yuk joylash ham, taklif yuborish ham komissiyasiz. O'zgarish bo'lsa, oldindan xabar beriladi.",
+      "help.howpost.q": "Yukni qanday joylayman?",
+      "help.howpost.a": "Pastdagi «Yuk joylash» tugmasini bosing va formani to'ldiring: qayerdan qayerga, nima, necha kilo. Yuk saytdagi «Yuklar» ro'yxatida va haydovchilar Telegram guruhida paydo bo'ladi.",
+      "help.account.q": "Ro'yxatdan o'tish shartmi?",
+      "help.account.a": "Yuklarni ko'rish uchun shart emas. Yuk joylash, taklif yuborish va xabar yozish uchun Google yoki Telegram orqali kirasiz — alohida parol o'ylab topish kerak emas.",
+      "help.offers.q": "Haydovchi qanday tanlanadi?",
+      "help.offers.a": "Haydovchilar sizga taklif yuboradi: narx, yetib borish vaqti va izoh bilan. Siz ularni taqqoslab, o'zingiz tanlaysiz. Kimni tanlashingizdan oldin uning profilini, bahosini va tasdiqlarini ko'rishingiz mumkin.",
+      "help.track.q": "Yuk qayerdaligini qanday bilaman?",
+      "help.track.a": "«Yuk joylash» bo'limidagi «Buyurtmani kuzatish» kartochkasiga kod va telefon raqamingizni kiriting. Olti bosqich ko'rinadi: Yangi, Haydovchi topildi, Yuklashga ketdi, Yuklandi, Yo'lda, Yetkazildi. Har bosqichda sizga xabar boradi.",
+      "help.cancel.q": "Buyurtmani bekor qila olamanmi?",
+      "help.cancel.a": "Ha, yetkazilgunga qadar. Kuzatish bo'limida ikkita tugma bor: <b>Bekor qilish</b> — yuk endi kerak emas; <b>Haydovchini bo'shatish</b> — yuk kerak, lekin bu haydovchi javob bermayapti, shunda yuk yana boshqa haydovchilarga ko'rinadi.",
+      "help.findload.q": "Yuklarni qayerdan topaman?",
+      "help.findload.a": "«Yuklar» bo'limida — yo'nalish, og'irlik va mashina turi bo'yicha filtr bilan. Qidiruvni saqlab qo'ysangiz, unga mos yangi yuk chiqqanda sizga xabar keladi. Yuklar Telegram guruhiga ham tushadi.",
+      "help.sendoff.q": "Taklif qanday yuboriladi?",
+      "help.sendoff.a": "Yuk sahifasidagi «Taklif yuborish» tugmasini bosing, narxingizni va qachon yetib borishingizni yozing. Yuk beruvchi tanlasa, sizga xabar keladi va uning raqami ochiladi.",
+      "help.status.q": "Holatni qanday yangilayman?",
+      "help.status.a": "Ikki joydan: Telegram guruhidagi xabar ostidagi tugmadan yoki saytdagi yuk sahifasidan. Tugma har safar keyingi bosqichning nomini o'zi yozib turadi — tanlab o'tirish shart emas.",
+      "help.giveup.q": "Olgan yukimdan voz kecha olamanmi?",
+      "help.giveup.a": "Ha. Guruhdagi xabar ostida «Voz kechaman» tugmasi bor. Yuk yo'qolmaydi — u yana boshqa haydovchilarga ko'rinadi, yuk beruvchiga esa darrov xabar boradi.",
+      "help.price.q": "Narx qanday hisoblanadi?",
+      "help.price.a": "Yukni joylaganda ko'rsatiladigan raqam — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narx — siz qabul qilgan taklifdagi raqam.",
+      "help.hint.q": "«Bu yo'nalishda odatda...» degan maslahat qayerdan olinadi?",
+      "help.hint.a": "Shu yo'nalishda haqiqatan joylangan buyurtmalar narxidan. Yetarli ma'lumot to'planmagan bo'lsa, hech qanday raqam ko'rsatilmaydi — ikkita buyurtmadan «o'rtacha narx» chiqarish noto'g'ri bo'lardi.",
+      "help.payment.q": "To'lov sayt orqali o'tadimi?",
+      "help.payment.a": "Yo'q. Hozircha YO'LDA to'lovni qabul qilmaydi va pulni ushlab turmaydi — siz haydovchi bilan to'g'ridan-to'g'ri hisoblashasiz.",
+      "help.verify.q": "«Tasdiqlangan» nima degani?",
+      "help.verify.a": "Uch xil tasdiq bor va ular alohida olinadi: <b>telefon raqami</b> (Telegram boti orqali), <b>shaxs hujjati</b> va <b>texnik pasport</b> (moderator ko'radi). Profilda qaysi biri olingani ko'rinib turadi.",
+      "help.phone.q": "Telefon raqamim kimga ko'rinadi?",
+      "help.phone.a": "Faqat siz taklifini qabul qilgan haydovchiga, va faqat qabul qilganingizdan keyin. Taklif yuborgan boshqa haydovchilar raqamingizni ko'rmaydi.",
+      "help.rating.q": "Baho qanday ishlaydi?",
+      "help.rating.a": "Yuk yetkazilgach ikkala tomon bir-birini baholaydi: yuk beruvchi haydovchini, haydovchi yuk beruvchini. Yulduzlardan tashqari mezon tanlanadi — masalan «vaqtida yetkazdi» yoki «to'lovni vaqtida qildi» — va profilda ko'p takrorlanganlari ko'rinadi.",
       "contact.reportTitle": "Shikoyat qilish",
       "contact.reportDesc": "Firibgarlik, soxta e'lon, soxta haydovchi yoki boshqa jiddiy muammoga duch kelsangiz — shu yerdan xabar bering, biz tekshiramiz.",
       "contact.reportReasonLabel": "Sabab", "contact.choose": "Tanlang",
@@ -2901,19 +2914,47 @@
       "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
 
       "contact.sub": "Есть вопрос или нужна помощь? Свяжитесь с нами.",
-      "contact.faqTitle": "Часто задаваемые вопросы",
-      "contact.faq1q": "Сервис платный?",
-      "contact.faq1a": "Пока полностью бесплатно — и регистрация, и размещение заказов без комиссии. Если что-то изменится, мы заранее предупредим пользователей.",
-      "contact.faq2q": "Как подтверждается мой заказ?",
-      "contact.faq2a": "Водитель, первым нажавший в группе кнопку <strong>«Я беру»</strong>, получает заказ и после этого сразу звонит вам.",
-      "contact.faq3q": "Как согласовывается цена?",
-      "contact.faq3a": "Цена на сайте — примерный расчёт по расстоянию и весу. Окончательную цену вы согласовываете с водителем по телефону.",
-      "contact.faq4q": "Что делать, если водитель не приехал или не отвечает?",
-      "contact.faq4a": "Вернитесь на сайт и разместите новый заказ — он снова станет виден всем водителям. Если это повторяется, напишите нам через форму ниже.",
-      "contact.faq5q": "Могу ли я отменить заказ?",
-      "contact.faq5a": "Да. Если его ещё никто не взял, напишите об этом в группе или через форму ниже — мы поможем.",
-      "contact.faq6q": "Кому виден мой номер телефона?",
-      "contact.faq6a": "Только водителю, который «взял» ваш груз — и только после подтверждения заказа. Больше никому он не раскрывается.",
+      "help.title": "Центр помощи",
+      "help.searchPlaceholder": "Напишите свой вопрос",
+      "help.noResults": "Такого вопроса нет. Напишите нам через форму ниже.",
+      "help.catAll": "Все",
+      "help.catStart": "Начало",
+      "help.catShipper": "Отправителям",
+      "help.catDriver": "Водителям",
+      "help.catMoney": "Цена и оплата",
+      "help.catSafety": "Безопасность",
+      "help.free.q": "Сервис платный?",
+      "help.free.a": "Нет. Пока полностью бесплатно — регистрация, размещение груза и отправка предложений без комиссии. Если что-то изменится, мы предупредим заранее.",
+      "help.howpost.q": "Как разместить груз?",
+      "help.howpost.a": "Нажмите «Разместить груз» внизу и заполните форму: откуда куда, что и сколько килограммов. Груз появится в разделе «Грузы» и в Telegram-группе водителей.",
+      "help.account.q": "Нужна ли регистрация?",
+      "help.account.a": "Чтобы смотреть грузы — нет. Чтобы разместить груз, отправить предложение или написать сообщение, вы входите через Google или Telegram — придумывать отдельный пароль не нужно.",
+      "help.offers.q": "Как выбирается водитель?",
+      "help.offers.a": "Водители присылают вам предложения: цена, время прибытия и комментарий. Вы сравниваете и выбираете сами. Перед выбором можно открыть профиль водителя, его оценку и подтверждения.",
+      "help.track.q": "Как узнать, где груз?",
+      "help.track.a": "В разделе «Разместить груз» есть карточка «Отслеживание заказа» — введите код и свой номер. Показываются шесть этапов: Новый, Водитель найден, Едет на погрузку, Загружен, В пути, Доставлен. На каждом этапе приходит уведомление.",
+      "help.cancel.q": "Могу ли я отменить заказ?",
+      "help.cancel.a": "Да, пока груз не доставлен. В отслеживании две кнопки: <b>Отменить заказ</b> — груз больше не нужен; <b>Освободить водителя</b> — груз нужен, но этот водитель не отвечает, и тогда груз снова видят другие.",
+      "help.findload.q": "Где искать грузы?",
+      "help.findload.a": "В разделе «Грузы» — с фильтрами по направлению, весу и типу машины. Сохранённый поиск пришлёт уведомление, когда появится подходящий груз. Грузы также приходят в Telegram-группу.",
+      "help.sendoff.q": "Как отправить предложение?",
+      "help.sendoff.a": "На странице груза нажмите «Отправить предложение», укажите свою цену и время прибытия. Если отправитель выберет вас, придёт уведомление и откроется его номер.",
+      "help.status.q": "Как обновлять статус?",
+      "help.status.a": "Двумя способами: кнопкой под сообщением в Telegram-группе или на странице груза на сайте. Кнопка каждый раз сама называет следующий этап — выбирать ничего не нужно.",
+      "help.giveup.q": "Могу ли я отказаться от взятого груза?",
+      "help.giveup.a": "Да. Под сообщением в группе есть кнопка «Отказываюсь». Груз не пропадает — его снова видят другие водители, а отправителю сразу приходит уведомление.",
+      "help.price.q": "Как считается цена?",
+      "help.price.a": "Число, которое показывается при размещении, — примерный расчёт по расстоянию и весу. Итоговая цена — та, что указана в принятом вами предложении.",
+      "help.hint.q": "Откуда берётся подсказка «на этом направлении обычно...»?",
+      "help.hint.a": "Из цен реально размещённых заказов на этом направлении. Если данных мало, не показывается ничего — выводить «среднюю цену» из двух заказов было бы неправдой.",
+      "help.payment.q": "Оплата проходит через сайт?",
+      "help.payment.a": "Нет. Пока YO'LDA не принимает платежи и не держит деньги — вы рассчитываетесь с водителем напрямую.",
+      "help.verify.q": "Что означает «подтверждён»?",
+      "help.verify.a": "Есть три подтверждения, и они получаются отдельно: <b>номер телефона</b> (через Telegram-бота), <b>документ личности</b> и <b>техпаспорт</b> (проверяет модератор). В профиле видно, какие именно получены.",
+      "help.phone.q": "Кто видит мой номер телефона?",
+      "help.phone.a": "Только тот водитель, чьё предложение вы приняли, и только после принятия. Остальные водители, приславшие предложения, номер не видят.",
+      "help.rating.q": "Как работают оценки?",
+      "help.rating.a": "После доставки обе стороны оценивают друг друга: отправитель — водителя, водитель — отправителя. Кроме звёзд отмечаются критерии — например «доставил вовремя» или «заплатил вовремя» — и в профиле видно, какие из них повторяются чаще.",
       "contact.reportTitle": "Пожаловаться",
       "contact.reportDesc": "Столкнулись с мошенничеством, фейковым объявлением, фейковым водителем или другой серьёзной проблемой — сообщите здесь, мы проверим.",
       "contact.reportReasonLabel": "Причина", "contact.choose": "Выберите",
@@ -3203,19 +3244,47 @@
       "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
 
       "contact.sub": "Have a question or need help? Get in touch.",
-      "contact.faqTitle": "Frequently asked questions",
-      "contact.faq1q": "Is the service paid?",
-      "contact.faq1a": "It's completely free for now — sign-up and posting orders both come with no commission. If that ever changes, users will be notified in advance.",
-      "contact.faq2q": "How does my order get confirmed?",
-      "contact.faq2a": "Whichever driver taps <strong>\"I'll take it\"</strong> first in the group gets the order, then calls you directly.",
-      "contact.faq3q": "How is the price agreed?",
-      "contact.faq3a": "The price shown on the site is an estimate based on distance and weight. You agree on the final price with the driver by phone.",
-      "contact.faq4q": "What if the driver doesn't show up or reply?",
-      "contact.faq4a": "Go back to the site and post a new order — it will be visible to all drivers again. If it keeps happening, let us know via the form below.",
-      "contact.faq5q": "Can I cancel an order?",
-      "contact.faq5a": "Yes. If no one has taken it yet, say so in the group or tell us via the form below — we'll help.",
-      "contact.faq6q": "Who can see my phone number?",
-      "contact.faq6a": "Only the driver who \"took\" your cargo — and only after accepting the order. It's never shown to anyone else.",
+      "help.title": "Help Center",
+      "help.searchPlaceholder": "Type your question",
+      "help.noResults": "Nothing matched. Use the form below to write to us.",
+      "help.catAll": "All",
+      "help.catStart": "Getting started",
+      "help.catShipper": "For shippers",
+      "help.catDriver": "For drivers",
+      "help.catMoney": "Price and payment",
+      "help.catSafety": "Safety",
+      "help.free.q": "Does it cost anything?",
+      "help.free.a": "No. It is entirely free for now — signing up, posting a load and sending offers all carry no commission. If that changes, we will say so in advance.",
+      "help.howpost.q": "How do I post a load?",
+      "help.howpost.a": "Tap «Post a load» at the bottom and fill in the form: where from, where to, what, and how many kilograms. The load appears in the Loads list and in the drivers' Telegram group.",
+      "help.account.q": "Do I need an account?",
+      "help.account.a": "Not to browse loads. To post a load, send an offer or write a message you sign in with Google or Telegram — there is no separate password to invent.",
+      "help.offers.q": "How is a driver chosen?",
+      "help.offers.a": "Drivers send you offers with a price, an arrival time and a note. You compare them and choose. Before choosing you can open a driver's profile and see their rating and verifications.",
+      "help.track.q": "How do I see where my load is?",
+      "help.track.a": "The «Track order» card in the Post a load tab takes your order code and phone number. Six stages are shown: New, Driver found, Heading to pickup, Loaded, On the way, Delivered. You are notified at each one.",
+      "help.cancel.q": "Can I cancel an order?",
+      "help.cancel.a": "Yes, any time before delivery. Tracking has two buttons: <b>Cancel the order</b> if you no longer need it, and <b>Release the driver</b> if you still need the load moved but this driver has gone quiet — the load then goes back out to other drivers.",
+      "help.findload.q": "Where do I find loads?",
+      "help.findload.a": "In the Loads tab, filtered by route, weight and vehicle type. Save a search and you will be notified when a matching load appears. Loads also go to the Telegram group.",
+      "help.sendoff.q": "How do I send an offer?",
+      "help.sendoff.a": "On the load's page tap «Send an offer» and give your price and when you can be there. If the shipper picks you, you are notified and their number is revealed.",
+      "help.status.q": "How do I update the status?",
+      "help.status.a": "Two ways: the button under the message in the Telegram group, or the load's page on the site. The button names the next stage itself each time — there is nothing to choose between.",
+      "help.giveup.q": "Can I give up a load I took?",
+      "help.giveup.a": "Yes. There is a «Give up» button under the group message. The load is not lost â other drivers see it again, and the shipper is told straight away.",
+      "help.price.q": "How is the price worked out?",
+      "help.price.a": "The figure shown when you post is an estimate from distance and weight. The final price is whatever is in the offer you accept.",
+      "help.hint.q": "Where does the «this route usually costs...» hint come from?",
+      "help.hint.a": "From what people have actually posted on that route. If there is not enough data, no figure is shown at all â an «average price» drawn from two orders would not be true.",
+      "help.payment.q": "Does payment go through the site?",
+      "help.payment.a": "No. YO'LDA does not take payments or hold money for now — you settle with the driver directly.",
+      "help.verify.q": "What does «verified» mean?",
+      "help.verify.a": "There are three verifications, earned separately: <b>phone number</b> (through the Telegram bot), <b>identity document</b> and <b>vehicle registration</b> (both reviewed by a moderator). A profile shows which ones a person has.",
+      "help.phone.q": "Who can see my phone number?",
+      "help.phone.a": "Only the driver whose offer you accepted, and only after you accept it. Other drivers who sent offers never see it.",
+      "help.rating.q": "How do ratings work?",
+      "help.rating.a": "After delivery both sides rate each other: the shipper rates the driver, the driver rates the shipper. Alongside the stars you pick criteria â «delivered on time», «paid on time» â and a profile shows which ones keep coming back.",
       "contact.reportTitle": "Report a problem",
       "contact.reportDesc": "Run into a scam, a fake listing, a fake driver, or another serious problem? Report it here and we'll look into it.",
       "contact.reportReasonLabel": "Reason", "contact.choose": "Choose",
@@ -7334,6 +7403,102 @@
   }
 
   /* ============================================================
+     Yordam markazi
+     ------------------------------------------------------------
+     Ilgari bu oltita <details> edi, aralash tartibda, va yarmi eski
+     oqimni tasvirlardi — masalan "guruhda birinchi bosgan yukni
+     oladi", holbuki endi haydovchi taklif yuboradi va tanlovni yuk
+     beruvchi qiladi. Noto'g'ri javob javob emas.
+
+     Endi maqolalar ma'lumot sifatida turadi: turkumlarga bo'lingan,
+     qidiriladigan va uch tilda. Matn i18n lug'atida, shuning uchun
+     bu yerda faqat kalitlar bor.
+     ============================================================ */
+  var HELP_CATS = [
+    { key: "all",     i18n: "help.catAll",     label: "Hammasi" },
+    { key: "start",   i18n: "help.catStart",   label: "Boshlash" },
+    { key: "shipper", i18n: "help.catShipper", label: "Yuk beruvchilar" },
+    { key: "driver",  i18n: "help.catDriver",  label: "Haydovchilar" },
+    { key: "money",   i18n: "help.catMoney",   label: "Narx va to'lov" },
+    { key: "safety",  i18n: "help.catSafety",  label: "Xavfsizlik" }
+  ];
+  var HELP_ARTICLES = [
+    { id: "free",     cat: "start" },
+    { id: "howpost",  cat: "start" },
+    { id: "account",  cat: "start" },
+    { id: "offers",   cat: "shipper" },
+    { id: "track",    cat: "shipper" },
+    { id: "cancel",   cat: "shipper" },
+    { id: "findload", cat: "driver" },
+    { id: "sendoff",  cat: "driver" },
+    { id: "status",   cat: "driver" },
+    { id: "giveup",   cat: "driver" },
+    { id: "price",    cat: "money" },
+    { id: "hint",     cat: "money" },
+    { id: "payment",  cat: "money" },
+    { id: "verify",   cat: "safety" },
+    { id: "phone",    cat: "safety" },
+    { id: "rating",   cat: "safety" }
+  ];
+  var helpCat = "all";
+  var helpQuery = "";
+
+  function helpText(id, part){ return t("help." + id + "." + part) || ""; }
+
+  function renderHelpCenter(){
+    var box = document.getElementById("helpCenter");
+    if(!box) return;
+
+    var q = helpQuery.trim().toLowerCase();
+    var shown = HELP_ARTICLES.filter(function(a){
+      if(helpCat !== "all" && a.cat !== helpCat) return false;
+      if(!q) return true;
+      // Qidiruv tarjima qilingan matn bo'yicha — odam ko'rgan so'zni yozadi.
+      return (helpText(a.id, "q") + " " + helpText(a.id, "a")).toLowerCase().indexOf(q) !== -1;
+    });
+
+    box.innerHTML = '<h3 class="card-title">'+icon("iconInfo")+' '
+      +   '<span data-i18n="help.title">Yordam markazi</span></h3>'
+      + '<div class="field" style="margin-bottom:var(--s3);">'
+      +   '<input type="search" id="helpSearch" placeholder="Savolingizni yozing" '
+      +     'data-i18n-placeholder="help.searchPlaceholder" value="'+escapeHtml(helpQuery)+'">'
+      + '</div>'
+      + '<div class="help-cats">'
+      +   HELP_CATS.map(function(c){
+            return '<button type="button" class="chip'+(helpCat === c.key ? " active" : "")+'" '
+              + 'data-help-cat="'+c.key+'"><span data-i18n="'+c.i18n+'">'+escapeHtml(c.label)+'</span></button>';
+          }).join("")
+      + '</div>'
+      + (shown.length
+          ? shown.map(function(a){
+              return '<details class="faq-item">'
+                + '<summary data-i18n="help.'+a.id+'.q">'+escapeHtml(helpText(a.id, "q"))+'</summary>'
+                + '<p data-i18n="help.'+a.id+'.a">'+helpText(a.id, "a")+'</p>'
+                + '</details>';
+            }).join("")
+          : '<div class="empty-state">'+icon("iconSearch")
+            + '<p data-i18n="help.noResults">Bunday savol topilmadi. Pastdagi forma orqali bizga yozing.</p></div>');
+
+    box.querySelectorAll("[data-help-cat]").forEach(function(b){
+      b.addEventListener("click", function(){
+        helpCat = b.getAttribute("data-help-cat");
+        renderHelpCenter();
+      });
+    });
+    var search = box.querySelector("#helpSearch");
+    if(search){
+      search.addEventListener("input", function(){
+        helpQuery = search.value;
+        renderHelpCenter();
+        // Qayta chizishdan keyin kursor yo'qolmasin.
+        var again = document.getElementById("helpSearch");
+        if(again){ again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+      });
+    }
+    applyLang();
+  }
+
+  /* ============================================================
      Saqlanganlar — yuklar, haydovchilar, mashinalar bir joyda
      ------------------------------------------------------------
      Uchtasi uch xil joyda turardi: yuk yurakchasi faqat shu
@@ -9025,6 +9190,7 @@
     if(name === "chat") renderChatTab();
     if(name === "trucks") renderTrucksTab();
     if(name === "home") renderHomeMatch();
+    if(name === "contact") renderHelpCenter();
     if(name !== "chat") stopChatPoll();
     // A tab switch triggered from inside a sheet (e.g. Settings → Xabarlar)
     // should actually land the visitor on that tab, not leave the sheet
