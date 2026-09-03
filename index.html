@@ -2297,6 +2297,22 @@
   }
   .life a{color:inherit;}
 
+  /* Bo'limga pastki paneldan emas, bosh sahifadagi kartochkadan
+     kiriladi — ya'ni panelda yoritilgan band yo'q va chiqish yo'li
+     ko'rinmay qolardi. Shu sababli sarlavha tepasida orqaga tugmasi. */
+  .lf-back{
+    display:inline-flex;align-items:center;gap:7px;
+    margin:0 0 var(--s3);padding:8px 14px 8px 10px;
+    background:var(--lf-card);border:1px solid var(--lf-line);border-radius:999px;
+    color:var(--lf-soft);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+    transition:transform 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .lf-back:active{transform:scale(0.96);}
+  .lf-back:hover{color:var(--lf-ink);border-color:var(--lf-line);}
+  /* Belgi o'ngga qaragan — chapga aylantiramiz. */
+  .lf-back .ic-svg{font-size:16px;transform:rotate(180deg);}
+
   .lf-head h1{
     font-family:'Sora',sans-serif;font-size:24px;font-weight:800;
     letter-spacing:-0.03em;margin:0 0 4px;color:var(--lf-ink);
@@ -3591,6 +3607,10 @@
 <section class="tabview" id="tab-life" data-tab="life" hidden>
   <div class="life">
     <header class="lf-head">
+      <button type="button" class="lf-back" id="btnLifeBack">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        <span data-i18n="common.back">Orqaga</span>
+      </button>
       <h1>YO'LDA <em>LIFE</em></h1>
       <p data-i18n="life.sub">Yo'lda vaqtni foydali va qiziqarli o'tkazing.</p>
     </header>
@@ -10563,6 +10583,10 @@
     { id: "stories",   key: "life.tabStories",   label: "Stories" }
   ];
   var lifeTab = "audio";
+  // Bo'limga kartochka orqali kirilganmi? Shundan orqaga tugmasi
+  // history.back() ni ishlatadimi yoki bosh sahifaga o'tadimi —
+  // shu hal qilinadi.
+  var lifeCameFrom = false;
 
   /* Xarita qidiruvi: koordinata yubormaymiz — xarita ilovasi
      foydalanuvchining o'z joylashuvidan boshlaydi. */
@@ -10820,7 +10844,15 @@
     var item = e.target.closest && e.target.closest("[data-life-open]");
     if(item){ openLifeItem(item.getAttribute("data-life-open")); return; }
     var open = e.target.closest && e.target.closest("#btnOpenLife");
-    if(open) switchTab("life");
+    if(open){ lifeCameFrom = true; switchTab("life", true); return; }
+    var back = e.target.closest && e.target.closest("#btnLifeBack");
+    if(back){
+      // Tarixda o'z yozuvimiz bo'lsa — orqaga qaytamiz, shunda
+      // telefondagi tugma bilan bir xil ishlaydi. Bo'lmasa (masalan
+      // ?tab=life bilan to'g'ridan-to'g'ri kirilgan) bosh sahifaga.
+      if(lifeCameFrom) history.back();
+      else switchTab("home");
+    }
   });
 
   /* ---------- Takliflar ----------
@@ -12803,12 +12835,20 @@
    * tarixiga yangi yozuv qo'shsa, "orqaga" tugmasini o'nlab marta
    * bosish kerak bo'lardi.
    */
-  function rememberTab(name){
+  function rememberTab(name, push){
     if(!window.history || !history.replaceState) return;
     var url = name === "home"
       ? location.pathname + location.hash
       : location.pathname + "?tab=" + encodeURIComponent(name) + location.hash;
-    try{ history.replaceState(null, "", url); }catch(e){}
+    try{
+      // Odatda `replaceState`: pastki paneldagi har bosish tarixga
+      // yozilsa, telefondagi "orqaga" tugmasi o'nlab marta bosilishi
+      // kerak bo'lardi. `push` esa alohida holat uchun — bo'limga
+      // panel orqali emas, kartochka orqali kirilganda, ya'ni qaytish
+      // yo'li ko'rinmaydigan joyda.
+      if(push) history.pushState(null, "", url);
+      else history.replaceState(null, "", url);
+    }catch(e){}
   }
 
   /* ---------- Pastki paneldagi linzani sudrash ----------
@@ -13047,7 +13087,7 @@
     });
   }
 
-  function switchTab(name){
+  function switchTab(name, push){
     if(TABS.indexOf(name) === -1) return;
     var prev = visibleTabName();
     TABS.forEach(function(t){
@@ -13062,7 +13102,7 @@
       b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
     });
     moveNavBlob();
-    rememberTab(name);
+    rememberTab(name, push);
     var active = document.getElementById("tab-" + name);
     if(active){
       // IntersectionObserver never fires for content that was hidden —
@@ -13077,6 +13117,10 @@
     if(name === "life") renderLife();
     if(name === "contact") renderHelpCenter();
     if(name !== "chat") stopChatPoll();
+    // Bo'limdan chiqilganda belgi tozalanadi, aks holda keyingi safar
+    // (masalan manzil orqali kirilganda) orqaga tugmasi tarixda yo'q
+    // yozuvga qaytmoqchi bo'lardi.
+    if(name !== "life") lifeCameFrom = false;
     // A tab switch triggered from inside a sheet (e.g. Settings → Xabarlar)
     // should actually land the visitor on that tab, not leave the sheet
     // floating on top of it.
@@ -13516,13 +13560,21 @@
 
      O'qib bo'lgach parametr manzil qatoridan olib tashlanadi — sahifa
      yangilanganda odam boshqa joyga sakrab qolmasin. */
-  (function openTabFromUrl(){
+  /* Manzildagi ?tab= ni ochadi. Boshlanishida bir marta, keyin esa
+     telefondagi "orqaga" tugmasi bosilganda qayta chaqiriladi. */
+  function openTabFromUrl(){
     var match = /[?&]tab=([a-z]+)/.exec(location.search);
-    if(!match) return;
-    var wanted = match[1];
-    if(TABS.indexOf(wanted) === -1 || wanted === "home") return;
+    var wanted = match ? match[1] : "home";
+    if(TABS.indexOf(wanted) === -1) wanted = "home";
+    if(wanted === visibleTabName()) return;
     switchTab(wanted);
-  })();
+  }
+  openTabFromUrl();
+
+  /* "Orqaga" bosilganda sahifadan chiqib ketmasin — avval ochilgan
+     bo'limga qaytsin. Ilgari popstate umuman tinglanmasdi, shuning
+     uchun YO'LDA LIFE ga kirgan odam uchun qaytish yo'li yo'q edi. */
+  window.addEventListener("popstate", function(){ openTabFromUrl(); });
 
   var homeSearchBar = document.getElementById("homeSearchBar");
   if(homeSearchBar) homeSearchBar.addEventListener("click", openRouteSearch);
