@@ -20,6 +20,9 @@
  *   GET  /api/admin-data?resource=settings
  *   POST /api/admin-data?action=update-settings { platformName?, supportPhone?, ... }
  *   POST /api/admin-data?action=requeue-legacy  { confirm: true }
+ *   GET  /api/admin-data?resource=life
+ *   POST /api/admin-data?action=save-life       { id?, kind, category, title, url, ... }
+ *   POST /api/admin-data?action=delete-life     { id }
  *
  * All of these require the signed cookie set by /api/admin-login, and each
  * one is gated on the caller's role — see READ_PERMISSIONS /
@@ -29,6 +32,7 @@ import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from
 import { requireAdmin } from '../lib/adminAuth.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
+import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/life.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -620,6 +624,69 @@ const updateSettings = async (req, res) => {
   return res.status(200).json({ ok: true, settings: next });
 };
 
+/* ---------- YO'LDA LIFE mazmuni ----------
+   Media faylning o'zi bu yerda saqlanmaydi (sabab lib/life.js da
+   yozilgan) — bazada faqat havola va tavsif turadi. */
+const getLife = async (res) => {
+  const ids = await kvSmembers('life_ids');
+  const items = (await Promise.all(ids.map(async (id) => {
+    const raw = await kvGet(`life:${id}`);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }))).filter(Boolean);
+  return res.status(200).json({ ok: true, life: sortLifeItems(items) });
+};
+
+const saveLife = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const id = String(body.id || '').trim();
+
+  let existing = null;
+  if (id) {
+    const raw = await kvGet(`life:${id}`);
+    if (!raw) return res.status(404).json({ error: 'Yozuv topilmadi' });
+    try { existing = JSON.parse(raw); } catch { existing = null; }
+    if (!existing) return res.status(500).json({ error: 'Yozuv o‘qilmadi' });
+  }
+
+  const { item, error } = normaliseLife(body, existing);
+  if (error) return res.status(400).json({ error });
+
+  if (!(await kvSet(`life:${item.id}`, JSON.stringify(item)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+  await kvSadd('life_ids', item.id).catch(() => {});
+
+  // Faqat bittasi asosiy bo'lishi mumkin: yangisi belgilanganda
+  // eskisidan belgi olinadi, aks holda bannerda qaysi biri chiqishi
+  // tasodifga qolardi.
+  if (item.featured) {
+    const ids = await kvSmembers('life_ids');
+    await Promise.all(ids.map(async (other) => {
+      if (other === item.id) return;
+      const raw = await kvGet(`life:${other}`);
+      if (!raw) return;
+      let parsed = null;
+      try { parsed = JSON.parse(raw); } catch { return; }
+      if (!parsed || !parsed.featured) return;
+      parsed.featured = false;
+      await kvSet(`life:${other}`, JSON.stringify(parsed)).catch(() => {});
+    }));
+  }
+
+  return res.status(200).json({ ok: true, item });
+};
+
+const deleteLife = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const id = String(body.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'id kerak' });
+  if (!(await kvGet(`life:${id}`))) return res.status(404).json({ error: 'Yozuv topilmadi' });
+  await kvDel(`life:${id}`).catch(() => {});
+  await kvSrem('life_ids', id).catch(() => {});
+  return res.status(200).json({ ok: true });
+};
+
 /** Read permission required per GET resource. */
 const READ_PERMISSIONS = {
   orders: 'orders:read',
@@ -630,6 +697,7 @@ const READ_PERMISSIONS = {
   truck: 'trucks:read',
   settings: 'settings:read',
   verifydoc: 'users:read',
+  life: 'life:read',
 };
 
 /** Write permission required per POST action. */
@@ -641,6 +709,8 @@ const WRITE_PERMISSIONS = {
   'update-truck': 'trucks:write',
   'update-settings': 'settings:write',
   'requeue-legacy': 'trucks:write',
+  'save-life': 'life:write',
+  'delete-life': 'life:write',
 };
 
 export default async function handler(req, res) {
@@ -662,6 +732,7 @@ export default async function handler(req, res) {
     if (resource === 'truck') return getTruck(req, res);
     if (resource === 'settings') return getSettings(res);
     if (resource === 'verifydoc') return getVerifyDoc(req, res);
+    if (resource === 'life') return getLife(res);
   }
 
   if (req.method === 'POST') {
@@ -680,6 +751,8 @@ export default async function handler(req, res) {
     if (action === 'update-truck') return updateTruck(req, res);
     if (action === 'update-settings') return updateSettings(req, res);
     if (action === 'requeue-legacy') return requeueLegacy(req, res);
+    if (action === 'save-life') return saveLife(req, res);
+    if (action === 'delete-life') return deleteLife(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

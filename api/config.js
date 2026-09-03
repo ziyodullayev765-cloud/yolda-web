@@ -19,7 +19,8 @@
  * index.html renders whatever it gets. Only the genuinely public fields
  * are forwarded — commissionPercent stays admin-side.
  */
-import { kvGet } from '../lib/kv.js';
+import { kvGet, kvSmembers } from '../lib/kv.js';
+import { publicShape as lifeShape, sortItems as sortLifeItems } from '../lib/life.js';
 
 const FALLBACK = {
   platformName: "YO'LDA",
@@ -29,7 +30,35 @@ const FALLBACK = {
   maintenanceMessage: '',
 };
 
+/**
+ * GET /api/config?resource=life
+ *
+ * YO'LDA LIFE bo'limining e'lon qilingan yozuvlari. Ochiq o'qish —
+ * bu mazmun baribir hamma uchun. Alohida endpoint ochilmadi: Vercel
+ * Hobby rejasida bitta deploy'da 12 ta funksiya bo'lishi mumkin va
+ * 10 tasi allaqachon band, shuning uchun ochiq o'qishlar shu yerda
+ * to'planadi.
+ */
+const getLife = async (res) => {
+  let items = [];
+  try {
+    const ids = await kvSmembers('life_ids');
+    items = (await Promise.all(ids.map(async (id) => {
+      const raw = await kvGet(`life:${id}`);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }))).filter(Boolean).filter((it) => it.published);
+  } catch {
+    // Baza javob bermasa bo'lim bo'sh ko'rinadi — sahifa baribir ochiladi.
+    items = [];
+  }
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+  return res.status(200).json({ ok: true, life: sortLifeItems(items).map(lifeShape) });
+};
+
 export default async function handler(req, res) {
+  if (String(req.query.resource || '') === 'life') return getLife(res);
+
   let settings = FALLBACK;
   try {
     const parsed = JSON.parse((await kvGet('admin_settings')) || '{}');
