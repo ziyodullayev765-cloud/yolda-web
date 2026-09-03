@@ -103,6 +103,14 @@
     --chrome-glass:rgba(255,255,255,0.62);
     --chrome-solid:rgba(255,255,255,0.94);
     --chrome-brd:rgba(255,255,255,0.55);
+    /* Pastki panel sarlavhadan ko'ra shaffofroq: u sahifaning ustida
+       suzib turadi va ostidagi kontent ko'rinib tursin. Xiralashtirish
+       kuchliroq, shuning uchun yozuv baribir o'qiladi. */
+    --nav-glass:rgba(255,255,255,0.34);
+    --nav-solid:rgba(255,255,255,0.92);
+    --nav-brd:rgba(255,255,255,0.5);
+    --nav-lens:rgba(255,255,255,0.55);
+    --nav-lens-brd:rgba(255,255,255,0.85);
 
     /* spacing scale (8pt grid) */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
@@ -152,6 +160,11 @@
     --chrome-glass:rgba(8,8,8,0.62);
     --chrome-solid:rgba(8,8,8,0.96);
     --chrome-brd:rgba(255,255,255,0.10);
+    --nav-glass:rgba(12,12,12,0.34);
+    --nav-solid:rgba(10,10,10,0.94);
+    --nav-brd:rgba(255,255,255,0.12);
+    --nav-lens:rgba(255,255,255,0.14);
+    --nav-lens-brd:rgba(255,255,255,0.28);
     --glass:rgba(10,10,10,0.72);
     --glass-brd:rgba(255,255,255,0.12);
   }
@@ -399,32 +412,53 @@
     bottom:calc(20px + env(safe-area-inset-bottom, 0px));
     display:flex;align-items:center;
     border-radius:999px;
-    background:var(--chrome-glass);
-    -webkit-backdrop-filter:saturate(180%) blur(24px);
-    backdrop-filter:saturate(180%) blur(24px);
-    border:1px solid var(--chrome-brd);
+    background:var(--nav-glass);
+    -webkit-backdrop-filter:saturate(200%) blur(30px);
+    backdrop-filter:saturate(200%) blur(30px);
+    border:1px solid var(--nav-brd);
     box-shadow:0 10px 34px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.06);
     padding:0 6px;
+    /* Sudrash paytida sahifa yonlamasiga surilib ketmasin. */
+    touch-action:pan-y;
+    -webkit-user-select:none;user-select:none;
   }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .bottom-nav{background:var(--chrome-solid);}
+    .bottom-nav{background:var(--nav-solid);}
   }
   /* Qora fonda oq soya ko'rinmaydi — tunda soya quyuqroq bo'ladi. */
   :root[data-theme="dark"] .bottom-nav{box-shadow:0 10px 34px rgba(0,0,0,0.5);}
 
-  /* Tanlangan bo'lim ostidagi "tomchi". Bitta element bo'lib, joydan
-     joyga sirg'aladi — har bir tugmaga alohida fon berilganda bunday
-     harakat chiqmasdi. */
+  /* Tanlangan bo'lim ostidagi tomchi — shisha linza. Bitta element
+     bo'lib, joydan joyga sirg'aladi; barmoq bilan sudrab ham
+     ko'chiriladi (pastdagi initNavDrag).
+
+     Linza panelning o'zidan yorug'roq: o'zining xiralashtirishi va
+     yorqinlik filtri bor, chekkasida esa ingichka yorqin chiziq —
+     shisha bo'lakning qirrasi shunday ko'rinadi. */
   .bn-blob{
     position:absolute;top:5px;bottom:5px;left:0;width:0;
-    border-radius:999px;background:var(--tint);
+    border-radius:999px;
+    background:var(--nav-lens);
+    border:1px solid var(--nav-lens-brd);
+    -webkit-backdrop-filter:brightness(1.12) saturate(160%) blur(6px);
+    backdrop-filter:brightness(1.12) saturate(160%) blur(6px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,23,42,0.1);
     opacity:0;pointer-events:none;z-index:0;
     transition:transform 0.42s cubic-bezier(0.34,1.32,0.5,1),
                width 0.42s cubic-bezier(0.34,1.32,0.5,1),
                opacity 0.25s var(--ease);
   }
-  :root[data-theme="dark"] .bn-blob{background:rgba(45,212,128,0.16);}
+  :root[data-theme="dark"] .bn-blob{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.16), 0 2px 8px rgba(0,0,0,0.4);
+  }
+  /* Sudrash paytida linza barmoq ortidan darhol yursin — sakrash
+     animatsiyasi bu yerda kechikish bo'lib tuyulardi. */
+  .bottom-nav.dragging .bn-blob{transition:opacity 0.15s linear;}
+  .bottom-nav.dragging .bn-item .ic-svg{transition:none;}
   :root[data-reduce-motion="1"] .bn-blob{transition:opacity 0.2s linear;}
+  /* Sudrash paytida ustidan o'tilayotgan bo'lim oldindan yorishadi. */
+  .bn-item.bn-armed{color:var(--route);}
+  .bn-item.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
 
   .bn-item{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
@@ -11919,6 +11953,132 @@
     try{ history.replaceState(null, "", url); }catch(e){}
   }
 
+  /* ---------- Pastki paneldagi linzani sudrash ----------
+     Bosib turib yon tomonga surilsa, linza barmoq ortidan yuradi va
+     qo'yib yuborilgan joydagi bo'lim ochiladi. Oddiy bosish
+     avvalgidek ishlaydi.
+
+     Sudrash paytida bo'lim almashtirilmaydi — faqat qo'yib
+     yuborilganda. Har bir piksel harakatda bo'lim ochilsa, ustidan
+     o'tib ketilgan har bir bo'lim ma'lumot so'rab yuborardi
+     (renderLoadsTab, renderTrucksTab va hokazo). Ustidan o'tilayotgani
+     shunchaki yorishib turadi.
+
+     Pointer Events ishlatiladi: bitta kod bilan barmoq ham, sichqoncha
+     ham qamrab olinadi. setPointerCapture bo'lmasa, barmoq panel
+     chetidan chiqib ketganda harakat yo'qolardi. */
+  function initNavDrag(){
+    var nav = document.querySelector(".bottom-nav");
+    var blob = document.getElementById("bnBlob");
+    if(!nav || !blob || !window.PointerEvent) return;
+
+    var DRAG_THRESHOLD = 8;   // shu qadar surilgandan keyingina sudrash deb hisoblanadi
+    var CLICK_GUARD_MS = 350; // sudrash tugagach shu muddat ichidagi bosish e'tiborga olinmaydi
+    var startX = 0, pointerId = null, dragging = false, armed = null;
+    var dragEndedAt = 0;
+
+    // Sudrashdan keyin brauzer yana "click" yuborishi mumkin — u
+    // barmoq uzilgan joydagi tugmani ikkinchi marta ishga tushirardi.
+    // Tinglovchi doimiy turadi va faqat vaqtga qaraydi: ilgari har
+    // safar yangi tinglovchi qo'shilardi va "click" kelmasa (barmoq
+    // bilan ko'pincha kelmaydi) o'sha tinglovchi osilib qolib,
+    // keyingi haqiqiy bosishni yutib yuborardi.
+    nav.addEventListener("click", function(e){
+      if(Date.now() - dragEndedAt > CLICK_GUARD_MS) return;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+
+    function itemsOf(){
+      return Array.prototype.slice.call(nav.querySelectorAll(".bn-item"));
+    }
+
+    function itemAt(clientX){
+      var found = null;
+      itemsOf().forEach(function(el){
+        var r = el.getBoundingClientRect();
+        if(clientX >= r.left && clientX <= r.right) found = el;
+      });
+      // Barmoq panel chetidan tashqarida bo'lsa — eng chekkadagisi.
+      if(!found){
+        var list = itemsOf();
+        if(!list.length) return null;
+        var navBox = nav.getBoundingClientRect();
+        found = clientX < navBox.left + navBox.width / 2 ? list[0] : list[list.length - 1];
+      }
+      return found;
+    }
+
+    function setArmed(el){
+      if(armed === el) return;
+      if(armed) armed.classList.remove("bn-armed");
+      armed = el;
+      if(armed) armed.classList.add("bn-armed");
+    }
+
+    function drawAt(el){
+      if(!el) return;
+      var navBox = nav.getBoundingClientRect();
+      var box = el.getBoundingClientRect();
+      // O'rtadagi tugmaning o'z doirasi bor — linza u yerda yashirinadi.
+      if(el.classList.contains("bn-item--primary")){
+        blob.style.opacity = "0";
+        return;
+      }
+      blob.style.opacity = "1";
+      blob.style.width = Math.round(box.width) + "px";
+      blob.style.transform = "translateX(" + Math.round(box.left - navBox.left) + "px)";
+    }
+
+    nav.addEventListener("pointerdown", function(e){
+      if(pointerId !== null) return;
+      pointerId = e.pointerId;
+      startX = e.clientX;
+      dragging = false;
+    });
+
+    nav.addEventListener("pointermove", function(e){
+      if(e.pointerId !== pointerId) return;
+      if(!dragging){
+        if(Math.abs(e.clientX - startX) < DRAG_THRESHOLD) return;
+        dragging = true;
+        nav.classList.add("dragging");
+        try{ nav.setPointerCapture(pointerId); }catch(err){}
+      }
+      var el = itemAt(e.clientX);
+      setArmed(el);
+      drawAt(el);
+    });
+
+    function finish(e){
+      if(e.pointerId !== pointerId) return;
+      var wasDragging = dragging;
+      var target = armed;
+      pointerId = null;
+      dragging = false;
+      setArmed(null);
+      nav.classList.remove("dragging");
+      try{ nav.releasePointerCapture(e.pointerId); }catch(err){}
+
+      if(!wasDragging){ moveNavBlob(); return; }
+      dragEndedAt = Date.now();
+
+      var name = target && target.getAttribute("data-tab-link");
+      if(name) switchTab(name);
+      else moveNavBlob();
+    }
+
+    nav.addEventListener("pointerup", finish);
+    nav.addEventListener("pointercancel", function(e){
+      if(e.pointerId !== pointerId) return;
+      pointerId = null;
+      dragging = false;
+      setArmed(null);
+      nav.classList.remove("dragging");
+      moveNavBlob();
+    });
+  }
+
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
     TABS.forEach(function(t){
@@ -12129,6 +12289,7 @@
   moveNavBlob();
   window.addEventListener("resize", moveNavBlob);
   window.addEventListener("orientationchange", function(){ setTimeout(moveNavBlob, 250); });
+  initNavDrag();
 
   var bellBtn = document.getElementById("btnNotifications");
   if(bellBtn) bellBtn.addEventListener("click", openNotifications);
