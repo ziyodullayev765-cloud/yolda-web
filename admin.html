@@ -4,15 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
 <title>YO'LDA — Admin</title>
 <style>
-  /* ---------- Login screen (light, deliberately plain) ---------- */
+  /* ---------- Kirish ekrani — panel bilan bir xil qora ---------- */
   :root{
-    --ink:#0F172A; --ink-soft:#475569; --route:#1D4ED8;
-    --border:#E2E8F0; --paper:#F9FAFB; --card:#FFFFFF;
+    /* Kirish ekrani ham panel bilan bir xil: ilgari u oq-ko'k edi va
+       parol kiritilgach ekran birdan qorayib ketardi. */
+    --ink:#F2F2F2; --ink-soft:#A8A8A8; --route:#2DD480;
+    --border:rgba(255,255,255,0.10); --paper:#000000; --card:#0E0E0E;
+    --on-accent:#052E1A;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;}
+  html,body{margin:0;background:#000000;}
+  :root{color-scheme:dark;}
   body{font-family:-apple-system,'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
 
   .login-wrap{max-width:360px;margin:80px auto;padding:0 20px;}
@@ -22,7 +27,7 @@
   .login-wrap .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;}
   .login-wrap input{
     width:100%;padding:12px 44px 12px 14px;border:1px solid var(--border);border-radius:8px;
-    font-size:15px;margin-bottom:12px;background:#fff;color:var(--ink);
+    font-size:15px;margin-bottom:12px;background:var(--card);color:var(--ink);
   }
   .login-wrap input:focus{outline:none;border-color:var(--route);}
   /* Scoped to the card's direct-child submit button only — a plain
@@ -30,7 +35,7 @@
      ".pw-toggle") match the eye-icon button nested inside .pw-field,
      stretching it to width:100% and painting it blue. */
   .login-wrap .card > button{
-    padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:#fff;
+    padding:12px 20px;border:none;border-radius:8px;background:var(--route);color:var(--on-accent);
     font-weight:600;cursor:pointer;font-size:15px;width:100%;
   }
   .login-wrap .card > button:hover{opacity:0.92;}
@@ -46,10 +51,16 @@
 
   /* ---------- Admin shell ---------- */
   .admin-shell{
-    --bg:#0B1220; --panel:#0F1A2E; --card2:#131F3A; --card-hi:#182648;
-    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.14);
-    --text:#E7ECF7; --text-soft:#8B97B3; --text-dim:#5F6C8A;
-    --accent:#4F8CFF; --accent-dark:#3D6FE0; --accent-soft:rgba(79,140,255,0.14);
+    /* Ilovaning tungi mavzusi bilan bir xil: sof qora yuza va yashil
+       aksent. Ilgari bu yerda ko'kimtir (#0B1220) palitra turardi va
+       panel saytdan butunlay boshqa ilovadek ko'rinardi. */
+    --bg:#000000; --panel:#0E0E0E; --card2:#141414; --card-hi:#1B1B1B;
+    --line:rgba(255,255,255,0.10); --line-2:rgba(255,255,255,0.16);
+    --text:#F2F2F2; --text-soft:#A8A8A8; --text-dim:#767676;
+    --accent:#2DD480; --accent-dark:#22B368; --accent-soft:rgba(45,212,128,0.14);
+    /* Yashil fonda oq matn 1.94:1 — o'qib bo'lmaydi. To'q yashil matn
+       esa 7.89:1. Shu sababli aksent ustidagi yozuv shu rangda. */
+    --on-accent:#052E1A;
     --ok:#22C55E; --ok-soft:rgba(34,197,94,0.15);
     --warn:#F59E0B; --warn-soft:rgba(245,158,11,0.15);
     --bad:#EF4444; --bad-soft:rgba(239,68,68,0.15);
@@ -58,11 +69,11 @@
     font-size:14px;line-height:1.45;
   }
   .admin-shell[hidden]{display:none;}
-  .admin-shell ::selection{background:var(--accent);color:#fff;}
+  .admin-shell ::selection{background:var(--accent);color:var(--on-accent);}
 
   .admin-sidebar{
     position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);z-index:40;
-    background:#070C18;border-right:1px solid var(--line);
+    background:#080808;border-right:1px solid var(--line);
     display:flex;flex-direction:column;
     transition:width 0.18s ease, transform 0.22s ease;
   }
@@ -71,7 +82,7 @@
     padding:0 16px;border-bottom:1px solid var(--line);
   }
   .sb-brand{font-size:16px;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;}
-  .sb-brand span{color:#38BDF8;}
+  .sb-brand span{color:var(--accent);}
   .sb-collapse{
     margin-left:auto;width:30px;height:30px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
@@ -95,7 +106,7 @@
   }
   .sb-item svg{width:18px;height:18px;flex-shrink:0;}
   .sb-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
-  .sb-item.active{background:var(--accent);color:#fff;}
+  .sb-item.active{background:var(--accent);color:var(--on-accent);}
   .sb-label{flex:1;overflow:hidden;text-overflow:ellipsis;}
   .sb-badge{
     background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;line-height:1;
@@ -107,7 +118,7 @@
   .sb-user{display:flex;align-items:center;gap:10px;padding:6px 8px 10px;overflow:hidden;}
   .sb-avatar{
     width:32px;height:32px;border-radius:9px;flex-shrink:0;
-    background:var(--accent-soft);color:#9DC0FF;
+    background:var(--accent-soft);color:#7BE8AF;
     display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
   }
   .sb-user-meta{min-width:0;white-space:nowrap;overflow:hidden;}
@@ -139,7 +150,7 @@
   .admin-shell.collapsed .admin-body{margin-left:var(--sidebar-w-collapsed);}
 
   .sb-scrim{
-    position:fixed;inset:0;z-index:35;background:rgba(3,7,18,0.6);
+    position:fixed;inset:0;z-index:35;background:rgba(0,0,0,0.66);
     opacity:0;pointer-events:none;transition:opacity 0.2s ease;
   }
 
@@ -149,7 +160,12 @@
   .admin-topbar{
     position:sticky;top:0;z-index:30;height:60px;
     display:flex;align-items:center;gap:12px;padding:0 20px;
-    background:rgba(11,18,32,0.9);backdrop-filter:blur(10px);
+    /* Ilovadagi sarlavha kabi qora shisha. Ilgari bu yerda ko'kimtir
+       rgba(11,18,32,.9) turardi — qolgani qoraygandan keyin ham u
+       yolg'iz ko'k chiziq bo'lib ko'rinib qolardi. */
+    background:rgba(8,8,8,0.86);
+    -webkit-backdrop-filter:saturate(180%) blur(12px);
+    backdrop-filter:saturate(180%) blur(12px);
     border-bottom:1px solid var(--line);
   }
   .tb-burger{
@@ -194,7 +210,7 @@
   .role-chip{
     display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
     padding:5px 10px;border-radius:999px;font-size:11.5px;font-weight:700;
-    background:var(--accent-soft);color:#9DC0FF;white-space:nowrap;
+    background:var(--accent-soft);color:#7BE8AF;white-space:nowrap;
   }
 
   /* ---------- Main ---------- */
@@ -222,7 +238,7 @@
   .btn:hover{border-color:var(--line-2);background:var(--card-hi);}
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn svg{width:15px;height:15px;}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
   .btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark);}
   .btn.ok{border-color:rgba(34,197,94,0.45);color:#86EFAC;background:var(--ok-soft);}
   .btn.ok:hover{background:rgba(34,197,94,0.24);}
@@ -232,7 +248,7 @@
   .btn.bad:hover{background:rgba(239,68,68,0.24);}
   .btn.sm{padding:6px 10px;font-size:12px;border-radius:7px;}
   .btn.sm svg{width:13px;height:13px;}
-  .btn.on{border-color:var(--accent);color:#fff;background:var(--accent-soft);}
+  .btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
   .btn.spinning svg{animation:spin 0.7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -254,7 +270,7 @@
   .stat-ico{
     width:30px;height:30px;border-radius:9px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    background:var(--accent-soft);color:#9DC0FF;
+    background:var(--accent-soft);color:#7BE8AF;
   }
   .stat-ico svg{width:16px;height:16px;}
   .stat-ico.ok{background:var(--ok-soft);color:#86EFAC;}
@@ -296,7 +312,7 @@
     font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:7px;cursor:pointer;white-space:nowrap;
   }
   .seg button:hover{color:#fff;}
-  .seg button.on{background:var(--accent);color:#fff;}
+  .seg button.on{background:var(--accent);color:var(--on-accent);}
 
   .table-wrap{border:1px solid var(--line);border-radius:14px;background:var(--card2);overflow:hidden;}
   .table-scroll{overflow-x:auto;}
@@ -333,7 +349,7 @@
     font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
   }
   .pager button:hover:not(:disabled){color:#fff;border-color:var(--line-2);}
-  .pager button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .pager button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
   .pager button:disabled{opacity:0.35;cursor:not-allowed;}
 
   /* ---------- Pills ---------- */
@@ -341,7 +357,7 @@
     display:inline-block;padding:4px 9px;border-radius:999px;
     font-size:11px;font-weight:700;white-space:nowrap;
   }
-  .pill-blue{background:var(--accent-soft);color:#9DC0FF;}
+  .pill-blue{background:var(--accent-soft);color:#7BE8AF;}
   .pill-ok{background:var(--ok-soft);color:#86EFAC;}
   .pill-warn{background:var(--warn-soft);color:#FCD34D;}
   .pill-bad{background:var(--bad-soft);color:#FCA5A5;}
@@ -351,7 +367,7 @@
     border-radius:999px;margin-left:6px;vertical-align:1px;
   }
   .tag-bad{color:#FCA5A5;background:var(--bad-soft);}
-  .tag-blue{color:#9DC0FF;background:var(--accent-soft);}
+  .tag-blue{color:#7BE8AF;background:var(--accent-soft);}
 
   select.inline{
     padding:6px 8px;border-radius:7px;border:1px solid var(--line);
@@ -384,23 +400,23 @@
   .photo-strip img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--panel);}
   .avatar-lg{
     width:56px;height:56px;border-radius:14px;object-fit:cover;flex-shrink:0;
-    background:var(--accent-soft);color:#9DC0FF;
+    background:var(--accent-soft);color:#7BE8AF;
     display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;
   }
 
   /* ---------- Modal ---------- */
   .modal-backdrop{
-    position:fixed;inset:0;z-index:100;background:rgba(3,7,18,0.66);
+    position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.72);
     display:flex;align-items:center;justify-content:center;padding:18px;
   }
   .modal-backdrop[hidden]{display:none;}
   .modal{
     width:100%;max-width:580px;max-height:88vh;display:flex;flex-direction:column;
-    background:#0F1A2E;border:1px solid rgba(255,255,255,0.14);border-radius:16px;
-    box-shadow:0 24px 70px rgba(0,0,0,0.6);color:#E7ECF7;
+    background:var(--panel);border:1px solid var(--line-2);border-radius:16px;
+    box-shadow:0 24px 70px rgba(0,0,0,0.8);color:var(--text);
     font-family:-apple-system,'Inter',system-ui,sans-serif;
-    --line:rgba(255,255,255,0.08); --card2:#131F3A; --text:#E7ECF7;
-    --text-soft:#8B97B3; --text-dim:#5F6C8A; --accent:#4F8CFF; --accent-dark:#3D6FE0;
+    --line:rgba(255,255,255,0.10); --card2:#141414; --text:#F2F2F2;
+    --text-soft:#A8A8A8; --text-dim:#767676; --accent:#2DD480; --accent-dark:#22B368;
   }
   .modal-head{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -437,7 +453,7 @@
   .toast-stack{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;flex-direction:column;gap:9px;align-items:flex-end;}
   .toast{
     display:flex;align-items:center;gap:9px;padding:11px 15px;border-radius:11px;
-    background:#141F3B;border:1px solid rgba(255,255,255,0.14);color:#E7ECF7;
+    background:var(--card2);border:1px solid var(--line-2);color:var(--text);
     font-size:13.5px;font-weight:500;max-width:min(400px,88vw);
     box-shadow:0 14px 40px rgba(0,0,0,0.5);
     font-family:-apple-system,'Inter',system-ui,sans-serif;
@@ -690,7 +706,7 @@
     if(!p || typeof p.lat !== "number" || typeof p.lng !== "number") return "—";
     var q = p.lat + "," + p.lng;
     return '<a href="https://maps.google.com/?q=' + esc(q) + '" target="_blank" rel="noopener" '
-      + 'style="color:#9DC0FF;">' + esc(q) + '</a>';
+      + 'style="color:#7BE8AF;">' + esc(q) + '</a>';
   }
 
   /* Joy sonining birligi — lib/orderMessage.js dagi ro'yxat bilan bir xil. */
@@ -1138,7 +1154,7 @@
       svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1)
         + '" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>'
         + '<text x="' + (padL - 7) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" '
-        + 'font-size="9.5" fill="#5F6C8A">' + Math.round(niceMax * g / 4) + '</text>';
+        + 'font-size="9.5" fill="#767676">' + Math.round(niceMax * g / 4) + '</text>';
     }
     labels.forEach(function(lab, i){
       var groupX = padL + slot * i + (slot - barW * series.length) / 2;
@@ -1154,7 +1170,7 @@
       // Every other label on a 14-day axis, so they never collide.
       if(labels.length <= 8 || i % 2 === 1){
         svg += '<text x="' + (padL + slot * i + slot / 2).toFixed(1) + '" y="' + (H - 8)
-          + '" text-anchor="middle" font-size="9.5" fill="#5F6C8A">' + esc(lab) + '</text>';
+          + '" text-anchor="middle" font-size="9.5" fill="#767676">' + esc(lab) + '</text>';
       }
     });
     svg += '</svg>';
@@ -1563,11 +1579,11 @@
         var days = lastDays(14);
         var series = [];
         if(can("orders:read")){
-          series.push({ label:"Buyurtmalar", color:"#4F8CFF",
+          series.push({ label:"Buyurtmalar", color:"#2DD480",
             values: countInDays(orders, days, function(o){ return o.createdAt || 0; }) });
         }
         if(can("trucks:read")){
-          series.push({ label:"Mashina e'lonlari", color:"#38BDF8",
+          series.push({ label:"Mashina e'lonlari", color:"#34D399",
             values: countInDays(trucks, days, function(t){ return t.createdAt || 0; }) });
         }
         var chartCard = series.length
@@ -1766,7 +1782,7 @@
         var contact = card("Yuk beruvchi",
           '<dl class="kv">'
           + kvRow("Ism", esc(order.name))
-          + kvRow("Telefon", order.phone ? '<a href="tel:' + esc(order.phone) + '" style="color:#9DC0FF;">' + esc(order.phone) + '</a>' : "—")
+          + kvRow("Telefon", order.phone ? '<a href="tel:' + esc(order.phone) + '" style="color:#7BE8AF;">' + esc(order.phone) + '</a>' : "—")
           + kvRow("Google", esc(order.googleEmail) || "—")
           + '</dl>'
           + (order.googleEmail && can("users:read")
@@ -1778,7 +1794,7 @@
         var driverCard = card("Haydovchi", driver
           ? '<dl class="kv">'
             + kvRow("Ism", esc(driver.name) + (driver.verified ? ' <span class="tag tag-blue">Tasdiqlangan</span>' : ""))
-            + kvRow("Telefon", driver.phone ? '<a href="tel:' + esc(driver.phone) + '" style="color:#9DC0FF;">' + esc(driver.phone) + '</a>' : "—")
+            + kvRow("Telefon", driver.phone ? '<a href="tel:' + esc(driver.phone) + '" style="color:#7BE8AF;">' + esc(driver.phone) + '</a>' : "—")
             + (driver.vehicleType ? kvRow("Mashina", esc(VEHICLE_LABELS[driver.vehicleType] || driver.vehicleType)) : "")
             + (driver.plateNumber ? kvRow("Davlat raqami", esc(driver.plateNumber)) : "")
             + (driver.takenAt ? kvRow("Olingan vaqt", esc(dt(driver.takenAt))) : "")
@@ -1997,7 +2013,7 @@
       '<dl class="kv">'
       + kvRow("Ism", esc(t.sellerName))
       + kvRow("Username", t.sellerUsername ? "@" + esc(t.sellerUsername) : "—")
-      + kvRow("Telefon", t.phone ? '<a href="tel:' + esc(t.phone) + '" style="color:#9DC0FF;">' + esc(t.phone) + '</a>' : "—")
+      + kvRow("Telefon", t.phone ? '<a href="tel:' + esc(t.phone) + '" style="color:#7BE8AF;">' + esc(t.phone) + '</a>' : "—")
       + kvRow("Identifikator", '<code style="font-size:12px;">' + esc(t.sellerIdentity) + '</code>')
       + '</dl>'
       + (t.sellerIdentity && can("users:read")
@@ -2381,7 +2397,7 @@
         + kvRow("Email / ID", esc(user.email))
         + kvRow("Rol", esc(ROLE_LABELS[user.role] || "—"))
         + kvRow("Shahar", esc(user.city || "—"))
-        + kvRow("Telefon", user.phone ? '<a href="tel:' + esc(user.phone) + '" style="color:#9DC0FF;">' + esc(user.phone) + '</a>' : "—")
+        + kvRow("Telefon", user.phone ? '<a href="tel:' + esc(user.phone) + '" style="color:#7BE8AF;">' + esc(user.phone) + '</a>' : "—")
         + kvRow("Telegram", user.telegramUsername ? "@" + esc(user.telegramUsername) : "—")
         + kvRow("Mashina", esc(VEHICLE_LABELS[user.vehicleType] || "—"))
         + kvRow("Davlat raqami", esc(user.plateNumber || "—"))
@@ -2523,7 +2539,7 @@
               render:function(m){
                 var c = String(m.contact || "");
                 if(/^[+\d][\d\s-]{6,}$/.test(c)){
-                  return '<a href="tel:' + esc(c.replace(/[^\d+]/g, "")) + '" style="color:#9DC0FF;">' + esc(c) + '</a>';
+                  return '<a href="tel:' + esc(c.replace(/[^\d+]/g, "")) + '" style="color:#7BE8AF;">' + esc(c) + '</a>';
                 }
                 return esc(c || "—");
               } },
@@ -2560,11 +2576,11 @@
         var days30 = lastDays(30);
         var series = [];
         if(can("orders:read")){
-          series.push({ label:"Buyurtmalar", color:"#4F8CFF",
+          series.push({ label:"Buyurtmalar", color:"#2DD480",
             values: countInDays(orders, days30, function(o){ return o.createdAt || 0; }) });
         }
         if(can("trucks:read")){
-          series.push({ label:"E'lonlar", color:"#38BDF8",
+          series.push({ label:"E'lonlar", color:"#34D399",
             values: countInDays(trucks, days30, function(t){ return t.createdAt || 0; }) });
         }
         if(can("users:read")){
@@ -2588,7 +2604,7 @@
             function(k){ return ORDER_LABELS[k] || k; });
           html += '<div class="grid-2-even">'
             + card("Eng ko'p yo'nalishlar", hbars(routeCounts))
-            + card("Yuk turlari", hbars(cargoCounts, "#38BDF8"))
+            + card("Yuk turlari", hbars(cargoCounts, "#34D399"))
             + '</div>'
             + '<div class="grid-2-even">'
             + card("Buyurtma holatlari", hbars(statusCounts, "#22C55E"))
@@ -2606,14 +2622,14 @@
         if(can("trucks:read")){
           pairB = card("E'lon turkumlari",
             hbars(rank(trucks, function(t){ return t.category || ""; },
-              function(k){ return TRUCK_CAT_LABELS[k] || k; }, 8), "#38BDF8"));
+              function(k){ return TRUCK_CAT_LABELS[k] || k; }, 8), "#34D399"));
         }
         if(pairA || pairB) html += '<div class="grid-2-even">' + pairA + pairB + '</div>';
 
         var pairC = "", pairD = "";
         if(can("users:read")){
           pairC = card("Shaharlar (foydalanuvchilar)",
-            hbars(rank(users, function(u){ return u.city || ""; }, null, 8), "#A78BFA"));
+            hbars(rank(users, function(u){ return u.city || ""; }, null, 8), "#0BAA63"));
         }
         if(can("reports:read")){
           pairD = card("Shikoyat sabablari",
