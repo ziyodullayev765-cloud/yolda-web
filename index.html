@@ -3233,15 +3233,15 @@
         </div>
         <div class="row2">
           <div class="field"><label for="fLoadsMinWeight" data-i18n="loads.minWeight">Og'irlik, min (kg)</label>
-            <input type="number" id="fLoadsMinWeight" min="0" step="100" placeholder="0"></div>
+            <input type="text" id="fLoadsMinWeight" inputmode="numeric" data-grouped="1" placeholder="0"></div>
           <div class="field"><label for="fLoadsMaxWeight" data-i18n="loads.maxWeight">Og'irlik, max (kg)</label>
-            <input type="number" id="fLoadsMaxWeight" min="0" step="100" placeholder="50 000"></div>
+            <input type="text" id="fLoadsMaxWeight" inputmode="numeric" data-grouped="1" placeholder="50 000"></div>
         </div>
         <div class="row2">
           <div class="field"><label for="fLoadsMinPrice" data-i18n="loads.minPrice">Narx, min (so'm)</label>
-            <input type="number" id="fLoadsMinPrice" min="0" step="10000" placeholder="0"></div>
+            <input type="text" id="fLoadsMinPrice" inputmode="numeric" data-grouped="1" placeholder="0"></div>
           <div class="field"><label for="fLoadsMaxPrice" data-i18n="loads.maxPrice">Narx, max (so'm)</label>
-            <input type="number" id="fLoadsMaxPrice" min="0" step="10000" placeholder="—"></div>
+            <input type="text" id="fLoadsMaxPrice" inputmode="numeric" data-grouped="1" placeholder="—"></div>
         </div>
         <div class="field"><label for="fLoadsDate" data-i18n="loads.exactDate">Sana</label>
           <input type="date" id="fLoadsDate"></div>
@@ -7894,8 +7894,8 @@
     var html = ''
       + '<div class="edit-section-heading" data-i18n="trucks.priceLabel">Narx (so\'m)</div>'
       + '<div class="row2">'
-      +   '<div class="field"><label for="fTfMinPrice" data-i18n="common.min">Eng kam</label><input type="number" id="fTfMinPrice" min="0" step="1000000" value="'+numVal(s.minPrice)+'"></div>'
-      +   '<div class="field"><label for="fTfMaxPrice" data-i18n="common.max">Eng ko\'p</label><input type="number" id="fTfMaxPrice" min="0" step="1000000" value="'+numVal(s.maxPrice)+'"></div>'
+      +   '<div class="field"><label for="fTfMinPrice" data-i18n="common.min">Eng kam</label><input type="text" id="fTfMinPrice" inputmode="numeric" data-grouped="1" value="'+groupNum(numVal(s.minPrice))+'"></div>'
+      +   '<div class="field"><label for="fTfMaxPrice" data-i18n="common.max">Eng ko\'p</label><input type="text" id="fTfMaxPrice" inputmode="numeric" data-grouped="1" value="'+groupNum(numVal(s.maxPrice))+'"></div>'
       + '</div>'
       + '<div class="edit-section-heading" data-i18n="trucks.yearLabel">Ishlab chiqarilgan yili</div>'
       + '<div class="row2">'
@@ -7904,8 +7904,8 @@
       + '</div>'
       + '<div class="edit-section-heading" data-i18n="trucks.mileageLabel">Probeg (km)</div>'
       + '<div class="row2">'
-      +   '<div class="field"><label for="fTfMinMileage" data-i18n="common.min">Eng kam</label><input type="number" id="fTfMinMileage" min="0" step="10000" value="'+numVal(s.minMileage)+'"></div>'
-      +   '<div class="field"><label for="fTfMaxMileage" data-i18n="common.max">Eng ko\'p</label><input type="number" id="fTfMaxMileage" min="0" step="10000" value="'+numVal(s.maxMileage)+'"></div>'
+      +   '<div class="field"><label for="fTfMinMileage" data-i18n="common.min">Eng kam</label><input type="text" id="fTfMinMileage" inputmode="numeric" data-grouped="1" value="'+groupNum(numVal(s.minMileage))+'"></div>'
+      +   '<div class="field"><label for="fTfMaxMileage" data-i18n="common.max">Eng ko\'p</label><input type="text" id="fTfMaxMileage" inputmode="numeric" data-grouped="1" value="'+groupNum(numVal(s.maxMileage))+'"></div>'
       + '</div>'
       + '<div class="edit-section-heading" data-i18n="trucks.moreFilters">Qo\'shimcha</div>'
       + '<div class="field"><label for="fTfCity" data-i18n="profile.cityLabel">Shahar</label>'
@@ -7945,9 +7945,12 @@
             b.classList.toggle("active", pendingFlags[k]);
           });
         });
+        // Ajratilgan maydonlarda qiymat "15 000 000" ko'rinishida —
+        // fieldNum ajratgichlarni tashlab o'qiydi.
         var num = function(id){
           var el = document.getElementById(id);
           if(!el || el.value === "") return null;
+          if(el.hasAttribute("data-grouped")) return fieldNum(el.value);
           var v = Number(el.value);
           return Number.isFinite(v) ? v : null;
         };
@@ -8364,7 +8367,7 @@
         +   '<div class="field"><label for="fTruckYear" data-i18n="trucks.yearLabel">Yil</label>'
         +     '<input type="number" id="fTruckYear" min="1970" max="'+(new Date().getFullYear()+1)+'" placeholder="2015" value="'+esc(d.year)+'"></div>'
         +   '<div class="field"><label for="fTruckMileage" data-i18n="trucks.mileageLabel">Probeg (km)</label>'
-        +     '<input type="number" id="fTruckMileage" min="0" placeholder="120000" value="'+esc(d.mileageKm)+'"></div>'
+        +     '<input type="text" id="fTruckMileage" inputmode="numeric" data-grouped="1" placeholder="120 000" value="'+groupNum(d.mileageKm)+'"></div>'
         + '</div>'
         + sellSelect("fTruckBody", "trucks.bodyLabel", "Kuzov turi", TRUCK_BODY_LABELS, d.bodyType, true)
         + sellSelect("fTruckFuel", "trucks.fuelLabel", "Yoqilg'i", TRUCK_FUEL_LABELS, d.fuel, true)
@@ -8399,7 +8402,7 @@
       return '<div class="wizard-panel">'
         + '<h3 class="card-title" data-i18n="trucks.stepPriceTitle">Narx va joylashuv</h3>'
         + '<div class="field"><label for="fTruckPrice" data-i18n="trucks.priceLabel">Narx (so\'m)</label>'
-        +   '<input type="number" id="fTruckPrice" min="0" step="1000" placeholder="850000000" value="'+esc(d.price)+'" data-autofocus></div>'
+        +   '<input type="text" id="fTruckPrice" inputmode="numeric" data-grouped="1" placeholder="850 000 000" value="'+groupNum(d.price)+'" data-autofocus></div>'
         + '<div class="chip-row" style="margin-bottom:var(--s4);">'
         +   '<button type="button" class="chip'+(d.priceType !== "NEGOTIABLE" ? " active" : "")+'" data-sell-pricetype="FIXED" data-i18n="trucks.priceFixed">Qat\'iy</button>'
         +   '<button type="button" class="chip'+(d.priceType === "NEGOTIABLE" ? " active" : "")+'" data-sell-pricetype="NEGOTIABLE" data-i18n="trucks.negotiable">Kelishiladi</button>'
@@ -8468,6 +8471,9 @@
     var num = function(id){
       var v = get(id);
       if(v === undefined || v === "") return null;
+      // Ajratilgan maydonlarda "850 000 000" turadi — ajratgichsiz o'qiladi.
+      var el = document.getElementById(id);
+      if(el && el.hasAttribute("data-grouped")) return fieldNum(v);
       var n = Number(v);
       return Number.isFinite(n) ? n : null;
     };
@@ -9228,10 +9234,10 @@
     if(applyBtn) applyBtn.addEventListener("click", function(){
       loadsState.cargoType = cargoSel.value;
       loadsState.truckType = truckSel.value;
-      loadsState.minWeight = minWeightInput.value ? Math.max(0, parseInt(minWeightInput.value, 10)) : null;
-      loadsState.maxWeight = maxWeightInput.value ? Math.max(0, parseInt(maxWeightInput.value, 10)) : null;
-      loadsState.minPrice = minPriceInput.value ? Math.max(0, parseInt(minPriceInput.value, 10)) : null;
-      loadsState.maxPrice = maxPriceInput.value ? Math.max(0, parseInt(maxPriceInput.value, 10)) : null;
+      loadsState.minWeight = fieldNum(minWeightInput.value);
+      loadsState.maxWeight = fieldNum(maxWeightInput.value);
+      loadsState.minPrice = fieldNum(minPriceInput.value);
+      loadsState.maxPrice = fieldNum(maxPriceInput.value);
       loadsState.exactDate = dateInput.value || "";
       Sheet.close();
       fetchLoads();
@@ -10485,8 +10491,8 @@
         + escapeHtml(d.fromCity) + " → " + escapeHtml(d.toCity)
         + ' · ' + formatNum(d.weightKg) + ' kg</p>'
         + '<div class="field"><label for="fOfferPrice" data-i18n="offer.priceLabel">Yakuniy narx (so\'m)</label>'
-        +   '<input type="number" id="fOfferPrice" min="10000" step="10000" '
-        +   'placeholder="'+formatNum(d.amount || 0)+'" value="'+escapeHtml(d.amount || "")+'" data-autofocus></div>'
+        +   '<input type="text" id="fOfferPrice" inputmode="numeric" data-grouped="1" '
+        +   'placeholder="'+formatNum(d.amount || 0)+'" value="'+groupNum(d.amount || "")+'" data-autofocus></div>'
         + '<div class="field"><label for="fOfferEta" data-i18n="offer.etaLabel">Yetib borish vaqti</label>'
         +   '<input type="text" id="fOfferEta" maxlength="60" placeholder="Masalan: ertaga ertalab"></div>'
         + '<div class="field"><label for="fOfferNote" data-i18n="offer.noteLabel">Izoh (ixtiyoriy)</label>'
@@ -10499,7 +10505,7 @@
         btn.addEventListener("click", function(){
           var priceEl = document.getElementById("fOfferPrice");
           var noteEl = document.getElementById("offerNote");
-          var price = Number(priceEl.value);
+          var price = fieldNum(priceEl.value);
           if(!price || price <= 0){
             noteEl.textContent = t("offer.priceRequired") || "Narxni kiriting";
             noteEl.style.color = "#DC2626";
@@ -10586,7 +10592,10 @@
     // uchun ularni id bo'yicha to'g'ridan-to'g'ri yangilaymiz.
     var set = function(id, value){
       var el = document.getElementById(id);
-      if(el) el.value = value == null ? "" : value;
+      if(!el) return;
+      // Ajratiladigan maydonga son "15 000" ko'rinishida qaytariladi.
+      el.value = value == null ? ""
+        : (el.hasAttribute("data-grouped") ? groupNum(value) : value);
     };
     set("fLoadsFrom", x.fromCity); set("fLoadsTo", x.toCity);
     set("fLoadsCargo", x.cargoType); set("fLoadsTruck", x.truckType);
@@ -11252,7 +11261,65 @@
     var rounded = Math.round(((distance * BASE_PER_KM + weight * BASE_PER_KG) * mult) / 1000) * 1000;
     return Math.max(MIN_PRICE, rounded);
   }
-  function formatNum(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  /* ---------- Sonlarni uch xonaga ajratish ----------
+     Kartalarda narx allaqachon "15 000 000" ko'rinishida edi, kiritish
+     maydonida esa "15000000" bo'lib turardi va nollarni sanashga to'g'ri
+     kelardi. Endi yozayotganda ham xuddi shunday ajratiladi.
+
+     Ajratgich — bo'shliq, ya'ni pastdagi formatNum bilan bir xil:
+     bitta ekranda bitta son ikki xil ko'rinmasin.
+
+     `type="number"` bunday matnni qabul qilmaydi — brauzer uni yaroqsiz
+     deb `.value` ni bo'sh qaytaradi — shuning uchun ajratiladigan
+     maydonlar `type="text" inputmode="numeric"` bo'ladi. Raqamdan
+     boshqasi yozilmaydi: groupNum har kiritishda tozalab turadi. */
+  var NUM_SEP = " ";
+  function formatNum(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NUM_SEP); }
+  /** Faqat raqamlarni qoldiradi: "15 000" -> "15000". */
+  function rawNum(v){ return String(v == null ? "" : v).replace(/\D+/g, ""); }
+  /** Uch xonaga ajratadi: "15000000" -> "15 000 000". Bo'sh — bo'sh. */
+  function groupNum(v){
+    var d = rawNum(v);
+    if(!d) return "";
+    // Boshidagi ortiqcha nollar tashlanadi, "0" ning o'zi qoladi.
+    d = d.replace(/^0+(?=\d)/, "");
+    return formatNum(d);
+  }
+  /** Maydondan sonni o'qiydi: ajratgichlarsiz. Bo'sh bo'lsa null. */
+  function fieldNum(v){
+    var d = rawNum(v);
+    if(!d) return null;
+    var n = Number(d);
+    return Number.isFinite(n) ? n : null;
+  }
+  /* Jonli ajratish. Tinglovchi hujjatga bir marta ulanadi: bo'limlar va
+     oynalar qayta chizilganda maydonlar yangidan yaratiladi, har biriga
+     alohida ulanish esa albatta bitta unutilgan joy qoldirardi. */
+  function reformatGrouped(el){
+    // Kursorgacha nechta raqam borligini sanaymiz va qayta ajratgandan
+    // keyin uni o'sha raqamdan keyin qo'yamiz — aks holda kursor har
+    // yozganda satr oxiriga sakrab ketardi.
+    var pos = el.selectionStart;
+    var digitsBefore = pos == null ? null : rawNum(el.value.slice(0, pos)).length;
+    var next = groupNum(el.value);
+    if(next === el.value) return;
+    el.value = next;
+    if(digitsBefore == null) return;
+    var i = 0, seen = 0;
+    while(i < next.length && seen < digitsBefore){
+      if(next.charCodeAt(i) >= 48 && next.charCodeAt(i) <= 57) seen++;
+      i++;
+    }
+    try{ el.setSelectionRange(i, i); }catch(e){}
+  }
+  // Tutish (capture) bosqichida: maydonning o'z tinglovchisi qiymatni
+  // o'qiganda u allaqachon ajratilgan bo'lsin, ular esa rawNum bilan
+  // o'qiydi. Ko'tarilish bosqichida bo'lsa, tartib ulanish navbatiga
+  // bog'liq bo'lib qolardi.
+  document.addEventListener("input", function(e){
+    var el = e.target;
+    if(el && el.matches && el.matches("input[data-grouped]")) reformatGrouped(el);
+  }, true);
   /* Sprite'dagi belgini chizadi. `cls` — qo'shimcha sinf, masalan
      "filled" (yurak/yulduz ichi bo'yalgan holati). */
   function icon(id, cls){
@@ -11515,7 +11582,7 @@
     return '<div class="wizard-panel">'
       + '<h3 class="card-title">'+icon("iconClipboard")+' <span data-i18n="wizard.cargoTitle">Yukingiz haqida</span></h3>'
       + '<div class="field"><label for="fWeight" data-i18n="order.weightLabel">Yuk og\'irligi (kg)</label>'
-      +   '<input type="number" id="fWeight" min="1" max="50000" inputmode="numeric" value="'+state.weight+'"></div>'
+      +   '<input type="text" id="fWeight" inputmode="numeric" data-grouped="1" value="'+groupNum(state.weight)+'"></div>'
       /* Hajm va joy soni — ixtiyoriy. Og'irlik yolg'iz o'zi yetarli
          emas: haydovchi yuk mashinasiga sig'adimi-yo'qmi shundan
          biladi. Lekin ko'p odam hajmini bilmaydi, shuning uchun
@@ -11525,8 +11592,8 @@
       +     '<input type="number" id="fVolume" min="0.1" max="200" step="0.1" inputmode="decimal" '
       +       'placeholder="masalan: 12" value="'+escapeHtml(state.volume)+'"></div>'
       +   '<div class="field"><label for="fQuantity" data-i18n="order.quantityLabel">Joy soni (ixtiyoriy)</label>'
-      +     '<input type="number" id="fQuantity" min="1" max="100000" inputmode="numeric" '
-      +       'placeholder="masalan: 20" value="'+escapeHtml(state.quantity)+'"></div>'
+      +     '<input type="text" id="fQuantity" inputmode="numeric" data-grouped="1" '
+      +       'placeholder="masalan: 20" value="'+groupNum(state.quantity)+'"></div>'
       + '</div>'
       + (state.quantity
           ? '<div class="field"><label for="fQuantityUnit" data-i18n="order.quantityUnitLabel">O\'lchov birligi</label>'
@@ -11585,7 +11652,7 @@
       + '<div id="priceHint"></div>'
       + '<div class="field" style="margin-top:var(--s3);">'
       +   '<label for="fCustomPrice" data-i18n="order.customPriceLabel">O\'z narxingizni taklif qilasizmi? (ixtiyoriy)</label>'
-      +   '<input type="number" id="fCustomPrice" min="10000" max="100000000" step="1000" placeholder="'+formatNum(price)+'" value="'+escapeHtml(state.customPrice)+'">'
+      +   '<input type="text" id="fCustomPrice" inputmode="numeric" data-grouped="1" placeholder="'+formatNum(price)+'" value="'+groupNum(state.customPrice)+'">'
       + '</div>'
       + '<div class="row2">'
       +   '<div class="field"><label for="fName" data-i18n="order.nameLabel">Ismingiz</label>'
@@ -11611,7 +11678,7 @@
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewRoute">Yo\'nalish</span><span class="wr-v">'+escapeHtml(state.from)+' → '+escapeHtml(state.to)+'</span></div>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.weightLabel">Og\'irlik</span><span class="wr-v">'+formatNum(state.weight)+' kg</span></div>'
       + (state.volume ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.volumeShort">Hajm</span><span class="wr-v">'+escapeHtml(state.volume)+' m³</span></div>' : '')
-      + (state.quantity ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.quantityShort">Joy soni</span><span class="wr-v">'+escapeHtml(state.quantity)+' '+escapeHtml(QUANTITY_UNITS[state.quantityUnit] || QUANTITY_UNITS.JOY)+'</span></div>' : '')
+      + (state.quantity ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.quantityShort">Joy soni</span><span class="wr-v">'+formatNum(rawNum(state.quantity))+' '+escapeHtml(QUANTITY_UNITS[state.quantityUnit] || QUANTITY_UNITS.JOY)+'</span></div>' : '')
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.cargoTypeLabel">Yuk turi</span><span class="wr-v">'+escapeHtml(cargoLabel)+'</span></div>'
       + (state.truckType ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.truckTypeLabel">Mashina turi</span><span class="wr-v">'+escapeHtml(VEHICLE_LABELS[state.truckType]||state.truckType)+'</span></div>' : '')
       + (state.pickupDate ? '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.pickupDateLabel">Sana</span><span class="wr-v">'+escapeHtml(state.pickupDate)+'</span></div>' : '')
@@ -11895,7 +11962,7 @@
 
     var fWeight = document.getElementById("fWeight");
     if(fWeight) fWeight.addEventListener("input", function(e){
-      state.weight = Math.max(0, parseInt(e.target.value || "0", 10));
+      state.weight = Math.max(0, parseInt(rawNum(e.target.value) || "0", 10));
       refreshButton();
     });
 
@@ -11912,7 +11979,7 @@
     var fQuantity = document.getElementById("fQuantity");
     if(fQuantity) fQuantity.addEventListener("input", function(e){
       var was = state.quantity;
-      state.quantity = e.target.value;
+      state.quantity = rawNum(e.target.value);
       // Birlik tanlash faqat son kiritilganda kerak — qatorni paydo
       // qilish yoki olib tashlash uchun qaytadan chizamiz. Har harfda
       // emas: faqat "bo'shdan to'lganga" yoki teskarisiga o'tganda.
@@ -11936,7 +12003,7 @@
     if(fPickupDate) fPickupDate.addEventListener("change", function(e){ state.pickupDate = e.target.value; });
 
     var fCustomPrice = document.getElementById("fCustomPrice");
-    if(fCustomPrice) fCustomPrice.addEventListener("input", function(e){ state.customPrice = e.target.value; });
+    if(fCustomPrice) fCustomPrice.addEventListener("input", function(e){ state.customPrice = rawNum(e.target.value); });
     var fName = document.getElementById("fName");
     if(fName) fName.addEventListener("input", function(e){ state.name = e.target.value; refreshButton(); });
     var fPhone = document.getElementById("fPhone");
