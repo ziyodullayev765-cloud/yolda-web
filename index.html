@@ -10584,6 +10584,90 @@
       + '<span data-i18n="'+key+'">'+escapeHtml(text)+'</span></div>';
   }
 
+  /* Mazmun admin paneldan keladi (/api/config?resource=life). Bir marta
+     olinadi va bo'lim ichida qayta ishlatiladi — turkum almashganda
+     har safar so'rov yuborish keraksiz. */
+  var lifeItems = null;      // null = hali olinmagan
+  var lifeLoading = false;
+
+  function loadLifeItems(){
+    if(lifeItems || lifeLoading) return Promise.resolve(lifeItems || []);
+    lifeLoading = true;
+    return fetch("/api/config?resource=life")
+      .then(function(r){ return r.json(); })
+      .then(function(body){
+        lifeItems = (body && body.life) || [];
+        return lifeItems;
+      })
+      .catch(function(){ lifeItems = []; return lifeItems; })
+      .then(function(v){ lifeLoading = false; return v; });
+  }
+
+  function lifeOfCategory(cat){
+    return (lifeItems || []).filter(function(x){ return x.category === cat; });
+  }
+
+  /** Bannerda turadigan yozuv: admin "asosiy" deb belgilagani, bo'lmasa
+      birinchi audio, u ham bo'lmasa umuman birinchisi. */
+  function lifeFeatured(){
+    var all = lifeItems || [];
+    var found = null;
+    all.forEach(function(x){ if(!found && x.featured) found = x; });
+    if(found) return found;
+    all.forEach(function(x){ if(!found && x.kind === "AUDIO") found = x; });
+    return found || all[0] || null;
+  }
+
+  function lifeMeta(x){
+    return [x.author, x.durationMin ? x.durationMin + " daqiqa" : ""]
+      .filter(Boolean).join(" · ");
+  }
+
+  function lifeCardHtml(x){
+    var art = x.coverUrl
+      ? '<span class="lf-card-art" style="background-image:url(\''+escapeHtml(x.coverUrl)+'\')"></span>'
+      : '<span class="lf-card-art"></span>';
+    var ico = x.kind === "VIDEO" ? "iconPlay" : (x.kind === "AUDIO" ? "iconHeadphones" : "iconArrowRight");
+    var meta = lifeMeta(x);
+    return '<button type="button" class="lf-card" data-life-open="'+escapeHtml(x.id)+'">'
+      + art + '<span class="lf-card-veil"></span>'
+      + '<span class="lf-card-ico">'+icon(ico)+'</span>'
+      + '<h4>'+escapeHtml(x.title)+'</h4>'
+      + (meta ? '<span>'+escapeHtml(meta)+'</span>' : '')
+      + '</button>';
+  }
+
+  /** Yozuvni ochadi: video — YouTube, audio — chalg'ich, havola — yangi oyna. */
+  function openLifeItem(id){
+    var x = null;
+    (lifeItems || []).forEach(function(v){ if(v.id === id) x = v; });
+    if(!x) return;
+
+    if(x.kind === "LINK"){
+      window.open(x.url, "_blank", "noopener");
+      return;
+    }
+    var meta = lifeMeta(x);
+    var body;
+    if(x.kind === "VIDEO"){
+      // nocookie domeni: YouTube ko'rish tarixiga yozmaydi.
+      body = '<div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000;">'
+        + '<iframe src="https://www.youtube-nocookie.com/embed/'+encodeURIComponent(x.videoId)+'?rel=0" '
+        + 'title="'+escapeHtml(x.title)+'" allow="accelerometer; encrypted-media; picture-in-picture" '
+        + 'allowfullscreen referrerpolicy="strict-origin-when-cross-origin" '
+        + 'style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
+    }else{
+      body = '<audio controls autoplay preload="none" style="width:100%;" '
+        + 'src="'+escapeHtml(x.url)+'"></audio>';
+    }
+    Sheet.open({
+      title: x.title,
+      html: body
+        + (meta ? '<p class="muted" style="margin:12px 0 0;font-size:12.5px;">'+escapeHtml(meta)+'</p>' : '')
+        + (x.description ? '<p style="margin:8px 0 0;font-size:13.5px;line-height:1.6;">'+escapeHtml(x.description)+'</p>' : '')
+    });
+  }
+
   function renderLifeTabs(){
     var box = document.getElementById("lifeTabs");
     if(!box) return;
@@ -10597,8 +10681,13 @@
   function renderLifeTrending(){
     var box = document.getElementById("lifeTrending");
     if(!box) return;
-    // Turkumga qarab boshqa matn — tab bosilganda haqiqatan nimadir
-    // o'zgarsin, bezak bo'lib turmasin.
+    var items = lifeOfCategory(lifeTab);
+    if(items.length){
+      box.innerHTML = '<div class="lf-rail">' + items.map(lifeCardHtml).join("") + '</div>';
+      return;
+    }
+    // Bo'sh bo'lsa — turkumga mos halol matn. Har turkumda boshqacha,
+    // ya'ni tab bosilganda haqiqatan nimadir o'zgaradi.
     var soon = {
       audio:     ["life.soonAudio",     "Podkast va audio hikoyalar tayyorlanmoqda."],
       news:      ["life.soonNews",      "Yo'l yangiliklari bo'limi tayyorlanmoqda."],
@@ -10611,8 +10700,44 @@
   function renderLifeCommunity(){
     var box = document.getElementById("lifeCommunity");
     if(!box) return;
+    var items = lifeOfCategory("community");
+    if(items.length){
+      box.innerHTML = '<div class="lf-rail">' + items.map(lifeCardHtml).join("") + '</div>';
+      return;
+    }
     box.innerHTML = lifeSoon("life.soonPosts",
       "Haydovchilar posti hali yo'q. Bo'lim ochilganda shu yerda chiqadi.");
+  }
+
+  /* Banner — admin "asosiy" deb belgilagan yozuv. Yo'q bo'lsa "O'ynash"
+     tugmasi o'chirilgan holatda qoladi: bosilib hech narsa qilmaydigan
+     tugma bo'lib turmasin. */
+  function renderLifeBanner(){
+    var wrap = document.querySelector("#tab-life .lf-banner");
+    if(!wrap) return;
+    var art = wrap.querySelector(".lf-banner-art");
+    var title = wrap.querySelector("h3");
+    var sub = wrap.querySelector("p");
+    var btn = wrap.querySelector(".lf-play");
+    var x = lifeFeatured();
+
+    if(!x){
+      if(art) art.style.backgroundImage = "";
+      if(title){ title.setAttribute("data-i18n", "life.bannerTitle"); title.textContent = "Uzoq yo'lda zerikmaslik"; }
+      if(sub){ sub.setAttribute("data-i18n", "life.bannerSoon");
+               sub.textContent = "Podkastlar tayyorlanmoqda — birinchisi qo'shilganda shu yerda chiqadi."; }
+      if(btn){ btn.disabled = true; btn.removeAttribute("data-life-open"); }
+      return;
+    }
+    if(art && x.coverUrl) art.style.backgroundImage = "url('" + x.coverUrl + "')";
+    // data-i18n olib tashlanadi, aks holda applyLang jonli sarlavhani
+    // qaytadan tarjima matni bilan almashtirib qo'yardi.
+    if(title){ title.removeAttribute("data-i18n"); title.textContent = x.title; }
+    if(sub){
+      sub.removeAttribute("data-i18n");
+      sub.textContent = lifeMeta(x) || x.description || "";
+    }
+    if(btn){ btn.disabled = false; btn.setAttribute("data-life-open", x.id); }
   }
 
   function renderLifeTools(){
@@ -10671,11 +10796,16 @@
 
   function renderLife(){
     renderLifeTabs();
-    renderLifeTrending();
-    renderLifeCommunity();
     renderLifeTools();
     renderLifeRank();
-    applyLang();
+    var paint = function(){
+      renderLifeBanner();
+      renderLifeTrending();
+      renderLifeCommunity();
+      applyLang();
+    };
+    paint();
+    if(lifeItems === null) loadLifeItems().then(paint);
   }
 
   document.addEventListener("click", function(e){
@@ -10687,6 +10817,8 @@
       applyLang();
       return;
     }
+    var item = e.target.closest && e.target.closest("[data-life-open]");
+    if(item){ openLifeItem(item.getAttribute("data-life-open")); return; }
     var open = e.target.closest && e.target.closest("#btnOpenLife");
     if(open) switchTab("life");
   });

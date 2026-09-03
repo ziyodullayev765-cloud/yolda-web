@@ -642,7 +642,10 @@
     star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9Z"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     trash: '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
-    pin: '<path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>'
+    pin: '<path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
+    play: '<path d="M8 5.6 19 12 8 18.4Z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    edit: '<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M14.5 6.5 17.5 9.5"/>'
   };
   function ico(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
@@ -830,11 +833,12 @@
     ADMIN: [
       "orders:read","users:read","users:write","reports:read","reports:write",
       "trucks:read","trucks:write","messages:read","analytics:read",
-      "settings:read","settings:write"
+      "settings:read","settings:write",
+      "life:read","life:write"
     ],
     MODERATOR: [
       "orders:read","users:read","reports:read","reports:write",
-      "trucks:read","trucks:write","messages:read"
+      "trucks:read","trucks:write","messages:read","life:read"
     ]
   };
   var session = { role: null };
@@ -855,7 +859,8 @@
     trucks:   { query:"resource=trucks",   perm:"trucks:read",   key:"trucks" },
     reports:  { query:"resource=reports",  perm:"reports:read",  key:"reports" },
     messages: { query:"resource=messages", perm:"messages:read", key:"messages" },
-    settings: { query:"resource=settings", perm:"settings:read", key:"settings" }
+    settings: { query:"resource=settings", perm:"settings:read", key:"settings" },
+    life:     { query:"resource=life",     perm:"life:read",     key:"life" }
   };
   var Store = {
     data: {},
@@ -1252,6 +1257,7 @@
     { name:"users",         label:"Foydalanuvchilar", icon:"users",     group:"Moderatsiya",perm:"users:read",     view:viewUsers,    detail:viewUserDetail },
     { name:"messages",      label:"Murojaatlar",      icon:"mail",      group:"Moderatsiya",perm:"messages:read",  view:viewMessages },
     { name:"analytics",     label:"Tahlil",           icon:"chart",     group:"Tizim",      perm:"analytics:read", view:viewAnalytics },
+    { name:"life",          label:"YO'LDA LIFE",      icon:"play",      group:"Mazmun",     perm:"life:read",      view:viewLife },
     { name:"settings",      label:"Sozlamalar",       icon:"gear",      group:"Tizim",      perm:"settings:read",  view:viewSettings }
   ];
   function routeByName(name){
@@ -2645,6 +2651,219 @@
      26. Sozlamalar — stored in KV and read back by /api/config,
      so what you change here really does change the public site.
      ========================================================== */
+  /* ==========================================================
+     YO'LDA LIFE — mazmun boshqaruvi
+     Media faylning o'zi bu yerda saqlanmaydi: video YouTube'da,
+     audio esa Telegram kanalida yoki obyekt xotirasida turadi va bu
+     yerga faqat havolasi kiritiladi. Sababi oddiy — 45 daqiqalik
+     bitta podkast ~21 MB, saytning oylik trafigi esa 100 GB.
+     ========================================================== */
+  var LIFE_KINDS = { AUDIO:"Audio / musiqa", VIDEO:"Video", LINK:"Havola" };
+  var LIFE_CATS = { audio:"Audio", news:"Yangiliklar", community:"Hamjamiyat", stories:"Stories" };
+
+  function lifeById(id){
+    var found = null;
+    Store.list("life").forEach(function(x){ if(x.id === id) found = x; });
+    return found;
+  }
+
+  function viewLife(){
+    var writable = can("life:write");
+    var addBtn = writable
+      ? '<button type="button" class="btn primary" data-act="life-new">' + ico("plus") + "Yangi qo'shish</button>"
+      : "";
+    return pageHead("YO'LDA LIFE", "Ilovadagi Life bo'limining mazmuni", addBtn + refreshBtn("life"))
+      + withData(["life"], function(){
+        var all = Store.list("life");
+        var published = all.filter(function(x){ return x.published; }).length;
+        var audio = all.filter(function(x){ return x.kind === "AUDIO"; }).length;
+        var video = all.filter(function(x){ return x.kind === "VIDEO"; }).length;
+
+        var stats = '<div class="stat-grid">'
+          + stat("Jami", String(all.length), "yozuv", "play")
+          + stat("E'lon qilingan", String(published), "ilovada ko'rinadi", "check", "ok")
+          + stat("Audio", String(audio), "musiqa va podkast", "star")
+          + stat("Video", String(video), "YouTube", "chart")
+          + '</div>';
+
+        var note = card("Media qayerda saqlanadi",
+          '<p class="hint" style="margin:0;">Fayl bu yerga yuklanmaydi — faqat havolasi kiritiladi. '
+          + 'Video uchun YouTube havolasi (oddiy, qisqa yoki Shorts). '
+          + 'Audio uchun to‘g‘ridan-to‘g‘ri <b>https</b> havola: Telegram kanalidagi fayl yoki '
+          + 'obyekt xotirasi (masalan Cloudflare R2). '
+          + 'Sabab: 45 daqiqalik bitta podkast ~21 MB, saytning oylik trafigi esa 100 GB — '
+          + 'fayllarni o‘zimizda saqlasak, bir necha ming tinglashdan keyin butun sayt o‘chadi.</p>');
+
+        if(!all.length){
+          return stats + note + card("Mazmun",
+            stateBox("empty", "Hozircha bo'sh",
+              writable ? "Yuqoridagi “Yangi qo‘shish” tugmasi orqali birinchi yozuvni qo‘shing."
+                       : "Yozuv qo‘shish uchun ruxsatingiz yo‘q."));
+        }
+
+        var rows = all.map(function(x){
+          var pills = '<span class="pill' + (x.published ? " pill-ok" : " pill-dim") + '">'
+              + (x.published ? "E'lon qilingan" : "Yashirin") + '</span>'
+            + (x.featured ? '<span class="pill pill-blue">Asosiy</span>' : "")
+            + '<span class="pill">' + esc(LIFE_KINDS[x.kind] || x.kind) + '</span>'
+            + '<span class="pill">' + esc(LIFE_CATS[x.category] || x.category) + '</span>'
+            + (x.durationMin ? '<span class="pill pill-dim">' + x.durationMin + ' daqiqa</span>' : "");
+
+          var actions = writable
+            ? '<div class="cell-actions" style="margin-top:10px;">'
+              + '<button type="button" class="btn" data-act="life-edit" data-id="' + esc(x.id) + '">'
+              + ico("edit") + 'Tahrirlash</button>'
+              + '<button type="button" class="btn" data-act="life-publish" data-id="' + esc(x.id) + '" '
+              + 'data-on="' + (x.published ? "1" : "0") + '">'
+              + (x.published ? "Yashirish" : "E'lon qilish") + '</button>'
+              + '<button type="button" class="btn" data-act="life-feature" data-id="' + esc(x.id) + '" '
+              + 'data-on="' + (x.featured ? "1" : "0") + '">'
+              + (x.featured ? "Asosiydan olish" : "Asosiy qilish") + '</button>'
+              + '<button type="button" class="btn bad" data-act="life-delete" data-id="' + esc(x.id) + '">'
+              + ico("trash") + "O'chirish</button>"
+              + '</div>'
+            : "";
+
+          return '<div class="card card-pad" style="margin-bottom:12px;">'
+            + '<h2 class="card-title" style="margin-bottom:8px;">' + esc(x.title) + '</h2>'
+            + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">' + pills + '</div>'
+            + (x.description ? '<p class="hint" style="margin:0 0 8px;">' + esc(x.description) + '</p>' : "")
+            + '<dl class="kv">'
+            +   (x.author ? kvRow("Muallif", esc(x.author)) : "")
+            +   kvRow("Havola", '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">'
+                  + esc(x.url.length > 60 ? x.url.slice(0, 60) + "…" : x.url) + '</a>')
+            +   kvRow("Tartib", String(x.order || 0))
+            + '</dl>'
+            + actions
+            + '</div>';
+        }).join("");
+
+        return stats + note + rows;
+      });
+  }
+
+  /** Qo'shish va tahrirlash — bitta oyna, ikkalasiga ham. */
+  function openLifeModal(id){
+    var x = id ? lifeById(id) : null;
+    if(id && !x) return;
+    var v = x || { kind:"AUDIO", category:"audio", published:true, featured:false,
+                   title:"", description:"", author:"", url:"", coverUrl:"", durationMin:"", order:0 };
+
+    function opts(map, selected){
+      return Object.keys(map).map(function(k){
+        return '<option value="' + esc(k) + '"' + (selected === k ? " selected" : "") + '>'
+          + esc(map[k]) + '</option>';
+      }).join("");
+    }
+
+    openModal({
+      title: x ? "Tahrirlash" : "Yangi yozuv",
+      body:
+        '<div class="row2">'
+        + '<div class="field"><label for="lfKind">Tur</label>'
+        + '<select id="lfKind">' + opts(LIFE_KINDS, v.kind) + '</select></div>'
+        + '<div class="field"><label for="lfCat">Turkum</label>'
+        + '<select id="lfCat">' + opts(LIFE_CATS, v.category) + '</select></div>'
+        + '</div>'
+        + '<div class="field"><label for="lfTitle">Sarlavha</label>'
+        + '<input type="text" id="lfTitle" maxlength="120" value="' + esc(v.title) + '"></div>'
+        + '<div class="field"><label for="lfDesc">Tavsif</label>'
+        + '<textarea id="lfDesc" maxlength="400">' + esc(v.description) + '</textarea></div>'
+        + '<div class="field"><label for="lfUrl">Havola (https)</label>'
+        + '<input type="text" id="lfUrl" maxlength="600" placeholder="https://youtu.be/… yoki https://…/podkast.mp3" '
+        + 'value="' + esc(v.url) + '"></div>'
+        + '<p class="hint">Video uchun YouTube havolasi. Audio uchun to‘g‘ridan-to‘g‘ri mp3/m4a havolasi.</p>'
+        + '<div class="row2">'
+        + '<div class="field"><label for="lfAuthor">Muallif</label>'
+        + '<input type="text" id="lfAuthor" maxlength="80" value="' + esc(v.author) + '"></div>'
+        + '<div class="field"><label for="lfDur">Davomiylik (daqiqa)</label>'
+        + '<input type="number" id="lfDur" min="0" max="600" value="' + esc(v.durationMin || "") + '"></div>'
+        + '</div>'
+        + '<div class="row2">'
+        + '<div class="field"><label for="lfCover">Muqova rasmi (https, ixtiyoriy)</label>'
+        + '<input type="text" id="lfCover" maxlength="600" value="' + esc(v.coverUrl || "") + '"></div>'
+        + '<div class="field"><label for="lfOrder">Tartib (kattasi tepada)</label>'
+        + '<input type="number" id="lfOrder" min="-999" max="999" value="' + esc(v.order || 0) + '"></div>'
+        + '</div>'
+        + '<label class="check"><input type="checkbox" id="lfPub"' + (v.published ? " checked" : "") + '> '
+        + 'Ilovada ko\'rinsin</label>'
+        + '<label class="check"><input type="checkbox" id="lfFeat"' + (v.featured ? " checked" : "") + '> '
+        + 'Asosiy banner sifatida chiqsin</label>'
+        + '<div class="form-err" id="lfErr" hidden></div>',
+      onSave: function(){
+        var payload = {
+          kind: byId("lfKind").value,
+          category: byId("lfCat").value,
+          title: byId("lfTitle").value.trim(),
+          description: byId("lfDesc").value.trim(),
+          author: byId("lfAuthor").value.trim(),
+          url: byId("lfUrl").value.trim(),
+          coverUrl: byId("lfCover").value.trim(),
+          durationMin: byId("lfDur").value,
+          order: byId("lfOrder").value,
+          published: byId("lfPub").checked,
+          featured: byId("lfFeat").checked
+        };
+        if(x) payload.id = x.id;
+
+        var err = byId("lfErr");
+        if(payload.title.length < 2){ err.hidden = false; err.textContent = "Sarlavhani kiriting"; return; }
+        if(!/^https:\/\//i.test(payload.url)){
+          err.hidden = false; err.textContent = "Havola https bilan boshlanishi kerak"; return;
+        }
+        err.hidden = true;
+
+        Api.post("save-life", payload).then(function(){
+          closeModal();
+          toast(x ? "Saqlandi" : "Qo'shildi", "ok");
+          Store.load("life", true);
+        }).catch(function(e){
+          if(handleApiError(e)) return;
+          err.hidden = false;
+          err.textContent = e.message;
+        });
+      }
+    });
+  }
+
+  function setLifeFlag(id, field, value){
+    var x = lifeById(id);
+    if(!x) return;
+    var payload = { id: id };
+    payload[field] = value;
+    Api.post("save-life", payload).then(function(){
+      toast("Yangilandi", "ok");
+      Store.load("life", true);
+    }).catch(function(e){
+      if(handleApiError(e)) return;
+      toast(e.message, "bad");
+    });
+  }
+
+  function confirmDeleteLife(id){
+    var x = lifeById(id);
+    if(!x) return;
+    openModal({
+      title: "O'chirish",
+      body: '<p style="margin:0;">“' + esc(x.title) + '” butunlay o‘chiriladi. '
+        + 'Bu amalni qaytarib bo‘lmaydi.</p>'
+        + '<p class="hint" style="margin-top:10px;">Havola bo‘yicha turgan faylning o‘ziga tegilmaydi '
+        + '— u YouTube yoki xotirada qoladi.</p>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
+        + '<button type="button" class="btn bad" data-act="modal-save">O\'chirish</button>',
+      onSave: function(){
+        Api.post("delete-life", { id: id }).then(function(){
+          closeModal();
+          toast("O'chirildi", "ok");
+          Store.load("life", true);
+        }).catch(function(e){
+          if(handleApiError(e)) return;
+          toast(e.message, "bad");
+        });
+      }
+    });
+  }
+
   function viewSettings(){
     var writable = can("settings:write");
     return pageHead("Sozlamalar", "Platforma sozlamalari", refreshBtn("settings"))
@@ -3017,6 +3236,11 @@
       return;
     }
     if(act === "user-edit"){ openUserModal(t.getAttribute("data-email")); return; }
+    if(act === "life-new"){ openLifeModal(null); return; }
+    if(act === "life-edit"){ openLifeModal(t.getAttribute("data-id")); return; }
+    if(act === "life-publish"){ setLifeFlag(t.getAttribute("data-id"), "published", t.getAttribute("data-on") !== "1"); return; }
+    if(act === "life-feature"){ setLifeFlag(t.getAttribute("data-id"), "featured", t.getAttribute("data-on") !== "1"); return; }
+    if(act === "life-delete"){ confirmDeleteLife(t.getAttribute("data-id")); return; }
     if(act === "settings-save"){ saveSettings(); return; }
     if(act === "requeue-legacy"){ confirmRequeueLegacy(); return; }
 
