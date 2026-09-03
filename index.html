@@ -2297,22 +2297,6 @@
   }
   .life a{color:inherit;}
 
-  /* Bo'limga pastki paneldan emas, bosh sahifadagi kartochkadan
-     kiriladi — ya'ni panelda yoritilgan band yo'q va chiqish yo'li
-     ko'rinmay qolardi. Shu sababli sarlavha tepasida orqaga tugmasi. */
-  .lf-back{
-    display:inline-flex;align-items:center;gap:7px;
-    margin:0 0 var(--s3);padding:8px 14px 8px 10px;
-    background:var(--lf-card);border:1px solid var(--lf-line);border-radius:999px;
-    color:var(--lf-soft);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
-    cursor:pointer;-webkit-tap-highlight-color:transparent;
-    transition:transform 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
-  }
-  .lf-back:active{transform:scale(0.96);}
-  .lf-back:hover{color:var(--lf-ink);border-color:var(--lf-line);}
-  /* Belgi o'ngga qaragan — chapga aylantiramiz. */
-  .lf-back .ic-svg{font-size:16px;transform:rotate(180deg);}
-
   .lf-head h1{
     font-family:'Sora',sans-serif;font-size:24px;font-weight:800;
     letter-spacing:-0.03em;margin:0 0 4px;color:var(--lf-ink);
@@ -3288,13 +3272,14 @@
       </button>
     </div>
 
-    <!-- 2. YO'LDA LIFE — bu yerda ilgari statistika (faol yuk,
-         haydovchi, yakunlangan tashuv, faol yo'nalish) turardi. -->
-    <button type="button" class="life-entry" id="btnOpenLife">
-      <span class="life-entry-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg></span>
+    <!-- 2. Mashinalar bo'limiga kirish. YO'LDA LIFE pastki panelga
+         ko'chgach, bu kartochka Mashinalar bilan o'rin almashdi —
+         bo'lim panelda yo'q, lekin bir bosishda ochiladi. -->
+    <button type="button" class="life-entry" id="btnOpenTrucks" data-tab-link="trucks">
+      <span class="life-entry-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg></span>
       <span class="life-entry-txt">
-        <span class="life-entry-t">YO'LDA <em>LIFE</em></span>
-        <span class="life-entry-s" data-i18n="life.entrySub">Yo'lda vaqtni foydali va qiziqarli o'tkazing</span>
+        <span class="life-entry-t" data-i18n="nav.trucks">Mashinalar</span>
+        <span class="life-entry-s" data-i18n="home.trucksSub">Sizning biznesingiz uchun eng yaxshi texnika</span>
       </span>
       <span class="life-entry-go"><svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg></span>
     </button>
@@ -3607,10 +3592,6 @@
 <section class="tabview" id="tab-life" data-tab="life" hidden>
   <div class="life">
     <header class="lf-head">
-      <button type="button" class="lf-back" id="btnLifeBack">
-        <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
-        <span data-i18n="common.back">Orqaga</span>
-      </button>
       <h1>YO'LDA <em>LIFE</em></h1>
       <p data-i18n="life.sub">Yo'lda vaqtni foydali va qiziqarli o'tkazing.</p>
     </header>
@@ -3808,7 +3789,7 @@
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
-  <button type="button" class="bn-item" data-tab-link="trucks"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><span data-i18n="nav.trucks">Mashinalar</span></button>
+  <button type="button" class="bn-item" data-tab-link="life"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
   <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
 </nav>
 
@@ -3851,7 +3832,7 @@
   var STRINGS = {
     uz: {
       "nav.home": "Asosiy", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
-      "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)", "nav.trucks": "Mashinalar",
+      "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)", "nav.trucks": "Mashinalar", "nav.life": "Life",
 
       "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
       "trucks.sub": "Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.",
@@ -4294,7 +4275,7 @@
     },
     ru: {
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
-      "nav.telegramGroupAria": "Группа водителей (Telegram)", "nav.trucks": "Машины",
+      "nav.telegramGroupAria": "Группа водителей (Telegram)", "nav.trucks": "Машины", "nav.life": "Life",
 
       "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовик", "trucks.titleB": "продайте или купите",
       "trucks.sub": "Только грузовой транспорт: грузовики, фургоны, прицепы и спецтехника.",
@@ -4733,7 +4714,7 @@
     },
     en: {
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
-      "nav.telegramGroupAria": "Drivers group (Telegram)", "nav.trucks": "Vehicles",
+      "nav.telegramGroupAria": "Drivers group (Telegram)", "nav.trucks": "Vehicles", "nav.life": "Life",
 
       "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a freight vehicle",
       "trucks.sub": "Freight transport only: trucks, vans, trailers and special equipment.",
@@ -10595,9 +10576,21 @@
      yurilganda almashtiriladi, Asosiyga qaytilganda esa iste'mol
      qilinadi. Aks holda har bosish tarixga yozilib, saytdan chiqish
      uchun "orqaga" ni o'nlab marta bosish kerak bo'lardi. */
-  var tabPushed = false;   // tarixda bo'lim yozuvi bormi
   var pendingTab = null;   // history.back() javobini kutayotgan bo'lim
   var inPopstate = false;  // popstate ichida tarixga qayta tegmaymiz
+
+  /* Tarixdagi joriy yozuv bizniki — ya'ni uni "orqaga" bilan yopsa
+     bo'ladimi? Buni manzildagi ?tab= dan bilib bo'lmaydi: sahifa
+     yangilanganda yoki havola orqali to'g'ridan-to'g'ri kirilganda
+     manzilda ?tab= turadi, lekin ostida hech narsa yo'q — o'sha
+     holatda history.back() odamni saytdan butunlay olib chiqib
+     ketardi. Shuning uchun belgi yozuvning o'zida saqlanadi: u faqat
+     biz pushState qilgan yozuvda bo'ladi va sahifa yangilansa ham
+     o'sha yozuv bilan qoladi. */
+  function tabEntryOwned(){
+    try{ return Boolean(history.state && history.state.yoldaTab); }
+    catch(e){ return false; }
+  }
 
   /* Xarita qidiruvi: koordinata yubormaymiz — xarita ilovasi
      foydalanuvchining o'z joylashuvidan boshlaydi. */
@@ -10856,9 +10849,6 @@
     if(item){ openLifeItem(item.getAttribute("data-life-open")); return; }
     var open = e.target.closest && e.target.closest("#btnOpenLife");
     if(open){ switchTab("life"); return; }
-    var back = e.target.closest && e.target.closest("#btnLifeBack");
-    // Telefondagi "orqaga" bilan bir xil natija: Asosiy sahifa.
-    if(back) switchTab("home");
   });
 
   /* ---------- Takliflar ----------
@@ -12847,20 +12837,15 @@
       ? location.pathname + location.hash
       : location.pathname + "?tab=" + encodeURIComponent(name) + location.hash;
     try{
-      if(inPopstate){
-        // "Orqaga"/"oldinga" bosilgan — tarix allaqachon to'g'ri joyda,
-        // biz faqat holatni unga moslaymiz.
-        tabPushed = name !== "home";
-        history.replaceState(null, "", url);
+      // Yangi yozuv faqat bitta holatda qo'shiladi: Asosiydan boshqa
+      // bo'limga o'tilganda va joriy yozuv hali bizniki bo'lmaganda.
+      if(name !== "home" && !inPopstate && !tabEntryOwned()){
+        history.pushState({ yoldaTab: true }, "", url);
         return;
       }
-      if(name !== "home" && !tabPushed){
-        history.pushState(null, "", url);
-        tabPushed = true;
-        return;
-      }
-      history.replaceState(null, "", url);
-      if(name === "home") tabPushed = false;
+      // Qolgan hollarda joriy yozuv ustidan yoziladi. Belgi esa
+      // saqlanadi yoki olib tashlanadi: Asosiy — bu tarixning ildizi.
+      history.replaceState(name === "home" ? null : { yoldaTab: true }, "", url);
     }catch(e){}
   }
 
@@ -13108,10 +13093,9 @@
        Bo'lmasa tarixda hech narsa qilmaydigan ortiqcha qadam qolib
        ketardi: odam "orqaga" bosardi, ekranda hech narsa o'zgarmasdi,
        ikkinchi bosishda esa saytdan butunlay chiqib ketardi. */
-    if(!inPopstate && pendingTab === null && tabPushed
+    if(!inPopstate && pendingTab === null && tabEntryOwned()
        && name === "home" && visibleTabName() !== "home"){
       pendingTab = "home";
-      tabPushed = false;
       try{
         history.back();
         // popstate kelmay qolsa ham bo'lim almashsin.
@@ -13599,7 +13583,6 @@
     var match = /[?&]tab=([a-z]+)/.exec(location.search);
     var wanted = match ? match[1] : "home";
     if(TABS.indexOf(wanted) === -1) wanted = "home";
-    tabPushed = wanted !== "home";
     if(wanted === visibleTabName()) return;
     switchTab(wanted);
   }
