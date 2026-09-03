@@ -561,10 +561,13 @@
      Nusxa panel bilan aynan bir joyda turishi uchun linzaning surilishi
      unda teskari yo'nalishda qaytariladi (--lx / --ly). */
   .bn-blob{
-    --ld:66px;                    /* linza diametri */
-    --mag:1.34;                   /* kattalashtirish */
+    --lw:88px;                    /* tomchi eni  — uzunchoq */
+    --lh:60px;                    /* tomchi bo'yi */
+    --mag:1.32;                   /* kattalashtirish */
+    --sx:1;                       /* sudralganda cho'zilish (JS yozadi) */
+    --sy:1;
     position:absolute;left:0;top:50%;
-    width:var(--ld);height:var(--ld);margin-top:calc(var(--ld) / -2);
+    width:var(--lw);height:var(--lh);margin-top:calc(var(--lh) / -2);
     border-radius:50%;
     opacity:0;pointer-events:none;z-index:3;
     transition:transform 0.62s cubic-bezier(0.26,1.12,0.32,1),
@@ -583,7 +586,7 @@
     left:calc(-1 * var(--lx));top:calc(-1 * var(--ly));
     width:var(--nw);height:var(--nh);
     display:flex;align-items:center;padding:0 6px;box-sizing:border-box;
-    transform-origin:calc(var(--lx) + var(--ld) / 2) calc(var(--ly) + var(--ld) / 2);
+    transform-origin:calc(var(--lx) + var(--lw) / 2) calc(var(--ly) + var(--lh) / 2);
     transform:scale(var(--mag));
   }
   /* Nusxadagi tugmalar bosilmaydi va o'z animatsiyasi bo'lmaydi —
@@ -662,18 +665,40 @@
     .bn-blob-fill{background:var(--nav-solid);}
   }
 
-  /* Bosilganda linza bo'rtadi: kattalashadi, ko'tariladi, kattalashtirish
-     kuchayadi va kamalak yorqinlashadi. */
-  .bottom-nav.pressed .bn-blob{--mag:1.5;}
+  /* ---------- Suyuq tebranish ----------
+     Bo'lim almashganda tomchi yo'nalish bo'ylab cho'ziladi, keyin
+     ikki marta silkinib joyiga tushadi — suv tomchisi shunday
+     tinchiydi. Faqat "sakrash" bo'lsa, u qattiq jismday ko'rinardi. */
+  @keyframes lensWobble{
+    0%   {transform:scale(1, 1);}
+    18%  {transform:scale(1.22, 0.82);}
+    40%  {transform:scale(0.90, 1.14);}
+    62%  {transform:scale(1.07, 0.95);}
+    82%  {transform:scale(0.98, 1.02);}
+    100% {transform:scale(1, 1);}
+  }
+  .bn-blob.wobble .bn-blob-fill,
+  .bn-blob.wobble .bn-blob-gloss,
+  .bn-blob.wobble .bn-blob-mag,
+  .bn-blob.wobble .bn-blob-rim{
+    animation:lensWobble 0.72s cubic-bezier(0.3,0.9,0.3,1) both;
+  }
+  :root[data-reduce-motion="1"] .bn-blob.wobble .bn-blob-fill,
+  :root[data-reduce-motion="1"] .bn-blob.wobble .bn-blob-gloss,
+  :root[data-reduce-motion="1"] .bn-blob.wobble .bn-blob-mag,
+  :root[data-reduce-motion="1"] .bn-blob.wobble .bn-blob-rim{animation:none;}
+
+  /* Bosilganda tomchi sezilarli kattalashadi va kattalashtirish kuchayadi. */
+  .bottom-nav.pressed .bn-blob{--mag:1.42;}
   .bottom-nav.pressed .bn-blob-fill{
-    transform:scale(1.14) translateY(-4px);
-    box-shadow:0 14px 28px rgba(15,23,42,0.32);
+    transform:scale(1.26) translateY(-5px);
+    box-shadow:0 16px 32px rgba(15,23,42,0.34);
   }
   :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-fill{
     box-shadow:0 14px 28px rgba(0,0,0,0.75);
   }
   .bottom-nav.pressed .bn-blob-gloss{
-    transform:scale(1.14) translateY(-4px);
+    transform:scale(1.26) translateY(-5px);
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.95),
                inset 0 -9px 18px rgba(255,255,255,0.26);
   }
@@ -681,14 +706,18 @@
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.4),
                inset 0 -9px 18px rgba(255,255,255,0.11);
   }
-  .bottom-nav.pressed .bn-blob-mag{transform:scale(1.14) translateY(-4px);}
-  .bottom-nav.pressed .bn-blob-rim{transform:scale(1.14) translateY(-4px);opacity:1;}
+  .bottom-nav.pressed .bn-blob-mag{transform:scale(1.26) translateY(-5px);}
+  .bottom-nav.pressed .bn-blob-rim{transform:scale(1.26) translateY(-5px);opacity:1;}
   /* Sudralayotganda tomchi cho'ziladi — suyuq shishaday. */
+  /* Sudralganda cho'zilish barmoq tezligiga qarab o'zgaradi: tez
+     surilsa ko'proq cho'ziladi, to'xtasa yumaloqlanadi. Qat'iy qiymat
+     bo'lsa, tomchi tezlikdan qat'i nazar bir xil ko'rinardi. */
   .bottom-nav.dragging .bn-blob-fill,
   .bottom-nav.dragging .bn-blob-gloss,
   .bottom-nav.dragging .bn-blob-mag,
   .bottom-nav.dragging .bn-blob-rim{
-    transform:scaleX(1.14) scaleY(1.06) translateY(-4px);
+    transform:scaleX(var(--sx)) scaleY(var(--sy)) translateY(-5px);
+    transition:transform 0.12s linear;
   }
   /* Joyi esa barmoq ortidan darhol yursin: sakrash animatsiyasi bu
      yerda kechikish bo'lib tuyulardi. */
@@ -13283,9 +13312,11 @@
     if(!blob || !nav) return;
     var navBox = nav.getBoundingClientRect();
     if(!navBox.width) return;
-    var d = parseFloat(getComputedStyle(blob).getPropertyValue("--ld")) || 66;
-    var left = x - d / 2;
-    var top = navBox.height / 2 - d / 2;
+    var cs = getComputedStyle(blob);
+    var w = parseFloat(cs.getPropertyValue("--lw")) || 88;
+    var h = parseFloat(cs.getPropertyValue("--lh")) || 60;
+    var left = x - w / 2;
+    var top = navBox.height / 2 - h / 2;
     blob.style.transform = "translateX(" + (Math.round(left * 10) / 10) + "px)";
     // Nusxa panel bilan bir joyda tursin: linzaning surilishi unda
     // teskari yo'nalishda qaytariladi.
@@ -13294,6 +13325,18 @@
     blob.style.setProperty("--nw", navBox.width + "px");
     blob.style.setProperty("--nh", navBox.height + "px");
     blob.style.opacity = "1";
+  }
+
+  /* Bo'lim almashganda tomchi silkinadi. Sinf animatsiya tugagach
+     olib tashlanadi, aks holda ikkinchi marta ishga tushmasdi. */
+  function wobbleNavLens(){
+    var blob = document.getElementById("bnBlob");
+    if(!blob || blob.style.opacity !== "1") return;
+    blob.classList.remove("wobble");
+    void blob.offsetWidth;
+    blob.classList.add("wobble");
+    clearTimeout(blob.__wobbleTimer);
+    blob.__wobbleTimer = setTimeout(function(){ blob.classList.remove("wobble"); }, 800);
   }
 
   function moveNavBlob(){
@@ -13442,8 +13485,15 @@
       var diff = trackX - drawX;
       // 0.45 — barmoqqa deyarli yopishib yuradi (~3 kadrda yetib oladi),
       // ammo to'satdan siltanishlarni yumshatadi.
+      var prevX = drawX;
       drawX += diff * 0.45;
       if(Math.abs(trackX - drawX) < 0.4) drawX = trackX;
+      // Kadrda bosib o'tilgan masofa — cho'zilish o'lchovi. Tez
+      // surilganda tomchi cho'ziladi, to'xtaganda yumaloqlanadi.
+      var speed = Math.abs(drawX - prevX);
+      var st = Math.min(0.34, speed * 0.022);
+      blob.style.setProperty("--sx", (1 + st).toFixed(3));
+      blob.style.setProperty("--sy", (1 - st * 0.55).toFixed(3));
       // Markaz bo'yicha qo'yiladi, shunda ichidagi kattalashtirilgan
       // nusxa ham barmoq ostidagi joyni ko'rsatadi.
       placeNavLens(drawX + blobW / 2);
@@ -13496,7 +13546,7 @@
         // Turgan joyidan davom etsin: sudrash boshlanishida sakramasin.
         var navBox = nav.getBoundingClientRect();
         var here = blob.getBoundingClientRect();
-        blobW = here.width || parseFloat(getComputedStyle(blob).getPropertyValue("--ld")) || 66;
+        blobW = here.width || parseFloat(getComputedStyle(blob).getPropertyValue("--lw")) || 88;
         drawX = here.left - navBox.left;
         trackX = drawX;
         syncLensClone();
@@ -13516,6 +13566,9 @@
       pointerId = null;
       dragging = false;
       stopPaint();
+      // Cho'zilish tugadi — tomchi yana yumaloq holiga qaytadi.
+      blob.style.setProperty("--sx", "1");
+      blob.style.setProperty("--sy", "1");
       setArmed(null);
       // Sinf avval olib tashlanadi: shunda linza qo'yib yuborilgan
       // joyidan tanlangan bo'limga CSS o'tishi bilan suzib boradi.
@@ -13620,6 +13673,7 @@
       b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
     });
     moveNavBlob();
+    if(prev && prev !== name) wobbleNavLens();
     rememberTab(name);
     var active = document.getElementById("tab-" + name);
     if(active){
