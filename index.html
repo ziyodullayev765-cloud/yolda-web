@@ -12,6 +12,12 @@
         theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
       }
       document.documentElement.setAttribute("data-theme", theme);
+      // Shisha darajasi ham shu yerda — keyinroq qo'yilsa, sahifa bir
+      // lahza boshqa kuchdagi shisha bilan chizilib ketardi.
+      var glass = localStorage.getItem("yolda_glass");
+      if(glass === "off" || glass === "low" || glass === "high"){
+        document.documentElement.setAttribute("data-glass", glass);
+      }
     }catch(e){}
   })();
 </script>
@@ -163,12 +169,35 @@
     --sh-4:0 8px 16px rgba(15,23,42,0.05), 0 24px 48px rgba(15,23,42,0.12);
     --sh-brand:0 10px 24px rgba(10,159,91,0.24);
 
+    /* ---------- Suyuq shisha (liquid glass) ----------
+       Bitta boshqaruv: --lg-k. U 0 dan 1.4 gacha ko'paytirgich va
+       Sozlamalardan o'zgaradi (data-glass). Qolgan hamma qiymat
+       shundan hisoblanadi, shuning uchun kuchini oshirish yoki
+       pasaytirish uchun bitta sonni o'zgartirish kifoya.
+
+       Shishaning uch qatlami bor: orqadagi tasvirni xiralashtirish,
+       ustidagi yarim shaffof rang, va chekkasidagi ingichka yorug'lik
+       chizig'i — haqiqiy shisha bo'lakning qirrasi shunday yaltiraydi.
+       Uchinchisisiz yuza shunchaki xira dog' bo'lib qoladi. */
+    --lg-k:1;
+    --lg-blur:calc(24px * var(--lg-k));
+    --lg-sat:calc(100% + 70% * var(--lg-k));
+    --lg-tint:rgba(255,255,255,calc(0.30 + 0.30 * var(--lg-k)));
+    --lg-brd:rgba(255,255,255,calc(0.30 + 0.45 * var(--lg-k)));
+    --lg-sheen:rgba(255,255,255,calc(0.35 * var(--lg-k)));
+    --lg-shadow:0 6px 22px rgba(15,23,42,calc(0.05 + 0.05 * var(--lg-k)));
+
     /* glass */
     --glass:rgba(255,255,255,0.72);
     --glass-brd:rgba(255,255,255,0.6);
 
     --ease:cubic-bezier(0.16,1,0.3,1);
   }
+  /* Sozlamalardagi uch daraja. "off" da shisha butunlay yo'q —
+     eski yoki sekin telefonlarda xiralashtirish qimmatga tushadi. */
+  :root[data-glass="off"]{--lg-k:0;}
+  :root[data-glass="low"]{--lg-k:0.55;}
+  :root[data-glass="high"]{--lg-k:1.35;}
   /* Tungi rejim — a real toggle (see #btnThemeToggle), not prefers-color-scheme,
      though that's what picks the default the first time (see the bootstrap
      script in <head>). Every color elsewhere in this file is one of the
@@ -206,6 +235,13 @@
     --nav-lens-brd-hot:rgba(255,255,255,0.5);
     --glass:rgba(10,10,10,0.72);
     --glass-brd:rgba(255,255,255,0.12);
+    /* Qorong'ida shisha qorayadi, chekkasidagi yorug'lik esa
+       kuchsizroq — oq fondagidek yaltirasa, plastmassa bo'lib
+       ko'rinardi. */
+    --lg-tint:rgba(24,24,24,calc(0.34 + 0.30 * var(--lg-k)));
+    --lg-brd:rgba(255,255,255,calc(0.07 + 0.13 * var(--lg-k)));
+    --lg-sheen:rgba(255,255,255,calc(0.11 * var(--lg-k)));
+    --lg-shadow:0 6px 22px rgba(0,0,0,calc(0.22 + 0.22 * var(--lg-k)));
   }
   /* Qorong'i rejimda brend yashili ataylab ochiq (qora fonda ko'rinishi
      uchun), lekin o'sha ochiq yashil ustiga oq yozuv qo'yib bo'lmaydi —
@@ -633,14 +669,31 @@
     opacity:0;transition:opacity 0.25s var(--ease);
   }
   .sheet-root.open .sheet-backdrop{opacity:1;}
+  /* Oyna — suyuq shisha. Ortidagi sahifa xiralashib ko'rinib turadi,
+     yuqori qirrasida esa ingichka yorug'lik chizig'i bor. */
   .sheet{
     position:absolute;left:0;right:0;bottom:0;margin:0 auto;
     max-width:480px;max-height:min(84vh,720px);
-    background:var(--card);border-radius:var(--r-xl) var(--r-xl) 0 0;
+    background:var(--lg-tint);
+    -webkit-backdrop-filter:saturate(var(--lg-sat)) blur(calc(var(--lg-blur) * 1.5));
+    backdrop-filter:saturate(var(--lg-sat)) blur(calc(var(--lg-blur) * 1.5));
+    border-top:1px solid var(--lg-brd);
+    border-radius:var(--r-xl) var(--r-xl) 0 0;
     box-shadow:var(--sh-4);
     display:flex;flex-direction:column;
     padding-bottom:env(safe-area-inset-bottom,0);
-    transform:translateY(100%);transition:transform 0.32s var(--ease);
+    transform:translateY(100%);
+    transition:transform 0.42s var(--ease), opacity 0.28s var(--ease);
+    opacity:0;
+  }
+  .sheet-root.open .sheet{opacity:1;}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .sheet{background:var(--card);}
+  }
+  :root[data-glass="off"] .sheet{
+    background:var(--card);
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    border-top-color:var(--border);
   }
   .sheet-root.open .sheet{transform:translateY(0);}
   .sheet-handle{
@@ -686,17 +739,25 @@
   }
 
   .settings-menu{list-style:none;margin:0;padding:0;}
+  /* Sozlamalar qatorlari endi alohida shisha kartochkalar: ilgari
+     ular bitta ro'yxatda chiziq bilan ajratilgan edi va bosiladigan
+     joyi qayerdaligi ko'rinmasdi. */
+  .settings-menu{display:flex;flex-direction:column;gap:8px;}
   .settings-row{
     width:100%;display:flex;align-items:center;gap:var(--s3);
-    min-height:48px;padding:12px 4px;border:none;background:none;
-    border-bottom:1px solid var(--border);cursor:pointer;text-align:left;
+    min-height:52px;padding:12px 14px;border-radius:var(--r-md);
+    cursor:pointer;text-align:left;
     color:var(--ink);font-family:'Inter',sans-serif;font-size:14.5px;font-weight:500;
-    transition:color 0.2s var(--ease);
+    transition:color 0.22s var(--ease), transform 0.22s var(--ease);
   }
-  .settings-menu li:last-child .settings-row{border-bottom:none;}
+  .settings-row:active{transform:scale(0.99);}
   .settings-row .ic-svg{font-size:19px;color:var(--route);flex-shrink:0;}
   .settings-row .sr-chev{margin-left:auto;color:var(--muted);font-size:16px;flex-shrink:0;}
   .settings-row:hover{color:var(--route-dark);}
+  .settings-row .ic-svg:first-child{
+    width:32px;height:32px;border-radius:10px;background:var(--tint);
+    padding:6px;box-sizing:border-box;
+  }
   .settings-row:hover .sr-chev{color:var(--route-dark);}
 
   /* Accessible on/off switch — used by the Notifications page. */
@@ -973,9 +1034,20 @@
   .loads-search-card{margin-bottom:0;}
   .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin:var(--s2) 0 var(--s4);}
   .chip{
-    padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--border);
-    background:var(--card);color:var(--ink-soft);font-size:12.5px;font-weight:600;cursor:pointer;
-    transition:border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+    padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--lg-brd);
+    background:var(--lg-tint);color:var(--ink-soft);font-size:12.5px;font-weight:600;cursor:pointer;
+    -webkit-backdrop-filter:saturate(var(--lg-sat)) blur(calc(var(--lg-blur) * 0.6));
+    backdrop-filter:saturate(var(--lg-sat)) blur(calc(var(--lg-blur) * 0.6));
+    transition:border-color 0.22s var(--ease), color 0.22s var(--ease),
+               background 0.22s var(--ease), transform 0.22s var(--ease);
+  }
+  .chip:active{transform:scale(0.96);}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .chip{background:var(--card);border-color:var(--border);}
+  }
+  :root[data-glass="off"] .chip{
+    background:var(--card);border-color:var(--border);
+    -webkit-backdrop-filter:none;backdrop-filter:none;
   }
   .chip.active{border-color:var(--route);color:var(--route);background:rgba(10,159,91,0.08);}
   .load-card{
@@ -1419,10 +1491,21 @@
   .pf-menu{display:flex;flex-direction:column;gap:10px;margin-top:var(--s5);}
   .pf-row{
     display:flex;align-items:center;gap:13px;width:100%;
-    background:var(--card);border:1px solid var(--border);border-radius:15px;
+    background:var(--lg-tint);border:1px solid var(--lg-brd);border-radius:15px;
+    -webkit-backdrop-filter:saturate(var(--lg-sat)) blur(var(--lg-blur));
+    backdrop-filter:saturate(var(--lg-sat)) blur(var(--lg-blur));
+    box-shadow:var(--lg-shadow);
     cursor:pointer;text-align:left;padding:13px 14px;min-height:68px;
     font-family:'Inter',sans-serif;color:var(--ink);
-    transition:border-color 0.15s var(--ease), transform 0.15s var(--ease);
+    transition:border-color 0.22s var(--ease), transform 0.22s var(--ease),
+               background 0.22s var(--ease);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .pf-row{background:var(--card);border-color:var(--border);}
+  }
+  :root[data-glass="off"] .pf-row{
+    background:var(--card);border-color:var(--border);
+    -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;
   }
   .pf-row:hover{border-color:var(--route);}
   .pf-row:active{transform:scale(0.995);}
@@ -2480,6 +2563,139 @@
     .lf-card{flex-basis:72%;}
   }
 
+  /* ---------- SUYUQ SHISHA: umumiy sinf ----------
+     `.lg` — shishaga aylanadigan har qanday yuza. Chekkasidagi
+     yorug'lik ::before bilan chiziladi: `border` bo'lib turishi bir xil
+     qalinlikda bo'lardi, haqiqiy shishada esa yuqori qirra pastkisidan
+     yorqinroq. */
+  .lg{
+    position:relative;
+    background:var(--lg-tint);
+    border:1px solid var(--lg-brd);
+    /* Xiralashtirish + rangni to'yintirish + yorug'lik va kontrastni
+       biroz ko'tarish. Oxirgi ikkitasi bo'lmasa, ortidagi tasvir xira
+       kulrang bo'lib qoladi — iPhone'dagi shishada esa ranglar aynan
+       kuchayadi. */
+    -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat))
+                            brightness(calc(1 + 0.06 * var(--lg-k)))
+                            contrast(calc(1 + 0.04 * var(--lg-k)));
+    backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat))
+                    brightness(calc(1 + 0.06 * var(--lg-k)))
+                    contrast(calc(1 + 0.04 * var(--lg-k)));
+    /* Uch qatlam soya: tashqi chuqurlik, tepa qirradagi yorug'lik va
+       past qirradagi zaif aks. Shishaning qalinligi shundan seziladi. */
+    box-shadow:var(--lg-shadow),
+               inset 0 1px 0 var(--lg-sheen),
+               inset 0 -1px 0 rgba(255,255,255,calc(0.09 * var(--lg-k)));
+  }
+  /* Yuzaga tushayotgan nur ikki qismdan: tepadan pastga so'nadigan
+     yupqa yorug'lik va chap yuqori burchakdagi yumshoq dog' — shisha
+     yuzasida yorug'lik shunday aks etadi. Faqat chiziqli gradient
+     bo'lsa, yuza tekis plyonkaday ko'rinardi. */
+  .lg::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;
+    pointer-events:none;
+    background:
+      radial-gradient(120% 90% at 12% -10%,
+        rgba(255,255,255,calc(0.40 * var(--lg-k))) 0%,
+        rgba(255,255,255,0) 58%),
+      linear-gradient(180deg, var(--lg-sheen) 0%, rgba(255,255,255,0) 46%);
+  }
+  :root[data-theme="dark"] .lg::before{
+    background:
+      radial-gradient(120% 90% at 12% -10%,
+        rgba(255,255,255,calc(0.13 * var(--lg-k))) 0%,
+        rgba(255,255,255,0) 58%),
+      linear-gradient(180deg, var(--lg-sheen) 0%, rgba(255,255,255,0) 46%);
+  }
+  /* Qirra bo'ylab nur sinishi: gradient faqat 1px halqaga tushadi
+     (mask ikki qatlamni ayiradi). Haqiqiy shisha bo'lakning chekkasi
+     shunday — bir tomoni yorqin, qarama-qarshisi zaifroq. */
+  .lg::after{
+    content:"";position:absolute;inset:0;border-radius:inherit;
+    pointer-events:none;padding:1px;
+    background:linear-gradient(135deg,
+      rgba(255,255,255,calc(0.55 * var(--lg-k))) 0%,
+      rgba(255,255,255,0) 32%,
+      rgba(255,255,255,0) 64%,
+      rgba(255,255,255,calc(0.22 * var(--lg-k))) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite:exclude;
+  }
+  :root[data-theme="dark"] .lg::after{
+    background:linear-gradient(135deg,
+      rgba(255,255,255,calc(0.30 * var(--lg-k))) 0%,
+      rgba(255,255,255,0) 30%,
+      rgba(255,255,255,0) 68%,
+      rgba(255,255,255,calc(0.10 * var(--lg-k))) 100%);
+  }
+  /* Ichkaridagi mazmun yorug'lik ostida qolmasin. */
+  .lg > *{position:relative;z-index:1;}
+  /* Xiralashtirish yo'q brauzerda shunchaki qattiq yuza qoladi —
+     matn shaffof fonda o'qilmay qolgandan ko'ra yaxshiroq. */
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .lg{background:var(--card);border-color:var(--border);box-shadow:var(--sh-1);}
+    .lg::before,.lg::after{display:none;}
+  }
+  /* Shisha o'chirilganda oddiy kartochkaga qaytadi. */
+  :root[data-glass="off"] .lg{
+    background:var(--card);border-color:var(--border);
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:var(--sh-1);
+  }
+  :root[data-glass="off"] .lg::before,
+  :root[data-glass="off"] .lg::after{display:none;}
+
+  /* Shisha darajasi sahifasi. */
+  .hint-note{
+    margin:0 0 var(--s4);font-size:13px;line-height:1.6;color:var(--ink-soft);
+  }
+  .glass-list{display:flex;flex-direction:column;gap:8px;}
+  .glass-btn{
+    display:flex;align-items:center;gap:12px;width:100%;
+    padding:13px 15px;border-radius:var(--r-md);cursor:pointer;text-align:left;
+    font-family:'Inter',sans-serif;color:var(--ink);
+  }
+  .gb-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+  .gb-t{font-size:14.5px;font-weight:600;}
+  .gb-s{font-size:12px;color:var(--ink-soft);line-height:1.4;}
+  .gb-mark{
+    width:24px;height:24px;border-radius:50%;flex-shrink:0;
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    color:transparent;transition:all 0.22s var(--ease);
+  }
+  .gb-mark .ic-svg{font-size:14px;}
+  .glass-btn.active .gb-mark{background:var(--route);border-color:var(--route);color:#fff;}
+  :root[data-theme="dark"] .glass-btn.active .gb-mark{color:#052E1A;}
+  .glass-btn.active .gb-t{color:var(--route);}
+
+  /* Bosiladigan shisha: barmoq tekkanda biroz "cho'kadi". */
+  .lg-tap{transition:transform 0.26s var(--ease), background 0.26s var(--ease),
+                     box-shadow 0.26s var(--ease);}
+  .lg-tap:active{
+    transform:scale(0.978);
+    box-shadow:var(--lg-shadow),
+               inset 0 1px 0 rgba(255,255,255,calc(0.55 * var(--lg-k))),
+               inset 0 -1px 0 rgba(255,255,255,calc(0.12 * var(--lg-k)));
+  }
+  :root[data-reduce-motion="1"] .lg-tap{transition:none;}
+  :root[data-reduce-motion="1"] .lg-tap:active{transform:none;}
+
+  /* Pastki panelda o'z bandi yo'q bo'limlar uchun qaytish tugmasi.
+     Hozircha bu — Mashinalar: u panelda YO'LDA LIFE bilan o'rin
+     almashdi, ya'ni kirilgach "qayerdaman" degan savol tug'ilardi. */
+  .tab-back{
+    display:inline-flex;align-items:center;gap:7px;
+    margin-bottom:var(--s4);padding:8px 15px 8px 11px;border-radius:999px;
+    color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .tab-back:hover{color:var(--ink);}
+  /* Belgi o'ngga qaragan — chapga aylantiramiz. */
+  .tab-back .ic-svg{font-size:16px;transform:rotate(180deg);}
+
   /* ---------- BO'LIM ALMASHUVI ---------- */
   /* Bo'limlar `hidden` orqali almashadi — oraliq holat bo'lmagani uchun
      ekran bir zumda sakrab o'zgarardi. Yangi bo'lim qaysi tomondan
@@ -2496,6 +2712,42 @@
   .tabview.tab-in-right,.tabview.tab-in-left{will-change:opacity,transform;}
   .tabview.tab-in-right{animation:tabInRight 0.46s cubic-bezier(0.22,0.86,0.3,1) both;}
   .tabview.tab-in-left{animation:tabInLeft 0.46s cubic-bezier(0.22,0.86,0.3,1) both;}
+
+  /* Bo'lim kelgach ichidagi bloklar birin-ketin ko'tariladi. Hammasi
+     birdan paydo bo'lsa, ekran "chaqnab" ketardi; ketma-ket kelsa,
+     ko'z tabiiy ravishda tepadan pastga yuradi. Kechikish faqat
+     dastlabki bir nechta blokka beriladi — pastdagilari baribir
+     ekrandan tashqarida. */
+  @keyframes secIn{
+    from{opacity:0;transform:translate3d(0,14px,0);}
+    to{opacity:1;transform:none;}
+  }
+  .tabview.tab-enter #profileCard > *,
+  .tabview.tab-enter > * > .section-head,
+  .tabview.tab-enter > * > .home-sec,
+  .tabview.tab-enter > * > .card,
+  .tabview.tab-enter > .life > .lf-head,
+  .tabview.tab-enter > .life > .lf-sec,
+  .tabview.tab-enter > * > .pf-topbar,
+  .tabview.tab-enter > * > .pf-id,
+  .tabview.tab-enter > * > .pf-id-stats,
+  .tabview.tab-enter > * > .pf-group{
+    animation:secIn 0.5s cubic-bezier(0.22,0.9,0.28,1) both;
+  }
+  .tabview.tab-enter > * > *:nth-child(1),
+  .tabview.tab-enter #profileCard > *:nth-child(1){animation-delay:0.02s;}
+  .tabview.tab-enter > * > *:nth-child(2),
+  .tabview.tab-enter #profileCard > *:nth-child(2){animation-delay:0.07s;}
+  .tabview.tab-enter > * > *:nth-child(3),
+  .tabview.tab-enter #profileCard > *:nth-child(3){animation-delay:0.12s;}
+  .tabview.tab-enter > * > *:nth-child(4),
+  .tabview.tab-enter #profileCard > *:nth-child(4){animation-delay:0.17s;}
+  .tabview.tab-enter > * > *:nth-child(5),
+  .tabview.tab-enter #profileCard > *:nth-child(5){animation-delay:0.21s;}
+  .tabview.tab-enter > * > *:nth-child(n+6),
+  .tabview.tab-enter #profileCard > *:nth-child(n+6){animation-delay:0.24s;}
+  :root[data-reduce-motion="1"] .tabview.tab-enter > * > *,
+  :root[data-reduce-motion="1"] .tabview.tab-enter #profileCard > *{animation:none;}
   :root[data-reduce-motion="1"] .tabview.tab-in-right,
   :root[data-reduce-motion="1"] .tabview.tab-in-left{animation:none;opacity:1;transform:none;}
 
@@ -2721,6 +2973,15 @@
   .info-empty-cta button{color:var(--route);background:none;border:none;font-weight:600;font-size:13px;cursor:pointer;min-height:32px;}
 
   .profile-settings-card ul.settings-menu{margin-top:0;}
+  /* Qatorlarning o'zi shisha kartochka bo'lgach, ularni yana bir
+     kartochka ichiga solish "quti ichida quti" bo'lib ko'rinardi.
+     O'rovchi endi faqat guruhlarni ajratib turadi. */
+  .info-card.profile-settings-card{
+    background:none;border:none;padding:0;margin-bottom:var(--s4);
+  }
+  :root[data-glass="off"] .info-card.profile-settings-card{
+    background:var(--card);border:1px solid var(--border);padding:var(--s4) var(--s5);
+  }
 
   .danger-zone{margin:var(--s5) 0 var(--s6);}
   .danger-row{
@@ -3524,6 +3785,10 @@
 
 <section class="tabview" id="tab-trucks" data-tab="trucks" hidden>
   <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:960px;">
+    <button type="button" class="tab-back lg lg-tap" data-tab-link="home">
+      <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+      <span data-i18n="common.back">Orqaga</span>
+    </button>
     <div class="section-head reveal">
       <div class="section-eyebrow" data-i18n="trucks.eyebrow">Mashinalar</div>
       <h2 class="section-title"><span data-i18n="trucks.titleA">Yuk mashinasi</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
@@ -3719,17 +3984,22 @@
     <div class="card reveal" id="settingsCard" style="text-align:left;margin-top:var(--s4);">
       <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconGear"></use></svg> <span data-i18n="settings.title">Sozlamalar</span></h3>
       <ul class="settings-menu" id="settingsMenu">
-        <li><button type="button" class="settings-row" data-settings-page="language">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="language">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg>
           <span data-i18n="settings.lang">Til</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-settings-page="theme">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="theme">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconBadge"/></svg>
           <span data-i18n="settings.theme">Ko'rinish</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-settings-page="notifications">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="glass">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconGem"/></svg>
+          <span data-i18n="glass.title">Shisha effekti</span>
+          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+        </button></li>
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="notifications">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"/></svg>
           <span data-i18n="settings.notifications">Bildirishnomalar</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
@@ -3737,37 +4007,37 @@
         <!-- Account linking (requirement #6) — only one of these two is ever
              relevant to a given visitor, so both start hidden and
              updateAccountLinkRows() shows the right one for their context. -->
-        <li id="rowLinkTelegram" hidden><button type="button" class="settings-row" data-settings-page="link-telegram">
+        <li id="rowLinkTelegram" hidden><button type="button" class="settings-row lg lg-tap" data-settings-page="link-telegram">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
           <span data-i18n="settings.linkTelegram">Telegram bilan bog'lash</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li id="rowLinkGoogle" hidden><button type="button" class="settings-row" data-settings-page="link-google">
+        <li id="rowLinkGoogle" hidden><button type="button" class="settings-row lg lg-tap" data-settings-page="link-google">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg>
           <span data-i18n="settings.linkGoogle">Google akkauntga bog'lash</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-tab-link="contact">
+        <li><button type="button" class="settings-row lg lg-tap" data-tab-link="contact">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg>
           <span data-i18n="settings.support">Yordam</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-settings-page="feedback">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="feedback">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconAlert"/></svg>
           <span data-i18n="settings.feedback">Fikr bildirish</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-settings-page="about">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="about">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconInfo"/></svg>
           <span data-i18n="settings.about">Yolda haqida</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-settings-page="terms">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="terms">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconClipboard"/></svg>
           <span data-i18n="settings.terms">Foydalanish shartlari</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row" data-settings-page="privacy">
+        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="privacy">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconReceipt"/></svg>
           <span data-i18n="settings.privacy">Maxfiylik siyosati</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
@@ -4173,6 +4443,12 @@
       "settings.title": "Sozlamalar", "settings.lang": "Til", "settings.theme": "Ko'rinish",
       "settings.light": "Kunduzgi", "settings.dark": "Tungi", "settings.auto": "Tizim",
       "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
+      "glass.title": "Shisha effekti",
+      "glass.intro": "Oynalar, sozlamalar va profil qatorlari ortidagi tasvir qanchalik xiralashsin. Telefon sekinlashsa, kamaytiring yoki butunlay o'chiring.",
+      "glass.off": "O'chirilgan", "glass.offSub": "Shishasiz, eng tez ishlaydi",
+      "glass.low": "Kam", "glass.lowSub": "Zaif xiralashtirish",
+      "glass.normal": "O'rtacha", "glass.normalSub": "Odatdagi ko'rinish",
+      "glass.high": "Ko'p", "glass.highSub": "Kuchli shisha effekti",
       "settings.notifications": "Bildirishnomalar", "settings.feedback": "Fikr bildirish",
       "settings.about": "Yolda haqida", "settings.terms": "Foydalanish shartlari",
       "settings.linkTelegram": "Telegram bilan bog'lash", "settings.linkGoogle": "Google akkauntga bog'lash",
@@ -4616,6 +4892,12 @@
       "settings.title": "Настройки", "settings.lang": "Язык", "settings.theme": "Оформление",
       "settings.light": "Дневной", "settings.dark": "Ночной", "settings.auto": "Системный",
       "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
+      "glass.title": "Эффект стекла",
+      "glass.intro": "Насколько сильно размывается фон под окнами, настройками и строками профиля. Если телефон подтормаживает — уменьшите или отключите.",
+      "glass.off": "Выключено", "glass.offSub": "Без стекла, работает быстрее всего",
+      "glass.low": "Слабо", "glass.lowSub": "Лёгкое размытие",
+      "glass.normal": "Средне", "glass.normalSub": "Обычный вид",
+      "glass.high": "Сильно", "glass.highSub": "Выраженный эффект стекла",
       "settings.notifications": "Уведомления", "settings.feedback": "Оставить отзыв",
       "settings.about": "О Yolda", "settings.terms": "Условия использования",
       "settings.linkTelegram": "Привязать Telegram", "settings.linkGoogle": "Привязать к аккаунту Google",
@@ -5055,6 +5337,12 @@
       "settings.title": "Settings", "settings.lang": "Language", "settings.theme": "Appearance",
       "settings.light": "Light", "settings.dark": "Dark", "settings.auto": "System",
       "settings.support": "Help", "settings.privacy": "Privacy policy",
+      "glass.title": "Glass effect",
+      "glass.intro": "How much the background blurs behind sheets, settings and profile rows. If your phone feels slow, turn it down or off.",
+      "glass.off": "Off", "glass.offSub": "No glass, fastest",
+      "glass.low": "Light", "glass.lowSub": "Gentle blur",
+      "glass.normal": "Medium", "glass.normalSub": "Default look",
+      "glass.high": "Strong", "glass.highSub": "Pronounced glass effect",
       "settings.notifications": "Notifications", "settings.feedback": "Send feedback",
       "settings.about": "About Yolda", "settings.terms": "Terms of use",
       "settings.linkTelegram": "Link Telegram", "settings.linkGoogle": "Link to Google account",
@@ -5493,6 +5781,57 @@
       + '</div>';
   }
 
+  /* ---------- Suyuq shisha darajasi ----------
+     Xiralashtirish (backdrop-filter) chiroyli, lekin bepul emas: eski
+     yoki sekin telefonlarda har bir surishda qayta hisoblanadi. Shu
+     sababli uni odamning o'zi boshqaradi — butunlay o'chirishgacha. */
+  var GLASS_KEY = "yolda_glass";
+  var GLASS_LEVELS = ["off", "low", "normal", "high"];
+
+  function readGlassLevel(){
+    var v = null;
+    try{ v = localStorage.getItem(GLASS_KEY); }catch(e){}
+    return GLASS_LEVELS.indexOf(v) === -1 ? "normal" : v;
+  }
+
+  function applyGlassPref(){
+    var level = readGlassLevel();
+    // "normal" — sukut bo'yicha qiymat, u uchun belgi qo'yilmaydi.
+    if(level === "normal") document.documentElement.removeAttribute("data-glass");
+    else document.documentElement.setAttribute("data-glass", level);
+    document.querySelectorAll(".glass-btn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-glass-choice") === level);
+    });
+  }
+
+  function setGlassLevel(level){
+    if(GLASS_LEVELS.indexOf(level) === -1) return;
+    try{ localStorage.setItem(GLASS_KEY, level); }catch(e){}
+    applyGlassPref();
+  }
+
+  function renderGlassPage(){
+    var rows = [
+      { id: "off",    key: "glass.off",    label: "O'chirilgan", subKey: "glass.offSub",    sub: "Shishasiz, eng tez ishlaydi" },
+      { id: "low",    key: "glass.low",    label: "Kam",         subKey: "glass.lowSub",    sub: "Zaif xiralashtirish" },
+      { id: "normal", key: "glass.normal", label: "O'rtacha",    subKey: "glass.normalSub", sub: "Odatdagi ko'rinish" },
+      { id: "high",   key: "glass.high",   label: "Ko'p",        subKey: "glass.highSub",   sub: "Kuchli shisha effekti" }
+    ];
+    return '<p class="hint-note" data-i18n="glass.intro">'
+      + 'Oynalar, sozlamalar va profil qatorlari ortidagi tasvir qanchalik xiralashsin. '
+      + 'Telefon sekinlashsa, kamaytiring yoki butunlay o\'chiring.</p>'
+      + '<div class="glass-list" role="radiogroup">'
+      + rows.map(function(r){
+          return '<button type="button" class="glass-btn lg lg-tap" role="radio" '
+            + 'data-glass-choice="'+r.id+'">'
+            + '<span class="gb-text"><span class="gb-t" data-i18n="'+r.key+'">'+escapeHtml(r.label)+'</span>'
+            + '<span class="gb-s" data-i18n="'+r.subKey+'">'+escapeHtml(r.sub)+'</span></span>'
+            + '<span class="gb-mark">'+icon("iconCheck")+'</span>'
+            + '</button>';
+        }).join("")
+      + '</div>';
+  }
+
   /* ---------- NotificationsPage ---------- */
   /* Telegram bildirishnomalari — serverda profilga saqlanadi (api/profile.js
      `notify`), chunki xabarni server yuboradi, brauzer emas. Quyidagi
@@ -5739,6 +6078,7 @@
   var SETTINGS_PAGES = {
     language: function(){ return { titleKey: "settings.langPageTitle", html: renderLanguagePage() }; },
     theme: function(){ return { titleKey: "settings.themePageTitle", html: renderThemePage() }; },
+    glass: function(){ return { titleKey: "glass.title", html: renderGlassPage(), onOpen: applyGlassPref }; },
     notifications: function(){ return { titleKey: "settings.notifications", html: renderNotificationsPage(null), onOpen: bindNotificationsPage }; },
     feedback: function(){ return { titleKey: "settings.feedback", html: renderFeedbackPage(), onOpen: bindFeedbackPage }; },
     about: function(){ return { titleKey: "about.title", html: t("about.body") || "" }; },
@@ -5952,7 +6292,7 @@
     });
     var verifyGroup = (
       '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      + '<li><button type="button" class="settings-row" data-settings-page="verify">'
+      + '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="verify">'
       +   verifyBadgeSvg(vDone ? "" : "muted")
       +   '<span data-i18n="settings.verify">Profilni tasdiqlash</span>'
       +   '<span class="sr-tag">'
@@ -5965,26 +6305,27 @@
 
     return verifyGroup
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row" data-tab-link="chat">'+icon("iconChat")+'<span data-i18n="nav.chat">Xabarlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" id="btnOpenSaved">'+icon("iconHeart")+'<span data-i18n="saved.title">Saqlanganlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-tab-link="chat">'+icon("iconChat")+'<span data-i18n="nav.chat">Xabarlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" id="btnOpenSaved">'+icon("iconHeart")+'<span data-i18n="saved.title">Saqlanganlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       + '</ul></div>'
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="glass">'+icon("iconGem")+'<span data-i18n="glass.title">Shisha effekti</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       // Profilni ulashish ilgari sarlavhadagi uchta tugmadan biri edi.
       // Sarlavhada endi bitta tishli g'ildirak turadi, shuning uchun
       // ulashish shu ro'yxatga ko'chdi — yo'qolgani yo'q.
-      +   '<li><button type="button" class="settings-row" id="btnShareProfile">'+icon("iconShare")+'<span data-i18n="profile.shareAria">Profilni ulashish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   (showLinkTelegram ? '<li><button type="button" class="settings-row" data-settings-page="link-telegram">'+icon("iconTelegram")+'<span data-i18n="settings.linkTelegram">Telegram bilan bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
-      +   (showLinkGoogle ? '<li><button type="button" class="settings-row" data-settings-page="link-google">'+icon("iconUser")+'<span data-i18n="settings.linkGoogle">Google akkauntga bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
+      +   '<li><button type="button" class="settings-row lg lg-tap" id="btnShareProfile">'+icon("iconShare")+'<span data-i18n="profile.shareAria">Profilni ulashish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   (showLinkTelegram ? '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="link-telegram">'+icon("iconTelegram")+'<span data-i18n="settings.linkTelegram">Telegram bilan bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
+      +   (showLinkGoogle ? '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="link-google">'+icon("iconUser")+'<span data-i18n="settings.linkGoogle">Google akkauntga bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
       + '</ul></div>'
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row" data-tab-link="contact">'+icon("iconChat")+'<span data-i18n="settings.support">Yordam</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="feedback">'+icon("iconAlert")+'<span data-i18n="settings.feedback">Fikr bildirish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="about">'+icon("iconInfo")+'<span data-i18n="settings.about">Yolda haqida</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="terms">'+icon("iconClipboard")+'<span data-i18n="settings.terms">Foydalanish shartlari</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row" data-settings-page="privacy">'+icon("iconReceipt")+'<span data-i18n="settings.privacy">Maxfiylik siyosati</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-tab-link="contact">'+icon("iconChat")+'<span data-i18n="settings.support">Yordam</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="feedback">'+icon("iconAlert")+'<span data-i18n="settings.feedback">Fikr bildirish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="about">'+icon("iconInfo")+'<span data-i18n="settings.about">Yolda haqida</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="terms">'+icon("iconClipboard")+'<span data-i18n="settings.terms">Foydalanish shartlari</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
+      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="privacy">'+icon("iconReceipt")+'<span data-i18n="settings.privacy">Maxfiylik siyosati</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       + '</ul></div>'
       + renderDangerZone()
       + '<p style="color:var(--muted);font-size:12.5px;text-align:center;margin:var(--s5) 0 0;">© 2026 YO\'LDA</p>';
@@ -7643,7 +7984,9 @@
       .then(function(d){
         if(!d || !d.counts) return;
         var c = d.counts;
-        setText("pfStatLoads", String(c.total));
+        // Server bu maydonni bermay qolsa "undefined" deb yozilib
+        // qolardi — bunday joyda chiziqcha ancha halolroq.
+        setText("pfStatLoads", Number.isFinite(c.total) ? formatNum(c.total) : "—");
         var closed = c.delivered + c.cancelled;
         // Yopilgan buyurtma bo'lmasa foiz ko'rsatilmaydi: nolni
         // nolga bo'lib ham, "100%" deb yozib qo'yib ham bo'lmaydi.
@@ -7656,8 +7999,12 @@
           setSectionSub("loads", c.active + " " + (t("loadgrp.active") || "faol") + " · "
             + c.inProgress + " " + (t("loadgrp.inProgress") || "jarayonda"));
         }
-        setSectionSub("activity", c.total + " " + (t("pf.loadWord") || "yuk") + " · "
-          + (p.deliveredCount || 0) + " " + (t("pf.tripsWord") || "safar"));
+        // Son kelmasa "undefined yuk" deb yozilib qolardi — bunday
+        // paytda faqat ma'lum bo'lgan qismi ko'rsatiladi.
+        var trips = (p.deliveredCount || 0) + " " + (t("pf.tripsWord") || "safar");
+        setSectionSub("activity", Number.isFinite(c.total)
+          ? formatNum(c.total) + " " + (t("pf.loadWord") || "yuk") + " · " + trips
+          : trips);
       })
       .catch(function(){ /* ko'rsatkich — majburiy emas */ });
 
@@ -13071,11 +13418,16 @@
   function animateTabIn(el, dir){
     if(!el) return;
     var cls = dir < 0 ? "tab-in-left" : "tab-in-right";
-    el.classList.remove("tab-in-left", "tab-in-right");
+    el.classList.remove("tab-in-left", "tab-in-right", "tab-enter");
     // Reflow: sinf darhol qayta qo'yilsa brauzer animatsiyani
     // qaytadan boshlamaydi.
     void el.offsetWidth;
-    el.classList.add(cls);
+    el.classList.add(cls, "tab-enter");
+    /* Ichkaridagi bloklar ketma-ket kelgani uchun ular tashqi
+       animatsiyadan kechroq tugaydi — sinf o'sha paytgacha turadi.
+       `animationend` ga bog'lasak, ular yarim yo'lda kesilib qolardi. */
+    clearTimeout(el.__tabEnterTimer);
+    el.__tabEnterTimer = setTimeout(function(){ el.classList.remove("tab-enter"); }, 900);
     // Animatsiya tugagach sinf olib tashlanadi — aks holda `will-change`
     // va tugagan animatsiyaning holati elementda qolib ketardi.
     el.addEventListener("animationend", function handler(e){
@@ -13282,6 +13634,8 @@
     if(langBtn){ setLang(langBtn.getAttribute("data-lang")); return; }
     var themeBtn = e.target.closest(".theme-btn");
     if(themeBtn){ setTheme(themeBtn.getAttribute("data-theme-choice")); return; }
+    var glassBtn = e.target.closest && e.target.closest("[data-glass-choice]");
+    if(glassBtn){ setGlassLevel(glassBtn.getAttribute("data-glass-choice")); return; }
     if(e.target.closest("#sheetBackBtn")){ Sheet.back(); return; }
     if(e.target.closest("#sheetCloseBtn") || e.target.id === "sheetBackdrop") Sheet.close();
   });
@@ -13298,6 +13652,7 @@
 
   applyLang();
   applyThemeButtons();
+  applyGlassPref();
   applyMotionPref();
   populateCityDatalist();
   renderHomeTrucks();
