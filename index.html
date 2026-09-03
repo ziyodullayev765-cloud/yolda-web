@@ -12083,18 +12083,58 @@
       if(armed) armed.classList.add("bn-armed");
     }
 
-    function drawAt(el){
-      if(!el) return;
+    /* Sudrash paytida linza barmoq ostida turadi — bo'limdan bo'limga
+       sakramaydi. Ilgari u eng yaqin bo'limning katagiga yopishardi va
+       magnitdek tortilib turgandek tuyulardi; endi joyini barmoqning
+       o'zi belgilaydi.
+
+       Yozish har bir `pointermove` da emas, kadrga bir marta bo'ladi:
+       brauzer bir kadrda bir nechta harakat hodisasini yuborishi mumkin
+       va ularning har biriga style yozish bejiz ish. Oradagi masofa
+       ozgina yumshatiladi (lerp) — barmoqdan ortda qolmaydi, lekin
+       harakat suyuqlikdek silliq ko'rinadi.
+
+       Eni sudrash davomida o'zgarmaydi: bitta tomchi surilyapti, har
+       katakda qayta chizilmayapti. */
+    var trackX = 0;      // barmoq ko'rsatgan joy (panelga nisbatan)
+    var drawX = 0;       // linzaning ayni damdagi joyi
+    var blobW = 0;       // sudrash boshlangandagi eni — o'zgarmaydi
+    var rafId = 0;
+    // Panel sudrash davomida qimirlamaydi, shuning uchun chegaralari bir
+    // marta o'lchanadi: har bir harakat hodisasida o'lchash brauzerni
+    // qayta hisoblashga majburlardi.
+    var bounds = null;
+
+    function measureBounds(){
       var navBox = nav.getBoundingClientRect();
-      var box = el.getBoundingClientRect();
-      // O'rtadagi tugmaning o'z doirasi bor — linza u yerda yashirinadi.
-      if(el.classList.contains("bn-item--primary")){
-        blob.style.opacity = "0";
-        return;
-      }
-      blob.style.opacity = "1";
-      blob.style.width = Math.round(box.width) + "px";
-      blob.style.transform = "translateX(" + Math.round(box.left - navBox.left) + "px)";
+      var style = window.getComputedStyle(nav);
+      var padL = parseFloat(style.paddingLeft) || 0;
+      var padR = parseFloat(style.paddingRight) || 0;
+      bounds = { left: navBox.left, min: padL,
+                 max: Math.max(padL, navBox.width - padR - blobW) };
+    }
+
+    function paint(){
+      rafId = 0;
+      var diff = trackX - drawX;
+      // 0.45 — barmoqqa deyarli yopishib yuradi (~3 kadrda yetib oladi),
+      // ammo to'satdan siltanishlarni yumshatadi.
+      drawX += diff * 0.45;
+      if(Math.abs(trackX - drawX) < 0.4) drawX = trackX;
+      blob.style.transform = "translateX(" + (Math.round(drawX * 10) / 10) + "px)";
+      if(dragging && drawX !== trackX) rafId = requestAnimationFrame(paint);
+    }
+
+    function trackTo(clientX){
+      if(!bounds) return;
+      var x = clientX - bounds.left - blobW / 2;
+      trackX = Math.min(bounds.max, Math.max(bounds.min, x));
+      if(!rafId) rafId = requestAnimationFrame(paint);
+    }
+
+    function stopPaint(){
+      if(rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+      bounds = null;
     }
 
     var downItem = null;
@@ -12128,10 +12168,24 @@
         // endi linzaning o'zi cho'zilib ko'rsatadi.
         if(downItem){ downItem.classList.remove("bn-down"); downItem = null; }
         try{ nav.setPointerCapture(pointerId); }catch(err){}
+        // Turgan joyidan davom etsin: sudrash boshlanishida sakramasin.
+        var navBox = nav.getBoundingClientRect();
+        var here = blob.getBoundingClientRect();
+        blobW = here.width || 0;
+        if(!blobW){
+          var first = nav.querySelector(".bn-item:not(.bn-item--primary)");
+          blobW = first ? first.getBoundingClientRect().width : 0;
+          blob.style.width = Math.round(blobW) + "px";
+        }
+        drawX = here.left - navBox.left;
+        trackX = drawX;
+        blob.style.opacity = "1";
+        measureBounds();
       }
-      var el = itemAt(e.clientX);
-      setArmed(el);
-      drawAt(el);
+      // Ustidan o'tilayotgan bo'lim yorishib turadi — bu faqat ishora,
+      // linzaning joyiga ta'sir qilmaydi.
+      setArmed(itemAt(e.clientX));
+      trackTo(e.clientX);
     });
 
     function finish(e){
@@ -12140,7 +12194,10 @@
       var target = armed;
       pointerId = null;
       dragging = false;
+      stopPaint();
       setArmed(null);
+      // Sinf avval olib tashlanadi: shunda linza qo'yib yuborilgan
+      // joyidan tanlangan bo'limga CSS o'tishi bilan suzib boradi.
       nav.classList.remove("dragging");
       clearPress();
       try{ nav.releasePointerCapture(e.pointerId); }catch(err){}
@@ -12158,6 +12215,7 @@
       if(e.pointerId !== pointerId) return;
       pointerId = null;
       dragging = false;
+      stopPaint();
       setArmed(null);
       nav.classList.remove("dragging");
       clearPress();
