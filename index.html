@@ -110,7 +110,9 @@
     --nav-solid:rgba(255,255,255,0.92);
     --nav-brd:rgba(255,255,255,0.5);
     --nav-lens:rgba(255,255,255,0.55);
+    --nav-lens-hot:rgba(255,255,255,0.82);
     --nav-lens-brd:rgba(255,255,255,0.85);
+    --nav-lens-brd-hot:rgba(255,255,255,1);
 
     /* spacing scale (8pt grid) */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
@@ -164,7 +166,9 @@
     --nav-solid:rgba(10,10,10,0.94);
     --nav-brd:rgba(255,255,255,0.12);
     --nav-lens:rgba(255,255,255,0.14);
+    --nav-lens-hot:rgba(255,255,255,0.24);
     --nav-lens-brd:rgba(255,255,255,0.28);
+    --nav-lens-brd-hot:rgba(255,255,255,0.5);
     --glass:rgba(10,10,10,0.72);
     --glass-brd:rgba(255,255,255,0.12);
   }
@@ -435,27 +439,62 @@
      Linza panelning o'zidan yorug'roq: o'zining xiralashtirishi va
      yorqinlik filtri bor, chekkasida esa ingichka yorqin chiziq —
      shisha bo'lakning qirrasi shunday ko'rinadi. */
+  /* Linza ikki qatlam: tashqi element faqat joyini o'zgartiradi (uni
+     JS yozadi), ichkarisi esa ko'rinishni va bo'rtishni oladi.
+     Ajratilmasa, sudrash paytida joyni darhol o'zgartirish uchun
+     transition o'chirilganda bo'rtish animatsiyasi ham o'chib
+     ketardi — ikkalasi bitta `transform` da bo'lardi. */
   .bn-blob{
     position:absolute;top:5px;bottom:5px;left:0;width:0;
-    border-radius:999px;
+    opacity:0;pointer-events:none;z-index:0;
+    transition:transform 0.46s cubic-bezier(0.22,1.4,0.36,1),
+               width 0.46s cubic-bezier(0.22,1.4,0.36,1),
+               opacity 0.25s var(--ease);
+  }
+  .bn-blob-fill{
+    position:absolute;inset:0;border-radius:999px;
     background:var(--nav-lens);
     border:1px solid var(--nav-lens-brd);
     -webkit-backdrop-filter:brightness(1.12) saturate(160%) blur(6px);
     backdrop-filter:brightness(1.12) saturate(160%) blur(6px);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,23,42,0.1);
-    opacity:0;pointer-events:none;z-index:0;
-    transition:transform 0.42s cubic-bezier(0.34,1.32,0.5,1),
-               width 0.42s cubic-bezier(0.34,1.32,0.5,1),
-               opacity 0.25s var(--ease);
+    transform-origin:center;
+    transition:transform 0.42s cubic-bezier(0.22,1.5,0.36,1),
+               box-shadow 0.3s var(--ease),
+               background 0.3s var(--ease);
   }
-  :root[data-theme="dark"] .bn-blob{
+  :root[data-theme="dark"] .bn-blob-fill{
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.16), 0 2px 8px rgba(0,0,0,0.4);
   }
-  /* Sudrash paytida linza barmoq ortidan darhol yursin — sakrash
-     animatsiyasi bu yerda kechikish bo'lib tuyulardi. */
+
+  /* Bosilganda linza bo'rtib chiqadi: kattalashadi, biroz ko'tariladi
+     va shishasi yorqinroq bo'ladi. */
+  .bottom-nav.pressed .bn-blob-fill{
+    transform:scale(1.16) translateY(-4px);
+    background:var(--nav-lens-hot);
+    border-color:var(--nav-lens-brd-hot);
+    -webkit-backdrop-filter:brightness(1.22) saturate(190%) blur(8px);
+    backdrop-filter:brightness(1.22) saturate(190%) blur(8px);
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.95),
+               0 12px 26px rgba(15,23,42,0.3);
+  }
+  :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-fill{
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.32),
+               0 12px 26px rgba(0,0,0,0.7);
+  }
+  /* Sudralayotganda cho'zilib boradi — suyuq shishaday. */
+  .bottom-nav.dragging .bn-blob-fill{
+    transform:scaleX(1.2) scaleY(1.1) translateY(-4px);
+  }
+  /* Joyi esa barmoq ortidan darhol yursin: sakrash animatsiyasi bu
+     yerda kechikish bo'lib tuyulardi. Ko'rinish animatsiyasi
+     yuqoridagi ichki qatlamda saqlanib qoladi. */
   .bottom-nav.dragging .bn-blob{transition:opacity 0.15s linear;}
   .bottom-nav.dragging .bn-item .ic-svg{transition:none;}
-  :root[data-reduce-motion="1"] .bn-blob{transition:opacity 0.2s linear;}
+  /* Bosilgan bo'limning ikonkasi ham bir siltanadi. */
+  .bn-item.bn-down .ic-svg{transform:scale(0.88);}
+  :root[data-reduce-motion="1"] .bn-blob,
+  :root[data-reduce-motion="1"] .bn-blob-fill{transition:opacity 0.2s linear;transform:none;}
   /* Sudrash paytida ustidan o'tilayotgan bo'lim oldindan yorishadi. */
   .bn-item.bn-armed{color:var(--route);}
   .bn-item.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
@@ -3357,7 +3396,7 @@
   <!-- Tanlangan bo'lim ostida sirg'aladigan "tomchi". O'lchami va
        joyi JS'da hisoblanadi (moveNavBlob) — tugmalar eni tilga qarab
        o'zgaradi, shuning uchun uni CSS'da qotirib qo'yib bo'lmaydi. -->
-  <span class="bn-blob" id="bnBlob" aria-hidden="true"></span>
+  <span class="bn-blob" id="bnBlob" aria-hidden="true"><span class="bn-blob-fill"></span></span>
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
@@ -12030,12 +12069,26 @@
       blob.style.transform = "translateX(" + Math.round(box.left - navBox.left) + "px)";
     }
 
+    var downItem = null;
+
     nav.addEventListener("pointerdown", function(e){
       if(pointerId !== null) return;
       pointerId = e.pointerId;
       startX = e.clientX;
       dragging = false;
+      // Barmoq tekkan zahoti javob: linza bo'rtib chiqadi, bosilgan
+      // bo'limning ikonkasi bir siltanadi. Bu hali sudrash emas —
+      // shunchaki "eshitdim" degani.
+      nav.classList.add("pressed");
+      downItem = e.target.closest ? e.target.closest(".bn-item") : null;
+      if(downItem) downItem.classList.add("bn-down");
     });
+
+    function clearPress(){
+      nav.classList.remove("pressed");
+      if(downItem) downItem.classList.remove("bn-down");
+      downItem = null;
+    }
 
     nav.addEventListener("pointermove", function(e){
       if(e.pointerId !== pointerId) return;
@@ -12043,6 +12096,9 @@
         if(Math.abs(e.clientX - startX) < DRAG_THRESHOLD) return;
         dragging = true;
         nav.classList.add("dragging");
+        // Sudrash boshlangach bosilgan bo'limning siqilishi ortiqcha:
+        // endi linzaning o'zi cho'zilib ko'rsatadi.
+        if(downItem){ downItem.classList.remove("bn-down"); downItem = null; }
         try{ nav.setPointerCapture(pointerId); }catch(err){}
       }
       var el = itemAt(e.clientX);
@@ -12058,6 +12114,7 @@
       dragging = false;
       setArmed(null);
       nav.classList.remove("dragging");
+      clearPress();
       try{ nav.releasePointerCapture(e.pointerId); }catch(err){}
 
       if(!wasDragging){ moveNavBlob(); return; }
@@ -12075,7 +12132,13 @@
       dragging = false;
       setArmed(null);
       nav.classList.remove("dragging");
+      clearPress();
       moveNavBlob();
+    });
+    // Barmoq panel ustidan chiqib ketsa ham bosilgan holat qolib
+    // ketmasin (masalan sichqoncha tugmasi tashqarida qo'yib yuborilsa).
+    nav.addEventListener("pointerleave", function(){
+      if(pointerId === null) clearPress();
     });
   }
 
