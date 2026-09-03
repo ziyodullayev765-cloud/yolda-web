@@ -1699,28 +1699,6 @@
   /* minmax(0,1fr) muhim: oddiy `1fr` aslida minmax(auto,1fr) va uzun
      so'z ustunni kengaytirib, qo'shnisining ustiga chiqib ketardi
      ("Yakunlangan tashuv" shunday buzilgandi). */
-  .stats-card{
-    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
-    background:var(--tint);border:1px solid var(--border);border-radius:16px;
-    padding:14px 11px;
-  }
-  .stats-card[hidden]{display:none;}
-  /* Ikonka chapda, raqam va izoh o'ngda — namunadagidek yonma-yon. */
-  .stat-item{display:flex;align-items:flex-start;gap:6px;min-width:0;}
-  .stat-ico{
-    width:24px;height:24px;border-radius:8px;background:var(--card);flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;color:var(--route);
-  }
-  .stat-ico .ic-svg{font-size:14px;}
-  .stat-text{min-width:0;display:flex;flex-direction:column;}
-  .stat-v{font-size:16px;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-0.02em;}
-  /* Sahifada umumiy `overflow-wrap:anywhere` bor — u "Yakunlangan" ni
-     so'z o'rtasidan kesib tashlardi. Bu yerda so'z butunligicha
-     keyingi qatorga o'tadi. */
-  .stat-k{font-size:10px;color:var(--ink-soft);line-height:1.25;overflow-wrap:normal;word-break:normal;}
-
-  /* ---------- Bo'lim sarlavhasi ---------- */
-  .home-sec{display:flex;flex-direction:column;gap:12px;}
   .home-sec[hidden]{display:none;}
   .home-sec-head{display:flex;align-items:center;gap:10px;}
   .home-sec-icon{
@@ -1925,9 +1903,7 @@
     .hero-card-body{padding:26px 22px;}
     .home-truck-card{flex-basis:200px;}
   }
-  /* Eng tor telefonlarda (320px) to'rtta ustun juda siqilib ketadi. */
   @media(max-width:359px){
-    .stats-card{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;}
     .hero-card-body{max-width:100%;}
     /* Bu yerda ilgari `inset:0 0 0 45%; opacity:0.55` turardi — o'sha
        paytda rasm faqat o'ng ustunda edi. Rasm butun kartochkani
@@ -2295,6 +2271,213 @@
   @media(max-width:380px){
     .row2{grid-template-columns:1fr;}
     .cargo-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- YO'LDA LIFE ----------
+     Bu bo'lim ilovaning qolganidan ajralib turadi: har doim qorong'i
+     yuza, ustida yashil aksent. Kunduzgi mavzuda ham qorong'i qoladi —
+     bu tasodif emas, media bo'limi shunday tanilsin. Shuning uchun bu
+     yerdagi ranglar `--ink`/`--paper` tokenlariga bog'lanmaydi:
+     ular mavzuga qarab o'zgaradi, bu yuza esa o'zgarmasligi kerak. */
+  .life{
+    --lf-bg:#07100C;        /* asosiy qora-yashil fon */
+    --lf-card:#0F1A15;      /* kartochka */
+    --lf-card-2:#16241D;    /* ikkinchi darajali yuza */
+    --lf-line:rgba(255,255,255,0.09);
+    --lf-ink:#F1F5F2;
+    --lf-soft:#9FB0A6;
+    --lf-dim:#6B7C72;
+    --lf-green:#2DD480;
+    --lf-green-dp:#0D2B1D;  /* yashil belgilar ostidagi to'q yuza */
+    background:var(--lf-bg);
+    color:var(--lf-ink);
+    min-height:100vh;
+    margin:0 calc(var(--s5) * -1);
+    padding:var(--s5) var(--s5) var(--s7);
+  }
+  .life a{color:inherit;}
+
+  .lf-head h1{
+    font-family:'Sora',sans-serif;font-size:24px;font-weight:800;
+    letter-spacing:-0.03em;margin:0 0 4px;color:var(--lf-ink);
+  }
+  .lf-head h1 em{font-style:normal;color:var(--lf-green);}
+  .lf-head p{margin:0;font-size:13px;line-height:1.5;color:var(--lf-soft);}
+
+  /* Bo'lim sarlavhasi: kichkina belgi + katta harfli yozuv. */
+  .lf-sec{margin-top:var(--s6);}
+  .lf-sec-head{
+    display:flex;align-items:center;gap:8px;margin-bottom:var(--s3);
+  }
+  .lf-sec-head .ic-svg{font-size:15px;color:var(--lf-green);}
+  .lf-sec-head span{
+    font-size:11px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;
+    color:var(--lf-soft);
+  }
+
+  /* Katta banner. Rasm hali yo'q — o'rniga chizilgan yo'l manzarasi
+     (--hero-photo bilan bir xil fayl) va uning ustida qorong'i parda. */
+  .lf-banner{
+    position:relative;overflow:hidden;border-radius:22px;
+    min-height:168px;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:var(--s5);border:1px solid var(--lf-line);
+    background:var(--lf-card);
+  }
+  .lf-banner-art{
+    position:absolute;inset:0;background:var(--hero-photo) center/cover no-repeat;
+    opacity:0.5;
+  }
+  .lf-banner-veil{
+    position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(7,16,12,0.25) 0%, rgba(7,16,12,0.86) 62%, rgba(7,16,12,0.97) 100%);
+  }
+  .lf-banner-body{position:relative;z-index:1;}
+  .lf-banner h3{
+    margin:0 0 4px;font-family:'Sora',sans-serif;font-size:18px;font-weight:700;
+    line-height:1.28;letter-spacing:-0.02em;color:#fff;
+  }
+  .lf-banner p{margin:0 0 var(--s4);font-size:12.5px;color:var(--lf-soft);}
+  .lf-play{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--lf-green);color:#052E1A;border:none;border-radius:999px;
+    padding:10px 20px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;
+    cursor:pointer;transition:transform 0.2s var(--ease), filter 0.2s var(--ease);
+  }
+  .lf-play .ic-svg{font-size:14px;fill:currentColor;stroke:none;}
+  .lf-play:active{transform:scale(0.96);}
+  .lf-play[disabled]{
+    background:var(--lf-card-2);color:var(--lf-dim);cursor:default;
+    border:1px solid var(--lf-line);
+  }
+
+  /* Turkumlar qatori — yon tomonga suriladi. */
+  .lf-tabs{
+    display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;
+    margin:var(--s5) 0 0;scrollbar-width:none;
+  }
+  .lf-tabs::-webkit-scrollbar{display:none;}
+  .lf-tab{
+    flex:0 0 auto;border-radius:999px;padding:8px 16px;
+    background:var(--lf-card);border:1px solid var(--lf-line);
+    color:var(--lf-soft);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;white-space:nowrap;
+    transition:background 0.22s var(--ease), color 0.22s var(--ease), border-color 0.22s var(--ease);
+  }
+  .lf-tab.active{background:var(--lf-green);border-color:var(--lf-green);color:#052E1A;}
+
+  /* Ommabop kartochkalar — yon tomonga suriladigan qator. */
+  .lf-rail{
+    display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;
+    scroll-snap-type:x proximity;scroll-padding:0 var(--s5);
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .lf-rail::-webkit-scrollbar{display:none;}
+  .lf-card{
+    flex:0 0 62%;max-width:230px;scroll-snap-align:start;
+    position:relative;overflow:hidden;border-radius:18px;
+    min-height:132px;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:var(--s4);border:1px solid var(--lf-line);background:var(--lf-card);
+    text-align:left;
+  }
+  .lf-card--green{background:linear-gradient(150deg, #1B8F58 0%, #0F6B41 100%);border-color:transparent;}
+  .lf-card-art{position:absolute;inset:0;background:var(--hero-photo) center/cover no-repeat;opacity:0.42;}
+  .lf-card-veil{position:absolute;inset:0;background:linear-gradient(180deg, rgba(7,16,12,0.1), rgba(7,16,12,0.9));}
+  .lf-card-ico{
+    position:relative;z-index:1;display:flex;gap:6px;margin-bottom:auto;
+    color:rgba(255,255,255,0.9);
+  }
+  .lf-card-ico .ic-svg{font-size:17px;}
+  .lf-card h4{
+    position:relative;z-index:1;margin:var(--s3) 0 0;
+    font-size:14px;font-weight:700;line-height:1.3;color:#fff;
+    overflow-wrap:normal;word-break:normal;
+  }
+  .lf-card span{position:relative;z-index:1;font-size:11.5px;color:rgba(255,255,255,0.62);margin-top:3px;}
+
+  /* Hamjamiyat posti. */
+  .lf-post{
+    background:var(--lf-card);border:1px solid var(--lf-line);border-radius:18px;
+    padding:var(--s4);
+  }
+  .lf-post-top{display:flex;align-items:center;gap:10px;margin-bottom:var(--s3);}
+  .lf-post-face{
+    width:40px;height:40px;border-radius:13px;flex-shrink:0;
+    background:var(--lf-card-2);border:1px solid var(--lf-line);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--lf-green);font-weight:700;font-size:15px;overflow:hidden;
+  }
+  .lf-post-face img{width:100%;height:100%;object-fit:cover;}
+  .lf-post-who{min-width:0;display:flex;flex-direction:column;}
+  .lf-post-name{font-size:14px;font-weight:700;color:var(--lf-ink);}
+  .lf-post-route{font-size:12px;color:var(--lf-green);}
+  .lf-post-text{margin:0;font-size:13.5px;line-height:1.55;color:var(--lf-soft);}
+
+  /* Foydali tugmalar to'ri. */
+  .lf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .lf-tool{
+    display:flex;flex-direction:column;align-items:center;gap:7px;
+    background:var(--lf-card);border:1px solid var(--lf-line);border-radius:16px;
+    padding:14px 6px;cursor:pointer;text-decoration:none;
+    color:var(--lf-soft);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;
+    text-align:center;line-height:1.25;
+    transition:background 0.22s var(--ease), transform 0.2s var(--ease);
+    overflow-wrap:normal;word-break:normal;
+  }
+  .lf-tool:active{transform:scale(0.96);}
+  .lf-tool-ico{
+    width:38px;height:38px;border-radius:12px;background:var(--lf-green-dp);
+    display:flex;align-items:center;justify-content:center;color:var(--lf-green);
+  }
+  .lf-tool-ico .ic-svg{font-size:18px;}
+
+  /* Reyting kartochkasi. */
+  .lf-rank{
+    background:linear-gradient(155deg, var(--lf-card-2) 0%, var(--lf-card) 100%);
+    border:1px solid var(--lf-line);border-radius:18px;padding:var(--s5);
+  }
+  .lf-rank-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .lf-rank-k{font-size:12.5px;color:var(--lf-soft);}
+  .lf-rank-v{font-size:20px;font-weight:800;color:var(--lf-ink);letter-spacing:-0.02em;}
+  .lf-rank-v em{font-style:normal;font-size:13px;font-weight:600;color:var(--lf-soft);}
+  .lf-rank-hr{height:1px;background:var(--lf-line);margin:var(--s4) 0;}
+
+  /* Hali ma'lumot yo'q bo'lgan joyning halol holati. O'ylab topilgan
+     podkast yoki soxta "103 like" o'rniga shu turadi. */
+  .lf-soon{
+    display:flex;align-items:center;gap:10px;
+    background:var(--lf-card);border:1px dashed var(--lf-line);border-radius:16px;
+    padding:var(--s4);color:var(--lf-dim);font-size:12.5px;line-height:1.5;
+  }
+  .lf-soon .ic-svg{font-size:16px;flex-shrink:0;color:var(--lf-dim);}
+
+  /* Bosh sahifadagi kirish kartochkasi — statistika turgan joyda,
+     xuddi o'sha o'lchamda. */
+  .life-entry{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:linear-gradient(135deg, #0F2A1D 0%, #07100C 100%);
+    border:1px solid rgba(45,212,128,0.22);border-radius:16px;
+    padding:14px;cursor:pointer;color:#F1F5F2;font-family:'Inter',sans-serif;
+    transition:transform 0.2s var(--ease), border-color 0.22s var(--ease);
+  }
+  .life-entry:active{transform:scale(0.985);}
+  .life-entry-ico{
+    width:40px;height:40px;border-radius:13px;flex-shrink:0;
+    background:rgba(45,212,128,0.14);color:#2DD480;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .life-entry-ico .ic-svg{font-size:19px;}
+  .life-entry-txt{min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .life-entry-t{
+    font-family:'Sora',sans-serif;font-size:14.5px;font-weight:700;letter-spacing:-0.01em;
+  }
+  .life-entry-t em{font-style:normal;color:#2DD480;}
+  .life-entry-s{font-size:11.5px;color:#9FB0A6;line-height:1.35;overflow-wrap:normal;word-break:normal;}
+  .life-entry-go{margin-left:auto;flex-shrink:0;color:#2DD480;}
+  .life-entry-go .ic-svg{font-size:18px;}
+
+  @media(max-width:359px){
+    .lf-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .lf-card{flex-basis:72%;}
   }
 
   /* ---------- BO'LIM ALMASHUVI ---------- */
@@ -2893,6 +3076,42 @@
       <path d="M12 2.8c3.4 3.9 5.6 6.7 5.6 10a5.6 5.6 0 1 1-11.2 0c0-1.8.6-3.2 1.6-4.5.2 1.1.7 1.9 1.5 2.4-.4-3 .5-5.7 2.5-7.9Z"/>
       <path d="M12 21.2a2.9 2.9 0 0 1-2.9-2.9c0-1.5 1.2-2.3 2.9-4.4 1.7 2.1 2.9 2.9 2.9 4.4a2.9 2.9 0 0 1-2.9 2.9Z"/>
     </symbol>
+    <!-- YO'LDA LIFE bo'limi uchun belgilar -->
+    <symbol id="iconHeadphones" viewBox="0 0 24 24">
+      <path d="M4 15v-3a8 8 0 0 1 16 0v3"/>
+      <rect x="2.5" y="14" width="4.5" height="6.5" rx="2.2"/>
+      <rect x="17" y="14" width="4.5" height="6.5" rx="2.2"/>
+    </symbol>
+    <symbol id="iconPlay" viewBox="0 0 24 24"><path d="M8 5.6 19 12 8 18.4Z"/></symbol>
+    <symbol id="iconUsers" viewBox="0 0 24 24">
+      <circle cx="9" cy="8" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/>
+      <path d="M16.4 5.2a3.4 3.4 0 0 1 0 6.6"/><path d="M17.6 14.4A6.2 6.2 0 0 1 21.2 20"/>
+    </symbol>
+    <symbol id="iconTrophy" viewBox="0 0 24 24">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0Z"/>
+      <path d="M7 5.5H4.5V7a3.5 3.5 0 0 0 3 3.4M17 5.5h2.5V7a3.5 3.5 0 0 1-3 3.4"/>
+      <path d="M12 14v3.5M8.5 20.5h7"/>
+    </symbol>
+    <symbol id="iconFuel" viewBox="0 0 24 24">
+      <rect x="4" y="3.5" width="9" height="17" rx="2"/><path d="M4 10h9M3 20.5h11"/>
+      <path d="M16 8.5h2.5a1.5 1.5 0 0 1 1.5 1.5v6a1.6 1.6 0 0 0 1.6 1.6"/>
+      <path d="M16.5 5.5 18.5 8.5"/>
+    </symbol>
+    <symbol id="iconWrench" viewBox="0 0 24 24">
+      <path d="M15.6 3.4a5.4 5.4 0 0 0-4.4 8.5L3.6 19.5l1.9 1.9 7.6-7.6a5.4 5.4 0 0 0 7.3-6.5l-3 3-2.6-2.6 3-3a5.4 5.4 0 0 0-2.2-1.3Z"/>
+    </symbol>
+    <symbol id="iconParking" viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4"/>
+      <path d="M10 17V7.5h3a2.9 2.9 0 0 1 0 5.8h-3"/>
+    </symbol>
+    <symbol id="iconFood" viewBox="0 0 24 24">
+      <path d="M6 3v7a2.5 2.5 0 0 0 5 0V3M8.5 10v11"/>
+      <path d="M17.5 3c-1.6 1.2-2.5 3-2.5 5.2 0 1.8.8 3 2.5 3.3V21"/>
+    </symbol>
+    <symbol id="iconBed" viewBox="0 0 24 24">
+      <path d="M3 20V6M3 12h18v8M3 16h18"/>
+      <circle cx="7.5" cy="9" r="1.8"/><path d="M11 12V9.6a1.6 1.6 0 0 1 1.6-1.6H21"/>
+    </symbol>
     <symbol id="iconList" viewBox="0 0 24 24">
       <path d="M9 6.5h11M9 12h11M9 17.5h11"/>
       <path d="M4.4 6.5h.01M4.4 12h.01M4.4 17.5h.01"/>
@@ -3053,9 +3272,16 @@
       </button>
     </div>
 
-    <!-- 2. STATISTIKA — /api/order?action=stats dan. Bazada hech narsa
-         bo'lmasa butun blok yashiriladi. -->
-    <div class="stats-card" id="homeStats" hidden></div>
+    <!-- 2. YO'LDA LIFE — bu yerda ilgari statistika (faol yuk,
+         haydovchi, yakunlangan tashuv, faol yo'nalish) turardi. -->
+    <button type="button" class="life-entry" id="btnOpenLife">
+      <span class="life-entry-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg></span>
+      <span class="life-entry-txt">
+        <span class="life-entry-t">YO'LDA <em>LIFE</em></span>
+        <span class="life-entry-s" data-i18n="life.entrySub">Yo'lda vaqtni foydali va qiziqarli o'tkazing</span>
+      </span>
+      <span class="life-entry-go"><svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg></span>
+    </button>
 
     <!-- 3. SIZGA MOS YUKLAR -->
     <section class="home-sec" id="homeMatchWrap" hidden>
@@ -3351,6 +3577,76 @@
          identity, not a form heading. The old "⋯" help/settings shortcut
          that used to live here moved into that action row's Menu icon. -->
     <div class="reveal" id="profileCard"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     YO'LDA LIFE — haydovchi uchun yo'ldagi bo'sh vaqt bo'limi.
+     Hozircha faqat karkas: mazmun (podkast, yangilik, hamjamiyat)
+     uchun backend yo'q, shuning uchun o'sha joylarda o'ylab topilgan
+     post yoki soxta "103 like" emas, halol "tez orada" turadi.
+     Ishlaydigan qismlar: turkumlar, foydali xaritalar va reyting —
+     ular haqiqiy ma'lumotdan.
+     ============================================================ -->
+<section class="tabview" id="tab-life" data-tab="life" hidden>
+  <div class="life">
+    <header class="lf-head">
+      <h1>YO'LDA <em>LIFE</em></h1>
+      <p data-i18n="life.sub">Yo'lda vaqtni foydali va qiziqarli o'tkazing.</p>
+    </header>
+
+    <div class="lf-sec">
+      <div class="lf-sec-head">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg>
+        <span data-i18n="life.todayTitle">Bugun tinglash uchun</span>
+      </div>
+      <div class="lf-banner">
+        <div class="lf-banner-art" aria-hidden="true"></div>
+        <div class="lf-banner-veil" aria-hidden="true"></div>
+        <div class="lf-banner-body">
+          <h3 data-i18n="life.bannerTitle">Uzoq yo'lda zerikmaslik</h3>
+          <p data-i18n="life.bannerSoon">Podkastlar tayyorlanmoqda — birinchisi qo'shilganda shu yerda chiqadi.</p>
+          <button type="button" class="lf-play" disabled>
+            <svg class="ic-svg" aria-hidden="true"><use href="#iconPlay"/></svg>
+            <span data-i18n="life.play">O'ynash</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="lf-tabs" id="lifeTabs" role="tablist"></div>
+    </div>
+
+    <div class="lf-sec" id="lifeTrendingSec">
+      <div class="lf-sec-head">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"/></svg>
+        <span data-i18n="life.trending">Hozir ommabop</span>
+      </div>
+      <div id="lifeTrending"></div>
+    </div>
+
+    <div class="lf-sec" id="lifeCommunitySec">
+      <div class="lf-sec-head">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconUsers"/></svg>
+        <span data-i18n="life.community">Haydovchilar hamjamiyati</span>
+      </div>
+      <div id="lifeCommunity"></div>
+    </div>
+
+    <div class="lf-sec">
+      <div class="lf-sec-head">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconPin"/></svg>
+        <span data-i18n="life.tools">Yo'lda foydali</span>
+      </div>
+      <div class="lf-grid" id="lifeTools"></div>
+    </div>
+
+    <div class="lf-sec">
+      <div class="lf-sec-head">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconTrophy"/></svg>
+        <span data-i18n="life.rank">Yo'lda reyting</span>
+      </div>
+      <div id="lifeRank"></div>
+    </div>
   </div>
 </section>
 
@@ -3676,8 +3972,25 @@
       "chatTab.eyebrow": "Xabarlar", "chatTab.titleA": "To'g'ridan-to'g'ri", "chatTab.titleB": "yozishing",
       "chatTab.sub": "Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.",
       "profile.helpLink": "Yordam, savollar va sozlamalar",
-      "home.statLoads": "Faol yuk", "home.statDrivers": "Haydovchi",
-      "home.statDelivered": "Yakunlangan tashuv", "home.statCities": "Faol yo'nalish",
+      "life.entrySub": "Yo'lda vaqtni foydali va qiziqarli o'tkazing",
+      "life.sub": "Yo'lda vaqtni foydali va qiziqarli o'tkazing.",
+      "life.todayTitle": "Bugun tinglash uchun", "life.bannerTitle": "Uzoq yo'lda zerikmaslik",
+      "life.bannerSoon": "Podkastlar tayyorlanmoqda — birinchisi qo'shilganda shu yerda chiqadi.",
+      "life.play": "O'ynash",
+      "life.tabAudio": "Audio", "life.tabNews": "Yangiliklar",
+      "life.tabCommunity": "Hamjamiyat", "life.tabStories": "Stories",
+      "life.trending": "Hozir ommabop", "life.community": "Haydovchilar hamjamiyati",
+      "life.tools": "Yo'lda foydali", "life.rank": "Yo'lda reyting",
+      "life.soonAudio": "Podkast va audio hikoyalar tayyorlanmoqda.",
+      "life.soonNews": "Yo'l yangiliklari bo'limi tayyorlanmoqda.",
+      "life.soonCommunity": "Haydovchilar hamjamiyati tayyorlanmoqda.",
+      "life.soonStories": "Stories bo'limi tayyorlanmoqda.",
+      "life.soonPosts": "Haydovchilar posti hali yo'q. Bo'lim ochilganda shu yerda chiqadi.",
+      "life.toolRest": "Dam olish joylari", "life.toolFuel": "Yoqilg'i",
+      "life.toolService": "Servis", "life.toolParking": "Parking", "life.toolFood": "Ovqatlanish",
+      "life.rankSignIn": "Raqamlaringizni ko'rish uchun tizimga kiring.",
+      "life.rankDelivered": "Yakunlangan tashuv", "life.rankActive": "Faol yuk",
+      "life.rankRating": "Reyting",
       "home.heroLine1": "Yukingizni kerakli", "home.heroLine2": "haydovchi bilan", "home.heroLine3": "bog'lang.",
       "home.heroSub": "O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.",
       "home.matchSub": "Sizning profilingizga mos yuklar", "home.seeAll": "Barchasini ko'rish",
@@ -4102,8 +4415,25 @@
       "chatTab.eyebrow": "Сообщения", "chatTab.titleA": "Пишите", "chatTab.titleB": "напрямую",
       "chatTab.sub": "Найдите пользователя по username и свяжитесь с ним.",
       "profile.helpLink": "Помощь, вопросы и настройки",
-      "home.statLoads": "Активных грузов", "home.statDrivers": "Водителей",
-      "home.statDelivered": "Завершённых перевозок", "home.statCities": "Активных направлений",
+      "life.entrySub": "Проведите время в пути с пользой и интересом",
+      "life.sub": "Проведите время в пути с пользой и интересом.",
+      "life.todayTitle": "Послушать сегодня", "life.bannerTitle": "Чтобы не скучать в дальней дороге",
+      "life.bannerSoon": "Подкасты готовятся — первый появится здесь.",
+      "life.play": "Слушать",
+      "life.tabAudio": "Аудио", "life.tabNews": "Новости",
+      "life.tabCommunity": "Сообщество", "life.tabStories": "Истории",
+      "life.trending": "Сейчас популярно", "life.community": "Сообщество водителей",
+      "life.tools": "Полезное в пути", "life.rank": "Рейтинг YO'LDA",
+      "life.soonAudio": "Подкасты и аудиоистории готовятся.",
+      "life.soonNews": "Раздел дорожных новостей готовится.",
+      "life.soonCommunity": "Сообщество водителей готовится.",
+      "life.soonStories": "Раздел историй готовится.",
+      "life.soonPosts": "Постов пока нет. Они появятся здесь, когда раздел откроется.",
+      "life.toolRest": "Места отдыха", "life.toolFuel": "Заправка",
+      "life.toolService": "Сервис", "life.toolParking": "Парковка", "life.toolFood": "Питание",
+      "life.rankSignIn": "Войдите, чтобы увидеть свои показатели.",
+      "life.rankDelivered": "Завершённых перевозок", "life.rankActive": "Активных грузов",
+      "life.rankRating": "Рейтинг",
       "home.heroLine1": "Свяжите свой груз", "home.heroLine2": "с нужным", "home.heroLine3": "водителем.",
       "home.heroSub": "Находите грузы по всему Узбекистану, размещайте свои и связывайтесь с надёжными водителями.",
       "home.matchSub": "Грузы, подходящие вашему профилю", "home.seeAll": "Смотреть все",
@@ -4524,8 +4854,25 @@
       "chatTab.eyebrow": "Messages", "chatTab.titleA": "Message people", "chatTab.titleB": "directly",
       "chatTab.sub": "Search by username and get in touch with anyone.",
       "profile.helpLink": "Help, questions and settings",
-      "home.statLoads": "Active loads", "home.statDrivers": "Drivers",
-      "home.statDelivered": "Deliveries completed", "home.statCities": "Active routes",
+      "life.entrySub": "Make the time on the road useful and enjoyable",
+      "life.sub": "Make the time on the road useful and enjoyable.",
+      "life.todayTitle": "Listen today", "life.bannerTitle": "Beat the boredom on a long haul",
+      "life.bannerSoon": "Podcasts are in the works — the first one will appear here.",
+      "life.play": "Play",
+      "life.tabAudio": "Audio", "life.tabNews": "News",
+      "life.tabCommunity": "Community", "life.tabStories": "Stories",
+      "life.trending": "Trending now", "life.community": "Drivers' community",
+      "life.tools": "Useful on the road", "life.rank": "YO'LDA ranking",
+      "life.soonAudio": "Podcasts and audio stories are in the works.",
+      "life.soonNews": "The road news section is in the works.",
+      "life.soonCommunity": "The drivers' community is in the works.",
+      "life.soonStories": "The stories section is in the works.",
+      "life.soonPosts": "No driver posts yet. They will appear here once the section opens.",
+      "life.toolRest": "Rest stops", "life.toolFuel": "Fuel",
+      "life.toolService": "Service", "life.toolParking": "Parking", "life.toolFood": "Food",
+      "life.rankSignIn": "Sign in to see your numbers.",
+      "life.rankDelivered": "Deliveries completed", "life.rankActive": "Active loads",
+      "life.rankRating": "Rating",
       "home.heroLine1": "Connect your load", "home.heroLine2": "with the right", "home.heroLine3": "driver.",
       "home.heroSub": "Find loads across Uzbekistan, post your own and connect with drivers you can trust.",
       "home.matchSub": "Loads that fit your profile", "home.seeAll": "See all",
@@ -10196,42 +10543,153 @@
     YARIM_TREYLER: "Yarim treyler", SAMOSVAL: "Samosval", BOSHQA: "Boshqa"
   };
 
-  /* ---------- Bosh sahifa statistikasi ----------
-     Faqat bazadagi haqiqiy raqamlar. Nol bo'lgan ko'rsatkich
-     ko'rsatilmaydi: "0 haydovchi" yozib qo'yish platformani bo'sh
-     ko'rsatadi va foydasi yo'q. Hech biri qolmasa, blok yashiriladi. */
-  /* Raqamlar butunlay /api/order?action=stats dan keladi. Nolga teng
-     ustun ko'rsatilmaydi, hech biri qolmasa butun blok yashiriladi —
-     bo'sh bazada "0 haydovchi" deb turgandan ko'ra hech narsa
-     turmagani yaxshiroq. O'ylab topilgan raqam bu yerda yo'q. */
-  function loadHomeStats(){
-    var box = document.getElementById("homeStats");
-    if(!box) return;
-    fetch("/api/order?action=stats")
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        var cells = [
-          { value: data.activeLoads, icon: "iconBox",         key: "home.statLoads",     label: "Faol yuk" },
-          { value: data.drivers,     icon: "iconUser",        key: "home.statDrivers",   label: "Haydovchi" },
-          { value: data.delivered,   icon: "iconCheckCircle", key: "home.statDelivered", label: "Yakunlangan tashuv" },
-          { value: data.cities,      icon: "iconPin",         key: "home.statCities",    label: "Faol yo'nalish" }
-        ].filter(function(c){ return Number(c.value) > 0; });
+  /* ============================================================
+     YO'LDA LIFE
+     ------------------------------------------------------------
+     Bu bo'limning katta qismi uchun hali backend yo'q: podkast ham,
+     yangilik ham, hamjamiyat posti ham. Shuning uchun o'sha joylarda
+     o'ylab topilgan mazmun turmaydi — halol "tez orada" turadi va
+     hech narsa qilmaydigan tugma qoldirilmaydi.
 
-        if(!cells.length){ box.hidden = true; return; }
-        box.innerHTML = cells.map(function(c){
-          return '<div class="stat-item">'
-            + '<span class="stat-ico">'+icon(c.icon)+'</span>'
-            + '<span class="stat-text">'
-            +   '<span class="stat-v">'+formatNum(c.value)+'</span>'
-            +   '<span class="stat-k" data-i18n="'+c.key+'">'+escapeHtml(c.label)+'</span>'
-            + '</span>'
-            + '</div>';
-        }).join("");
-        box.hidden = false;
-        applyLang();
-      })
-      .catch(function(){ /* statistika — majburiy emas, jim qolamiz */ });
+     Bugundan ishlaydigan ikkita narsa bor:
+       • "Yo'lda foydali" — xarita qidiruvini ochadi. Joylashuvni biz
+         so'ramaymiz, xarita ilovasining o'zi topadi.
+       • "Yo'lda reyting" — foydalanuvchining o'z haqiqiy raqamlari.
+     ============================================================ */
+  var LIFE_TABS = [
+    { id: "audio",     key: "life.tabAudio",     label: "Audio" },
+    { id: "news",      key: "life.tabNews",      label: "Yangiliklar" },
+    { id: "community", key: "life.tabCommunity", label: "Hamjamiyat" },
+    { id: "stories",   key: "life.tabStories",   label: "Stories" }
+  ];
+  var lifeTab = "audio";
+
+  /* Xarita qidiruvi: koordinata yubormaymiz — xarita ilovasi
+     foydalanuvchining o'z joylashuvidan boshlaydi. */
+  function mapSearchUrl(query){
+    return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
   }
+
+  var LIFE_TOOLS = [
+    { icon: "iconBed",     key: "life.toolRest",    label: "Dam olish joylari", q: "yo'l bo'yida dam olish joyi" },
+    { icon: "iconFuel",    key: "life.toolFuel",    label: "Yoqilg'i",          q: "yoqilg'i quyish shoxobchasi" },
+    { icon: "iconWrench",  key: "life.toolService", label: "Servis",            q: "yuk mashinasi servisi" },
+    { icon: "iconParking", key: "life.toolParking", label: "Parking",           q: "yuk mashinasi to'xtash joyi" },
+    { icon: "iconFood",    key: "life.toolFood",    label: "Ovqatlanish",       q: "yo'l bo'yidagi oshxona" }
+  ];
+
+  /** Mazmuni hali yo'q bo'lgan joyning halol ko'rinishi. */
+  function lifeSoon(key, text){
+    return '<div class="lf-soon">' + icon("iconInfo")
+      + '<span data-i18n="'+key+'">'+escapeHtml(text)+'</span></div>';
+  }
+
+  function renderLifeTabs(){
+    var box = document.getElementById("lifeTabs");
+    if(!box) return;
+    box.innerHTML = LIFE_TABS.map(function(t){
+      return '<button type="button" role="tab" class="lf-tab'+(t.id === lifeTab ? " active" : "")+'" '
+        + 'aria-selected="'+(t.id === lifeTab)+'" data-life-tab="'+t.id+'" '
+        + 'data-i18n="'+t.key+'">'+escapeHtml(t.label)+'</button>';
+    }).join("");
+  }
+
+  function renderLifeTrending(){
+    var box = document.getElementById("lifeTrending");
+    if(!box) return;
+    // Turkumga qarab boshqa matn — tab bosilganda haqiqatan nimadir
+    // o'zgarsin, bezak bo'lib turmasin.
+    var soon = {
+      audio:     ["life.soonAudio",     "Podkast va audio hikoyalar tayyorlanmoqda."],
+      news:      ["life.soonNews",      "Yo'l yangiliklari bo'limi tayyorlanmoqda."],
+      community: ["life.soonCommunity", "Haydovchilar hamjamiyati tayyorlanmoqda."],
+      stories:   ["life.soonStories",   "Stories bo'limi tayyorlanmoqda."]
+    }[lifeTab] || ["life.soonAudio", "Tayyorlanmoqda."];
+    box.innerHTML = lifeSoon(soon[0], soon[1]);
+  }
+
+  function renderLifeCommunity(){
+    var box = document.getElementById("lifeCommunity");
+    if(!box) return;
+    box.innerHTML = lifeSoon("life.soonPosts",
+      "Haydovchilar posti hali yo'q. Bo'lim ochilganda shu yerda chiqadi.");
+  }
+
+  function renderLifeTools(){
+    var box = document.getElementById("lifeTools");
+    if(!box) return;
+    box.innerHTML = LIFE_TOOLS.map(function(t){
+      return '<a class="lf-tool" href="'+escapeHtml(mapSearchUrl(t.q))+'" '
+        + 'target="_blank" rel="noopener noreferrer">'
+        + '<span class="lf-tool-ico">'+icon(t.icon)+'</span>'
+        + '<span data-i18n="'+t.key+'">'+escapeHtml(t.label)+'</span></a>';
+    }).join("");
+  }
+
+  /* Reyting — foydalanuvchining o'z haqiqiy raqamlari. "Ball" tizimi
+     hali yo'q, shuning uchun o'ylab topilgan ball ham yozilmaydi. */
+  function renderLifeRank(){
+    var box = document.getElementById("lifeRank");
+    if(!box) return;
+    if(!isSignedIn()){
+      box.innerHTML = lifeSoon("life.rankSignIn",
+        "Raqamlaringizni ko'rish uchun tizimga kiring.");
+      return;
+    }
+    box.innerHTML = '<div class="lf-rank"><div class="skeleton sk-line" style="width:60%;"></div></div>';
+    Promise.all([
+      fetch("/api/order?action=my-loads&" + profileApiQuery()).then(function(r){ return r.json(); })
+        .catch(function(){ return null; }),
+      fetch("/api/profile", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
+      }).then(function(r){ return r.json(); }).catch(function(){ return null; })
+    ]).then(function(res){
+      var counts = (res[0] && res[0].counts) || {};
+      var p = (res[1] && res[1].profile) || {};
+      var delivered = Number(counts.delivered || p.deliveredCount || 0);
+      var active = Number(counts.active || 0) + Number(counts.inProgress || 0);
+      var rated = Number(p.ratingCount || 0);
+      var rating = rated ? (Number(p.ratingSum || 0) / rated) : 0;
+      box.innerHTML = '<div class="lf-rank">'
+        + '<div class="lf-rank-row"><span class="lf-rank-k" data-i18n="life.rankDelivered">Yakunlangan tashuv</span>'
+        +   '<span class="lf-rank-v">'+formatNum(delivered)+'</span></div>'
+        + '<div class="lf-rank-hr"></div>'
+        + '<div class="lf-rank-row"><span class="lf-rank-k" data-i18n="life.rankActive">Faol yuk</span>'
+        +   '<span class="lf-rank-v">'+formatNum(active)+'</span></div>'
+        + '<div class="lf-rank-hr"></div>'
+        + '<div class="lf-rank-row"><span class="lf-rank-k" data-i18n="life.rankRating">Reyting</span>'
+        +   '<span class="lf-rank-v">'
+        +     (rated ? rating.toFixed(1) + ' <em>· ' + formatNum(rated) + '</em>'
+                     : '<em data-i18n="pf.noRating">Baho yo\'q</em>')
+        +   '</span></div>'
+        + '</div>';
+      applyLang();
+    });
+  }
+
+  function renderLife(){
+    renderLifeTabs();
+    renderLifeTrending();
+    renderLifeCommunity();
+    renderLifeTools();
+    renderLifeRank();
+    applyLang();
+  }
+
+  document.addEventListener("click", function(e){
+    var tab = e.target.closest && e.target.closest("[data-life-tab]");
+    if(tab){
+      lifeTab = tab.getAttribute("data-life-tab");
+      renderLifeTabs();
+      renderLifeTrending();
+      applyLang();
+      return;
+    }
+    var open = e.target.closest && e.target.closest("#btnOpenLife");
+    if(open) switchTab("life");
+  });
 
   /* ---------- Takliflar ----------
      Haydovchi narx va yetib borish vaqtini taklif qiladi; yuk egasi
@@ -12175,7 +12633,7 @@
      Tab navigation — the whole app is 5 screens (bottom nav),
      switched here instead of scrolling through one long page.
      ============================================================ */
-  var TABS = ["home", "order", "loads", "trucks", "chat", "profile", "contact"];
+  var TABS = ["home", "order", "loads", "trucks", "life", "chat", "profile", "contact"];
   /**
    * Tanlangan bo'lim ostidagi "tomchi"ni o'z joyiga sirg'atadi.
    * O'lcham CSS'da emas, shu yerda hisoblanadi: tugmalar eni tilga
@@ -12484,6 +12942,7 @@
     if(name === "chat") renderChatTab();
     if(name === "trucks") renderTrucksTab();
     if(name === "home") renderHomeMatch();
+    if(name === "life") renderLife();
     if(name === "contact") renderHelpCenter();
     if(name !== "chat") stopChatPoll();
     // A tab switch triggered from inside a sheet (e.g. Settings → Xabarlar)
@@ -12648,7 +13107,6 @@
   applyThemeButtons();
   applyMotionPref();
   populateCityDatalist();
-  loadHomeStats();
   renderHomeTrucks();
 
   /* Xarita: Leaflet <script defer> bilan yuklanadi, ya'ni shu yerga
