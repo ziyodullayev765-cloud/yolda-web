@@ -15,7 +15,42 @@
     }catch(e){}
   })();
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" id="metaViewport">
+<script>
+  /* Bosh ekrandan ochilgan ilova brauzer varag'idek emas, ilovadek
+     tutsin: barmoq bilan kattalashtirish va matnni bosib turib nusxalash
+     o'chadi. Saytga oddiy brauzerdan kirgan odamda ikkalasi ham
+     avvalgidek qoladi — u yerda kattalashtirish kerakli imkoniyat.
+
+     Bayroq CSS dan oldin, birinchi chizishdan avval qo'yiladi: keyinroq
+     qo'yilsa matn bir lahza tanlanadigan bo'lib turardi. */
+  (function(){
+    var standalone = false;
+    try{
+      standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+                || window.navigator.standalone === true;
+    }catch(e){}
+    if(!standalone) return;
+    document.documentElement.setAttribute("data-standalone", "1");
+    var mv = document.getElementById("metaViewport");
+    // maximum-scale + user-scalable=no: iOS buni faqat standalone
+    // rejimda hurmat qiladi, Android/Chrome esa hamma joyda.
+    if(mv) mv.setAttribute("content",
+      "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+
+    /* iOS ba'zan meta'ga qaramay ikki barmoq bilan kattalashtirishga
+       yo'l qo'yadi — o'ziga xos "gesture" hodisalari to'xtatiladi.
+       Xaritaning ustida to'xtatilmaydi: u yerda ikki barmoq bilan
+       kattalashtirish kerakli narsa. */
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function(type){
+      document.addEventListener(type, function(e){
+        var t = e.target;
+        if(t && t.closest && t.closest(".leaflet-container")) return;
+        e.preventDefault();
+      }, { passive: false });
+    });
+  })();
+</script>
 <title>YO'LDA — Yuk tashish bozori</title>
 <meta name="description" content="Jo'natuvchi va haydovchini bir yo'lda uchrashtiruvchi O'zbekiston yuk tashish bozori. Narxni hisoblang, buyurtma joylashtiring.">
 
@@ -208,6 +243,35 @@
     line-height:1.6;
     min-height:100vh;
   }
+  /* ---------- O'RNATILGAN ILOVA ----------
+     Bosh ekrandan ochilganda sahifa ilovadek tutadi. Brauzerdagi
+     saytga bularning hech biri tegmaydi: u yerda kattalashtirish ham,
+     nusxalash ham kerakli imkoniyat. */
+  /* Ikki barmoq bilan kattalashtirish va ikki marta bosib
+     kattalashtirish o'chadi; oddiy surish ishlayveradi. */
+  :root[data-standalone="1"],
+  :root[data-standalone="1"] body{touch-action:manipulation;}
+  /* Matnni bosib turganda tanlanish va iOS ning "Nusxalash" oynachasi
+     chiqmaydi — barmoq tegishi tugma bosish deb qabul qilinadi. */
+  :root[data-standalone="1"] body{
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* Nusxalash haqiqatan kerak bo'ladigan joylar ochiq qoladi: kiritish
+     maydonlari, xabarlar, buyurtma kodi va shu kabi qiymatlar. Bularni
+     yopib qo'yish ishlayotgan narsani buzardi. */
+  :root[data-standalone="1"] input,
+  :root[data-standalone="1"] textarea,
+  :root[data-standalone="1"] [contenteditable="true"],
+  :root[data-standalone="1"] .chat-bubble,
+  :root[data-standalone="1"] .detail-grid .dg-item .val,
+  :root[data-standalone="1"] .selectable,
+  :root[data-standalone="1"] .selectable *{
+    -webkit-user-select:text;user-select:text;
+    -webkit-touch-callout:default;
+  }
+
   /* Bo'lim almashuv animatsiyasi kontentni bir lahza yon tomonga suradi —
      u ko'ndalang aylantirish paydo qilmasin. Qirqish `main` da: `body` yoki
      `html` dagi overflow ko'rinish darchasiga o'tib ketadi va sahifaning
