@@ -550,64 +550,152 @@
      Ajratilmasa, sudrash paytida joyni darhol o'zgartirish uchun
      transition o'chirilganda bo'rtish animatsiyasi ham o'chib
      ketardi — ikkalasi bitta `transform` da bo'lardi. */
+  /* ---------- LINZA (lupa) ----------
+     Bu shunchaki shaffof pill emas — haqiqiy linza: ostidagi yozuv va
+     belgilarni kattalashtiradi, qirrasida esa nur sinishidan hosil
+     bo'lgan rangin halqa bor.
+
+     Kattalashtirishni CSS ning o'zi qila olmaydi (backdrop-filter
+     kattalashtirmaydi), shuning uchun panel qatorining nusxasi linza
+     ichiga qo'yiladi va linza markazini o'q qilib kattalashtiriladi.
+     Nusxa panel bilan aynan bir joyda turishi uchun linzaning surilishi
+     unda teskari yo'nalishda qaytariladi (--lx / --ly). */
   .bn-blob{
-    position:absolute;top:5px;bottom:5px;left:0;width:0;
-    opacity:0;pointer-events:none;z-index:0;
-    /* Uzunroq va yumshoqroq: oldingi egri chiziq tez otilib, keskin
-       to'xtardi. Endi linza bo'lim ustiga sekin suzib boradi. */
+    --ld:66px;                    /* linza diametri */
+    --mag:1.34;                   /* kattalashtirish */
+    position:absolute;left:0;top:50%;
+    width:var(--ld);height:var(--ld);margin-top:calc(var(--ld) / -2);
+    border-radius:50%;
+    opacity:0;pointer-events:none;z-index:3;
     transition:transform 0.62s cubic-bezier(0.26,1.12,0.32,1),
-               width 0.62s cubic-bezier(0.26,1.12,0.32,1),
                opacity 0.3s var(--ease);
   }
+
+  /* Kattalashtirilgan nusxa. `overflow:hidden` uni doira ichida ushlab
+     turadi — linzadan tashqarida hech narsa ko'rinmaydi. */
+  .bn-blob-mag{
+    position:absolute;inset:0;border-radius:50%;overflow:hidden;
+    pointer-events:none;transform-origin:center;
+    transition:transform 0.5s cubic-bezier(0.26,1.3,0.34,1);
+  }
+  .bn-mag-inner{
+    position:absolute;
+    left:calc(-1 * var(--lx));top:calc(-1 * var(--ly));
+    width:var(--nw);height:var(--nh);
+    display:flex;align-items:center;padding:0 6px;box-sizing:border-box;
+    transform-origin:calc(var(--lx) + var(--ld) / 2) calc(var(--ly) + var(--ld) / 2);
+    transform:scale(var(--mag));
+  }
+  /* Nusxadagi tugmalar bosilmaydi va o'z animatsiyasi bo'lmaydi —
+     ular faqat rasm. */
+  .bn-mag-inner .bn-ghost{pointer-events:none;transition:none;}
+  .bn-mag-inner .bn-ghost .ic-svg{transition:none;}
+
+  /* Shisha rangi va yuzasidagi yorug'lik. */
+  /* Linzaning foni. U ostidagi asl qatorni yopib turadi: aks holda
+     kattalashtirilgan nusxa asl yozuv bilan ustma-ust tushib, ikkita
+     "Asosiy" bo'lib ko'rinardi. Shu bilan birga ortidagi sahifa
+     xiralashib bilinib turadi — shisha shundan seziladi. */
   .bn-blob-fill{
-    position:absolute;inset:0;border-radius:999px;
-    background:var(--nav-lens);
-    border:1px solid var(--nav-lens-brd);
-    -webkit-backdrop-filter:brightness(1.12) saturate(160%) blur(6px);
-    backdrop-filter:brightness(1.12) saturate(160%) blur(6px);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,23,42,0.1);
+    position:absolute;inset:0;border-radius:50%;
+    background:var(--nav-solid);
+    -webkit-backdrop-filter:brightness(1.08) saturate(150%) blur(10px);
+    backdrop-filter:brightness(1.08) saturate(150%) blur(10px);
+    box-shadow:0 6px 18px rgba(15,23,42,0.16);
     transform-origin:center;
     transition:transform 0.5s cubic-bezier(0.26,1.3,0.34,1),
                box-shadow 0.34s var(--ease),
                background 0.34s var(--ease);
   }
-  :root[data-theme="dark"] .bn-blob-fill{
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.16), 0 2px 8px rgba(0,0,0,0.4);
+  /* Yuzadagi yorug'lik — kattalashtirilgan nusxa ustidan tushadi. */
+  .bn-blob-gloss{
+    position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),
+               inset 0 -7px 14px rgba(255,255,255,0.2);
+    transform-origin:center;
+    transition:transform 0.5s cubic-bezier(0.26,1.3,0.34,1);
+  }
+  :root[data-theme="dark"] .bn-blob-gloss{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),
+               inset 0 -7px 14px rgba(255,255,255,0.07);
+  }
+  .bn-blob-gloss::after{
+    content:"";position:absolute;border-radius:50%;
+    left:16%;top:10%;width:42%;height:30%;
+    background:radial-gradient(closest-side, rgba(255,255,255,0.8), rgba(255,255,255,0));
+    opacity:0.7;
+  }
+  :root[data-theme="dark"] .bn-blob-gloss::after{opacity:0.26;}
+  :root[data-theme="dark"] .bn-blob-fill{box-shadow:0 6px 18px rgba(0,0,0,0.5);}
+
+  /* Qirradagi rangin halqa: shisha yorug'likni ranglarga ajratadi,
+     shuning uchun chekkasi kamalakday tovlanadi. Halqa faqat tashqi
+     qirraga tushadi — mask o'rtasini kesib tashlaydi. */
+  .bn-blob-rim{
+    position:absolute;inset:-1px;border-radius:50%;pointer-events:none;
+    background:conic-gradient(from 205deg,
+      rgba(255,70,110,0.85), rgba(255,196,60,0.7), rgba(90,255,190,0.75),
+      rgba(80,175,255,0.9), rgba(190,110,255,0.8), rgba(255,70,110,0.85));
+    -webkit-mask:radial-gradient(closest-side, transparent 79%, #000 89%, transparent 100%);
+    mask:radial-gradient(closest-side, transparent 79%, #000 89%, transparent 100%);
+    mix-blend-mode:screen;
+    opacity:0.85;
+    transition:opacity 0.3s var(--ease), transform 0.5s cubic-bezier(0.26,1.3,0.34,1);
+  }
+  /* Shisha o'chirilganda kamalak ham yo'q — oddiy tomchi qoladi. */
+  :root[data-glass="off"] .bn-blob-rim{display:none;}
+  :root[data-glass="off"] .bn-blob-mag{display:none;}
+  :root[data-glass="low"] .bn-blob-rim{opacity:0.45;}
+  :root[data-glass="high"] .bn-blob-rim{opacity:1;}
+
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .bn-blob-fill{background:var(--nav-solid);}
   }
 
-  /* Bosilganda linza bo'rtib chiqadi: kattalashadi, biroz ko'tariladi
-     va shishasi yorqinroq bo'ladi. */
+  /* Bosilganda linza bo'rtadi: kattalashadi, ko'tariladi, kattalashtirish
+     kuchayadi va kamalak yorqinlashadi. */
+  .bottom-nav.pressed .bn-blob{--mag:1.5;}
   .bottom-nav.pressed .bn-blob-fill{
-    transform:scale(1.16) translateY(-4px);
-    background:var(--nav-lens-hot);
-    border-color:var(--nav-lens-brd-hot);
-    -webkit-backdrop-filter:brightness(1.22) saturate(190%) blur(8px);
-    backdrop-filter:brightness(1.22) saturate(190%) blur(8px);
-    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.95),
-               0 12px 26px rgba(15,23,42,0.3);
+    transform:scale(1.14) translateY(-4px);
+    box-shadow:0 14px 28px rgba(15,23,42,0.32);
   }
   :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-fill{
-    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.32),
-               0 12px 26px rgba(0,0,0,0.7);
+    box-shadow:0 14px 28px rgba(0,0,0,0.75);
   }
-  /* Sudralayotganda cho'zilib boradi — suyuq shishaday. */
-  .bottom-nav.dragging .bn-blob-fill{
-    transform:scaleX(1.2) scaleY(1.1) translateY(-4px);
+  .bottom-nav.pressed .bn-blob-gloss{
+    transform:scale(1.14) translateY(-4px);
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.95),
+               inset 0 -9px 18px rgba(255,255,255,0.26);
+  }
+  :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-gloss{
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.4),
+               inset 0 -9px 18px rgba(255,255,255,0.11);
+  }
+  .bottom-nav.pressed .bn-blob-mag{transform:scale(1.14) translateY(-4px);}
+  .bottom-nav.pressed .bn-blob-rim{transform:scale(1.14) translateY(-4px);opacity:1;}
+  /* Sudralayotganda tomchi cho'ziladi — suyuq shishaday. */
+  .bottom-nav.dragging .bn-blob-fill,
+  .bottom-nav.dragging .bn-blob-gloss,
+  .bottom-nav.dragging .bn-blob-mag,
+  .bottom-nav.dragging .bn-blob-rim{
+    transform:scaleX(1.14) scaleY(1.06) translateY(-4px);
   }
   /* Joyi esa barmoq ortidan darhol yursin: sakrash animatsiyasi bu
-     yerda kechikish bo'lib tuyulardi. Ko'rinish animatsiyasi
-     yuqoridagi ichki qatlamda saqlanib qoladi. */
+     yerda kechikish bo'lib tuyulardi. */
   .bottom-nav.dragging .bn-blob{transition:opacity 0.15s linear;}
   .bottom-nav.dragging .bn-item .ic-svg{transition:none;}
   /* Bosilgan bo'limning ikonkasi ham bir siltanadi. */
   .bn-item.bn-down .ic-svg{transform:scale(0.88);}
   :root[data-reduce-motion="1"] .bn-blob,
-  :root[data-reduce-motion="1"] .bn-blob-fill{transition:opacity 0.2s linear;transform:none;}
+  :root[data-reduce-motion="1"] .bn-blob-fill,
+  :root[data-reduce-motion="1"] .bn-blob-gloss,
+  :root[data-reduce-motion="1"] .bn-blob-mag,
+  :root[data-reduce-motion="1"] .bn-blob-rim{transition:opacity 0.2s linear;transform:none;}
   /* Sudrash paytida ustidan o'tilayotgan bo'lim oldindan yorishadi. */
   .bn-item.bn-armed{color:var(--route);}
   .bn-item.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
 
-  .bn-item{
+  .bn-item,.bn-ghost{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     background:none;border:none;cursor:pointer;
     padding:9px 4px 10px;position:relative;z-index:1;
@@ -617,13 +705,14 @@
     transition:color 0.34s var(--ease);
     -webkit-tap-highlight-color:transparent;
   }
-  .bn-item .ic-svg{
+  .bn-item .ic-svg,.bn-ghost .ic-svg{
     font-size:21px;
     transition:transform 0.5s cubic-bezier(0.34,1.42,0.5,1);
   }
-  .bn-item.active{color:var(--route);}
+  .bn-item.active,.bn-ghost.active{color:var(--route);}
   /* Tanlanganda ikonka bir sakrab qo'yadi. */
-  .bn-item.active:not(.bn-item--primary) .ic-svg{transform:translateY(-2px) scale(1.12);}
+  .bn-item.active:not(.bn-item--primary) .ic-svg,
+  .bn-ghost.active:not(.bn-item--primary) .ic-svg{transform:translateY(-2px) scale(1.12);}
   .bn-item:hover{color:var(--route-dark);}
   .bn-item:active .ic-svg{transform:scale(0.9);}
   :root[data-reduce-motion="1"] .bn-item .ic-svg{transition:none;transform:none;}
@@ -4055,7 +4144,7 @@
   <!-- Tanlangan bo'lim ostida sirg'aladigan "tomchi". O'lchami va
        joyi JS'da hisoblanadi (moveNavBlob) — tugmalar eni tilga qarab
        o'zgaradi, shuning uchun uni CSS'da qotirib qo'yib bo'lmaydi. -->
-  <span class="bn-blob" id="bnBlob" aria-hidden="true"><span class="bn-blob-fill"></span></span>
+  <span class="bn-blob" id="bnBlob" aria-hidden="true"><span class="bn-blob-fill"></span><span class="bn-blob-mag" id="bnBlobMag"></span><span class="bn-blob-gloss"></span><span class="bn-blob-rim"></span></span>
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
@@ -13150,20 +13239,68 @@
    * O'rtadagi "Yuk joylash" bundan mustasno — uning o'z dumaloq
    * tugmasi bor, ostiga yana tomchi qo'yish ortiqcha bo'lardi.
    */
+  /* Linza ichidagi kattalashtirilgan nusxa. U panel qatorining aynan
+     o'zi — shuning uchun bo'lim almashganda yoki til o'zgarganda
+     qaytadan olinadi. */
+  function syncLensClone(){
+    var nav = document.querySelector(".bottom-nav");
+    var mag = document.getElementById("bnBlobMag");
+    if(!nav || !mag) return;
+    var inner = document.createElement("span");
+    inner.className = "bn-mag-inner";
+    nav.querySelectorAll(".bn-item").forEach(function(it){
+      var copy = it.cloneNode(true);
+      copy.removeAttribute("id");
+      copy.setAttribute("tabindex", "-1");
+      copy.setAttribute("aria-hidden", "true");
+      // Sinf almashtiriladi: aks holda `.bn-item` bo'yicha qilingan har
+      // qanday so'rov — bizniki ham, testniki ham — linza ichidagi
+      // nusxani topib olardi. U esa boshqa joyda, boshqa o'lchamda
+      // turadi, ya'ni javob noto'g'ri bo'lardi.
+      copy.classList.remove("bn-item");
+      copy.classList.add("bn-ghost");
+      inner.appendChild(copy);
+    });
+    mag.innerHTML = "";
+    mag.appendChild(inner);
+  }
+
+  /* Linzani berilgan nuqtaga qo'yadi va nusxani unga moslaydi.
+     `x` — linza markazining panel ichidagi o'rni. */
+  function placeNavLens(x){
+    var blob = document.getElementById("bnBlob");
+    var nav = document.querySelector(".bottom-nav");
+    if(!blob || !nav) return;
+    var navBox = nav.getBoundingClientRect();
+    if(!navBox.width) return;
+    var d = parseFloat(getComputedStyle(blob).getPropertyValue("--ld")) || 66;
+    var left = x - d / 2;
+    var top = navBox.height / 2 - d / 2;
+    blob.style.transform = "translateX(" + (Math.round(left * 10) / 10) + "px)";
+    // Nusxa panel bilan bir joyda tursin: linzaning surilishi unda
+    // teskari yo'nalishda qaytariladi.
+    blob.style.setProperty("--lx", left + "px");
+    blob.style.setProperty("--ly", top + "px");
+    blob.style.setProperty("--nw", navBox.width + "px");
+    blob.style.setProperty("--nh", navBox.height + "px");
+    blob.style.opacity = "1";
+  }
+
   function moveNavBlob(){
     var blob = document.getElementById("bnBlob");
     var nav = document.querySelector(".bottom-nav");
     if(!blob || !nav) return;
+    // ":scope >" muhim: linza ichidagi kattalashtirilgan nusxada ham
+    // xuddi shunday tugmalar bor va ular boshqa joyda turadi.
     var active = nav.querySelector(".bn-item.active:not(.bn-item--primary)");
     if(!active){ blob.style.opacity = "0"; return; }
     var navBox = nav.getBoundingClientRect();
     var box = active.getBoundingClientRect();
     // Eni nolga teng bo'lsa (panel hali chizilmagan) tegmaymiz —
-    // aks holda tomchi chap chekkada bir zumga ko'rinib ketardi.
+    // aks holda linza chap chekkada bir zumga ko'rinib ketardi.
     if(!box.width) return;
-    blob.style.width = Math.round(box.width) + "px";
-    blob.style.transform = "translateX(" + Math.round(box.left - navBox.left) + "px)";
-    blob.style.opacity = "1";
+    syncLensClone();
+    placeNavLens(box.left - navBox.left + box.width / 2);
   }
 
   /**
@@ -13297,7 +13434,9 @@
       // ammo to'satdan siltanishlarni yumshatadi.
       drawX += diff * 0.45;
       if(Math.abs(trackX - drawX) < 0.4) drawX = trackX;
-      blob.style.transform = "translateX(" + (Math.round(drawX * 10) / 10) + "px)";
+      // Markaz bo'yicha qo'yiladi, shunda ichidagi kattalashtirilgan
+      // nusxa ham barmoq ostidagi joyni ko'rsatadi.
+      placeNavLens(drawX + blobW / 2);
       if(dragging && drawX !== trackX) rafId = requestAnimationFrame(paint);
     }
 
@@ -13347,14 +13486,10 @@
         // Turgan joyidan davom etsin: sudrash boshlanishida sakramasin.
         var navBox = nav.getBoundingClientRect();
         var here = blob.getBoundingClientRect();
-        blobW = here.width || 0;
-        if(!blobW){
-          var first = nav.querySelector(".bn-item:not(.bn-item--primary)");
-          blobW = first ? first.getBoundingClientRect().width : 0;
-          blob.style.width = Math.round(blobW) + "px";
-        }
+        blobW = here.width || parseFloat(getComputedStyle(blob).getPropertyValue("--ld")) || 66;
         drawX = here.left - navBox.left;
         trackX = drawX;
+        syncLensClone();
         blob.style.opacity = "1";
         measureBounds();
       }
