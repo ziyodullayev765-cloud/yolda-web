@@ -1,112 +1,91 @@
-<svg xmlns="http://w3.org" viewBox="0 0 7680 4320" width="100%" height="100%">
-  <!-- Сверхчеткий векторный концепт грузовика для 8K дисплеев -->
+<svg xmlns="http://w3.org" viewBox="0 0 800 400" width="100%" height="100%">
+  <!-- Zamonaviy va chiroyli yuk mashinasi SVG kodi -->
   <defs>
-    <!-- Градиенты для фотореалистичного эффекта металлика -->
-    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0a1128"/>
-      <stop offset="60%" stop-color="#1c2541"/>
-      <stop offset="100%" stop-color="#3a506b"/>
+    <!-- Kabina uchun qizil metallik gradienti -->
+    <linearGradient id="cabinGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e63946"/>
+      <stop offset="100%" stop-color="#d90429"/>
     </linearGradient>
-    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#ff0055"/>
-      <stop offset="50%" stop-color="#d90429"/>
-      <stop offset="100%" stop-color="#ef233c"/>
+    <!-- Oyna uchun gradient -->
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a8dadc"/>
+      <stop offset="100%" stop-color="#457b9d"/>
     </linearGradient>
-    <linearGradient id="chromeGrad" x1="0" y1="0" x2="0" y2="1">
+    <!-- G'ildirak disklari uchun xrom gradient -->
+    <linearGradient id="chromeGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="20%" stop-color="#e0e0e0"/>
-      <stop offset="50%" stop-color="#888888"/>
-      <stop offset="100%" stop-color="#333333"/>
+      <stop offset="100%" stop-color="#bdc3c7"/>
     </linearGradient>
-    <linearGradient id="wheelGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2b2d42"/>
-      <stop offset="100%" stop-color="#111116"/>
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="30" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    <!-- Mashina tagidagi soya effekti -->
+    <filter id="shadowBlur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
     </filter>
   </defs>
 
-  <!-- Задний план / Студийный фон -->
-  <rect width="7680" height="4320" fill="url(#skyGrad)"/>
+  <!-- 1. Mashina tagidagi soya -->
+  <ellipse cx="430" cy="335" rx="340" ry="15" fill="#1d1d1d" opacity="0.6" filter="url(#shadowBlur)"/>
+
+  <!-- YUK MASHINASI ASOSIY QISMI -->
+  <!-- 2. Orqa katta yukxona (Konteyner) -->
+  <rect x="260" y="90" width="460" height="200" rx="10" fill="#f1faee" stroke="#e1e8ed" stroke-width="4"/>
+  <!-- Konteyner ustidagi chiziqlar (Dizayn) -->
+  <line x1="260" y1="140" x2="720" y2="140" stroke="#e63946" stroke-width="6"/>
+  <line x1="260" y1="160" x2="720" y2="160" stroke="#1d3557" stroke-width="4"/>
+  <text x="490" y="220" font-family="'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="bold" fill="#1d3557" text-anchor="middle" letter-spacing="4">YOLDA LOGISTICS</text>
+
+  <!-- 3. Shassi (Pastki qora rama) -->
+  <rect x="120" y="280" width="580" height="30" rx="5" fill="#1d3557"/>
+  <!-- Old bamper -->
+  <path d="M 80 270 L 120 270 L 120 310 L 90 310 Z" fill="#2b2d42"/>
+
+  <!-- 4. Kabina (Haydovchi qismi) -->
+  <!-- Tom qismidagi aerodinamik spoyler -->
+  <path d="M 120 120 Q 180 90 250 95 L 250 130 L 120 130 Z" fill="url(#cabinGrad)"/>
+  <!-- Asosiy kabina korpusi -->
+  <path d="M 90 270 L 100 130 L 250 130 L 250 280 L 90 280 Z" fill="url(#cabinGrad)"/>
   
-  <!-- Линия горизонта / Дорожное покрытие -->
-  <rect y="3000" width="7680" height="1320" fill="#0b0c10"/>
-  <path d="M 0 3000 L 7680 3000" stroke="#4f5d75" stroke-width="12" opacity="0.4"/>
+  <!-- 5. Oynalar -->
+  <!-- Old oyna -->
+  <path d="M 105 200 L 112 145 L 175 145 L 170 200 Z" fill="url(#glassGrad)"/>
+  <!-- Yon oyna -->
+  <path d="M 180 145 L 240 145 L 240 200 L 175 200 Z" fill="url(#glassGrad)"/>
 
-  <!-- ОСНОВНОЙ КУЗОВ ГРУЗОВИКА (Флагманский Тягач) -->
-  <g transform="translate(600, 400)">
-    <!-- Тень под машиной -->
-    <ellipse cx="3200" cy="2650" rx="3000" ry="120" fill="#000000" opacity="0.8" filter="url(#glow)"/>
+  <!-- 6. Radiator panjarasi va Fara -->
+  <rect x="85" y="210" width="10" height="50" rx="2" fill="#bdc3c7"/>
+  <!-- LED Fara (Yorug'lik effekti bilan) -->
+  <polygon points="85,250 95,250 95,265 85,260" fill="#fff"/>
+  <circle cx="90" cy="257" r="4" fill="#00f0ff"/>
 
-    <!-- Огромный грузовой прицеп (Полуприцеп Aero) -->
-    <rect x="2000" y="700" width="4000" height="1700" rx="40" fill="#f8f9fa" stroke="#e5e5e5" stroke-width="10"/>
-    <!-- Декоративные полосы на прицепе -->
-    <path d="M 2000 1200 L 6000 1200 M 2000 1400 L 6000 1400" stroke="url(#bodyGrad)" stroke-width="30"/>
-    <text x="4000" y="1650" font-family="Arial, sans-serif" font-size="160" font-weight="900" fill="#1d3557" text-anchor="middle" letter-spacing="20">8K ULTRA TRANSPORT</text>
+  <!-- 7. G'ILDIRAKLAR (Mukammal va batafsil chizilgan) -->
+  <!-- Old g'ildirak -->
+  <g transform="translate(160, 310)">
+    <circle cx="0" cy="0" r="38" fill="#1d1d1d" stroke="#000" stroke-width="2"/>
+    <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+    <circle cx="0" cy="0" r="14" fill="#2b2d42"/>
+    <circle cx="0" cy="0" r="18" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="2 6"/>
+  </g>
 
-    <!-- Соединительный механизм (Сцепка) -->
-    <rect x="1700" y="2100" width="400" height="200" fill="url(#chromeGrad)"/>
+  <!-- Orqa g'ildiraklar (Ikkitalik o'q) -->
+  <g transform="translate(340, 310)">
+    <circle cx="0" cy="0" r="38" fill="#1d1d1d" stroke="#000" stroke-width="2"/>
+    <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+    <circle cx="0" cy="0" r="14" fill="#2b2d42"/>
+  </g>
+  <g transform="translate(415, 310)">
+    <circle cx="0" cy="0" r="38" fill="#1d1d1d" stroke="#000" stroke-width="2"/>
+    <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+    <circle cx="0" cy="0" r="14" fill="#2b2d42"/>
+  </g>
 
-    <!-- ТЯГАЧ (Кабина) -->
-    <!-- Обтекатель на крыше -->
-    <path d="M 500 900 Q 1100 650 1700 700 L 1700 950 L 500 950 Z" fill="url(#bodyGrad)"/>
-    
-    <!-- Основной каркас кабины -->
-    <path d="M 400 1400 L 500 950 L 1700 950 L 1800 2400 L 450 2400 Z" fill="url(#bodyGrad)"/>
-    
-    <!-- Лобовое стекло и боковое окно (Premium Tint) -->
-    <path d="M 430 1350 L 510 1020 L 1100 1020 L 1050 1450 Z" fill="#1a1c23" stroke="#4f5d75" stroke-width="10"/>
-    <path d="M 1120 1020 L 1650 1020 L 1650 1450 L 1080 1450 Z" fill="#1a1c23" stroke="#4f5d75" stroke-width="10"/>
-    <!-- Блик на стекле -->
-    <path d="M 460 1300 L 520 1050 L 700 1050 L 600 1300 Z" fill="#ffffff" opacity="0.15"/>
-
-    <!-- Решетка радиатора и хромированный бампер -->
-    <rect x="350" y="1550" width="80" height="700" rx="20" fill="url(#chromeGrad)"/>
-    <line x1="390" y1="1600" x2="390" y2="2200" stroke="#111" stroke-width="15" stroke-dasharray="30 20"/>
-    
-    <!-- Нижний спойлер/Бампер -->
-    <path d="M 320 2250 L 800 2250 L 800 2450 L 350 2450 Z" fill="#2b2d42"/>
-
-    <!-- Светодиодные фары (LED Matrix эффект с эффектом свечения) -->
-    <path d="M 340 2100 L 420 2100 L 400 2200 L 330 2180 Z" fill="#fff" filter="url(#glow)"/>
-    <circle cx="370" cy="2140" r="25" fill="#00f0ff" filter="url(#glow)"/>
-
-    <!-- Хромированные выхлопные трубы -->
-    <path d="M 1720 500 L 1780 500 L 1780 1200 L 1720 1200 Z" fill="url(#chromeGrad)"/>
-    <path d="M 1720 500 Q 1750 400 1780 500" fill="none" stroke="url(#chromeGrad)" stroke-width="10"/>
-
-    <!-- ВЫСОКОДЕТАЛИЗИРОВАННЫЕ КОЛЕСА (Сдвоенные для тяжелых грузов) -->
-    <!-- Функция сборки колеса повторена для реализма осей -->
-    <!-- Передняя ось -->
-    <g transform="translate(750, 2400)">
-      <circle cx="0" cy="0" r="280" fill="url(#wheelGrad)" stroke="#000000" stroke-width="15"/>
-      <circle cx="0" cy="0" r="160" fill="url(#chromeGrad)"/>
-      <circle cx="0" cy="0" r="110" fill="#111116"/>
-      <!-- Болты на дисках -->
-      <circle cx="0" cy="0" r="135" fill="none" stroke="#ffffff" stroke-width="16" stroke-dasharray="2 40"/>
-    </g>
-
-    <!-- Задние оси тягача -->
-    <g transform="translate(1600, 2400)">
-      <circle cx="0" cy="0" r="280" fill="url(#wheelGrad)" stroke="#000000" stroke-width="15"/>
-      <circle cx="0" cy="0" r="160" fill="url(#chromeGrad)"/>
-      <circle cx="0" cy="0" r="110" fill="#111116"/>
-    </g>
-    
-    <!-- Оси полуприцепа (Тройной блок для экстремальных нагрузок) -->
-    <g transform="translate(4200, 2400)">
-      <circle cx="0" cy="0" r="280" fill="url(#wheelGrad)" stroke="#000000" stroke-width="15"/>
-      <circle cx="0" cy="0" r="160" fill="url(#chromeGrad)"/>
-    </g>
-    <g transform="translate(4800, 2400)">
-      <circle cx="0" cy="0" r="280" fill="url(#wheelGrad)" stroke="#000000" stroke-width="15"/>
-      <circle cx="0" cy="0" r="160" fill="url(#chromeGrad)"/>
-    </g>
-    <g transform="translate(5400, 2400)">
-      <circle cx="0" cy="0" r="280" fill="url(#wheelGrad)" stroke="#000000" stroke-width="15"/>
-      <circle cx="0" cy="0" r="160" fill="url(#chromeGrad)"/>
-    </g>
+  <!-- Eng orqa g'ildiraklar -->
+  <g transform="translate(610, 310)">
+    <circle cx="0" cy="0" r="38" fill="#1d1d1d" stroke="#000" stroke-width="2"/>
+    <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+    <circle cx="0" cy="0" r="14" fill="#2b2d42"/>
+  </g>
+  <g transform="translate(685, 310)">
+    <circle cx="0" cy="0" r="38" fill="#1d1d1d" stroke="#000" stroke-width="2"/>
+    <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+    <circle cx="0" cy="0" r="14" fill="#2b2d42"/>
   </g>
 </svg>
