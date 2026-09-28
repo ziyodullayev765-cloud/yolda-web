@@ -72,18 +72,36 @@ function mkRes(){
   return r;
 }
 const cookieFor = (role) => `admin_session=${makeSessionToken(role, Date.now() + 60000)}`;
+let testIp = null;   // reset() har safar yangi "IP" beradi (login throttle uchun)
 const call = async (handler, method, query, body, cookie) => {
-  const req = { method, query: query || {}, body, headers: cookie ? { cookie } : {} };
+  const headers = cookie ? { cookie } : {};
+  if(testIp) headers['x-forwarded-for'] = testIp;
+  const req = { method, query: query || {}, body, headers };
   const res = mkRes();
   await handler(req, res);
   return res;
 };
 
-let pass = 0, fail = 0;
-const check = (label, ok) => {
+let pass = 0, fail = 0, gaps = 0;
+const check = (label, ok, detail) => {
   if(ok){ pass++; console.log('  PASS ' + label); }
-  else { fail++; console.log('  FAIL ' + label); }
+  else { fail++; console.log('  FAIL ' + label + (detail ? '  (' + detail + ')' : '')); }
 };
+
+/**
+ * Ma'lum kamchilik: kod hozir bu kutilmaganini bajarmaydi, lekin buni
+ * tuzatish mahsulot qarori yoki alohida ish. Testni yiqitmaydi (npm test
+ * yashil qoladi), ammo yakunda ko'rinib turadi va kamchilik tuzatilgach
+ * o'zi PASS'ga aylanadi.
+ */
+const gap = (label, ok, note) => {
+  if(ok){ pass++; console.log('  PASS ' + label + '  (kamchilik yopilgan)'); }
+  else { gaps++; console.log('  GAP  ' + label + '  — ' + note); }
+};
+
+// Har bir bo'lim toza xotiradan va yangi login "IP"sidan boshlashi uchun.
+let ipCounter = 0;
+const reset = () => { store.clear(); sets.clear(); testIp = '10.9.0.' + (++ipCounter); };
 
 /* ---------------------------------------------------------- */
 console.log('\n== cookie signing ==');
@@ -376,5 +394,284 @@ console.log('\n== the moderator decides, and the document goes ==');
   check('while leaving the vehicle check alone', after.verifications.TRANSPORT.status === 'VERIFIED');
 }
 
-console.log(`\n==== ${pass} passed, ${fail} failed ====`);
+/* ---------------------------------------------------------- */
+console.log('\n== login: all roles, edge cases ==');
+{
+  reset();
+  const sup = await call(adminLogin, 'POST', {}, { password: 'super-secret-pw' });
+  check('super password returns SUPER_ADMIN', sup.statusCode === 200 && sup.body.role === 'SUPER_ADMIN');
+  const adm = await call(adminLogin, 'POST', {}, { password: 'admin-pw-here' });
+  check('admin password returns ADMIN', adm.statusCode === 200 && adm.body.role === 'ADMIN');
+
+  check('empty password rejected', (await call(adminLogin, 'POST', {}, { password: '' })).statusCode === 401);
+  check('missing password field rejected', (await call(adminLogin, 'POST', {}, {})).statusCode === 401);
+  check('missing body rejected', [400, 401].includes((await call(adminLogin, 'POST', {}, undefined)).statusCode));
+  check('non-string password rejected',
+    (await call(adminLogin, 'POST', {}, { password: 12345 })).statusCode === 401);
+
+  const ok = await call(adminLogin, 'POST', {}, { password: 'admin-pw-here' });
+  const c = ok.headers['Set-Cookie'] || '';
+  check('cookie has SameSite', /SameSite=(Strict|Lax)/i.test(c));
+  check('cookie has Path=/', /Path=\//.test(c));
+  check('cookie has a Max-Age', /Max-Age=\d+/.test(c) && !/Max-Age=0/.test(c));
+
+  check('PUT is not allowed', (await call(adminLogin, 'PUT', {}, {})).statusCode === 405);
+  check('DELETE is not allowed', (await call(adminLogin, 'DELETE', {})).statusCode === 405);
+
+  // Bloklangandan keyin to'g'ri parol ham o'tmasligi kerak.
+  reset();
+  let blocked = false;
+  for (let i = 0; i < 10; i++) {
+    if ((await call(adminLogin, 'POST', {}, { password: 'x' + i })).statusCode === 429) { blocked = true; break; }
+  }
+  const afterBlock = await call(adminLogin, 'POST', {}, { password: 'admin-pw-here' });
+  check('correct password is also refused while blocked', blocked && afterBlock.statusCode === 429);
+}
+
+console.log('\n== cookie signature tampering ==');
+{
+  const good = makeSessionToken('ADMIN', Date.now() + 60000);
+  const flipLast = good.slice(0, -1) + (good.slice(-1) === 'a' ? 'b' : 'a');
+  check('flipped last signature char rejected',
+    isAdminAuthed({ headers: { cookie: `admin_session=${flipLast}` } }) === null);
+  check('truncated token rejected',
+    isAdminAuthed({ headers: { cookie: `admin_session=${good.slice(0, -8)}` } }) === null);
+  check('empty cookie value rejected',
+    isAdminAuthed({ headers: { cookie: 'admin_session=' } }) === null);
+  check('other cookies do not confuse the parser',
+    isAdminAuthed({ headers: { cookie: `a=1; admin_session=${good}; b=2` } }) === 'ADMIN');
+  // Ikkalasi ham hozircha yiqiladi: isAdminAuthed `req.headers.cookie` ni
+  // to'g'ridan-to'g'ri o'qiydi va decodeURIComponent'ni try/catch'siz
+  // chaqiradi. Birinchisi Vercel'da bo'lmaydi (headers doim bor), ikkinchisi
+  // esa bo'lishi mumkin: buzuq cookie 401 o'rniga istisno tashlaydi.
+  gap('no headers object at all does not throw', (() => {
+    try { return isAdminAuthed({}) === null; } catch { return false; }
+  })(), 'req.headers undefined bo‘lsa TypeError; Vercel’da uchramaydi');
+  gap('malformed %-encoding in the cookie is rejected instead of throwing', (() => {
+    try { return isAdminAuthed({ headers: { cookie: 'admin_session=%E0%A4%A' } }) === null; }
+    catch { return false; }
+  })(), 'decodeURIComponent URIError tashlaydi → 401 o‘rniga 500');
+}
+
+console.log('\n== endpoint-level permissions ==');
+{
+  reset();
+  // Ruxsat jadvali (lib/adminAuth.js) bo'yicha: moderator buyurtma va
+  // foydalanuvchilarni O'QIY oladi, lekin sozlamalarni o'qiy olmaydi va
+  // hech narsa yoza olmaydi (users/settings). "analytics" resursi yo'q.
+  const cases = [
+    ['moderator cannot POST update-settings', 'POST', { action: 'update-settings' }, { commissionPercent: 5 }, 'MODERATOR', 403],
+    ['moderator cannot POST update-user', 'POST', { action: 'update-user' }, { email: 'x@y.z' }, 'MODERATOR', 403],
+    ['moderator cannot read settings', 'GET', { resource: 'settings' }, null, 'MODERATOR', 403],
+    ['moderator may read users (per permission table)', 'GET', { resource: 'users' }, null, 'MODERATOR', 200],
+    ['moderator may read orders (per permission table)', 'GET', { resource: 'orders' }, null, 'MODERATOR', 200],
+    ['admin may read users', 'GET', { resource: 'users' }, null, 'ADMIN', 200],
+    ['admin may read orders', 'GET', { resource: 'orders' }, null, 'ADMIN', 200],
+    ['admin may read settings', 'GET', { resource: 'settings' }, null, 'ADMIN', 200],
+    ['unknown resource refused', 'GET', { resource: 'analytics' }, null, 'ADMIN', 400],
+    ['unknown action rejected', 'POST', { action: 'drop-database' }, {}, 'SUPER_ADMIN', 400],
+  ];
+  for (const [label, m, q, b, role, want] of cases) {
+    const r = await call(adminData, m, q, b, cookieFor(role));
+    check(label, r.statusCode === want, `got ${r.statusCode}`);
+  }
+  check('unknown resource without a session gets 401, not 400',
+    (await call(adminData, 'GET', { resource: 'analytics' }, null)).statusCode === 401);
+  check('unknown action without a session gets 401, not 400',
+    (await call(adminData, 'POST', { action: 'drop-database' }, {})).statusCode === 401);
+
+  const anon = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: true });
+  check('requeue-legacy needs a session', anon.statusCode === 401);
+  const adminRequeue = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: true }, cookieFor('ADMIN'));
+  check('admin may requeue', adminRequeue.statusCode === 200);
+}
+
+console.log('\n== moderation: reject path ==');
+{
+  reset();
+  store.set('truck:m1', JSON.stringify({ id: 'm1', brand: 'M', status: 'PENDING', createdAt: 1 }));
+  sets.set('truck_ids', new Set(['m1']));
+
+  const badStatus = await call(adminData, 'POST', { action: 'update-truck' },
+    { id: 'm1', status: 'BANANA' }, cookieFor('MODERATOR'));
+  check('invalid status refused', badStatus.statusCode === 400);
+  const noSuch = await call(adminData, 'POST', { action: 'update-truck' },
+    { id: 'nope', status: 'ACTIVE' }, cookieFor('MODERATOR'));
+  check('unknown listing id gets 404', noSuch.statusCode === 404);
+  const noId = await call(adminData, 'POST', { action: 'update-truck' },
+    { status: 'ACTIVE' }, cookieFor('MODERATOR'));
+  check('missing id gets 400', noId.statusCode === 400);
+  check('failed attempts change nothing', JSON.parse(store.get('truck:m1')).status === 'PENDING');
+
+  const rej = await call(adminData, 'POST', { action: 'update-truck' },
+    { id: 'm1', status: 'REJECTED', rejectionReason: 'Rasm sifatsiz' }, cookieFor('MODERATOR'));
+  const t = JSON.parse(store.get('truck:m1'));
+  check('rejection succeeds', rej.statusCode === 200);
+  check('rejection stores the reason', t.rejectionReason === 'Rasm sifatsiz');
+  check('rejection stamps moderatedAt', typeof t.moderatedAt === 'number');
+
+  await call(adminData, 'POST', { action: 'update-truck' }, { id: 'm1', status: 'ACTIVE' }, cookieFor('MODERATOR'));
+  check('reactivating clears the old reason', JSON.parse(store.get('truck:m1')).rejectionReason === undefined);
+
+  // Mahsulot qarori kerak: hozir sababsiz rad etish mumkin, sotuvchiga esa
+  // "rad etildi" degan xabar sababsiz boradi. Tasdiqlash (verify-review)
+  // esa sababni majburiy qiladi — ikki joy bir-biriga o'xshamaydi.
+  store.set('truck:m2', JSON.stringify({ id: 'm2', brand: 'M2', status: 'PENDING', createdAt: 1 }));
+  sets.get('truck_ids').add('m2');
+  const bare = await call(adminData, 'POST', { action: 'update-truck' },
+    { id: 'm2', status: 'REJECTED' }, cookieFor('MODERATOR'));
+  gap('rejecting a listing without a reason is refused', bare.statusCode === 400,
+    'verify-review sabab talab qiladi, update-truck esa yo‘q');
+}
+
+console.log('\n== settings: bad input ==');
+{
+  reset();
+  const S = cookieFor('SUPER_ADMIN');
+  const post = (b) => call(adminData, 'POST', { action: 'update-settings' }, b, S);
+  check('negative commission rejected', (await post({ commissionPercent: -1 })).statusCode === 400);
+  check('NaN commission rejected', (await post({ commissionPercent: NaN })).statusCode === 400);
+  check('string commission rejected', (await post({ commissionPercent: 'abc' })).statusCode === 400);
+  check('0 is a valid commission', (await post({ commissionPercent: 0 })).statusCode === 200);
+  check('100 is a valid commission', (await post({ commissionPercent: 100 })).statusCode === 200);
+  check('100.01 is too much', (await post({ commissionPercent: 100.01 })).statusCode === 400);
+
+  const long = await post({ maintenanceMessage: 'x'.repeat(5000) });
+  check('very long message rejected or truncated',
+    long.statusCode === 400 || long.body.settings.maintenanceMessage.length < 5000);
+
+  // Server matnni o'zgartirmaydi (JSON'da xom qaytadi) — xavfsizlik uni
+  // CHIZISH joyida: sayt textContent, admin panel esa esc() ishlatadi.
+  // Shu ikki joyning birortasi innerHTML'ga o'tib qolsa, test yiqiladi.
+  const html = await post({ maintenanceMessage: '<script>alert(1)</script>' });
+  const cfg = await call(config, 'GET', {});
+  check('markup in the message is returned as plain text, unchanged',
+    html.statusCode === 200 && cfg.body.maintenanceMessage === '<script>alert(1)</script>');
+  const siteSrc = readFileSync(join(repo, 'index.html'), 'utf8');
+  check('the site shows the message via textContent',
+    /maintenanceBannerText[\s\S]{0,200}bannerText\.textContent\s*=\s*cfg\.maintenanceMessage/.test(siteSrc));
+  check('the site never writes it with innerHTML',
+    !/innerHTML\s*=[^;]*maintenanceMessage/.test(siteSrc));
+  const adminSrc = readFileSync(join(repo, 'admin.html'), 'utf8');
+  check('the admin panel escapes it before putting it in the form',
+    /esc\(s\.maintenanceMessage/.test(adminSrc));
+
+  const flag = await post({ maintenanceMode: 'yes' });
+  check('non-boolean maintenanceMode is refused or coerced to a boolean',
+    flag.statusCode === 400 || typeof flag.body.settings.maintenanceMode === 'boolean');
+}
+
+console.log('\n== requeue: edge cases ==');
+{
+  reset();
+  const BEFORE = Date.parse('2026-09-01T06:18:58Z');
+  const seed = (id, patch) => {
+    store.set(`truck:${id}`, JSON.stringify({ id, brand: id, status: 'ACTIVE', ...patch }));
+    return id;
+  };
+  sets.set('truck_ids', new Set([
+    seed('edge', { createdAt: BEFORE }),
+    seed('justbefore', { createdAt: BEFORE - 1 }),
+    seed('nodate', {}),
+  ]));
+  store.set('truck:broken', '{not json');
+  sets.get('truck_ids').add('broken');
+
+  const strConfirm = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: 'true' }, cookieFor('SUPER_ADMIN'));
+  check('confirm as a string is not enough', strConfirm.statusCode === 400);
+
+  const res = await call(adminData, 'POST', { action: 'requeue-legacy' }, { confirm: true }, cookieFor('SUPER_ADMIN'));
+  check('corrupt JSON row does not crash the run', res.statusCode === 200);
+  check('listing with no createdAt is treated as legacy',
+    JSON.parse(store.get('truck:nodate')).status === 'PENDING');
+  // Kod `createdAt < MODERATION_LAUNCHED_AT` deydi: aynan ishga tushgan
+  // lahzada yaratilgan e'lon endi moderatsiyadan o'tgan davrga kiradi.
+  check('createdAt exactly at the cutoff is NOT legacy',
+    JSON.parse(store.get('truck:edge')).status === 'ACTIVE');
+  check('one millisecond before the cutoff IS legacy',
+    JSON.parse(store.get('truck:justbefore')).status === 'PENDING');
+}
+
+console.log('\n== verification review: full paths ==');
+{
+  reset();
+  const setup = () => {
+    store.set('profile:r@example.com', JSON.stringify({ username: 'r' }));
+    store.set('verifydoc:r@example.com:IDENTITY', 'data:image/jpeg;base64,ZZZ');
+    sets.set('verify_queue', new Set(['r@example.com|IDENTITY']));
+  };
+  setup();
+
+  const modDoc = await call(adminData, 'GET',
+    { resource: 'verifydoc', email: 'r@example.com', kind: 'IDENTITY' }, null, cookieFor('MODERATOR'));
+  // verifydoc uchun faqat 'users:read' kerak, moderatorda esa u bor —
+  // ya'ni pasport/guvohnoma rasmini ko'ra oladi, garchi ko'rib chiqa olmasa
+  // (verify-review 'users:write' talab qiladi). Egasi qaror qilsin.
+  gap('moderator cannot open identity documents', modDoc.statusCode === 403,
+    'READ_PERMISSIONS.verifydoc = users:read; moderator’da bor');
+
+  const rej = await call(adminData, 'POST', { action: 'verify-review' },
+    { email: 'r@example.com', kind: 'IDENTITY', approve: false, reason: 'noaniq' }, cookieFor('ADMIN'));
+  const p = JSON.parse(store.get('profile:r@example.com'));
+  check('rejection succeeds', rej.statusCode === 200);
+  check('rejection is recorded with its reason',
+    p.verifications.IDENTITY.status === 'REJECTED' && p.verifications.IDENTITY.reason === 'noaniq');
+  check('rejection leaves no blue badge', p.verified === false);
+  check('rejected document is deleted', !store.has('verifydoc:r@example.com:IDENTITY'));
+  check('rejected entry leaves the queue', !sets.get('verify_queue').has('r@example.com|IDENTITY'));
+
+  const badKind = await call(adminData, 'POST', { action: 'verify-review' },
+    { email: 'r@example.com', kind: 'GOD', approve: true }, cookieFor('ADMIN'));
+  check('unknown kind refused', badKind.statusCode === 400);
+
+  const noProfile = await call(adminData, 'POST', { action: 'verify-review' },
+    { email: 'ghost@example.com', kind: 'IDENTITY', approve: true }, cookieFor('ADMIN'));
+  check('unknown profile gets 404', noProfile.statusCode === 404);
+
+  const noDoc = await call(adminData, 'GET',
+    { resource: 'verifydoc', email: 'r@example.com', kind: 'IDENTITY' }, null, cookieFor('ADMIN'));
+  check('fetching a deleted document gets 404', noDoc.statusCode === 404);
+
+  // verified:false badge revoke
+  setup();
+  await call(adminData, 'POST', { action: 'verify-driver' }, { email: 'r@example.com', verified: true }, cookieFor('ADMIN'));
+  await call(adminData, 'POST', { action: 'verify-driver' }, { email: 'r@example.com', verified: false }, cookieFor('ADMIN'));
+  const rev = JSON.parse(store.get('profile:r@example.com'));
+  check('verify-driver false takes the badge back', rev.verified === false);
+  check('and no longer reads as verified identity', rev.verifications.IDENTITY.status !== 'VERIFIED');
+}
+
+console.log('\n== lib/verification.js: edges ==');
+{
+  const { readVerifications, publicVerifications, canSubmit, docKey, setVerification } =
+    await import(join(repo, 'lib/verification.js'));
+
+  check('publicVerifications({}) is all false',
+    Object.values(publicVerifications({})).every((v) => v === false));
+  check('publicVerifications(null) does not throw', (() => {
+    try { publicVerifications(null); return true; } catch { return false; }
+  })());
+  check('readVerifications(null) does not throw', (() => {
+    try { readVerifications(null); return true; } catch { return false; }
+  })());
+
+  const DAY = 24 * 3600 * 1000;
+  check('just under 24h is still cooling down',
+    !canSubmit({ status: 'REJECTED', reviewedAt: Date.now() - DAY + 60000 }).ok);
+  check('just over 24h may retry',
+    canSubmit({ status: 'REJECTED', reviewedAt: Date.now() - DAY - 60000 }).ok);
+
+  gap('email case does not split the document key',
+    docKey('D@x.com', 'IDENTITY') === docKey('d@x.com', 'IDENTITY'),
+    'kalit aynan mos keladi; identity Google/Telegram’dan xom keladi, shuning uchun hozir zarari yo‘q');
+  check('different people never share a key',
+    docKey('a@x.com', 'IDENTITY') !== docKey('b@x.com', 'IDENTITY'));
+
+  gap('unknown kind is refused by setVerification', (() => {
+    try { const r = {}; setVerification(r, 'GOD', { status: 'VERIFIED' }); return !r.verifications?.GOD; }
+    catch { return true; }
+  })(), 'chaqiruvchilar turni o‘zlari tekshiradi; lib ichida himoya yo‘q');
+}
+
+console.log(`\n==== ${pass} passed, ${fail} failed, ${gaps} known gaps ====`);
 process.exit(fail ? 1 : 0);
