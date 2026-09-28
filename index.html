@@ -800,6 +800,15 @@
   }
   .bn-item--primary .bn-fab .ic-svg{font-size:21px;}
 
+  /* ---------- BOSH SAHIFA: klassik hero ----------
+     Rasm va sarlavha/tavsif olib tashlandi. Karta endi shunchaki
+     ikkita teng tugmali ixcham blok. (Sarlavha ekran o'quvchilar uchun
+     ko'rinmas <h1> bo'lib qoldi.) */
+  .home .hero-card{min-height:0;}
+  .home .hero-card .hero-card-body{max-width:100%;width:100%;padding:14px;}
+  .home .hero-card .hero-card-ctas{flex-wrap:nowrap;}
+  .home .hero-card .hero-card-ctas .hc-btn{flex:1 1 0;min-width:0;padding:0 12px;white-space:nowrap;}
+
   /* ---------- YUKLAR: ixcham qidiruv ----------
      Sarlavha olib tashlangach qidiruv sahifaning boshiga chiqdi, shuning
      uchun u ham ixchamroq: kichikroq bo'shliqlar, pastroq tanlash
@@ -3674,14 +3683,12 @@
 
     <!-- 1. HERO -->
     <header class="hero-card">
-      <div class="hero-card-photo" aria-hidden="true"></div>
       <div class="hero-card-body">
-        <h1 class="hero-card-title">
-          <span data-i18n="home.heroLine1">Yukingizni kerakli</span><br>
-          <span data-i18n="home.heroLine2">haydovchi bilan</span><br>
-          <span class="accent" data-i18n="home.heroLine3">bog'lang.</span>
+        <h1 class="sr-only">
+          <span data-i18n="home.heroLine1">Yukingizni kerakli</span>
+          <span data-i18n="home.heroLine2">haydovchi bilan</span>
+          <span data-i18n="home.heroLine3">bog'lang.</span>
         </h1>
-        <p class="hero-card-sub" data-i18n="home.heroSub">O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.</p>
         <div class="hero-card-ctas">
           <a class="hc-btn hc-btn--primary" href="#" data-tab-link="order">
             <svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg>
