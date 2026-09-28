@@ -799,6 +799,22 @@
     box-shadow:0 4px 12px rgba(10,159,91,0.45), 0 0 0 3px rgba(10,10,10,0.8);
   }
   .bn-item--primary .bn-fab .ic-svg{font-size:21px;}
+  /* 3) Markaziy tugma bilan yozuv orasida aniq bo'shliq, tugma esa
+        panel chetidan yaqqol chiqib turadi (ilgari yozuvga tegib turardi). */
+  .bn-item--primary{gap:7px;}
+  .bn-item--primary .bn-fab{margin-top:-27px;}
+  .bn-item--primary .bn-fab + span{margin-top:1px;white-space:nowrap;}
+
+  /* ---------- O'qilishi (kontrast) ----------
+     1) "Sizga mos yuklar" bo'sh holati: matn endi asosiy rangda,
+        biroz kattaroq, fon esa kartadan bir oz ajralib turadi.
+     4) "Qanday ishlaydi?" izohlari: 10.5px -> 12px va ancha yorqinroq
+        rang (qorong'i rejimda #A8A8A8 emas, deyarli oq). */
+  .home .home-state{background:var(--paper-dark, var(--card));}
+  .home .home-state p{font-size:14.5px;color:var(--ink);opacity:0.86;}
+  .home .hiw-step p{font-size:12px;line-height:1.35;color:var(--ink);opacity:0.78;}
+  .home .hiw-step h3{font-size:13px;}
+  :root[data-theme="light"] .home .home-state{background:var(--card);}
 
   /* ---------- BOSH SAHIFA: klassik hero ----------
      Rasm va sarlavha/tavsif olib tashlandi. Karta endi shunchaki
@@ -3795,7 +3811,7 @@
         <li class="hiw-step">
           <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconPin"/></svg><b>04</b></span>
           <h3 data-i18n="home.how4">Yukni kuzating</h3>
-          <p data-i18n="home.how4sub">Real-time tracking</p>
+          <p data-i18n="home.how4sub">Jonli kuzatuv</p>
         </li>
       </ol>
     </section>
@@ -4487,7 +4503,7 @@
       "home.how1": "Yukni joylang", "home.how1sub": "Yuk ma'lumotlarini kiriting",
       "home.how2": "Haydovchini toping", "home.how2sub": "Smart matching orqali",
       "home.how3": "Kelishing", "home.how3sub": "Takliflarni ko'rib chiqing",
-      "home.how4": "Yukni kuzating", "home.how4sub": "Real-time tracking",
+      "home.how4": "Yukni kuzating", "home.how4sub": "Jonli kuzatuv",
       "home.trucksTitle": "Yuk mashinalari", "home.trucksSub": "Sizning biznesingiz uchun eng yaxshi texnika",
       "home.matchEmpty": "Hozircha sizga mos yuklar topilmadi.", "home.matchEmptyBtn": "Yuklarni ko'rish",
       "home.loadError": "Ma'lumotlarni yuklashda xatolik yuz berdi.", "home.retry": "Qayta urinish",
