@@ -5,7 +5,7 @@
  * driver's side, one button tap at a time. The button always names the
  * next stage, so the driver never has to choose between four of them:
  *
- *   ✅ Men olaman → 🚚 Yuklashga ketdim → 📦 Yukladim → 🛣️ Yo'lga chiqdim → ✅ Yetkazdim
+ *   ✅ Men olaman → 🚚 Yuklashga ketdim → 📦 Yukladim → 🛣️ Men yo'ldaman → ✅ Bo'shatdim
  *   (NEW)          (DRIVER_FOUND)        (PICKING_UP)   (LOADED)            (ON_THE_WAY → DELIVERED)
  *
  * The persisted `order:<code>` record (written by /api/order) is the source
