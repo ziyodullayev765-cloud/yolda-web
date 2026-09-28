@@ -805,6 +805,41 @@
   .bn-item--primary .bn-fab{margin-top:-27px;}
   .bn-item--primary .bn-fab + span{margin-top:1px;white-space:nowrap;}
 
+  /* ---------- Qanday ishlaydi? — yangi dizayn ----------
+     To'rt tor ustun o'rniga vertikal "yo'l": har qadam o'z qatorida,
+     katta belgi va o'qishga qulay matn bilan, qadamlar esa nuqtali
+     chiziq bilan bog'langan (yuk yo'lga chiqishi kabi). */
+  .home .hiw-list{
+    list-style:none;margin:0;padding:6px 16px;
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    box-shadow:var(--sh-1);
+  }
+  .home .hiw-item{
+    position:relative;display:flex;align-items:flex-start;gap:14px;padding:14px 0;
+  }
+  /* Belgilarni bog'lovchi nuqtali chiziq: faqat belgilar ORASIDA ko'rinadi */
+  .home .hiw-item:not(:last-child)::after{
+    content:"";position:absolute;left:21px;top:62px;height:calc(100% - 52px);width:0;
+    border-left:2px dotted var(--border);
+    border-left-color:color-mix(in srgb, var(--route) 45%, transparent);
+    z-index:0;
+  }
+  .home .hiw-ico{
+    position:relative;z-index:1;flex:0 0 44px;width:44px;height:44px;border-radius:14px;
+    background:var(--tint);color:var(--route);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .home .hiw-ico .ic-svg{font-size:22px;}
+  .home .hiw-ico b{
+    position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;
+    border-radius:999px;background:var(--route);color:#fff;
+    font-size:11px;font-weight:700;line-height:20px;text-align:center;
+    box-shadow:0 0 0 2px var(--card);
+  }
+  .home .hiw-txt{min-width:0;flex:1;min-height:44px;display:flex;flex-direction:column;justify-content:center;}
+  .home .hiw-txt h3{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.25;}
+  .home .hiw-txt p{margin:3px 0 0;font-size:13px;line-height:1.35;color:var(--ink);opacity:0.75;}
+
   /* ---------- O'qilishi (kontrast) ----------
      1) "Sizga mos yuklar" bo'sh holati: matn endi asosiy rangda,
         biroz kattaroq, fon esa kartadan bir oz ajralib turadi.
@@ -3781,37 +3816,43 @@
       </div>
     </section>
 
-    <!-- 5. QANDAY ISHLAYDI? -->
-    <section class="home-sec">
+    <!-- 5. QANDAY ISHLAYDI? — faqat kirmagan (yangi) foydalanuvchiga
+         ko'rinadi; kirgach renderHomeHow() uni yashiradi. -->
+    <section class="home-sec" id="homeHowWrap">
       <div class="home-sec-head plain">
         <div class="home-sec-text">
           <h2 data-i18n="home.howTitle">Qanday ishlaydi?</h2>
           <p data-i18n="home.howSub">4 ta oddiy qadamda yukingiz yo'lga chiqadi</p>
         </div>
       </div>
-      <ol class="hiw-row">
-        <li class="hiw-step">
-          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><b>01</b></span>
-          <h3 data-i18n="home.how1">Yukni joylang</h3>
-          <p data-i18n="home.how1sub">Yuk ma'lumotlarini kiriting</p>
+      <ol class="hiw-list">
+        <li class="hiw-item">
+          <span class="hiw-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><b>1</b></span>
+          <div class="hiw-txt">
+            <h3 data-i18n="home.how1">Yukni joylang</h3>
+            <p data-i18n="home.how1sub">Yuk ma'lumotlarini kiriting</p>
+          </div>
         </li>
-        <li class="hiw-sep" aria-hidden="true"><svg class="ic-svg"><use href="#iconChevronRight"/></svg></li>
-        <li class="hiw-step">
-          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><b>02</b></span>
-          <h3 data-i18n="home.how2">Haydovchini toping</h3>
-          <p data-i18n="home.how2sub">Smart matching orqali</p>
+        <li class="hiw-item">
+          <span class="hiw-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg><b>2</b></span>
+          <div class="hiw-txt">
+            <h3 data-i18n="home.how2">Haydovchini toping</h3>
+            <p data-i18n="home.how2sub">Smart matching orqali</p>
+          </div>
         </li>
-        <li class="hiw-sep" aria-hidden="true"><svg class="ic-svg"><use href="#iconChevronRight"/></svg></li>
-        <li class="hiw-step">
-          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconHandshake"/></svg><b>03</b></span>
-          <h3 data-i18n="home.how3">Kelishing</h3>
-          <p data-i18n="home.how3sub">Takliflarni ko'rib chiqing</p>
+        <li class="hiw-item">
+          <span class="hiw-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconHandshake"/></svg><b>3</b></span>
+          <div class="hiw-txt">
+            <h3 data-i18n="home.how3">Kelishing</h3>
+            <p data-i18n="home.how3sub">Takliflarni ko'rib chiqing</p>
+          </div>
         </li>
-        <li class="hiw-sep" aria-hidden="true"><svg class="ic-svg"><use href="#iconChevronRight"/></svg></li>
-        <li class="hiw-step">
-          <span class="hiw-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconPin"/></svg><b>04</b></span>
-          <h3 data-i18n="home.how4">Yukni kuzating</h3>
-          <p data-i18n="home.how4sub">Jonli kuzatuv</p>
+        <li class="hiw-item">
+          <span class="hiw-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconPin"/></svg><b>4</b></span>
+          <div class="hiw-txt">
+            <h3 data-i18n="home.how4">Yukni kuzating</h3>
+            <p data-i18n="home.how4sub">Jonli kuzatuv</p>
+          </div>
         </li>
       </ol>
     </section>
@@ -8439,6 +8480,7 @@
     updateAccountLinkRows();
     refreshNotifBadge();
     initGoogleSignIn();
+    renderHomeHow();
 
     if(!expired) switchTab("home");
     showWelcomeGate();
@@ -11990,7 +12032,17 @@
     return one + one;
   }
 
+  /* "Qanday ishlaydi?" — faqat yangi (hali kirmagan) foydalanuvchi uchun.
+     Kirgan odam ilovani biladi; unga bu blok o'rniga "Sizga mos yuklar"
+     va mashinalar ko'rinadi. */
+  function renderHomeHow(){
+    var how = document.getElementById("homeHowWrap");
+    if(how) how.hidden = isSignedIn();
+  }
+  renderHomeHow();
+
   function renderHomeMatch(){
+    renderHomeHow();
     var wrap = document.getElementById("homeMatchWrap");
     var list = document.getElementById("homeMatchList");
     if(!wrap || !list) return;
