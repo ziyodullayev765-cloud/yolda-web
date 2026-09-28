@@ -840,6 +840,28 @@
   .home .hiw-txt h3{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.25;}
   .home .hiw-txt p{margin:3px 0 0;font-size:13px;line-height:1.35;color:var(--ink);opacity:0.75;}
 
+  /* ---------- Kirish ekrani: mehmon rejimi ----------
+     Ikki holat: oddiy ("Xush kelibsiz" + Mehmon tugmasi) va so'rov
+     ("Davom etish uchun kiring" + "Hozircha kerak emas"). */
+  .welcome:not(.welcome--prompt) .wg-p{display:none;}
+  .welcome--prompt .wg-d{display:none;}
+  .welcome--prompt #welcomeGuestBtn{display:none;}
+  .welcome:not(.welcome--prompt) #welcomeLaterBtn{display:none;}
+  .welcome-guest{
+    display:block;width:100%;min-height:48px;margin-top:12px;
+    border-radius:999px;border:1px solid var(--border);
+    background:transparent;color:var(--ink);cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;
+    transition:background 0.2s var(--ease), transform 0.2s var(--ease);
+  }
+  .welcome-guest:hover{background:var(--tint);}
+  .welcome-guest:active{transform:scale(0.985);}
+  .welcome-later{
+    display:block;margin:14px auto 0;padding:8px 12px;background:none;border:none;
+    color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
+    cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+  }
+
   /* ---------- O'qilishi (kontrast) ----------
      1) "Sizga mos yuklar" bo'sh holati: matn endi asosiy rangda,
         biroz kattaroq, fon esa kartadan bir oz ajralib turadi.
@@ -3689,8 +3711,14 @@
   <div class="welcome-card" role="dialog" aria-labelledby="welcomeTitle" aria-modal="true">
     <svg class="welcome-mark" aria-hidden="true"><use href="#logoMarkFlat"/></svg>
     <div class="welcome-brand">YO'LDA</div>
-    <h1 class="welcome-title" id="welcomeTitle" data-i18n="welcome.title">Xush kelibsiz!</h1>
-    <p class="welcome-sub" data-i18n="welcome.sub">Davom etish uchun tizimga kiring</p>
+    <h1 class="welcome-title" id="welcomeTitle">
+      <span class="wg-d" data-i18n="welcome.title">Xush kelibsiz!</span>
+      <span class="wg-p" data-i18n="welcome.promptTitle">Davom etish uchun kiring</span>
+    </h1>
+    <p class="welcome-sub">
+      <span class="wg-d" data-i18n="welcome.sub">Davom etish uchun tizimga kiring</span>
+      <span class="wg-p" data-i18n="welcome.promptSub">Yuk joylash, taklif yuborish va profil uchun Telegram yoki Google orqali kiring.</span>
+    </p>
 
     <!-- Google o'z tugmasini o'zi chizadi (xavfsizlik talabi) —
          initGoogleSignIn() shu joyga joylashtiradi. -->
@@ -3700,6 +3728,12 @@
       <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
       <span data-i18n="welcome.telegram">Telegram bilan davom etish</span>
     </a>
+
+    <!-- Mehmon: ilovani kirmasdan ko'rish. Faqat oddiy kirish ekranida
+         ko'rinadi; yuk joylash kabi joyda kirish so'ralganda o'rniga
+         "Hozircha kerak emas" turadi. -->
+    <button type="button" class="welcome-guest" id="welcomeGuestBtn" data-i18n="welcome.guest">Mehmon sifatida davom etish</button>
+    <button type="button" class="welcome-later" id="welcomeLaterBtn" data-i18n="welcome.later">Hozircha kerak emas</button>
 
     <p class="welcome-hint" id="welcomeHint" hidden data-i18n="welcome.inAppHint">Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.</p>
 
@@ -4534,7 +4568,7 @@
       "rev.comments": "Sharhlar", "rev.empty": "Hozircha sharh yo'q.",
       "act.loads": "Yuklar", "act.trips": "Tashuvlar", "act.deals": "Kelishuvlar", "act.rating": "Reyting",
       "verify.google": "Google",
-      "welcome.title": "Xush kelibsiz!", "welcome.sub": "Davom etish uchun tizimga kiring",
+      "welcome.guest": "Mehmon sifatida davom etish", "welcome.later": "Hozircha kerak emas", "welcome.promptTitle": "Davom etish uchun kiring", "welcome.promptSub": "Yuk joylash, taklif yuborish va profil uchun Telegram yoki Google orqali kiring.", "welcome.title": "Xush kelibsiz!", "welcome.sub": "Davom etish uchun tizimga kiring",
       "welcome.telegram": "Telegram bilan davom etish",
       "welcome.inAppHint": "Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.",
       "welcome.legal": "Davom etish orqali foydalanish shartlariga rozilik bildirasiz.",
@@ -4983,7 +5017,7 @@
       "rev.comments": "Отзывы", "rev.empty": "Отзывов пока нет.",
       "act.loads": "Грузы", "act.trips": "Перевозки", "act.deals": "Сделки", "act.rating": "Рейтинг",
       "verify.google": "Google",
-      "welcome.title": "Добро пожаловать!", "welcome.sub": "Войдите, чтобы продолжить",
+      "welcome.guest": "Продолжить как гость", "welcome.later": "Не сейчас", "welcome.promptTitle": "Войдите, чтобы продолжить", "welcome.promptSub": "Чтобы разместить груз, отправить предложение и пользоваться профилем, войдите через Telegram или Google.", "welcome.title": "Добро пожаловать!", "welcome.sub": "Войдите, чтобы продолжить",
       "welcome.telegram": "Продолжить с Telegram",
       "welcome.inAppHint": "Google не работает в этом браузере. Скопируйте ссылку и откройте в Safari или Chrome.",
       "welcome.legal": "Продолжая, вы соглашаетесь с условиями использования.",
@@ -5428,7 +5462,7 @@
       "rev.comments": "Reviews", "rev.empty": "No reviews yet.",
       "act.loads": "Loads", "act.trips": "Deliveries", "act.deals": "Deals", "act.rating": "Rating",
       "verify.google": "Google",
-      "welcome.title": "Welcome!", "welcome.sub": "Sign in to continue",
+      "welcome.guest": "Continue as guest", "welcome.later": "Not now", "welcome.promptTitle": "Sign in to continue", "welcome.promptSub": "Sign in with Telegram or Google to post a load, send offers and use your profile.", "welcome.title": "Welcome!", "welcome.sub": "Sign in to continue",
       "welcome.telegram": "Continue with Telegram",
       "welcome.inAppHint": "Google sign-in does not work in this browser. Copy the link and open it in Safari or Chrome.",
       "welcome.legal": "By continuing you agree to the terms of use.",
@@ -6953,6 +6987,60 @@
      brauzer konsolidan yashirgan odam ham hech narsaga ega bo'lmaydi:
      tokeni yo'q, demak API unga javob bermaydi.
      ============================================================ */
+  /* Mehmon rejimi: ilovani kirmasdan ko'rish mumkin. Yuk joylash,
+     profil, xabarlar va taklif yuborish esa kirishni so'raydi
+     (promptSignIn). Tanlov shu ochiq oyna (tab) uchun eslab qolinadi;
+     yangi ochilganda odam yana tanlaydi. Bu ham faqat ko'rinish
+     qatlami: server har so'rovda tokenni o'zi tekshiradi. */
+  var guestMode = false;
+  try{ guestMode = sessionStorage.getItem("yolda.guest") === "1"; }catch(e){}
+  var signInIntent = null;   // kirgach qaysi bo'limga o'tish kerak
+
+  function continueAsGuest(){
+    guestMode = true;
+    try{ sessionStorage.setItem("yolda.guest", "1"); }catch(e){}
+    hideWelcomeGate();
+  }
+
+  /** Kirish kerak bo'lgan joyda chaqiriladi. Kirgan bo'lsa — hech narsa. */
+  function promptSignIn(intent){
+    if(isSignedIn()) return;
+    var gate = document.getElementById("welcomeGate");
+    if(!gate) return;
+    if(!guestMode){ showWelcomeGate(); return; }   // oddiy ekran allaqachon ochiq
+    signInIntent = intent || null;
+    gate.classList.add("welcome--prompt");
+    showWelcomeGate();
+    // Google tugmasi yashirin oynada chizilgan bo'lishi mumkin — bo'sh bo'lsa qayta chizamiz.
+    var g = document.getElementById("welcomeGoogleGate");
+    if(g && !g.querySelector("iframe")) { try{ initGoogleSignIn(); }catch(e){} }
+  }
+
+  function closeSignInPrompt(){
+    signInIntent = null;
+    var gate = document.getElementById("welcomeGate");
+    if(gate) gate.classList.remove("welcome--prompt");
+    hideWelcomeGate();
+  }
+
+  /** Kirish muvaffaqiyatli bo'lgach: so'rov holatini tozalab, kutilgan bo'limga o'tadi. */
+  function finishSignInIntent(){
+    var gate = document.getElementById("welcomeGate");
+    if(gate) gate.classList.remove("welcome--prompt");
+    if(signInIntent){
+      var next = signInIntent;
+      signInIntent = null;
+      setTimeout(function(){ switchTab(next); }, 350);
+    }
+  }
+
+  (function bindGuestButtons(){
+    var gb = document.getElementById("welcomeGuestBtn");
+    if(gb) gb.addEventListener("click", continueAsGuest);
+    var lb = document.getElementById("welcomeLaterBtn");
+    if(lb) lb.addEventListener("click", closeSignInPrompt);
+  })();
+
   function showWelcomeGate(){
     var gate = document.getElementById("welcomeGate");
     if(!gate) return;
@@ -6976,7 +7064,7 @@
 
   /** Kirgan bo'lsa yopadi, kirmagan bo'lsa ochadi — bitta joydan. */
   function syncWelcomeGate(){
-    if(isSignedIn()) hideWelcomeGate();
+    if(isSignedIn() || guestMode) hideWelcomeGate();
     else showWelcomeGate();
   }
 
@@ -7073,6 +7161,7 @@
       // tapping it opens the Profil tab (that's "the profile").
       renderNavAvatar(payload.picture, payload.name || payload.email);
       hideWelcomeGate();
+      finishSignInIntent();
 
       renderProfile();
       renderHomeMatch();
@@ -7127,6 +7216,7 @@
     // Same "round avatar becomes the profile shortcut" treatment as Google.
     renderNavAvatar(telegramUser && telegramUser.photoUrl, label);
     hideWelcomeGate();
+    finishSignInIntent();
 
     if(!state.name && telegramUser){
       state.name = [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ");
@@ -8481,6 +8571,11 @@
     refreshNotifBadge();
     initGoogleSignIn();
     renderHomeHow();
+    guestMode = false;
+    try{ sessionStorage.removeItem("yolda.guest"); }catch(e){}
+    var pg_ = document.getElementById("welcomeGate");
+    if(pg_) pg_.classList.remove("welcome--prompt");
+    signInIntent = null;
 
     if(!expired) switchTab("home");
     showWelcomeGate();
@@ -8768,7 +8863,7 @@
     if(countEl) countEl.textContent = "";
 
     if((trucksState.view === "mine" || trucksState.view === "favs") && !isSignedIn()){
-      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      promptSignIn();
       trucksState.view = "all";
       fetchTrucks();
       return;
@@ -9214,7 +9309,7 @@
   /* ---------- Report a listing (reuses the existing /api/report backend) ---------- */
   function openTruckReportSheet(tk){
     if(!isSignedIn()){
-      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      promptSignIn();
       return;
     }
     // Maps onto /api/report's existing REASONS — no new backend reasons,
@@ -9592,7 +9687,7 @@
   /** `existing` = edit an existing listing; omit to post a new one. */
   function openSellTruckSheet(existing){
     if(!isSignedIn()){
-      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      promptSignIn();
       return;
     }
     sellTruckStep = 1;
@@ -9714,7 +9809,7 @@
 
   function toggleTruckFavorite(id){
     if(!isSignedIn()){
-      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      promptSignIn();
       return;
     }
     var wasFav = isTruckFav(id);
@@ -10700,7 +10795,7 @@
     var saveBtn = e.target.closest("[data-save-driver]");
     if(!saveBtn) return;
     if(!isSignedIn()){
-      toast(t("trucks.needSignIn") || "Avval Google yoki Telegram orqali kiring", "", "info");
+      promptSignIn();
       return;
     }
     var now = toggleDriverSaved(saveBtn.getAttribute("data-save-driver"));
@@ -12412,7 +12507,7 @@
 
   function goToChatWith(username, prefill){
     if(!username) return;
-    if(!isSignedIn()){ toast("Avval Google yoki Telegram orqali kiring", "", "info"); return; }
+    if(!isSignedIn()){ promptSignIn(); return; }
     switchTab("chat");
     openChatThread(null, username);
     if(prefill){
@@ -13317,7 +13412,7 @@
 
   async function submitOrder(){
     if(state.submitting) return;
-    if(!isSignedIn()){ toast("Avval Google yoki Telegram orqali kiring", "Yuqoridagi tugma orqali hisobingizga kiring.", "info"); return; }
+    if(!isSignedIn()){ promptSignIn("order"); return; }
     state.submitting = true;
     render();
 
@@ -13731,6 +13826,14 @@
 
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
+
+    /* Mehmon yuk joylay olmaydi, profil va xabarlar ham hisobga bog'liq —
+       bu bo'limlar o'rniga kirish oynasi ochiladi va kirgach o'sha
+       bo'limga o'tiladi. */
+    if(!isSignedIn() && (name === "order" || name === "profile" || name === "chat")){
+      promptSignIn(name);
+      return;
+    }
 
     /* Asosiyga qaytilayotganda tarixdagi bo'lim yozuvi iste'mol
        qilinadi — "orqaga" bilan qaytish bilan bir xil ma'noda.
