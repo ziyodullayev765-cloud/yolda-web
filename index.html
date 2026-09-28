@@ -7245,6 +7245,21 @@
     try{ tg.ready(); }catch(e){}
     try{ tg.expand(); }catch(e){}
 
+    /* Telegram ichida pastga surish ilovani yopadi/kichraytiradi — xarita
+       ustida surganda ham. Xarita ustida barmoq turgan paytda gina bu
+       imkon o'chiriladi, qolgan joyda odatdagidek ishlaydi. */
+    try{
+      if(typeof tg.disableVerticalSwipes === "function" && typeof tg.enableVerticalSwipes === "function"){
+        document.addEventListener("touchstart", function(e){
+          var el = e.target;
+          if(el && el.closest && el.closest(".leaflet-container")) tg.disableVerticalSwipes();
+        }, { passive: true, capture: true });
+        ["touchend", "touchcancel"].forEach(function(type){
+          document.addEventListener(type, function(){ tg.enableVerticalSwipes(); }, { passive: true, capture: true });
+        });
+      }
+    }catch(e){}
+
     var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
     applyTelegramCredential(tg.initData, u
       ? { id: u.id, firstName: u.first_name || "", lastName: u.last_name || "", username: u.username || "", photoUrl: u.photo_url || "" }
@@ -14277,6 +14292,11 @@
     window.addEventListener("touchstart", function(e){
       if(refreshing || pulling || sheetOpen() || e.touches.length !== 1) return;
       if(window.scrollY > 0) return;
+      // Xarita ustida surish xaritaniki: sahifa tepasida turganda pastga
+      // surilgan xarita ilgari sahifani yangilab yuborardi (va xaritaning
+      // o'zi ham qimirlamasdi, chunki preventDefault chaqirilardi).
+      var tg = e.target;
+      if(tg && tg.closest && tg.closest(".leaflet-container, .home-map-card, .loads-map")) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       pulling = true;
