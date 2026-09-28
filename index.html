@@ -799,6 +799,29 @@
     box-shadow:0 4px 12px rgba(10,159,91,0.45), 0 0 0 3px rgba(10,10,10,0.8);
   }
   .bn-item--primary .bn-fab .ic-svg{font-size:21px;}
+
+  /* ---------- YUKLAR: ixcham qidiruv ----------
+     Sarlavha olib tashlangach qidiruv sahifaning boshiga chiqdi, shuning
+     uchun u ham ixchamroq: kichikroq bo'shliqlar, pastroq tanlash
+     maydonlari, chiplar esa bitta qatorda yon tomonga suriladi (ilgari
+     ular ikki qatorga tushib, joyni ko'p olardi). Faqat yuqori qism
+     nishonga olingan — "Ko'proq filtr" oynasidagi maydonlarga tegilmaydi. */
+  .loads-search-card{padding:14px;}
+  .loads-search-card > .row2{gap:10px;}
+  .loads-search-card > .row2 .field{margin-bottom:0;}
+  .loads-search-card > .row2 .field label{font-size:11px;margin-bottom:5px;color:var(--muted);}
+  .loads-search-card > .row2 select{min-height:44px;padding:10px 12px;font-size:14px;border-radius:12px;}
+  .loads-search-card > .chip-row{
+    flex-wrap:nowrap;overflow-x:auto;margin:12px -14px 8px;padding:0 14px 2px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .loads-search-card > .chip-row::-webkit-scrollbar{display:none;}
+  .loads-search-card > .chip-row .chip{
+    flex-shrink:0;white-space:nowrap;padding:7px 13px;
+    background:var(--card);border-color:var(--border);
+  }
+  .loads-search-card > .chip-row .chip.active{border-color:var(--route);background:rgba(10,159,91,0.08);}
+  .loads-search-card .link-btn{font-size:13px;text-decoration:none;}
   /* Suzib turgan panel uchun ko'proq joy kerak: balandligi + pastdagi
      bo'shliq + telefonning o'z chekkasi. */
   body{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
@@ -3834,13 +3857,7 @@
 </section>
 
 <section class="tabview" id="tab-loads" data-tab="loads" hidden>
-  <div class="section" id="loadsSection" style="padding-top:var(--s7);padding-bottom:var(--s8);">
-    <div class="section-head reveal">
-      <div class="section-eyebrow" data-i18n="loads.eyebrow">Yuklar</div>
-      <h2 class="section-title"><span data-i18n="loads.titleA">O'zingizga mos</span> <span class="accent" data-i18n="loads.titleB">yukni toping</span></h2>
-      <p class="section-sub" data-i18n="loads.sub">Ochiq buyurtmalarni ko'ring, filtrlang va telegram guruhida oling.</p>
-    </div>
-
+  <div class="section" id="loadsSection" style="padding-top:var(--s4);padding-bottom:var(--s8);">
     <div class="card reveal loads-search-card">
       <div class="row2">
         <div class="field"><label for="fLoadsFrom" data-i18n="loads.from">Qayerdan</label>
