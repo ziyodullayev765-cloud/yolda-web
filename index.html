@@ -1962,22 +1962,6 @@
      bo'yash mumkin emas. Shuning uchun o'lchami va joyi shu yerda
      boshqariladi, ko'rinishi esa Google'niki bo'lib qoladi. */
   .welcome-google{display:flex;justify-content:center;min-height:44px;max-width:100%;}
-  .welcome-phone-form{width:100%;display:flex;flex-direction:column;gap:9px;margin:0 0 12px;}
-  .welcome-phone-label{font-size:13px;font-weight:600;color:var(--ink-soft);text-align:left;}
-  .welcome-phone-field{display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;
-    border:1px solid var(--border);border-radius:14px;background:var(--paper-dark);}
-  .welcome-phone-prefix{font-size:14px;font-weight:600;white-space:nowrap;color:var(--ink);}
-  .welcome-phone-field input{width:100%;min-width:0;border:0;outline:0;background:transparent;
-    color:var(--ink);font:500 15px 'Inter',sans-serif;padding:13px 0;}
-  .welcome-phone-field input::placeholder{color:var(--muted);}
-  .welcome-btn--phone{width:100%;min-height:50px;border:0;border-radius:14px;
-    background:var(--stamp);color:#fff;font:600 15px 'Inter',sans-serif;cursor:pointer;
-    transition:transform .18s var(--ease),filter .18s var(--ease);}
-  .welcome-btn--phone:hover{filter:brightness(.96);}
-  .welcome-btn--phone:active{transform:scale(.985);}
-  .welcome-divider{display:flex;align-items:center;gap:12px;width:100%;margin:2px 0 12px;
-    color:var(--muted);font-size:12px;}
-  .welcome-divider::before,.welcome-divider::after{content:"";height:1px;flex:1;background:var(--border);}
   /* Google iframe'i o'z enini o'zi belgilaydi — sig'masa ham
      kartochkadan chiqib ketmasin. */
   .welcome-google > *{max-width:100%;}
@@ -3747,26 +3731,14 @@
       <span class="wg-p" data-i18n="welcome.promptSub">Yuk joylash, taklif yuborish va profil uchun Telegram yoki Google orqali kiring.</span>
     </p>
 
-    <!-- Telefon orqali kirish: hozircha faqat dizayn/demo. Keyinchalik
-         SMS va server autentifikatsiyasi ulanganda shu forma ishlatiladi. -->
-    <form class="welcome-phone-form" id="welcomePhoneForm" novalidate>
-      <label class="welcome-phone-label" for="welcomePhoneInput">Telefon raqamingiz</label>
-      <div class="welcome-phone-field">
-        <span class="welcome-phone-prefix" aria-hidden="true">🇺🇿 +998</span>
-        <input id="welcomePhoneInput" name="phone" type="tel"
-               inputmode="tel" autocomplete="tel-national"
-               placeholder="90 123 45 67" maxlength="12"
-               aria-label="Telefon raqamingiz">
-      </div>
-      <button type="submit" class="welcome-btn welcome-btn--phone" id="welcomePhoneBtn">
-        Telefon orqali kirish
-      </button>
-    </form>
-
-    <div class="welcome-divider" aria-hidden="true"><span>yoki</span></div>
-
-    <!-- Google tugmasini Google Identity Services xavfsiz tarzda chizadi. -->
+    <!-- Google o'z tugmasini o'zi chizadi (xavfsizlik talabi) —
+         initGoogleSignIn() shu joyga joylashtiradi. -->
     <div class="welcome-google" id="welcomeGoogleGate"></div>
+
+    <a class="welcome-btn welcome-btn--tg" id="welcomeTelegramBtn" href="#" hidden target="_blank" rel="noopener">
+      <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+      <span data-i18n="welcome.telegram">Telegram bilan davom etish</span>
+    </a>
 
     <!-- Mehmon: ilovani kirmasdan ko'rish. Faqat oddiy kirish ekranida
          ko'rinadi; yuk joylash kabi joyda kirish so'ralganda o'rniga
@@ -4243,7 +4215,7 @@
          yangi sarlavhada faqat qo'ng'iroq va avatarga joy bor, shuning
          uchun havola shu yerga — boshqa aloqa yo'llari yoniga ko'chdi. -->
     <div class="card reveal" style="margin:0 auto var(--s6);text-align:left;">
-      <a class="btn ghost" id="contactGroupLink" href="https://t.me/yoldaku" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
+      <a class="btn ghost" id="driverGroupLink" href="https://t.me/yoldaku" target="_blank" rel="noopener" style="justify-content:flex-start;gap:12px;">
         <svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg>
         <span data-i18n="contact.driverGroup">Haydovchilar guruhi (Telegram)</span>
       </a>
@@ -4639,7 +4611,7 @@
       "install.ios3": "O'ng yuqoridagi <b>Qo'shish</b> ni bosing — YO'LDA ikonkasi ekranda paydo bo'ladi.",
       "install.iosNote": "Shundan keyin ilova brauzer manzil qatorisiz, to'liq ekranda ochiladi.",
       "install.inApp": "Bu oyna ilova ichidagi brauzer — undan o'rnatib bo'lmaydi. Havolani nusxalab, <b>Safari</b> yoki <b>Chrome</b>da oching, keyin shu tugmani qaytadan bosing.",
-      "install.cta": "Ilovani o'rnatish", "install.done": "Ilova o'rnatildi", "common.close": "Yopish", "loads.saveAria": "Saqlash",
+      "install.cta": "Ilovani o'rnatish", "install.done": "Ilova o'rnatildi", "common.close": "Yopish",
       "order.fromAddressLabel": "Olib ketish manzili (ixtiyoriy)", "order.toAddressLabel": "Yetkazish manzili (ixtiyoriy)",
       "order.addressPlaceholder": "Ko'cha, uy, mo'ljal",
       "order.pointPick": "Xaritada belgilash", "order.pointSet": "Xaritada belgilangan",
@@ -5088,7 +5060,7 @@
       "install.ios3": "Нажмите <b>Добавить</b> справа вверху — значок YO'LDA появится на экране.",
       "install.iosNote": "После этого приложение открывается на весь экран, без адресной строки браузера.",
       "install.inApp": "Это встроенный браузер приложения — из него установить нельзя. Скопируйте ссылку, откройте её в <b>Safari</b> или <b>Chrome</b> и нажмите кнопку снова.",
-      "install.cta": "Установить приложение", "install.done": "Приложение установлено", "common.close": "Закрыть", "loads.saveAria": "Сохранить",
+      "install.cta": "Установить приложение", "install.done": "Приложение установлено", "common.close": "Закрыть",
       "order.fromAddressLabel": "Адрес загрузки (необязательно)", "order.toAddressLabel": "Адрес доставки (необязательно)",
       "order.addressPlaceholder": "Улица, дом, ориентир",
       "order.pointPick": "Отметить на карте", "order.pointSet": "Отмечено на карте",
@@ -5533,7 +5505,7 @@
       "install.ios3": "Tap <b>Add</b> at the top right — the YO'LDA icon appears on your home screen.",
       "install.iosNote": "From then on the app opens full screen, with no browser address bar.",
       "install.inApp": "This is an in-app browser and cannot install anything. Copy the link, open it in <b>Safari</b> or <b>Chrome</b>, then tap the button again.",
-      "install.cta": "Install the app", "install.done": "App installed", "common.close": "Close", "loads.saveAria": "Save",
+      "install.cta": "Install the app", "install.done": "App installed", "common.close": "Close",
       "order.fromAddressLabel": "Pickup address (optional)", "order.toAddressLabel": "Delivery address (optional)",
       "order.addressPlaceholder": "Street, building, landmark",
       "order.pointPick": "Mark on the map", "order.pointSet": "Marked on the map",
@@ -7070,36 +7042,11 @@
     }
   }
 
-  (function bindWelcomePhoneInput(){
-    var phoneInput = document.getElementById("welcomePhoneInput");
-    if(!phoneInput) return;
-    phoneInput.addEventListener("input", function(){
-      var digits = phoneInput.value.replace(/\\D/g, "").slice(0, 9);
-      var parts = [];
-      if(digits.length > 0) parts.push(digits.slice(0, 2));
-      if(digits.length > 2) parts.push(digits.slice(2, 5));
-      if(digits.length > 5) parts.push(digits.slice(5, 7));
-      if(digits.length > 7) parts.push(digits.slice(7, 9));
-      phoneInput.value = parts.join(" ");
-    });
-  })();
-
   (function bindGuestButtons(){
     var gb = document.getElementById("welcomeGuestBtn");
     if(gb) gb.addEventListener("click", continueAsGuest);
     var lb = document.getElementById("welcomeLaterBtn");
     if(lb) lb.addEventListener("click", closeSignInPrompt);
-
-    // Telefon orqali kirish hozircha demo: backend/SMS ulanmagan.
-    var phoneForm = document.getElementById("welcomePhoneForm");
-    if(phoneForm) phoneForm.addEventListener("submit", function(e){
-      e.preventDefault();
-      if(typeof toast === "function"){
-        toast("Telefon orqali kirish tez orada ishga tushadi.");
-      }else{
-        window.alert("Telefon orqali kirish tez orada ishga tushadi.");
-      }
-    });
   })();
 
   function showWelcomeGate(){
@@ -13541,10 +13488,8 @@
   /* ============================================================
      Page chrome
      ============================================================ */
-  ["driverGroupLink", "contactGroupLink"].forEach(function(id){
-    var groupLink = document.getElementById(id);
-    if(groupLink) groupLink.href = DRIVER_GROUP_URL;
-  });
+  var groupLink = document.getElementById("driverGroupLink");
+  if(groupLink) groupLink.href = DRIVER_GROUP_URL;
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches || getNotifPrefs().motion;
 
