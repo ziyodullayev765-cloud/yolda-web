@@ -1911,7 +1911,11 @@
      kira olmaydi.
      ============================================================ */
   .welcome{
-    position:fixed;inset:0;z-index:200;
+    /* Leaflet xaritasining o'z ichki qatlamlari (belgi, yorliq, boshqaruv
+       tugmalari) z-index:1000 gacha yetadi. Bu oyna ulardan pastroq
+       turgan bo'lsa, xarita pinlar/yorliqlar bilan uning ustidan
+       "teshib" chiqib ko'rinardi — xuddi shu holat sodir bo'lgan edi. */
+    position:fixed;inset:0;z-index:2000;
     display:flex;align-items:center;justify-content:center;
     padding:24px 20px;
     background:rgba(244,248,246,0.72);
