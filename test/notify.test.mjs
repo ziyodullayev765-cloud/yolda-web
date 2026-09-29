@@ -423,10 +423,13 @@ console.log('\n== offers ==');
   store.set('profile:driver1@example.com', JSON.stringify({
     username: 'driver1', displayName: 'Aziz', verified: true,
     ratingCount: 4, ratingSum: 19, city: 'Toshkent', phone: '+998900000001',
+    telegramUsername: 'aziz_haydovchi',
   }));
   store.set('profile:driver2@example.com', JSON.stringify({
     username: 'driver2', displayName: 'Bobur', ratingCount: 0, ratingSum: 0,
   }));
+
+  store.set('tgChat:owner@example.com', '4242');
 
   seedOrder('OF1');
   const anon = await post('offer', { code: 'OF1', price: 800000 });
@@ -443,6 +446,19 @@ console.log('\n== offers ==');
   check('a driver can send an offer', first.statusCode === 200);
   check('the driver profile is copied onto the offer',
     first.body.offer.driverName === 'Aziz' && first.body.offer.driverVerified === true);
+
+  // Yuk egasi taklif haqida darhol Telegram'da xabar oladi, va o'sha
+  // xabarning o'zida haydovchining kimligini (username) va u bilan
+  // to'g'ridan-to'g'ri bog'lanish yo'lini (bosiladigan Telegram havolasi,
+  // telefon) ko'radi — saytga kirmasdan turib.
+  const offerMsg = sentMessages.find((m) => m.url.endsWith('/sendMessage') && m.body.text.includes('Yangi taklif'));
+  check('the owner is messaged about the new offer', Boolean(offerMsg));
+  check('the message shows the driver\'s site username',
+    Boolean(offerMsg) && offerMsg.body.text.includes('@driver1'));
+  check('and a tappable link to their Telegram',
+    Boolean(offerMsg) && offerMsg.body.text.includes('href="https://t.me/aziz_haydovchi"'));
+  check('and their phone number',
+    Boolean(offerMsg) && offerMsg.body.text.includes('+998900000001'));
   check('the rating rides along', first.body.offer.driverRatingCount === 4);
   check('it starts pending', first.body.offer.status === 'PENDING');
 
