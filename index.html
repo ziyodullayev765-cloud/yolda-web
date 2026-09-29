@@ -4469,7 +4469,7 @@
       "stage.ON_THE_WAY": "Yo'lda", "stage.DELIVERED": "Yetkazildi",
       "stage.CANCELLED": "Bekor qilindi",
       "next.DRIVER_FOUND": "Yuklashga ketdim", "next.PICKING_UP": "Yukladim",
-      "next.LOADED": "Men yo'ldaman", "next.ON_THE_WAY": "Bo'shatdim",
+      "next.LOADED": "Yo'lga chiqdim", "next.ON_THE_WAY": "Yetkazdim",
       "track.release": "Haydovchini bo'shatish", "track.cancel": "Buyurtmani bekor qilish",
       "track.cancelled": "Bu buyurtma bekor qilingan.",
       "search.save": "Bu qidiruvni saqlash va xabar olish", "search.anyRoute": "Barcha yo'nalishlar",
@@ -4918,7 +4918,7 @@
       "stage.ON_THE_WAY": "В пути", "stage.DELIVERED": "Доставлен",
       "stage.CANCELLED": "Отменён",
       "next.DRIVER_FOUND": "Еду на погрузку", "next.PICKING_UP": "Загрузился",
-      "next.LOADED": "Я в пути", "next.ON_THE_WAY": "Разгрузился",
+      "next.LOADED": "Выехал", "next.ON_THE_WAY": "Доставил",
       "track.release": "Освободить водителя", "track.cancel": "Отменить заказ",
       "track.cancelled": "Этот заказ отменён.",
       "search.save": "Сохранить поиск и получать уведомления", "search.anyRoute": "Все маршруты",
@@ -5363,7 +5363,7 @@
       "stage.ON_THE_WAY": "On the way", "stage.DELIVERED": "Delivered",
       "stage.CANCELLED": "Cancelled",
       "next.DRIVER_FOUND": "Heading to pickup", "next.PICKING_UP": "Loaded up",
-      "next.LOADED": "I'm on my way", "next.ON_THE_WAY": "Unloaded",
+      "next.LOADED": "On my way", "next.ON_THE_WAY": "Delivered",
       "track.release": "Release the driver", "track.cancel": "Cancel the order",
       "track.cancelled": "This order has been cancelled.",
       "search.save": "Save this search and get alerts", "search.anyRoute": "All routes",
@@ -7244,21 +7244,6 @@
     isTelegramWebApp = true;
     try{ tg.ready(); }catch(e){}
     try{ tg.expand(); }catch(e){}
-
-    /* Telegram ichida pastga surish ilovani yopadi/kichraytiradi — xarita
-       ustida surganda ham. Xarita ustida barmoq turgan paytda gina bu
-       imkon o'chiriladi, qolgan joyda odatdagidek ishlaydi. */
-    try{
-      if(typeof tg.disableVerticalSwipes === "function" && typeof tg.enableVerticalSwipes === "function"){
-        document.addEventListener("touchstart", function(e){
-          var el = e.target;
-          if(el && el.closest && el.closest(".leaflet-container")) tg.disableVerticalSwipes();
-        }, { passive: true, capture: true });
-        ["touchend", "touchcancel"].forEach(function(type){
-          document.addEventListener(type, function(){ tg.enableVerticalSwipes(); }, { passive: true, capture: true });
-        });
-      }
-    }catch(e){}
 
     var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
     applyTelegramCredential(tg.initData, u
@@ -14289,14 +14274,19 @@
       setTimeout(function(){ indicator.style.transition = ""; }, 280);
     }
 
+    // Xarita, karusel va shunga o'xshash o'zi sudraladigan widgetlar
+    // ichida boshlangan tegishga aralashmaymiz — aks holda xaritani
+    // pastga qarab surish "tepaga tortib yangilash" bilan chalkashib,
+    // sahifa kutilmaganda qayta yuklanardi (Leaflet xaritasi buning
+    // aniq namunasi edi).
+    function startsInsideDraggableWidget(target){
+      return !!(target && target.closest && target.closest(".leaflet-container, [data-no-ptr]"));
+    }
+
     window.addEventListener("touchstart", function(e){
       if(refreshing || pulling || sheetOpen() || e.touches.length !== 1) return;
       if(window.scrollY > 0) return;
-      // Xarita ustida surish xaritaniki: sahifa tepasida turganda pastga
-      // surilgan xarita ilgari sahifani yangilab yuborardi (va xaritaning
-      // o'zi ham qimirlamasdi, chunki preventDefault chaqirilardi).
-      var tg = e.target;
-      if(tg && tg.closest && tg.closest(".leaflet-container, .home-map-card, .loads-map")) return;
+      if(startsInsideDraggableWidget(e.target)) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       pulling = true;
