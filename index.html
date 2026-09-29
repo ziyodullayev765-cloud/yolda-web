@@ -7366,7 +7366,15 @@
       // beradi — hech narsa so'ralmaydi va hech qanday oyna chiqmaydi.
       // Faqat pastdagi prompt() chaqirilganda ishlaydi, ya'ni tugmalar
       // ko'rinishiga ta'sir qilmaydi.
-      google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleSignIn, auto_select: true });
+      // use_fedcm_for_prompt: zamonaviy Chrome uchun MAJBURIY. Bo'lmasa
+      // pastdagi prompt() (jim yangilash) hech narsa qilmay, sezilmas
+      // holda muvaffaqiyatsiz tugaydi — token bir soatdan keyin eskiradi-yu,
+      // hech kim uni yangilamaydi, va odam qaytadan "Google bilan kirish"ni
+      // ko'radi. Shu bitta qator aynan shu muammoni tuzatadi.
+      google.accounts.id.initialize({
+        client_id: cfg.googleClientId, callback: onGoogleSignIn,
+        auto_select: true, use_fedcm_for_prompt: true
+      });
 
       // Saqlangan sessiya allaqachon tiklangan bo'lsa, uning ustidan
       // "Google bilan kirish" tugmasini chizib qo'yish — kirgan odamga
