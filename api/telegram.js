@@ -5,7 +5,7 @@
  * driver's side, one button tap at a time. The button always names the
  * next stage, so the driver never has to choose between four of them:
  *
- *   ✅ Men olaman → 🚚 Yuklashga ketdim → 📦 Yukladim → 🛣️ Men yo'ldaman → ✅ Bo'shatdim
+ *   ✅ Men olaman → 🚚 Yuklashga ketdim → 📦 Yukladim → 🛣️ Yo'lga chiqdim → ✅ Yetkazdim
  *   (NEW)          (DRIVER_FOUND)        (PICKING_UP)   (LOADED)            (ON_THE_WAY → DELIVERED)
  *
  * The persisted `order:<code>` record (written by /api/order) is the source
@@ -23,6 +23,8 @@ import { notifyUser, esc } from '../lib/notify.js';
 import { setVerification } from '../lib/verification.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// /api/order.js dagi bilan bir xil qiymat: guruh xabarini shu yerdan ham yangilaymiz.
+const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '-1003778958582';
 // Optional but recommended: set it in Vercel and pass the same value to setWebhook.
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 
@@ -89,6 +91,37 @@ const driverKeyboard = (order) => {
     row.push({ text: '✖️ Voz kechaman', callback_data: `giveup:${order.code}` });
   }
   return row.length ? [row] : [];
+};
+
+/**
+ * Bu Telegram foydalanuvchisi buyurtmaga biriktirilgan haydovchimi?
+ *
+ * Guruhdagi «Men olaman» orqali olgan haydovchida `telegramId` bo'ladi.
+ * Saytdagi taklif qabul qilinganda esa haydovchi faqat `identity` bilan
+ * biriktiriladi (Google email yoki `tg:<id>`), telegramId yo'q — shuning
+ * uchun ikkalasi ham tekshiriladi. Aks holda taklif orqali olingan yukning
+ * haydovchisi Telegram'dagi tugmani bosganda «sizga tegishli emas» olardi.
+ */
+const isAssignedDriver = async (order, fromId) => {
+  const d = order && order.driver;
+  if (!d) return false;
+  if (d.telegramId && d.telegramId === fromId) return true;
+  if (!d.identity) return false;
+  return d.identity === (await identityForTelegram(fromId));
+};
+
+/**
+ * Bosilgan xabar uchun klaviatura. Taklif orqali biriktirilgan haydovchi
+ * (telegramId yo'q) shaxsiy xabarida faqat «keyingi bosqich» tugmasini
+ * ko'radi: «Voz kechaman» xabarni guruhdagi «Men olaman» xabariga aylantirib
+ * yuborardi — bu esa shaxsiy suhbatda ma'nosiz. Voz kechish saytda qoladi.
+ */
+const keyboardFor = (order, query) => {
+  const rows = driverKeyboard(order);
+  if (order.driver && order.driver.telegramId) return rows;
+  return rows
+    .map((row) => row.filter((b) => !String(b.callback_data).startsWith('giveup:')))
+    .filter((row) => row.length);
 };
 
 const getOrder = async (code) => {
@@ -345,7 +378,7 @@ const handleAdvance = async (query, code) => {
     await answer(query, 'Buyurtma topilmadi.', true);
     return;
   }
-  if (!order.driver || order.driver.telegramId !== query.from.id) {
+  if (!(await isAssignedDriver(order, query.from.id))) {
     await answer(query, 'Bu buyurtma sizga tegishli emas.', true);
     return;
   }
@@ -376,8 +409,21 @@ const handleAdvance = async (query, code) => {
     message_id: query.message.message_id,
     text: buildOrderMessage(order),
     parse_mode: 'MarkdownV2',
-    reply_markup: { inline_keyboard: driverKeyboard(order) },
+    reply_markup: { inline_keyboard: keyboardFor(order, query) },
   });
+
+  // Tugma haydovchining shaxsiy xabarida bosilgan bo'lsa, guruhdagi xabar ham
+  // yangi holatni ko'rsatsin. Guruhda tugma faqat «Men olaman» orqali olgan
+  // haydovchida bor; taklif orqali olinganida guruh xabari tugmasiz qoladi.
+  if (order.groupMessageId && String(query.message.chat.id) !== String(GROUP_ID)) {
+    await telegram('editMessageText', {
+      chat_id: GROUP_ID,
+      message_id: order.groupMessageId,
+      text: buildOrderMessage(order),
+      parse_mode: 'MarkdownV2',
+      reply_markup: { inline_keyboard: order.driver.telegramId ? driverKeyboard(order) : [] },
+    }).catch((err) => console.error('group message edit failed:', err.message));
+  }
 
   await notifyOwner(order,
     `<b>${esc(STATUS_LABELS[next] || next)}</b>\n\n`
