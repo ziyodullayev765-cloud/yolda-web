@@ -700,6 +700,55 @@ console.log('\n== the same chain runs from the Telegram button ==');
 }
 
 /* ---------------------------------------------------------- */
+console.log('\n== a driver assigned via a site offer can still run the chain in Telegram ==');
+{
+  // Taklif orqali biriktirilgan haydovchida telegramId yo'q, faqat
+  // identity bor — avvalgi kod shu holatda hamma joyda "sizga tegishli
+  // emas" derdi, chunki tekshiruv faqat telegramId ga qarardi.
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const telegramMod = await load('api/telegram.js', 'telegram_offer_test');
+  const telegramHandler = telegramMod.default;
+
+  store.set('tgIdToEmail:555', 'driver1@example.com');
+  store.set('order:OF9', JSON.stringify({
+    code: 'OF9', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, amount: 900000, cargoType: 'OTHER', phone: '+998901112233',
+    status: 'DRIVER_FOUND', groupMessageId: 77,
+    driver: { name: 'Aziz', identity: 'driver1@example.com', viaOffer: 'off1' },
+  }));
+
+  const tapDm = async (data, fromId) => {
+    const res = mkRes();
+    await telegramHandler({
+      method: 'POST', headers: {},
+      body: { callback_query: {
+        id: 'q1', from: { id: fromId, first_name: 'Aziz' },
+        message: { chat: { id: fromId }, message_id: 42, text: '' },
+        data,
+      } },
+    }, res);
+    return res;
+  };
+  const statusOf9 = () => JSON.parse(store.get('order:OF9')).status;
+
+  await tapDm('next:OF9', 999);
+  check('a stranger cannot advance an offer-assigned load', statusOf9() === 'DRIVER_FOUND');
+
+  await tapDm('next:OF9', 555);
+  check('the offer-assigned driver can advance it from their own DM', statusOf9() === 'PICKING_UP');
+
+  const dmEdit = sentMessages.find((m) => m.url.endsWith('/editMessageText') && m.body.chat_id === 555);
+  check('their own message is updated', Boolean(dmEdit));
+  check('the DM keyboard has no give-up button (that stays on the site)',
+    !dmEdit.body.reply_markup.inline_keyboard.flat().some((b) => b.callback_data.startsWith('giveup:')));
+
+  const groupEdit = sentMessages.find((m) => m.url.endsWith('/editMessageText') && String(m.body.chat_id) === '-1003778958582');
+  check('the group message is kept in sync too', Boolean(groupEdit));
+  check('but carries no button, since this driver has no telegramId to claim through',
+    Boolean(groupEdit) && groupEdit.body.reply_markup.inline_keyboard.length === 0);
+}
+
+/* ---------------------------------------------------------- */
 console.log('\n== review criteria ==');
 {
   const { validateReview, applyReview, topTags, CRITERIA } =
