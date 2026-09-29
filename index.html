@@ -4274,11 +4274,6 @@
           <span data-i18n="settings.theme">Ko'rinish</span>
           <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
         </button></li>
-        <li><button type="button" class="settings-row lg lg-tap" data-settings-page="glass">
-          <svg class="ic-svg" aria-hidden="true"><use href="#iconGem"/></svg>
-          <span data-i18n="glass.title">Shisha effekti</span>
-          <svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>
-        </button></li>
         <li><button type="button" class="settings-row lg lg-tap" data-settings-page="notifications">
           <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"/></svg>
           <span data-i18n="settings.notifications">Bildirishnomalar</span>
@@ -5985,7 +5980,11 @@
       requestAnimationFrame(function(){ root.classList.add("open"); });
       document.body.style.overflow = "hidden";
       document.addEventListener("keydown", onKeydown, true);
-      [document.querySelector(".sheet-handle"), panel].forEach(function(el){
+      // Faqat yuqoridagi tutqich va sarlavha qatori pastga tortib yopadi.
+      // Ilgari butun panelga (shu jumladan ro'yxat skrolliga) osilgan edi —
+      // shuning uchun Sozlamalar ro'yxatini pastga skroll qilish ham
+      // "yopish" gesti sifatida o'qilib, oyna kutilmaganda yopilib qolardi.
+      [document.querySelector(".sheet-handle"), document.querySelector(".sheet-head")].forEach(function(el){
         if(!el) return;
         el.addEventListener("touchstart", onDragStart, {passive:true});
         el.addEventListener("touchmove", onDragMove, {passive:true});
@@ -6358,7 +6357,6 @@
   var SETTINGS_PAGES = {
     language: function(){ return { titleKey: "settings.langPageTitle", html: renderLanguagePage() }; },
     theme: function(){ return { titleKey: "settings.themePageTitle", html: renderThemePage() }; },
-    glass: function(){ return { titleKey: "glass.title", html: renderGlassPage(), onOpen: applyGlassPref }; },
     notifications: function(){ return { titleKey: "settings.notifications", html: renderNotificationsPage(null), onOpen: bindNotificationsPage }; },
     feedback: function(){ return { titleKey: "settings.feedback", html: renderFeedbackPage(), onOpen: bindFeedbackPage }; },
     about: function(){ return { titleKey: "about.title", html: t("about.body") || "" }; },
@@ -6591,7 +6589,6 @@
       + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
       +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="glass">'+icon("iconGem")+'<span data-i18n="glass.title">Shisha effekti</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
       // Profilni ulashish ilgari sarlavhadagi uchta tugmadan biri edi.
       // Sarlavhada endi bitta tishli g'ildirak turadi, shuning uchun
       // ulashish shu ro'yxatga ko'chdi — yo'qolgani yo'q.
