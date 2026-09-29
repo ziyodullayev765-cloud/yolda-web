@@ -516,7 +516,11 @@
      matn baribir o'qiladi. Shuning uchun rang ataylab yetarlicha
      to'yingan qilib olindi. */
   .bottom-nav{
-    position:fixed;left:14px;right:14px;z-index:80;
+    /* Leaflet xaritasining o'z boshqaruvlari (+/− tugmalari, pinlar)
+       z-index:1000 gacha chiqadi — shuning uchun bu panel ham xuddi
+       yuqoridagi kirish oynasi kabi ulardan balandroq turishi kerak,
+       aks holda xarita pastki panelning ustidan chiqib ketardi. */
+    position:fixed;left:14px;right:14px;z-index:1500;
     /* Telefonning eng pastiga yopishib qolmasin — ostida bo'shliq
        qoladi, iPhone'ning o'z chizig'i uchun ham joy bor. */
     bottom:calc(20px + env(safe-area-inset-bottom, 0px));
@@ -2547,7 +2551,10 @@
   /* ---------- TOASTS ---------- */
   #toastHost{
     position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
-    z-index:1000;display:flex;flex-direction:column;gap:var(--s2);
+    /* Pastki panel endi 1500 da turadi (xaritadan balandroq bo'lishi
+       uchun) — bildirishnoma undan pastda qolib, panel ortida
+       yashiringan bo'lmasin deb, bundan ham balandroq qo'yildi. */
+    z-index:1600;display:flex;flex-direction:column;gap:var(--s2);
     width:min(420px, calc(100vw - 32px));pointer-events:none;
   }
   .toast{
