@@ -1060,13 +1060,28 @@ const submitOffer = async (req, res) => {
   await kvPush(orderOffersKey(code), id);
   await kvPush(driverOffersKey(identity), id);
 
+  // Haydovchi kim ekani darhol ko'rinsin: sayt username'i, va bor bo'lsa
+  // bosilganda uning Telegram profiliga olib boradigan @handle hamda
+  // telefon raqami — hammasi shu bitta xabarda, saytga kirmasdan turib.
+  const driverLine = [
+    `${esc(snapshot.driverName)}${snapshot.driverVerified ? ' ✓' : ''}`,
+    snapshot.driverUsername ? `@${esc(snapshot.driverUsername)}` : '',
+  ].filter(Boolean).join('  ·  ');
+  const contactLines = [
+    snapshot.driverTelegramUsername
+      ? `Telegram: <a href="https://t.me/${esc(snapshot.driverTelegramUsername)}">@${esc(snapshot.driverTelegramUsername)}</a>`
+      : '',
+    snapshot.driverPhone ? `Tel: ${esc(snapshot.driverPhone)}` : '',
+  ].filter(Boolean).join('\n');
+
   await notifyUser(ownerKey, {
     category: 'offers',
     text: `<b>Yangi taklif</b>\n\n`
       + `Buyurtma: <b>${esc(code)}</b>\n`
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
-      + `${esc(snapshot.driverName)}${snapshot.driverVerified ? ' ✓' : ''}\n`
-      + `<b>${esc(formatNum(value.price))} so'm</b>`
+      + `${driverLine}\n`
+      + (contactLines ? `${contactLines}\n` : '')
+      + `\n<b>${esc(formatNum(value.price))} so'm</b>`
       + (value.eta ? `\nYetib borish: ${esc(value.eta)}` : '')
       + (value.note ? `\n\n${esc(value.note)}` : '')
       + `\n\nSaytda «Kelgan takliflar» bo'limidan ko'ring.`,
@@ -1365,8 +1380,17 @@ const decideOffer = async (req, res, accept) => {
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
       + `<b>${esc(formatNum(offer.price))} so'm</b>\n\n`
       + (order.phone ? `Mijoz: ${esc(order.phone)}\n\n` : '')
-      + `Saytdagi yuk sahifasida holatni bosqichma-bosqich yangilab boring — `
+      + `Holatni shu yerdan ham, saytdagi yuk sahifasidan ham yangilab boring — `
       + `har bosqichda tugma keyingisining nomini yozib turadi.`,
+    // Haydovchi saytga qaytmasa ham yuk «Haydovchi tanlandi»da qotib qolmasin:
+    // zanjir (Yuklashga ketdim → Yukladim → Men yo'ldaman → Bo'shatdim) shu
+    // xabarning o'zidagi tugma bilan yuradi (api/telegram.js, `next:`).
+    replyMarkup: {
+      inline_keyboard: [[{
+        text: `🚚 ${NEXT_STATUS_BUTTON.DRIVER_FOUND}`,
+        callback_data: `next:${offer.orderCode}`,
+      }]],
+    },
   });
 
   await editGroupMessage(order, []);
