@@ -51,7 +51,6 @@
     ["gesturestart", "gesturechange", "gestureend"].forEach(function(type){
       document.addEventListener(type, function(e){
         var t = e.target;
-        if(t && t.closest && t.closest(".leaflet-container")) return;
         e.preventDefault();
       }, { passive: false });
     });
@@ -92,9 +91,6 @@
      Loaded synchronously (no async/defer) per Telegram's own guidance, so
      it's ready before initTelegramWebApp() runs. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Leaflet + OpenStreetMap tiles for the "Yuklar" map view — free, no API key. -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" defer></script>
 <style>
   :root{
     /* YO'LDA design system — professional logistics palette: brand green
@@ -256,7 +252,6 @@
   :root[data-theme="dark"] .btn:not(.ghost),
   :root[data-theme="dark"] .step .num,
   :root[data-theme="dark"] .tab.active,
-  :root[data-theme="dark"] .map-pin-badge,
   :root[data-theme="dark"] .home-post-fab,
   :root[data-theme="dark"] .wizard-step.active .ws-dot,
   :root[data-theme="dark"] .chat-bubble.mine,
@@ -342,12 +337,17 @@
   /* Yoqilgan holat: yurak va yulduz ichi bo'yaladi. Emoji o'rniga
      ishlatiladigan ikonkalar shu bilan "to'ldirilgan" ko'rinishga o'tadi. */
   .ic-svg.filled{fill:currentColor;}
+  /* Ilgari bu yerda `filter:blur(6px)` ham jonlantirilardi. Telefonda
+     har bir blok uchun alohida qatlam yasalib, xiralikni har kadrda
+     qaytadan hisoblash kerak bo'lardi — ekran aynan shu sababli
+     "qotib" qolardi. Xiralik olib tashlandi: shaffoflik va siljish
+     qolgani esa qurilmaning grafik protsessorida bepul ishlaydi. */
   .reveal{
-    opacity:0;transform:translateY(26px) scale(0.985);filter:blur(6px);
-    transition:opacity 0.9s var(--ease), transform 0.9s var(--ease), filter 0.9s var(--ease);
-    will-change:opacity, transform, filter;
+    opacity:0;transform:translateY(22px) scale(0.99);
+    transition:opacity 0.62s var(--ease), transform 0.62s var(--ease);
+    will-change:opacity, transform;
   }
-  .reveal.in{opacity:1;transform:none;filter:blur(0);}
+  .reveal.in{opacity:1;transform:none;}
   .steps .step:nth-child(1){transition-delay:0s;}
   .steps .step:nth-child(2){transition-delay:0.12s;}
   .steps .step:nth-child(3){transition-delay:0.24s;}
@@ -1371,39 +1371,6 @@
   .empty-state p{margin:0 0 var(--s4);font-size:14px;line-height:1.6;}
 
   /* ---------- Yuklar: map/list toggle + Leaflet map + backhaul + match ---------- */
-  .view-toggle{display:flex;gap:6px;background:var(--paper-dark);border-radius:var(--r-pill);padding:4px;margin:var(--s4) 0;width:fit-content;}
-  .vt-btn{
-    border:none;background:none;padding:8px 16px;border-radius:var(--r-pill);
-    font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
-    display:flex;align-items:center;gap:6px;transition:background 0.2s var(--ease), color 0.2s var(--ease);
-  }
-  .vt-btn.active{background:var(--card);color:var(--route);box-shadow:var(--sh-1);}
-  .loads-map{
-    height:320px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);
-    margin-bottom:var(--s4);background:var(--paper-dark);
-  }
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip{background:var(--card);color:var(--ink);}
-  .map-pin-badge{
-    background:var(--route);color:#fff;border-radius:999px;padding:4px 9px;font-size:11.5px;font-weight:700;
-    box-shadow:var(--sh-2);white-space:nowrap;border:2px solid var(--card);
-  }
-  .backhaul-card{
-    background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.03));
-    border:1px solid rgba(245,158,11,0.3);border-radius:var(--r-lg);padding:var(--s4) var(--s5);
-    margin-bottom:var(--s4);
-  }
-  .backhaul-card .bh-head{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--warn);margin-bottom:4px;}
-  .backhaul-card .bh-route{font-size:13.5px;color:var(--ink-soft);}
-  .match-badge{
-    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
-    padding:3px 9px;border-radius:var(--r-pill);background:rgba(245,158,11,0.14);color:var(--warn);
-  }
-  .load-card{position:relative;}
-  .load-card .lc-fav{
-    position:absolute;top:var(--s4);right:var(--s4);background:none;border:none;font-size:20px;
-    cursor:pointer;line-height:1;color:var(--muted);
-  }
-
   /* ============================================================
      MARKETPLACE REDESIGN — home search bar, route-search sheet,
      wizard steps (Yuk joylash), and the docked map/list browsing
@@ -1591,40 +1558,10 @@
   .wizard-review-row .wr-k{color:var(--ink-soft);}
   .wizard-review-row .wr-v{color:var(--ink);font-weight:600;text-align:right;}
 
-  /* ---------- Loads: docked map + draggable card sheet (mobile) ---------- */
-  .map-dock-shell{
-    position:relative;height:min(60vh,520px);min-height:340px;
-    border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);margin-bottom:var(--s4);
-  }
-  .map-dock-shell .loads-map{position:absolute;inset:0;height:auto;border:none;border-radius:0;margin:0;}
-  .map-card-dock{
-    position:absolute;left:0;right:0;bottom:0;z-index:2;
-    background:var(--card);border-radius:var(--r-xl) var(--r-xl) 0 0;
-    box-shadow:0 -10px 28px rgba(15,23,42,0.14);
-    max-height:88%;display:flex;flex-direction:column;
-    transform:translateY(calc(100% - 96px));transition:transform 0.32s var(--ease);
-  }
-  .map-card-dock.expanded{transform:translateY(0);}
-  .map-card-dock .mcd-handle{width:36px;height:4px;background:var(--border);border-radius:var(--r-pill);margin:9px auto 2px;flex-shrink:0;cursor:grab;}
-  .map-card-dock .mcd-head{
-    padding:2px var(--s4) var(--s3);font-size:13px;font-weight:700;color:var(--ink);
-    flex-shrink:0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;
-  }
-  .map-card-dock .mcd-body{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 var(--s4) var(--s4);}
-  /* Base width for the Yuklar tab's section — fine for every other tab,
-     and for Yuklar itself on mobile (single column). The desktop media
-     query below widens it, once there's a second column (the map) to
-     fill; this base rule has to come first in source order for that
-     override to actually win at the breakpoint. */
+  /* Yuklar bo'limi ro'yxatining eni. */
   #loadsSection{max-width:680px;}
   @media(min-width:1024px){
-    /* Desktop: list and map sit side by side, always both visible — no
-       toggle needed, matching a sidebar-style marketplace layout. */
     #loadsSection{max-width:1180px;}
-    .loads-desktop-grid{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:var(--s5);align-items:start;}
-    .loads-desktop-grid .map-dock-shell{height:calc(100vh - 200px);min-height:480px;position:sticky;top:88px;margin-bottom:0;}
-    .loads-desktop-grid .map-card-dock{display:none;}
-    #loadsViewToggle{display:none;}
   }
   .load-card .lc-fav.on{color:#EF4444;}
 
@@ -1966,7 +1903,12 @@
     background:var(--au-page);
     color:var(--au-ink);
     font-family:'Inter',sans-serif;
-    animation:welcomeIn 0.4s var(--ease) both;
+    /* Bu ekran har doim oq — brauzerga ham shuni aytamiz. Aks holda
+       telefon tungi rejimda bo'lsa, tizim maydon ichidagi yozuvni oq
+       qilib qo'yadi va oq fonda u ko'rinmay qoladi. Aynan shu xato
+       bor edi: raqam teriladi, lekin ko'rinmaydi. */
+    color-scheme:light;
+    animation:welcomeIn 0.5s var(--ease) both;
   }
   .welcome[hidden]{display:none;}
   @keyframes welcomeIn{from{opacity:0;}to{opacity:1;}}
@@ -2001,10 +1943,10 @@
     padding:26px 24px calc(24px + env(safe-area-inset-bottom, 0px));
     overflow-y:auto;-webkit-overflow-scrolling:touch;
   }
-  .au-screen.is-on{display:flex;animation:auIn 0.34s cubic-bezier(0.22,0.9,0.3,1) both;}
+  .au-screen.is-on{display:flex;animation:auIn 0.44s cubic-bezier(0.22,0.9,0.3,1) both;}
   .au-screen.is-on.from-back{animation-name:auInBack;}
-  @keyframes auIn{from{opacity:0;transform:translateX(22px);}to{opacity:1;transform:none;}}
-  @keyframes auInBack{from{opacity:0;transform:translateX(-22px);}to{opacity:1;transform:none;}}
+  @keyframes auIn{from{opacity:0;transform:translate3d(28px,0,0);}to{opacity:1;transform:none;}}
+  @keyframes auInBack{from{opacity:0;transform:translate3d(-28px,0,0);}to{opacity:1;transform:none;}}
 
   .au-spacer{flex:1 1 auto;min-height:18px;}
 
@@ -2041,7 +1983,11 @@
 
   .au-label{display:block;margin:0 0 7px;font-size:12.5px;font-weight:500;color:var(--au-ink);}
 
-  .au-input{
+  /* `.welcome` prefiksi ataylab: umumiy `input[type=tel]` qoidasi
+     (0,1,1) oddiy `.au-input` dan (0,1,0) kuchliroq va qorong'i
+     mavzuda yozuvga oq rang berib yuborardi — raqam terilsa ham
+     ko'rinmasdi. Shu yerda og'irlik (0,2,0) ga ko'tarildi. */
+  .welcome .au-input{
     width:100%;min-height:50px;box-sizing:border-box;
     padding:0 14px;margin:0 0 16px;
     border:1px solid var(--au-line);border-radius:13px;
@@ -2049,11 +1995,25 @@
     font-family:'Inter',sans-serif;font-size:14.5px;
     transition:border-color 0.2s var(--ease), background 0.2s var(--ease);
   }
-  .au-input::placeholder{color:#AEB4BA;}
-  .au-input:focus{outline:none;border-color:var(--au-green);background:#fff;}
+  .welcome .au-input::placeholder{color:#AEB4BA;-webkit-text-fill-color:#AEB4BA;}
+  .welcome .au-input:focus{outline:none;border-color:var(--au-green);background:#fff;}
+  /* Yozuv rangi hamma holatda aniq belgilanadi — iOS o'zining
+     to'ldirish (AutoFill) uslubini qo'ymasin. */
+  .welcome .au-input,.welcome .au-otp-box{color:var(--au-ink);-webkit-text-fill-color:var(--au-ink);caret-color:var(--au-green);}
+  .welcome .au-input:-webkit-autofill,
+  .welcome .au-input:-webkit-autofill:focus,
+  .welcome .au-otp-box:-webkit-autofill{
+    -webkit-text-fill-color:var(--au-ink);
+    -webkit-box-shadow:0 0 0 1000px var(--au-field) inset;
+    box-shadow:0 0 0 1000px var(--au-field) inset;
+  }
+  .welcome .au-phone .au-input:-webkit-autofill{
+    -webkit-box-shadow:0 0 0 1000px var(--au-green-soft) inset;
+    box-shadow:0 0 0 1000px var(--au-green-soft) inset;
+  }
 
   .au-field{position:relative;}
-  .au-field .au-input{padding-right:46px;}
+  .welcome .au-field .au-input{padding-right:46px;}
   .au-eye{
     position:absolute;right:6px;top:7px;width:36px;height:36px;
     display:grid;place-items:center;border:none;background:none;
@@ -2068,8 +2028,8 @@
     border:1px solid var(--au-green);border-radius:13px;
     background:var(--au-green-soft);
   }
-  .au-phone .au-input{margin:0;border:none;background:none;min-height:46px;padding-left:0;}
-  .au-phone .au-input:focus{background:none;}
+  .welcome .au-phone .au-input{margin:0;border:none;background:none;min-height:46px;padding-left:0;}
+  .welcome .au-phone .au-input:focus{background:none;}
   .au-code{font-size:14.5px;font-weight:600;color:var(--au-ink);}
   .au-flag{
     width:20px;height:14px;flex:none;display:flex;flex-direction:column;
@@ -2127,7 +2087,7 @@
 
   /* ---------- Tasdiqlash kodi ---------- */
   .au-otp{display:flex;align-items:flex-start;gap:12px;margin:6px 0 18px;}
-  .au-otp-box{
+  .welcome .au-otp-box{
     flex:1 1 0;max-width:70px;aspect-ratio:1;min-height:62px;
     text-align:center;box-sizing:border-box;
     border:1.5px solid var(--au-line);border-radius:15px;
@@ -2135,8 +2095,8 @@
     font-family:'Inter',sans-serif;font-size:22px;font-weight:600;
     transition:border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
   }
-  .au-otp-box:focus{outline:none;border-color:var(--au-green);box-shadow:0 0 0 3px rgba(69,180,95,0.18);}
-  .au-otp-box.filled{border-color:var(--au-green);}
+  .welcome .au-otp-box:focus{outline:none;border-color:var(--au-green);box-shadow:0 0 0 3px rgba(69,180,95,0.18);}
+  .welcome .au-otp-box.filled{border-color:var(--au-green);}
 
   .au-resend{
     display:flex;align-items:center;justify-content:center;gap:6px;
@@ -2331,49 +2291,6 @@
   .hlc-fav.on{color:#EF4444;}
   .hlc-fav.on .ic-svg{fill:currentColor;}
 
-  /* ---------- 4. Xarita ---------- */
-  .home-map-card{
-    position:relative;border-radius:16px;overflow:hidden;
-    border:1px solid var(--border);background:var(--paper-dark);height:250px;
-  }
-  .home-map{position:absolute;inset:0;}
-  .home-map-toggle{
-    position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:6px;
-  }
-  .hmt-btn{
-    min-height:38px;padding:0 16px;border-radius:11px;border:1px solid var(--border);
-    background:var(--card);color:var(--ink);font-family:'Inter',sans-serif;
-    font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:var(--sh-1);
-  }
-  .hmt-btn.active{background:var(--route);color:#fff;border-color:var(--route);}
-  .home-map-legend{
-    position:absolute;bottom:12px;left:12px;z-index:500;display:flex;gap:12px;
-    background:var(--card);border-radius:10px;padding:7px 11px;box-shadow:var(--sh-1);
-    font-size:11.5px;color:var(--ink);
-  }
-  .home-map-legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
-  .home-map-legend .ic-svg{font-size:14px;}
-  .home-map-legend .pin-pickup{color:var(--route);}
-  .home-map-legend .pin-drop{color:#2563EB;}
-  .home-map-zoom{
-    position:absolute;right:12px;bottom:12px;z-index:500;display:flex;flex-direction:column;
-    background:var(--card);border-radius:10px;overflow:hidden;box-shadow:var(--sh-1);
-  }
-  .home-map-zoom button{
-    width:38px;height:38px;border:none;background:none;cursor:pointer;
-    font-size:19px;line-height:1;color:var(--ink);font-family:'Inter',sans-serif;
-  }
-  .home-map-zoom button + button{border-top:1px solid var(--border);}
-  .home-map-zoom button:hover{background:var(--tint);}
-  /* Shahar nomi nuqta yonida doim turadi — namunadagidek. Leaflet'ning
-     o'z uchburchagi va foni olib tashlandi. */
-  .home-map-label.leaflet-tooltip{
-    background:none;border:none;box-shadow:none;padding:0 0 0 3px;
-    font-family:'Inter',sans-serif;font-size:11.5px;font-weight:700;
-    color:var(--ink);text-shadow:0 1px 3px rgba(255,255,255,0.95),0 0 6px rgba(255,255,255,0.9);
-  }
-  .home-map-label.leaflet-tooltip::before{display:none;}
-
   /* ---------- 5. Qanday ishlaydi ---------- */
   .hiw-row{
     display:flex;align-items:flex-start;gap:4px;list-style:none;margin:0;padding:0;
@@ -2491,15 +2408,6 @@
      brauzerning o'z overscroll harakati o'chiriladi. */
   html.ptr-on,html.ptr-on body{overscroll-behavior-y:contain;}
 
-  /* Aniq olib ketish/yetkazish nuqtasi. */
-  .pick-point{
-    display:inline-flex;align-items:center;gap:6px;margin-top:8px;
-    background:none;border:1px dashed var(--border);border-radius:var(--r-pill);
-    padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
-    font-family:inherit;
-  }
-  .pick-point:hover{border-color:var(--route);color:var(--route);}
-  .pick-point.set{border-style:solid;border-color:var(--accepted);color:var(--accepted);}
   .addr-line{
     display:flex;gap:var(--s3);align-items:baseline;
     font-size:13px;margin-bottom:6px;
@@ -3232,16 +3140,16 @@
      kelishi pastki panel tartibiga qarab tanlanadi: oldinga o'tilsa
      o'ngdan, orqaga qaytilsa chapdan suriladi. */
   @keyframes tabInRight{
-    from{opacity:0;transform:translate3d(24px,0,0);}
+    from{opacity:0;transform:translate3d(30px,0,0);}
     to{opacity:1;transform:translate3d(0,0,0);}
   }
   @keyframes tabInLeft{
-    from{opacity:0;transform:translate3d(-24px,0,0);}
+    from{opacity:0;transform:translate3d(-30px,0,0);}
     to{opacity:1;transform:translate3d(0,0,0);}
   }
   .tabview.tab-in-right,.tabview.tab-in-left{will-change:opacity,transform;}
-  .tabview.tab-in-right{animation:tabInRight 0.46s cubic-bezier(0.22,0.86,0.3,1) both;}
-  .tabview.tab-in-left{animation:tabInLeft 0.46s cubic-bezier(0.22,0.86,0.3,1) both;}
+  .tabview.tab-in-right{animation:tabInRight 0.56s cubic-bezier(0.22,0.86,0.3,1) both;}
+  .tabview.tab-in-left{animation:tabInLeft 0.56s cubic-bezier(0.22,0.86,0.3,1) both;}
 
   /* Bo'lim kelgach ichidagi bloklar birin-ketin ko'tariladi. Hammasi
      birdan paydo bo'lsa, ekran "chaqnab" ketardi; ketma-ket kelsa,
@@ -3249,7 +3157,7 @@
      dastlabki bir nechta blokka beriladi — pastdagilari baribir
      ekrandan tashqarida. */
   @keyframes secIn{
-    from{opacity:0;transform:translate3d(0,14px,0);}
+    from{opacity:0;transform:translate3d(0,18px,0);}
     to{opacity:1;transform:none;}
   }
   .tabview.tab-enter #profileCard > *,
@@ -3262,20 +3170,20 @@
   .tabview.tab-enter > * > .pf-id,
   .tabview.tab-enter > * > .pf-id-stats,
   .tabview.tab-enter > * > .pf-group{
-    animation:secIn 0.5s cubic-bezier(0.22,0.9,0.28,1) both;
+    animation:secIn 0.58s cubic-bezier(0.22,0.9,0.28,1) both;
   }
   .tabview.tab-enter > * > *:nth-child(1),
-  .tabview.tab-enter #profileCard > *:nth-child(1){animation-delay:0.02s;}
+  .tabview.tab-enter #profileCard > *:nth-child(1){animation-delay:0.04s;}
   .tabview.tab-enter > * > *:nth-child(2),
-  .tabview.tab-enter #profileCard > *:nth-child(2){animation-delay:0.07s;}
+  .tabview.tab-enter #profileCard > *:nth-child(2){animation-delay:0.11s;}
   .tabview.tab-enter > * > *:nth-child(3),
-  .tabview.tab-enter #profileCard > *:nth-child(3){animation-delay:0.12s;}
+  .tabview.tab-enter #profileCard > *:nth-child(3){animation-delay:0.18s;}
   .tabview.tab-enter > * > *:nth-child(4),
-  .tabview.tab-enter #profileCard > *:nth-child(4){animation-delay:0.17s;}
+  .tabview.tab-enter #profileCard > *:nth-child(4){animation-delay:0.25s;}
   .tabview.tab-enter > * > *:nth-child(5),
-  .tabview.tab-enter #profileCard > *:nth-child(5){animation-delay:0.21s;}
+  .tabview.tab-enter #profileCard > *:nth-child(5){animation-delay:0.31s;}
   .tabview.tab-enter > * > *:nth-child(n+6),
-  .tabview.tab-enter #profileCard > *:nth-child(n+6){animation-delay:0.24s;}
+  .tabview.tab-enter #profileCard > *:nth-child(n+6){animation-delay:0.36s;}
   :root[data-reduce-motion="1"] .tabview.tab-enter > * > *,
   :root[data-reduce-motion="1"] .tabview.tab-enter #profileCard > *{animation:none;}
   :root[data-reduce-motion="1"] .tabview.tab-in-right,
@@ -4287,26 +4195,6 @@
       <div id="homeMatchList"></div>
     </section>
 
-    <!-- 4. XARITA — Yuklar bo'limidagi o'sha Leaflet/OSM xaritasi,
-         faqat bu yerda ochiq yuklarning yo'nalishlari ko'rsatiladi. -->
-    <section class="home-sec" id="homeMapWrap" hidden>
-      <div class="home-map-card">
-        <div class="home-map-toggle" role="tablist" aria-label="Ko'rinish">
-          <button type="button" class="hmt-btn active" id="btnHomeMapView" role="tab" aria-selected="true" data-i18n="loads.viewMap">Xarita</button>
-          <button type="button" class="hmt-btn" id="btnHomeListView" role="tab" aria-selected="false" data-i18n="loads.viewList">Ro'yxat</button>
-        </div>
-        <div class="home-map" id="homeMap"></div>
-        <div class="home-map-legend">
-          <span><svg class="ic-svg pin-pickup" aria-hidden="true"><use href="#iconPin"/></svg> <span data-i18n="home.legendPickup">Yuklash nuqtasi</span></span>
-          <span><svg class="ic-svg pin-drop" aria-hidden="true"><use href="#iconPin"/></svg> <span data-i18n="home.legendDrop">Yetkazish nuqtasi</span></span>
-        </div>
-        <div class="home-map-zoom">
-          <button type="button" id="btnHomeMapIn" aria-label="Kattalashtirish">+</button>
-          <button type="button" id="btnHomeMapOut" aria-label="Kichraytirish">−</button>
-        </div>
-      </div>
-    </section>
-
     <!-- 5. QANDAY ISHLAYDI? — faqat kirmagan (yangi) foydalanuvchiga
          ko'rinadi; kirgach renderHomeHow() uni yashiradi. -->
     <section class="home-sec" id="homeHowWrap">
@@ -4482,31 +4370,10 @@
 
     <div id="backhaulBanner" hidden></div>
 
-    <div class="view-toggle" id="loadsViewToggle">
-      <button type="button" class="vt-btn active" data-view="list"><svg class="ic-svg" aria-hidden="true"><use href="#iconList"></use></svg> <span data-i18n="loads.viewList">Ro'yxat</span></button>
-      <button type="button" class="vt-btn" data-view="map"><svg class="ic-svg" aria-hidden="true"><use href="#iconMap"></use></svg> <span data-i18n="loads.viewMap">Xarita</span></button>
-    </div>
-
     <p class="note" id="loadsCount" style="margin:var(--s3) 0 var(--s3);"></p>
 
-    <!-- On mobile, "Xarita" moves #loadsList into #mcdBody — a draggable
-         sheet docked over the map, not a separate page (see MapDock and
-         setLoadsView). On desktop (≥1024px) both stay visible side by
-         side and this docking never happens — see .loads-desktop-grid. -->
     <div class="loads-desktop-grid" id="loadsDesktopGrid">
       <div id="loadsListWrap"><div id="loadsList"></div></div>
-
-      <div class="map-dock-shell" id="mapDockShell" hidden>
-        <div id="loadsMap" class="loads-map"></div>
-        <div class="map-card-dock" id="mapCardDock">
-          <div class="mcd-handle" id="mcdHandle" aria-hidden="true"></div>
-          <div class="mcd-head" id="mcdHead" role="button" tabindex="0" aria-label="Ro'yxatni kengaytirish">
-            <span id="mcdCount"></span>
-            <span aria-hidden="true">⌃</span>
-          </div>
-          <div class="mcd-body" id="mcdBody"></div>
-        </div>
-      </div>
     </div>
 
     <div id="loadDetailView" hidden></div>
@@ -5249,6 +5116,7 @@
       "link.success": "Bog'landi! Endi ikkala usul bilan ham shu profilga kirasiz.",
       "notif.soundLabel": "Yangi xabar ovozi", "notif.soundSub": "Suhbat ochiq turganda yangi xabar kelsa, qisqa signal chalinadi.",
       "notif.motionLabel": "Animatsiyalarni kamaytirish", "notif.motionSub": "Qurilma sozlamasidan qat'i nazar, ilovadagi harakatlarni kamaytiradi.",
+      "notif.hapticLabel": "Teginishda vibratsiya", "notif.hapticSub": "Tugma bosilganda qisqa sezilarli javob. iPhone'da faqat Telegram ichida ishlaydi — Safari vebga vibratsiya bermaydi.",
       "notif.tgHeading": "Telegram bildirishnomalari", "notif.deviceHeading": "Shu qurilmada",
       "notif.tgOrders": "Buyurtmam holati", "notif.tgOrdersSub": "Haydovchi topildi, yo'lga chiqdi, yetkazildi",
       "notif.tgListings": "E'lonlarim", "notif.tgListingsSub": "E'lon tasdiqlandi yoki rad etildi",
@@ -5731,6 +5599,7 @@
       "link.success": "Привязано! Теперь вход возможен обоими способами в этот же профиль.",
       "notif.soundLabel": "Звук нового сообщения", "notif.soundSub": "Пока диалог открыт, новое сообщение сопровождается коротким сигналом.",
       "notif.motionLabel": "Меньше анимации", "notif.motionSub": "Уменьшает анимацию в приложении независимо от настроек устройства.",
+      "notif.hapticLabel": "Вибрация при нажатии", "notif.hapticSub": "Короткий отклик при нажатии. На iPhone работает только внутри Telegram — Safari не даёт вибрацию веб-страницам.",
       "notif.tgHeading": "Уведомления в Telegram", "notif.deviceHeading": "На этом устройстве",
       "notif.tgOrders": "Статус моего заказа", "notif.tgOrdersSub": "Водитель найден, выехал, доставил",
       "notif.tgListings": "Мои объявления", "notif.tgListingsSub": "Объявление одобрено или отклонено",
@@ -6209,6 +6078,7 @@
       "link.success": "Linked! You can now sign in with either method into this same profile.",
       "notif.soundLabel": "New message sound", "notif.soundSub": "Plays a short sound when a new message arrives while a chat is open.",
       "notif.motionLabel": "Reduce motion", "notif.motionSub": "Reduces animation across the app regardless of your device setting.",
+      "notif.hapticLabel": "Vibration on tap", "notif.hapticSub": "A short buzz when you tap. On iPhone it only works inside Telegram — Safari gives web pages no vibration.",
       "notif.tgHeading": "Telegram notifications", "notif.deviceHeading": "On this device",
       "notif.tgOrders": "My order status", "notif.tgOrdersSub": "Driver found, departed, delivered",
       "notif.tgListings": "My listings", "notif.tgListingsSub": "Listing approved or rejected",
@@ -6411,14 +6281,57 @@
   var NOTIF_KEY = "yolda_notif_prefs";
 
   function getNotifPrefs(){
-    var defaults = { sound: true, motion: false };
+    var defaults = { sound: true, motion: false, haptics: true };
     try{
       var saved = JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}");
       return {
         sound: saved.sound !== undefined ? !!saved.sound : defaults.sound,
-        motion: saved.motion !== undefined ? !!saved.motion : defaults.motion
+        motion: saved.motion !== undefined ? !!saved.motion : defaults.motion,
+        haptics: saved.haptics !== undefined ? !!saved.haptics : defaults.haptics
       };
     }catch(e){ return defaults; }
+  }
+
+  /* ============================================================
+     Teginish sezgisi (vibratsiya)
+     ------------------------------------------------------------
+     Ikki yo'l bor va ikkalasi ham shu yerda:
+       - Telegram ichida ochilganda — Telegram'ning o'z
+         HapticFeedback'i. U tizim darajasida ishlaydi, ya'ni
+         iPhone'da ham sezilади;
+       - oddiy brauzerda — navigator.vibrate.
+
+     iPhone'ning Safari'si (va unga qo'shilgan ilova) vibratsiyani
+     veb-sahifaga umuman bermaydi — bu brauzerning cheklovi, kod
+     bilan aylanib o'tib bo'lmaydi. Shuning uchun iPhone'da bu
+     faqat Telegram ichida seziladi, Android'da esa hamma joyda.
+     ============================================================ */
+  function haptic(kind){
+    if(!getNotifPrefs().haptics) return false;
+    try{
+      var tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback;
+      if(tg){
+        if(kind === "success" || kind === "error" || kind === "warning"){
+          tg.notificationOccurred(kind);
+        } else if(kind === "select"){
+          tg.selectionChanged();
+        } else {
+          tg.impactOccurred(kind === "heavy" ? "heavy" : kind === "medium" ? "medium" : "light");
+        }
+        return true;
+      }
+      if(navigator.vibrate){
+        var pattern = kind === "error" ? [26, 46, 26]
+          : kind === "success" ? [14, 34, 14]
+          : kind === "warning" ? [20, 40]
+          : kind === "heavy" ? 24
+          : kind === "medium" ? 16
+          : 10;
+        navigator.vibrate(pattern);
+        return true;
+      }
+    }catch(e){}
+    return false;
   }
 
   function applyMotionPref(){
@@ -6723,6 +6636,10 @@
       + '<div class="pref-switch">'
       +   '<div><div class="lbl" data-i18n="notif.motionLabel">Animatsiyalarni kamaytirish</div><div class="sub" data-i18n="notif.motionSub"></div></div>'
       +   '<button type="button" class="switch-track" id="notifMotionSwitch" role="switch" aria-checked="'+prefs.motion+'" aria-label="'+escapeHtml(t("notif.motionLabel")||"")+'"></button>'
+      + '</div>'
+      + '<div class="pref-switch">'
+      +   '<div><div class="lbl" data-i18n="notif.hapticLabel">Teginishda vibratsiya</div><div class="sub" data-i18n="notif.hapticSub"></div></div>'
+      +   '<button type="button" class="switch-track" id="notifHapticSwitch" role="switch" aria-checked="'+prefs.haptics+'" aria-label="'+escapeHtml(t("notif.hapticLabel")||"")+'"></button>'
       + '</div>';
   }
 
@@ -6778,6 +6695,14 @@
     if(motionBtn) motionBtn.addEventListener("click", function(){
       var next = setNotifPref("motion", motionBtn.getAttribute("aria-checked") !== "true");
       motionBtn.setAttribute("aria-checked", String(next.motion));
+    });
+    var hapticBtn = container.querySelector("#notifHapticSwitch");
+    if(hapticBtn) hapticBtn.addEventListener("click", function(){
+      var next = setNotifPref("haptics", hapticBtn.getAttribute("aria-checked") !== "true");
+      hapticBtn.setAttribute("aria-checked", String(next.haptics));
+      // Yoqilgan zahoti bir marta sezdiramiz — kalit nima qilishini
+      // tushuntirishdan ko'ra ko'rsatgan yaxshi.
+      if(next.haptics) haptic("medium");
     });
   }
 
@@ -7629,7 +7554,7 @@
   function auError(screen, message){
     var box = screen && screen.querySelector("[data-error]");
     if(!box) return;
-    if(message){ box.textContent = message; box.hidden = false; }
+    if(message){ box.textContent = message; box.hidden = false; haptic("error"); }
     else { box.textContent = ""; box.hidden = true; }
   }
 
@@ -7876,6 +7801,7 @@
    */
   function applyPhoneCredential(result, source){
     if(!result || !result.phoneToken) return false;
+    if(source !== "restored") haptic("success");
     phoneToken = result.phoneToken;
     phoneProfile = { name: result.name || "", phone: result.phone || "", pretty: result.prettyPhone || "" };
     try{
@@ -11205,8 +11131,6 @@
   };
   var loadsInitialized = false;
   var lastLoadsResult = [];
-  var loadsMapInstance = null;
-  var loadsMapMarkers = [];
 
   var CITY_COORDS = {
     "Toshkent": [41.2995, 69.2401], "Samarqand": [39.6542, 66.9597], "Buxoro": [39.7747, 64.4286],
@@ -11416,176 +11340,10 @@
       fetchLoads();
     });
 
-    document.querySelectorAll("#loadsViewToggle .vt-btn").forEach(function(b){
-      b.addEventListener("click", function(){ setLoadsView(b.getAttribute("data-view")); });
-    });
-  }
-
-  var currentLoadsView = "list";
-  function isDesktopLoadsLayout(){ return window.innerWidth >= 1024; }
-
-  function setLoadsView(view){
-    currentLoadsView = view;
-    var listWrap = document.getElementById("loadsListWrap");
-    var mapShell = document.getElementById("mapDockShell");
-    var list = document.getElementById("loadsList");
-    var mcdBody = document.getElementById("mcdBody");
-    document.querySelectorAll("#loadsViewToggle .vt-btn").forEach(function(b){
-      b.classList.toggle("active", b.getAttribute("data-view") === view);
-    });
-
-    if(isDesktopLoadsLayout()){
-      // Sidebar-style: list and map are both always visible, side by side —
-      // the mobile map/list toggle simply doesn't apply at this width.
-      if(list && listWrap && list.parentNode !== listWrap) listWrap.appendChild(list);
-      if(listWrap) listWrap.hidden = false;
-      if(mapShell) mapShell.hidden = false;
-      renderLoadsMap(lastLoadsResult);
-      return;
-    }
-
-    if(view === "map"){
-      if(listWrap) listWrap.hidden = true;
-      if(mapShell) mapShell.hidden = false;
-      if(list && mcdBody && list.parentNode !== mcdBody) mcdBody.appendChild(list);
-      renderLoadsMap(lastLoadsResult);
-    } else {
-      if(list && listWrap && list.parentNode !== listWrap) listWrap.appendChild(list);
-      if(listWrap) listWrap.hidden = false;
-      if(mapShell) mapShell.hidden = true;
-    }
-  }
-
-  // Crossing the 1024px breakpoint (rotating a tablet, resizing a window)
-  // should re-decide the layout, not leave it stuck in whichever mode it
-  // started in.
-  var loadsViewResizeTimer = null;
-  window.addEventListener("resize", function(){
-    clearTimeout(loadsViewResizeTimer);
-    loadsViewResizeTimer = setTimeout(function(){
-      var tab = document.getElementById("tab-loads");
-      if(tab && !tab.hidden) setLoadsView(currentLoadsView);
-    }, 200);
-  });
-
-  /**
-   * The docked card sheet over the map (mobile only) — a peek/expanded
-   * two-state panel, both tappable and draggable via its handle/header.
-   * Not a modal: no backdrop, nothing else on screen is blocked while it's
-   * in its default "peek" state, so the map stays part of the same browsing
-   * flow instead of feeling like a separate page.
-   */
-  var MapDock = (function(){
-    var dock = null, startY = null, currentY = null, dragging = false, startExpanded = false, touchHandled = false;
-
-    function els(){ if(!dock) dock = document.getElementById("mapCardDock"); }
-    function toggle(){ els(); if(dock) dock.classList.toggle("expanded"); }
-
-    function onStart(e){
-      els(); if(!dock) return;
-      dragging = true;
-      startY = (e.touches ? e.touches[0].clientY : e.clientY);
-      currentY = startY;
-      startExpanded = dock.classList.contains("expanded");
-      dock.style.transition = "none";
-    }
-    function onMove(e){
-      if(!dragging || !dock) return;
-      currentY = (e.touches ? e.touches[0].clientY : e.clientY);
-      var delta = currentY - startY; // negative = dragging upward (toward expanded)
-      var peekOffset = Math.max(0, dock.offsetHeight - 96);
-      var base = startExpanded ? 0 : peekOffset;
-      var next = Math.max(0, Math.min(peekOffset, base + delta));
-      dock.style.transform = "translateY(" + next + "px)";
-    }
-    function onEnd(){
-      if(!dragging || !dock) return;
-      dragging = false;
-      dock.style.transition = "";
-      dock.style.transform = "";
-      var delta = currentY - startY;
-      if(startExpanded){
-        if(delta > 70) dock.classList.remove("expanded");
-      } else if(delta < -70){
-        dock.classList.add("expanded");
-      }
-      touchHandled = true;
-      setTimeout(function(){ touchHandled = false; }, 400);
-    }
-
-    function init(){
-      els(); if(!dock) return;
-      [document.getElementById("mcdHandle"), document.getElementById("mcdHead")].forEach(function(el){
-        if(!el) return;
-        el.addEventListener("touchstart", onStart, {passive:true});
-        el.addEventListener("touchmove", onMove, {passive:true});
-        el.addEventListener("touchend", onEnd);
-        el.addEventListener("click", function(){ if(!touchHandled) toggle(); });
-        el.addEventListener("keydown", function(e){
-          if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
-        });
-      });
-    }
-    return { init: init };
-  })();
-
-  function ensureLoadsMap(){
-    if(loadsMapInstance) return;
-    if(typeof L === "undefined"){
-      // Leaflet loads via a deferred <script>, which can still be pending
-      // the very first time someone taps "Xarita" — retry once it's ready
-      // instead of leaving an empty box.
-      window.addEventListener("load", function(){
-        if(!loadsMapInstance && typeof L !== "undefined"){
-          ensureLoadsMap();
-          var mapBtn = document.querySelector("#loadsViewToggle .vt-btn[data-view=\"map\"].active");
-          if(mapBtn) renderLoadsMap(lastLoadsResult);
-        }
-      }, { once: true });
-      return;
-    }
-    var el = document.getElementById("loadsMap");
-    if(!el) return;
-    loadsMapInstance = L.map(el, { scrollWheelZoom: false }).setView([41.0, 66.5], 5.4);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap", maxZoom: 12
-    }).addTo(loadsMapInstance);
-  }
-
-  function renderLoadsMap(loads){
-    ensureLoadsMap();
-    if(!loadsMapInstance) return;
-    loadsMapMarkers.forEach(function(m){ loadsMapInstance.removeLayer(m); });
-    loadsMapMarkers = [];
-
-    var counts = {};
-    loads.forEach(function(o){ counts[o.fromCity] = (counts[o.fromCity] || 0) + 1; });
-
-    Object.keys(counts).forEach(function(city){
-      var coord = CITY_COORDS[city];
-      if(!coord) return;
-      var pinIcon = L.divIcon({
-        className: "", html: '<div class="map-pin-badge">'+escapeHtml(city)+' · '+counts[city]+'</div>', iconSize: null
-      });
-      var marker = L.marker(coord, { icon: pinIcon }).addTo(loadsMapInstance);
-      marker.on("click", function(){
-        var fromSel = document.getElementById("fLoadsFrom");
-        if(fromSel){ fromSel.value = city; }
-        loadsState.fromCity = city;
-        setLoadsView("list");
-        fetchLoads();
-      });
-      loadsMapMarkers.push(marker);
-    });
-
-    setTimeout(function(){ loadsMapInstance.invalidateSize(); }, 200);
   }
 
   function renderLoadsTab(){
-    var firstInit = !loadsInitialized;
     initLoadsFilters();
-    if(firstInit) MapDock.init();
-    setLoadsView(currentLoadsView);
     loadDriverMatchProfile(function(){
       var chip = document.getElementById("chipMatchOnly");
       if(chip) chip.hidden = !driverMatchProfile;
@@ -11723,13 +11481,8 @@
         lastLoadsResult = loads;
 
         if(countEl) countEl.textContent = loads.length + " ta yuk topildi";
-        var mcdCount = document.getElementById("mcdCount");
-        if(mcdCount) mcdCount.textContent = loads.length + " ta yuk";
         list.innerHTML = loads.length ? loads.map(loadCardHtml).join("") : emptyLoadsHtml();
         applyLang();
-
-        var mapBtn = document.querySelector("#loadsViewToggle .vt-btn[data-view=\"map\"].active");
-        if(mapBtn || isDesktopLoadsLayout()) renderLoadsMap(loads);
 
         var resetBtn = document.getElementById("btnLoadsResetEmpty");
         if(resetBtn) resetBtn.addEventListener("click", function(){
@@ -13244,75 +12997,6 @@
     });
   }
 
-  /* ---------- Bosh sahifadagi xarita ----------
-     Yuklar bo'limidagi o'sha Leaflet + OpenStreetMap. Ikkinchi xarita
-     kutubxonasi qo'shilmaydi va ikkinchi marta yozilmaydi: shu yerda
-     faqat ochiq yuklarning yo'nalishlari chiziladi.
-       yashil nuqta — yuklash joyi, ko'k nuqta — yetkazish joyi,
-       yashil chiziq — yo'nalish.
-     Nuqta bosilsa o'sha yukning sahifasi ochiladi. */
-  var homeMapInstance = null;
-  var homeMapLayers = [];
-
-  function homeMapPin(color){
-    return L.divIcon({
-      className: "",
-      html: '<span style="display:block;width:15px;height:15px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.4);"></span>',
-      iconSize: [15, 15], iconAnchor: [7, 7]
-    });
-  }
-
-  function renderHomeMap(){
-    var wrap = document.getElementById("homeMapWrap");
-    var box = document.getElementById("homeMap");
-    if(!wrap || !box || typeof L === "undefined") return;
-
-    fetch("/api/order?action=list").then(function(r){
-      if(!r.ok) throw new Error("http");
-      return r.json();
-    }).then(function(data){
-      var loads = (data.loads || []).slice(0, 25);
-      // Xaritada ko'rsatadigan narsa bo'lmasa, bo'sh xarita
-      // ko'rsatilmaydi — butun blok yashiriladi.
-      var usable = loads.filter(function(o){ return CITY_COORDS[o.fromCity] && CITY_COORDS[o.toCity]; });
-      if(!usable.length){ wrap.hidden = true; return; }
-      wrap.hidden = false;
-
-      if(!homeMapInstance){
-        homeMapInstance = L.map(box, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
-          .setView([41.3, 64.6], 5);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 12 }).addTo(homeMapInstance);
-      }
-
-      homeMapLayers.forEach(function(l){ homeMapInstance.removeLayer(l); });
-      homeMapLayers = [];
-
-      var bounds = [];
-      var seen = {};
-      usable.forEach(function(o){
-        var a = CITY_COORDS[o.fromCity];
-        var b = CITY_COORDS[o.toCity];
-        bounds.push(a, b);
-
-        var line = L.polyline([a, b], { color: "#0A9F5B", weight: 3, opacity: 0.85 }).addTo(homeMapInstance);
-        homeMapLayers.push(line);
-
-        [[a, o.fromCity, "#0A9F5B"], [b, o.toCity, "#2563EB"]].forEach(function(pair){
-          var key = pair[1] + pair[2];
-          if(seen[key]) return;
-          seen[key] = true;
-          var m = L.marker(pair[0], { icon: homeMapPin(pair[2]), title: pair[1] }).addTo(homeMapInstance);
-          m.bindTooltip(pair[1], { permanent: true, direction: "right", className: "home-map-label" });
-          m.on("click", function(){ openLoadDetail(o.code); });
-          homeMapLayers.push(m);
-        });
-      });
-
-      if(bounds.length) homeMapInstance.fitBounds(bounds, { padding: [46, 46], maxZoom: 8 });
-      setTimeout(function(){ homeMapInstance.invalidateSize(); }, 200);
-    }).catch(function(){ wrap.hidden = true; });
-  }
-
   /* ---------- Bosh sahifadagi yuk mashinalari ----------
      Narx bazada qanday bo'lsa shunday ko'rsatiladi — so'mda. Boshqa
      valyutaga aylantirilmaydi: kursni o'ylab topib qo'yish sotuvchi
@@ -13373,7 +13057,7 @@
   /* ---------- Load details — full view swapped into the Yuklar tab. ---------- */
   function openLoadDetail(code){
     switchTab("loads");
-    ["loadsDesktopGrid", "loadsCount", "loadsViewToggle", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
+    ["loadsDesktopGrid", "loadsCount", "backhaulBanner", "loadsGroupPromo"].forEach(function(id){
       var el = document.getElementById(id);
       if(el) el.hidden = true;
     });
@@ -13407,11 +13091,6 @@
     });
     var searchCard = document.querySelector(".loads-search-card");
     if(searchCard) searchCard.hidden = false;
-    var viewToggle = document.getElementById("loadsViewToggle");
-    if(viewToggle) viewToggle.hidden = false;
-
-    var activeBtn = document.querySelector("#loadsViewToggle .vt-btn.active");
-    setLoadsView(activeBtn ? activeBtn.getAttribute("data-view") : "list");
     loadBackhaul();
   }
 
@@ -13457,8 +13136,6 @@
       // borishini biladi; ikkalasi ham ixtiyoriy.
       + addressLineHtml("iconArrowRight", d.fromAddress, d.fromPoint, "loads.from", "Qayerdan")
       + addressLineHtml("iconArrowRight", d.toAddress, d.toPoint, "loads.to", "Qayerga")
-      + (orderPoint(d.fromPoint, d.fromCity) && orderPoint(d.toPoint, d.toCity)
-          ? '<div id="detailMap" class="loads-map" style="height:200px;"></div>' : '')
       + '<div class="detail-price"><div class="amt">'+formatNum(d.amount)+' so\'m</div>'
       +   '<p class="note" style="margin:4px 0 0;">'+(d.isProposed ? "Yuk beruvchi taklifi" : "Taxminiy narx")+'</p></div>'
       + '<div class="detail-grid">'
@@ -13509,26 +13186,6 @@
     var msgBtn = document.getElementById("btnDetailMessage");
     if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
 
-    // Yuk beruvchi aniq nuqta belgilagan bo'lsa, xarita shaharning
-    // markazini emas, o'sha nuqtani ko'rsatadi — haydovchi qayerga
-    // borishini shu yerda ko'rishi kerak. Belgilanmagan bo'lsa
-    // avvalgidek shahar markazi qoladi.
-    var fromLL = orderPoint(d.fromPoint, d.fromCity);
-    var toLL = orderPoint(d.toPoint, d.toCity);
-    if(fromLL && toLL && typeof L !== "undefined"){
-      // Aniq nuqta bo'lsa yaqinroq ko'rsatish mumkin; ikkalasi ham
-      // shahar markazi bo'lsa eski cheklov (12) o'z joyida qoladi.
-      var exact = Boolean(d.fromPoint || d.toPoint);
-      var m = L.map("detailMap", { scrollWheelZoom: false, zoomControl: false })
-        .fitBounds([fromLL, toLL], { padding: [30, 30] });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap", maxZoom: exact ? 17 : 12
-      }).addTo(m);
-      L.marker(fromLL).addTo(m);
-      L.marker(toLL).addTo(m);
-      L.polyline([fromLL, toLL], { color: "#0A9F5B", weight: 3, dashArray: "6 6" }).addTo(m);
-      setTimeout(function(){ m.invalidateSize(); }, 150);
-    }
   }
 
   /**
@@ -13794,13 +13451,9 @@
   /* Muhim natijalarda kichik tebranish — faqat qo'llab-quvvatlaydigan
      qurilmalarda (asosan Android; iOS Safari/PWA'da navigator.vibrate
      umuman yo'q, shuning uchun bu yerda jimgina hech narsa qilmaydi). */
-  function vibrate(pattern){
-    try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
-  }
-
   function toast(title, detail, kind){
     if(!toastHost) return;
-    if(kind === "success") vibrate(30);
+    haptic(kind === "success" ? "success" : kind === "error" ? "error" : "light");
     var el = document.createElement("div");
     el.className = "toast " + (kind || "info");
     el.innerHTML = icon(kind === "success" ? "iconCheck" : "iconInfo")
@@ -13929,7 +13582,6 @@
 
   function pointFieldHtml(which){
     var addr = which === "from" ? state.fromAddress : state.toAddress;
-    var point = which === "from" ? state.fromPoint : state.toPoint;
     var labelKey = which === "from" ? "order.fromAddressLabel" : "order.toAddressLabel";
     var labelText = which === "from"
       ? "Olib ketish manzili (ixtiyoriy)"
@@ -13939,90 +13591,7 @@
       + '<input type="text" id="fAddr'+which+'" maxlength="200" '
       +   'placeholder="Ko\'cha, uy, mo\'ljal" data-i18n-placeholder="order.addressPlaceholder" '
       +   'value="'+escapeHtml(addr)+'">'
-      + '<button type="button" class="pick-point'+(point ? " set" : "")+'" data-pick-point="'+which+'">'
-      +   icon(point ? "iconCheckLine" : "iconMap")
-      +   ' <span data-i18n="'+(point ? "order.pointSet" : "order.pointPick")+'">'
-      +   (point ? "Xaritada belgilangan" : "Xaritada belgilash") + '</span></button>'
       + '</div>';
-  }
-
-  /* Xaritali oyna: nuqtani surib belgilash. Manzil qidiruvi yo'q —
-     u tashqi xizmatga bog'lanishni talab qilardi; nuqtani surish esa
-     bor kutubxona bilan ishlaydi va aniqroq natija beradi. */
-  function openPointPicker(which){
-    var city = which === "from" ? state.from : state.to;
-    var current = which === "from" ? state.fromPoint : state.toPoint;
-    var centre = CITY_COORDS[city];
-    if(!current && !centre){
-      toast(t("order.pointNoCity") || "Bu shahar uchun xarita yo'q", "", "info");
-      return;
-    }
-    if(typeof L === "undefined"){
-      toast(t("order.pointNoMap") || "Xarita yuklanmadi, keyinroq urinib ko'ring", "", "info");
-      return;
-    }
-    var chosen = current
-      ? { lat: current.lat, lng: current.lng }
-      : { lat: centre[0], lng: centre[1] };
-
-    Sheet.open({
-      title: which === "from"
-        ? (t("order.pickFrom") || "Olib ketish nuqtasi")
-        : (t("order.pickTo") || "Yetkazish nuqtasi"),
-      html: '<p class="note" style="margin-top:0;" data-i18n="order.pointHelp">Belgini kerakli '
-        + 'joyga suring yoki xaritani bosing. Haydovchi shu nuqtaga yo\'l oladi.</p>'
-        + '<div id="pointMap" style="height:260px;border-radius:var(--r-md);overflow:hidden;"></div>'
-        + '<p class="note" id="pointCoords" style="text-align:center;"></p>',
-      footerHtml: '<div class="row2">'
-        + '<button type="button" class="btn ghost" id="btnPointClear" data-i18n="order.pointClear">Olib tashlash</button>'
-        + '<button type="button" class="btn" id="btnPointSave" data-i18n="order.pointSave">Saqlash</button>'
-        + '</div>',
-      onOpen: function(){
-        var map = L.map("pointMap", { zoomControl: true })
-          .setView([chosen.lat, chosen.lng], current ? 15 : 12);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "&copy; OpenStreetMap", maxZoom: 18
-        }).addTo(map);
-        var marker = L.marker([chosen.lat, chosen.lng], { draggable: true }).addTo(map);
-
-        function show(){
-          var el = document.getElementById("pointCoords");
-          if(el) el.textContent = chosen.lat.toFixed(5) + ", " + chosen.lng.toFixed(5);
-        }
-        show();
-        marker.on("dragend", function(){
-          var p = marker.getLatLng();
-          chosen = { lat: p.lat, lng: p.lng };
-          show();
-        });
-        map.on("click", function(e){
-          chosen = { lat: e.latlng.lat, lng: e.latlng.lng };
-          marker.setLatLng(e.latlng);
-          show();
-        });
-        // Oyna ochilish animatsiyasi tugagach o'lchamni qayta hisoblaydi,
-        // aks holda xarita yarim bo'sh chiziladi.
-        setTimeout(function(){ map.invalidateSize(); }, 280);
-
-        var saveBtn = document.getElementById("btnPointSave");
-        if(saveBtn) saveBtn.addEventListener("click", function(){
-          var value = {
-            lat: Math.round(chosen.lat * 1e5) / 1e5,
-            lng: Math.round(chosen.lng * 1e5) / 1e5
-          };
-          if(which === "from") state.fromPoint = value; else state.toPoint = value;
-          Sheet.close();
-          render();
-        });
-        var clearBtn = document.getElementById("btnPointClear");
-        if(clearBtn) clearBtn.addEventListener("click", function(){
-          if(which === "from") state.fromPoint = null; else state.toPoint = null;
-          Sheet.close();
-          render();
-        });
-        applyLang();
-      }
-    });
   }
 
   function stepCargoHtml(){
@@ -14417,9 +13986,6 @@
     if(fAddrFrom) fAddrFrom.addEventListener("input", function(e){ state.fromAddress = e.target.value; });
     var fAddrTo = document.getElementById("fAddrto");
     if(fAddrTo) fAddrTo.addEventListener("input", function(e){ state.toAddress = e.target.value; });
-    document.querySelectorAll("[data-pick-point]").forEach(function(b){
-      b.addEventListener("click", function(){ openPointPicker(b.getAttribute("data-pick-point")); });
-    });
 
     var fVolume = document.getElementById("fVolume");
     if(fVolume) fVolume.addEventListener("input", function(e){ state.volume = e.target.value; });
@@ -15123,21 +14689,21 @@
   populateCityDatalist();
   renderHomeTrucks();
 
-  /* Xarita: Leaflet <script defer> bilan yuklanadi, ya'ni shu yerga
-     yetganda hali tayyor bo'lmasligi mumkin. Tayyor bo'lsa darhol,
-     bo'lmasa yuklangach chizamiz — "L is not defined" bo'lmasin. */
-  if(typeof L !== "undefined") renderHomeMap();
-  else window.addEventListener("load", function(){ if(typeof L !== "undefined") renderHomeMap(); });
-
-  /* Xarita ustidagi ikkita tugma. "Ro'yxat" — Yuklar bo'limining
-     ro'yxat ko'rinishiga o'tkazadi: bu yerda ikkinchi ro'yxat
-     yasalmaydi, bittasi allaqachon bor. */
-  var btnHomeListView = document.getElementById("btnHomeListView");
-  if(btnHomeListView) btnHomeListView.addEventListener("click", function(){ switchTab("loads"); });
-  var btnHomeMapIn = document.getElementById("btnHomeMapIn");
-  if(btnHomeMapIn) btnHomeMapIn.addEventListener("click", function(){ if(homeMapInstance) homeMapInstance.zoomIn(); });
-  var btnHomeMapOut = document.getElementById("btnHomeMapOut");
-  if(btnHomeMapOut) btnHomeMapOut.addEventListener("click", function(){ if(homeMapInstance) homeMapInstance.zoomOut(); });
+  /* Teginish sezgisi butun ilovada bitta joydan beriladi: har bir
+     tugmaga alohida qo'shish o'rniga, bosilgan narsa bosiladiganmi —
+     shu yerda aniqlanadi. `pointerdown` tanlandi, chunki `click`
+     barmoq uzilganda keladi va javob kechikkanday tuyulardi.
+     Asosiy (yashil) tugmalar biroz kuchliroq sezdiradi. */
+  document.addEventListener("pointerdown", function(ev){
+    var el = ev.target && ev.target.closest
+      ? ev.target.closest("button, a.btn, [role='button'], .chip, .bn-item, .switch-track, .au-otp-box")
+      : null;
+    if(!el || el.disabled) return;
+    var strong = el.classList.contains("au-btn--primary")
+      || (el.classList.contains("btn") && !el.classList.contains("ghost"))
+      || el.classList.contains("bn-item--primary");
+    haptic(strong ? "medium" : "light");
+  }, { passive: true });
 
   // Tomchini boshlang'ich joyiga qo'yamiz va o'lcham o'zgarganda
   // (burilish, tilni almashtirish) qayta hisoblaymiz.
@@ -15351,7 +14917,7 @@
     // sahifa kutilmaganda qayta yuklanardi (Leaflet xaritasi buning
     // aniq namunasi edi).
     function startsInsideDraggableWidget(target){
-      return !!(target && target.closest && target.closest(".leaflet-container, [data-no-ptr]"));
+      return !!(target && target.closest && target.closest("[data-no-ptr]"));
     }
 
     window.addEventListener("touchstart", function(e){
