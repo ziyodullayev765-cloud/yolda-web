@@ -1685,8 +1685,65 @@
     return o.cargoType === "OTHER" && o.customCargoLabel ? o.customCargoLabel : (o.cargoType || "");
   }
 
+  /* Eski buyurtmalarni tozalash. Faqat bosh administratorda ko'rinadi
+     va ruxsat baribir serverda tekshiriladi — bu tugmani yashirish
+     shunchaki ko'rinish qatlami. */
+  var PURGE_CHOICES = [
+    { days: 1,  label: "1 kundan eski" },
+    { days: 7,  label: "7 kundan eski" },
+    { days: 30, label: "1 oydan eski" },
+    { days: 0,  label: "Hammasi" }
+  ];
+
+  function purgeButton(){
+    if(!can("orders:purge")) return "";
+    return '<button type="button" class="btn" data-act="orders-purge">'
+      + ico("trash") + "Eskilarini o'chirish</button>";
+  }
+
+  function confirmPurgeOrders(){
+    var orders = Store.list("orders");
+    var countFor = function(days){
+      if(days === 0) return orders.length;
+      var cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+      return orders.filter(function(o){ return Number(o.createdAt) < cutoff; }).length;
+    };
+
+    openModal({
+      title: "Buyurtmalarni o'chirish",
+      body: '<p style="margin:0 0 14px;color:var(--text-soft);font-size:13.5px;">'
+        + "Qaysi buyurtmalar o'chirilsin? Bu amalni <b>qaytarib bo'lmaydi</b> — "
+        + "o'chirilgan buyurtma bazadan butunlay ketadi."
+        + '</p>'
+        + '<div class="field"><label for="purgeRange">Muddat</label><select id="purgeRange">'
+        + PURGE_CHOICES.map(function(c){
+            return '<option value="' + c.days + '">' + esc(c.label)
+              + " — " + countFor(c.days) + " ta</option>";
+          }).join("")
+        + '</select></div>'
+        + '<p style="margin:12px 0 0;color:var(--text-dim);font-size:12.5px;">'
+        + "Sanasi noma'lum yozuvlar o'chirilmaydi."
+        + '</p>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
+        + '<button type="button" class="btn bad" data-act="modal-save">O\'chirish</button>',
+      onSave: function(){
+        var sel = byId("purgeRange");
+        var days = Number(sel ? sel.value : 0);
+        Api.post("purge-orders", { olderThanDays: days, confirm: true }).then(function(body){
+          closeModal();
+          toast(body.removed + " ta buyurtma o'chirildi", "ok");
+          Store.load("orders", true);
+        }).catch(function(e){
+          if(handleApiError(e)) return;
+          toast(e.message, "bad");
+        });
+      }
+    });
+  }
+
   function viewLoads(){
-    return pageHead("Yuk buyurtmalari", "Saytdan kelgan barcha yuk buyurtmalari", refreshBtn("orders"))
+    return pageHead("Yuk buyurtmalari", "Saytdan kelgan barcha yuk buyurtmalari",
+      purgeButton() + refreshBtn("orders"))
       + withData(["orders"], function(){
         var orders = Store.list("orders");
         var counts = {};
@@ -2286,8 +2343,16 @@
   /* ==========================================================
      22. Foydalanuvchilar
      ========================================================== */
+  /**
+   * Tayyor HTML qaytaradi (yulduzcha — SVG), shuning uchun chaqirgan
+   * joyda esc() QO'YILMAYDI. Ilgari qo'yilgan edi va jadvalda
+   * yulduzcha o'rniga SVG kodining o'zi matn bo'lib chiqardi.
+   * Ichidagi qiymatlar sondan hosil bo'ladi, ya'ni xavfsiz.
+   */
   function ratingText(u){
-    return u.ratingCount ? STAR_MARK + " " + (u.ratingSum / u.ratingCount).toFixed(1) + " (" + u.ratingCount + ")" : "—";
+    if(!u.ratingCount) return "—";
+    var avg = (u.ratingSum / u.ratingCount).toFixed(1);
+    return STAR_MARK + " " + esc(avg) + " (" + esc(String(u.ratingCount)) + ")";
   }
 
   function viewUsers(){
@@ -2350,7 +2415,7 @@
               render:function(u){ return u.verified ? pill("Ha", "pill-ok") : pill("Yo'q", "pill-dim"); } },
             { key:"rating", label:"Baho", sortable:true, cls:"num",
               value:function(u){ return u.ratingCount ? u.ratingSum / u.ratingCount : 0; },
-              render:function(u){ return esc(ratingText(u)); } },
+              render:function(u){ return ratingText(u); } },
             { key:"actions", label:"Amal",
               render:function(u){
                 var out = '<div class="cell-actions">'
@@ -2411,7 +2476,7 @@
         + kvRow("Telegram", user.telegramUsername ? "@" + esc(user.telegramUsername) : "—")
         + kvRow("Mashina", esc(VEHICLE_LABELS[user.vehicleType] || "—"))
         + kvRow("Davlat raqami", esc(user.plateNumber || "—"))
-        + kvRow("Baho", esc(ratingText(user)))
+        + kvRow("Baho", ratingText(user))
         + (user.verificationRequestedAt && !user.verified
             ? kvRow("Tasdiqlash so'rovi", esc(relTime(user.verificationRequestedAt))) : "")
         + (user.bio ? kvRow("Bio", esc(user.bio)) : "")
@@ -2778,12 +2843,17 @@
      ro'yxat orqada qolib ketardi va hech kim sezmasdi.
      ========================================================== */
   var iconSprite = { state:"idle", ids:[], error:"" };
+  var iconError = "";   // oxirgi yuklash xatosi, ekranda turadi
 
   function loadIconSprite(){
     if(iconSprite.state === "loading" || iconSprite.state === "ready") return;
     iconSprite.state = "loading";
-    fetch("/index.html", { cache:"no-cache" }).then(function(r){
-      if(!r.ok) throw new Error("Ilova sahifasi o'qilmadi");
+    // Ilova sahifasi service worker keshida turadi (sw.js). Oddiy
+    // so'rovda o'sha eski nusxa kelib qolardi, ya'ni yangi qo'shilgan
+    // ikonka ro'yxatda ko'rinmasdi. Manzilga vaqt belgisi qo'shilsa
+    // kesh bu so'rovni tanimaydi va jonli nusxa keladi.
+    fetch("/index.html?icons=" + Date.now(), { cache:"reload" }).then(function(r){
+      if(!r.ok) throw new Error("Ilova sahifasi o'qilmadi (" + r.status + ")");
       return r.text();
     }).then(function(html){
       // Sprite — <symbol> lar turgan yagona yashirin <svg>.
@@ -2843,6 +2913,11 @@
           + "<b>Fayl saqlash sozlanmagan.</b> Ikonka almashtirish uchun Cloudflare R2 "
           + "kalitlari kerak (README’da yozilgan). Hozircha faqat ko‘rish mumkin."
           + "</div>";
+        if(iconError){
+          warn += '<div class="note-box warn" style="margin-bottom:16px;">'
+            + "<b>Oxirgi urinish xatosi:</b> " + esc(iconError)
+            + "</div>";
+        }
 
         var stats = '<div class="stat-grid">'
           + stat("Jami", String(iconSprite.ids.length), "ikonka", "star")
@@ -2902,11 +2977,16 @@
 
         Api.post("save-icon", { id: id, dataUrl: canvas.toDataURL("image/png") })
           .then(function(){
+            iconError = "";
             toast("Ikonka almashtirildi", "ok");
             Store.load("icons", true);
           }).catch(function(e){
             if(handleApiError(e)) return;
+            // Xato ekranda ham qoladi: toast o'tib ketadi, sabab esa
+            // nima qilish kerakligini aytadi.
+            iconError = e.message;
             toast(e.message, "bad");
+            render();
           });
       };
       img.src = reader.result;
@@ -3431,6 +3511,7 @@
     if(act === "life-feature"){ setLifeFlag(t.getAttribute("data-id"), "featured", t.getAttribute("data-on") !== "1"); return; }
     if(act === "life-delete"){ confirmDeleteLife(t.getAttribute("data-id")); return; }
     if(act === "icon-reset"){ resetIcon(t.getAttribute("data-id")); return; }
+    if(act === "orders-purge"){ confirmPurgeOrders(); return; }
     if(act === "settings-save"){ saveSettings(); return; }
     if(act === "requeue-legacy"){ confirmRequeueLegacy(); return; }
 

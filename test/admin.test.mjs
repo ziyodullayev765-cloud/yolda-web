@@ -28,6 +28,8 @@ const store = new Map();
 const sets = new Map();
 globalThis.__store = store;
 globalThis.__sets = sets;
+const lists = new Map();
+globalThis.__lists = lists;
 
 writeFileSync(join(work, 'kvmock.mjs'), `
 export const kvConfigured = true;
@@ -39,8 +41,17 @@ export const kvSadd = async (k, m) => { if(!sets.has(k)) sets.set(k, new Set());
 export const kvSrem = async (k, m) => { if(sets.has(k)) sets.get(k).delete(m); return true; };
 export const kvSmembers = async (k) => sets.has(k) ? [...sets.get(k)] : [];
 export const kvSismember = async (k, m) => sets.has(k) && sets.get(k).has(m);
-export const kvPush = async () => true;
-export const kvRange = async () => [];
+const lists = globalThis.__lists;
+export const kvPush = async (k, v) => { if(!lists.has(k)) lists.set(k, []); lists.get(k).unshift(v); return true; };
+export const kvRange = async (k, a, b) => {
+  const all = lists.has(k) ? lists.get(k) : [];
+  const end = Number(b) < 0 ? all.length : Number(b) + 1;
+  return all.slice(Number(a), end);
+};
+export const kvLrem = async (k, v) => {
+  if(lists.has(k)) lists.set(k, lists.get(k).filter((x) => x !== v));
+  return true;
+};
 export const kvKeys = async () => [...store.keys()].filter(k => k.startsWith('profile:'));
 `);
 
@@ -769,6 +780,88 @@ console.log('\n== saqlash sozlanmaganda ==');
   const read = await call(bare, 'GET', { resource: 'icons' }, null, cookieFor('ADMIN'));
   check('ko‘rish baribir ishlaydi', read.statusCode === 200 && read.body.storage === false, JSON.stringify(read.body));
   Object.assign(process.env, keep);
+}
+
+/* ==========================================================
+   Eski buyurtmalarni tozalash — faqat bosh administrator
+   ========================================================== */
+console.log('\n== buyurtmalarni tozalash ==');
+{
+  const DAY = 24 * 60 * 60 * 1000;
+  const seed = () => {
+    store.clear(); lists.clear();
+    const make = (code, ageDays) => {
+      store.set(`order:${code}`, JSON.stringify({ code, createdAt: Date.now() - ageDays * DAY }));
+      lists.set('order_codes', [...(lists.get('order_codes') || []), code]);
+    };
+    make('OLD40', 40);
+    make('OLD10', 10);
+    make('OLD3', 3);
+    make('NEW', 0.2);
+    // Sanasi noma'lum yozuv — hech qachon o'chmasligi kerak.
+    store.set('order:NOTIME', JSON.stringify({ code: 'NOTIME' }));
+    lists.set('order_codes', [...lists.get('order_codes'), 'NOTIME']);
+    // Yozuvi yo'q, kodi ro'yxatda qolgan "yetim" kod.
+    lists.set('order_codes', [...lists.get('order_codes'), 'GHOST']);
+  };
+  const codes = () => (lists.get('order_codes') || []).slice();
+
+  // Ruxsat
+  seed();
+  const byAdmin = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 7, confirm: true }, cookieFor('ADMIN'));
+  check('oddiy admin o‘chira olmaydi', byAdmin.statusCode === 403, String(byAdmin.statusCode));
+  const byMod = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 7, confirm: true }, cookieFor('MODERATOR'));
+  check('moderator ham o‘chira olmaydi', byMod.statusCode === 403, String(byMod.statusCode));
+  check('hech narsa o‘chmadi', codes().length === 6, codes());
+
+  // Tasdiqsiz
+  const noConfirm = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 7 }, cookieFor('SUPER_ADMIN'));
+  check('tasdiqsiz rad etiladi', noConfirm.statusCode === 400, String(noConfirm.statusCode));
+  check('tasdiqsiz hech narsa o‘chmadi', codes().length === 6);
+
+  // 7 kundan eskilari
+  seed();
+  const week = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 7, confirm: true }, cookieFor('SUPER_ADMIN'));
+  check('bosh administrator o‘chira oladi', week.statusCode === 200, JSON.stringify(week.body));
+  check('faqat 7 kundan eskilari ketdi', week.body.removed === 2, JSON.stringify(week.body));
+  check('yangilari qoldi', codes().includes('OLD3') && codes().includes('NEW'), codes());
+  check('sanasi noma‘lum yozuv qoldi', codes().includes('NOTIME'), codes());
+  check('yetim kod tozalandi', !codes().includes('GHOST'), codes());
+  check('yozuvning o‘zi ham o‘chdi', !store.has('order:OLD40') && !store.has('order:OLD10'));
+
+  // 1 kundan eskilari
+  seed();
+  const day = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 1, confirm: true }, cookieFor('SUPER_ADMIN'));
+  check('1 kunlik tanlov ishlaydi', day.body.removed === 3, JSON.stringify(day.body));
+  check('bugungisi qoldi', codes().includes('NEW'), codes());
+
+  // 1 oydan eskilari
+  seed();
+  const month = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 30, confirm: true }, cookieFor('SUPER_ADMIN'));
+  check('1 oylik tanlov ishlaydi', month.body.removed === 1, JSON.stringify(month.body));
+
+  // Hammasi
+  seed();
+  const all = await call(adminData, 'POST', { action: 'purge-orders' },
+    { olderThanDays: 0, confirm: true }, cookieFor('SUPER_ADMIN'));
+  check('hammasi o‘chadi', all.body.removed === 4, JSON.stringify(all.body));
+  check('sanasi noma‘lum yozuv hatto shunda ham qoladi', codes().includes('NOTIME'), codes());
+
+  // Noto'g'ri muddat
+  check('manfiy muddat rad etiladi',
+    (await call(adminData, 'POST', { action: 'purge-orders' },
+      { olderThanDays: -5, confirm: true }, cookieFor('SUPER_ADMIN'))).statusCode === 400);
+  check('juda katta muddat rad etiladi',
+    (await call(adminData, 'POST', { action: 'purge-orders' },
+      { olderThanDays: 99999, confirm: true }, cookieFor('SUPER_ADMIN'))).statusCode === 400);
+
+  store.clear(); lists.clear();
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed, ${gaps} known gaps ====`);

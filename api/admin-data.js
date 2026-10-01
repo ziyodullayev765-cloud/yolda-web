@@ -28,7 +28,7 @@
  * one is gated on the caller's role — see READ_PERMISSIONS /
  * WRITE_PERMISSIONS below and the permission table in lib/adminAuth.js.
  */
-import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLrem } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
@@ -688,6 +688,56 @@ const deleteLife = async (req, res) => {
   return res.status(200).json({ ok: true });
 };
 
+/* ---------- Eski buyurtmalarni tozalash ----------
+   Faqat bosh administrator uchun: bu amalni qaytarib bo'lmaydi va
+   bir bosishda butun tarixni o'chirib yuborishi mumkin. Shuning
+   uchun ruxsati ro'yxatdagi hech bir rolga berilmagan — faqat
+   SUPER_ADMIN dagi "*" uni qamrab oladi (lib/adminAuth.js).
+
+   Tanlov kun bilan beriladi: 1, 7, 30 yoki 0 (hammasi). Oraliq
+   qiymat ham ishlaydi, lekin ekranda shu to'rttasi turadi. */
+const PURGE_MAX_DAYS = 3650;
+
+const purgeOrders = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  // Tasdiqsiz o'chirilmaydi: tasodifiy so'rov butun tarixni
+  // yo'q qilib yuborishi mumkin edi.
+  if (body.confirm !== true) return res.status(400).json({ error: 'Tasdiqlash kerak' });
+
+  const days = Number(body.olderThanDays);
+  if (!Number.isFinite(days) || days < 0 || days > PURGE_MAX_DAYS) {
+    return res.status(400).json({ error: 'Muddat noto‘g‘ri' });
+  }
+  // 0 — "hammasi". Boshqa holatda shu muddatdan eskilari.
+  const cutoff = days === 0 ? Infinity : Date.now() - days * 24 * 60 * 60 * 1000;
+
+  const codes = await kvRange('order_codes', 0, -1);
+  let removed = 0;
+  let kept = 0;
+
+  for (const code of codes) {
+    const raw = await kvGet(`order:${code}`);
+    if (!raw) {
+      // Yozuvi yo'q, kodi ro'yxatda qolib ketgan — baribir tozalaymiz.
+      await kvLrem('order_codes', code).catch(() => {});
+      continue;
+    }
+    let order = null;
+    try { order = JSON.parse(raw); } catch { order = null; }
+    // O'qib bo'lmaydigan yozuvni "eski" deb hisoblamaymiz: sanasi
+    // noma'lum narsani o'chirish — ma'lumotni tavakkaliga yo'qotish.
+    const at = order && Number(order.createdAt);
+    if (!Number.isFinite(at)) { kept += 1; continue; }
+    if (at >= cutoff) { kept += 1; continue; }
+
+    await kvDel(`order:${code}`).catch(() => {});
+    await kvLrem('order_codes', code).catch(() => {});
+    removed += 1;
+  }
+
+  return res.status(200).json({ ok: true, removed, kept });
+};
+
 /* ---------- Ikonkalar ----------
    Ilovadagi har bir ikonka (SVG sprite'dagi `<symbol>`) o'z rasmi
    bilan almashtirilishi mumkin. Bazada faqat {id: havola} jadvali
@@ -796,6 +846,8 @@ const WRITE_PERMISSIONS = {
   'delete-life': 'life:write',
   'save-icon': 'icons:write',
   'delete-icon': 'icons:write',
+  // Hech bir rolda yo'q — faqat SUPER_ADMIN dagi "*" qamrab oladi.
+  'purge-orders': 'orders:purge',
 };
 
 export default async function handler(req, res) {
@@ -841,6 +893,7 @@ export default async function handler(req, res) {
     if (action === 'delete-life') return deleteLife(req, res);
     if (action === 'save-icon') return saveIcon(req, res);
     if (action === 'delete-icon') return deleteIcon(req, res);
+    if (action === 'purge-orders') return purgeOrders(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
