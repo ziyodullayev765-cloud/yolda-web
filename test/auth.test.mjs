@@ -87,6 +87,9 @@ const PHONE = '+998901234567';
 const code = () => store.get(`otpOut:${PHONE}`);
 /** Taymerni va soatlik hisoblagichni tozalaydi — vaqt kutmaslik uchun. */
 const clearThrottle = () => { store.delete(`otp:${PHONE}`); store.delete(`otpRate:${PHONE}`); };
+/** Bot biladigan raqamda kod darhol yuboriladi va KV'dan o'chadi —
+ *  shuning uchun uni yuborilgan xabardan olamiz. */
+const sentCode = () => (/\b(\d{4})\b/.exec(sent.length ? sent[sent.length - 1].body.text : '') || [])[1];
 
 /* ---------------------------------------------------------- */
 console.log('\n== ro\'yxatdan o\'tish ==');
@@ -172,6 +175,60 @@ const bad = String((Number(real) + 7) % 10000).padStart(4, '0');
 for (let i = 0; i < 5; i += 1) await call({ action: 'verify', phone: PHONE, code: bad });
 check('besh marta xato kiritilsa kod bekor bo\'ladi',
   (await call({ action: 'verify', phone: PHONE, code: real })).status === 400);
+
+console.log('\n== raqam va Telegram bitta akkaunt ==');
+{
+  const TG_PHONE = '+998911112233';
+  // Bot bu raqamni tasdiqlagan: Telegram akkaunti 777.
+  store.set(`phoneChat:${TG_PHONE}`, '777');
+
+  const reg = await call({ action: 'register-start', phone: TG_PHONE, firstName: 'Behruz', lastName: 'Toshev', terms: true });
+  check('Telegram biladigan raqam ro\'yxatdan o\'ta oladi', reg.status === 200, reg.payload);
+
+  const v = await call({ action: 'verify', phone: TG_PHONE, code: sentCode() });
+  const done = await call({ action: 'set-password', phone: TG_PHONE, setupToken: v.payload.setupToken, password: 'Salom1234' });
+  check('parol o\'rnatildi', done.status === 200, done.payload);
+
+  const who = await resolveIdentity({ phoneToken: done.payload.phoneToken });
+  check('identity — Telegram akkaunti, yangi emas', who?.identity === 'tg:777', who);
+  check('ph: akkaunt yaratilmadi', !store.has('profile:ph:998911112233'));
+  check('profil Telegram akkauntiga yozildi', store.has('profile:tg:777'));
+  check('egasi biriktirildi', store.get(`phoneOwner:${TG_PHONE}`) === 'tg:777');
+
+  // Telegram akkaunti Google bilan bog'langan bo'lsa — o'sha email.
+  const MAIL_PHONE = '+998911114455';
+  store.set(`phoneChat:${MAIL_PHONE}`, '888');
+  store.set('tgIdToEmail:888', 'ali@example.com');
+  check('bog\'langan Google akkaunti topiladi',
+    (await (await import(copy('lib/phoneAuth.js', 'phoneauth_probe'))).identityForPhone(MAIL_PHONE)) === 'ali@example.com');
+
+  // Egasi bir marta biriktiriladi: boshqa Telegram akkaunt uni tortib ololmaydi.
+  const pa = await import(copy('lib/phoneAuth.js', 'phoneauth_probe2'));
+  await pa.claimPhoneForTelegram(TG_PHONE, 'tg:999');
+  check('egasi almashtirilmaydi', store.get(`phoneOwner:${TG_PHONE}`) === 'tg:777');
+
+  // Telegramda umuman bo'lmagan raqam — zaxira identity.
+  check('botsiz raqam uchun ph: qoladi',
+    (await pa.identityForPhone('+998900001122')) === 'ph:998900001122');
+
+  // Keyinchalik Telegramda raqamini ulasa — qayta kirmasdan o'sha akkauntga.
+  const LATE = '+998900007788';
+  const before = await pa.identityForPhone(LATE);
+  store.set(`phoneChat:${LATE}`, '1010');
+  store.delete(`phoneOwner:${LATE}`);
+  const after = await pa.identityForPhone(LATE);
+  check('keyin ulangan Telegram ham tanilaydi', before === 'ph:998900007788' && after === 'tg:1010', [before, after]);
+
+  // Telegramdagi ism ro'yxatdan o'tishdagi ism bilan bosib ketilmaydi.
+  store.set('profile:tg:1212', JSON.stringify({ name: 'Telegramdagi ism' }));
+  const NAMED = '+998900009911';
+  store.set(`phoneChat:${NAMED}`, '1212');
+  await call({ action: 'register-start', phone: NAMED, firstName: 'Boshqa', lastName: 'Ism', terms: true });
+  const v2 = await call({ action: 'verify', phone: NAMED, code: sentCode() });
+  await call({ action: 'set-password', phone: NAMED, setupToken: v2.payload.setupToken, password: 'Salom1234' });
+  check('mavjud ism saqlanib qoladi', JSON.parse(store.get('profile:tg:1212')).name === 'Telegramdagi ism');
+  check('raqam profilga yozildi', JSON.parse(store.get('profile:tg:1212')).phone === NAMED);
+}
 
 console.log('\n== endpoint ==');
 let st = 0;

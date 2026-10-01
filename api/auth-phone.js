@@ -19,7 +19,7 @@
 import { kvGet, kvSet } from '../lib/kv.js';
 import { setVerification } from '../lib/verification.js';
 import {
-  normalisePhone, phoneIdentity, prettyPhone,
+  normalisePhone, identityForPhone, prettyPhone,
   authConfigured, readAccount, saveAccount,
   hashPassword, verifyPassword, passwordProblem,
   createOtp, verifyOtp, readOtp, markOtpDelivered, OTP_RESEND_MS,
@@ -150,7 +150,15 @@ const verify = async (body, res) => {
   return res.status(200).json({ ok: true, purpose: result.purpose, setupToken });
 };
 
-/** Profil yozuvi — ilovaning qolgan qismi shu ko'rinishni kutadi. */
+/**
+ * Profil yozuvi — ilovaning qolgan qismi shu ko'rinishni kutadi.
+ *
+ * Bu profil Telegram orqali kirilganda ishlatiladigan profilning
+ * o'zi bo'lishi mumkin (identityForPhone qarang), shuning uchun
+ * tayyor ma'lumot ustidan yozilmaydi: ism faqat bo'sh bo'lsa
+ * qo'yiladi. Aks holda Telegramdagi ismni ro'yxatdan o'tishda
+ * yozilgan ism bosib ketardi.
+ */
 const upsertProfile = async (identity, phone, firstName, lastName) => {
   const key = `profile:${identity}`;
   let profile = {};
@@ -160,7 +168,7 @@ const upsertProfile = async (identity, phone, firstName, lastName) => {
     profile = {};
   }
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
-  if (fullName) profile.name = fullName;
+  if (fullName && !profile.name) profile.name = fullName;
   profile.phone = phone;
   // Raqam Telegram botining «Raqamni ulashish» tugmasi orqali
   // tasdiqlangan — kod aynan shu yo'l bilan yetib borgan.
@@ -217,7 +225,7 @@ const setPassword = async (body, res) => {
     return res.status(500).json({ error: 'Saqlab bo‘lmadi, qayta urinib ko‘ring' });
   }
 
-  const identity = phoneIdentity(phone);
+  const identity = await identityForPhone(phone);
   await upsertProfile(identity, phone, firstName, lastName);
   await resetLoginAttempts(phone);
 

@@ -21,7 +21,9 @@ import {
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { setVerification } from '../lib/verification.js';
-import { normalisePhone, peekUndeliveredCode, markOtpDelivered } from '../lib/phoneAuth.js';
+import {
+  normalisePhone, peekUndeliveredCode, markOtpDelivered, claimPhoneForTelegram,
+} from '../lib/phoneAuth.js';
 import { decideOfferCore } from './order.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -541,7 +543,7 @@ const handleContact = async (message) => {
     reply_markup: { remove_keyboard: true },
   }).catch(() => {});
 
-  await linkPhoneToChat(profile.phone, message.chat.id);
+  await linkPhoneToChat(profile.phone, message.chat.id, identity);
 };
 
 /* ============================================================
@@ -554,10 +556,15 @@ const handleContact = async (message) => {
    kutib turadi va aynan shu yerda — odam botga raqamini ulashgan
    zahoti — yuboriladi.
    ============================================================ */
-const linkPhoneToChat = async (phone, chatId) => {
+const linkPhoneToChat = async (phone, chatId, identity) => {
   const normalised = normalisePhone(phone);
   if (!normalised) return;
   await kvSet(`phoneChat:${normalised}`, String(chatId));
+  // Raqam shu Telegram akkauntiniki ekani Telegramning o'zi
+  // tomonidan tasdiqlandi — demak saytga shu raqam bilan kirgan
+  // odam ham aynan shu profilga tushadi, ikkinchi akkaunt
+  // yaratilmaydi (lib/phoneAuth.js: identityForPhone).
+  await claimPhoneForTelegram(normalised, identity);
 
   const code = await peekUndeliveredCode(normalised);
   if (!code) return;
