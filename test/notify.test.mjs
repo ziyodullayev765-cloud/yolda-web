@@ -70,6 +70,11 @@ const load = async (relPath, name) => {
     .replaceAll("'../lib/kv.js'", kvMock)
     .replaceAll("'../lib/identity.js'", JSON.stringify(join(work, 'identitymock.mjs')))
     .replaceAll("'../lib/notify.js'", JSON.stringify(join(work, 'notify.mjs')))
+    // api/telegram.js imports decideOfferCore straight from api/order.js —
+    // point it at the SAME already-mocked copy (see orderMod below) so both
+    // share one in-memory KV store, instead of the regex further down
+    // mistaking this for a lib/order.js file that doesn't exist.
+    .replaceAll("'./order.js'", JSON.stringify(join(work, 'order_under_test.mjs')))
     .replace(/'\.\.\/lib\/([\w.]+)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)))
     .replace(/'\.\/([\w.]+\.js)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)));
   const out = join(work, `${name}.mjs`);
@@ -522,6 +527,81 @@ console.log('\n== offers ==');
     asDriver('driver1@example.com', { id: w1.body.offer.id }));
   check('a driver can withdraw their own offer',
     withdrawn.statusCode === 200 && withdrawn.body.offer.status === 'WITHDRAWN');
+}
+
+/* ---------------------------------------------------------- */
+console.log('\n== a load owner can accept or reject an offer straight from Telegram ==');
+{
+  // Yuk egasi saytga kirmasdan, "Yangi taklif" xabaridagi ✅/❌ tugmasini
+  // bosib hal qiladi. Buning uchun uning Telegram ID'si sayt identity'siga
+  // (tgIdToEmail) bog'langan bo'lishi kerak — xuddi haydovchiniki kabi.
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const telegramMod = await load('api/telegram.js', 'telegram_offer_decision_test');
+  const telegramHandler = telegramMod.default;
+
+  store.set('tgIdToEmail:7001', 'owner@example.com');
+  store.set('order:OF9', JSON.stringify({
+    code: 'OF9', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
+    weightKg: 5000, amount: 900000, status: 'NEW', groupMessageId: 55,
+  }));
+  store.set('offer:offA', JSON.stringify({
+    id: 'offA', orderCode: 'OF9', driverIdentity: 'driver1@example.com',
+    driverName: 'Aziz', price: 700000, status: 'PENDING', createdAt: Date.now(),
+  }));
+
+  const tapDm = async (data, fromId, text) => {
+    const res = mkRes();
+    await telegramHandler({
+      method: 'POST', headers: {},
+      body: { callback_query: {
+        id: 'qOffer', from: { id: fromId, first_name: 'Owner' },
+        message: { chat: { id: fromId }, message_id: 61, text: text || 'Yangi taklif\n\nAziz — 700 000 so\'m' },
+        data,
+      } },
+    }, res);
+    return res;
+  };
+
+  await tapDm('offer_accept:offA', 9999);
+  check('a stranger cannot decide someone else\'s offer',
+    JSON.parse(store.get('offer:offA')).status === 'PENDING');
+
+  await tapDm('offer_accept:offA', 7001);
+  check('the owner can accept the offer from their own Telegram DM',
+    JSON.parse(store.get('offer:offA')).status === 'ACCEPTED');
+  check('accepting it assigns the driver on the order',
+    JSON.parse(store.get('order:OF9')).driver.identity === 'driver1@example.com');
+
+  const edited = sentMessages.find((m) => m.url.endsWith('/editMessageText') && m.body.chat_id === 7001);
+  check('the offer message is edited to show the outcome',
+    Boolean(edited) && edited.body.text.includes('Qabul qilindi'));
+  check('and its buttons are removed so it cannot be tapped twice',
+    Boolean(edited) && edited.body.reply_markup.inline_keyboard.length === 0);
+
+  resetFetch();
+  await tapDm('offer_accept:offA', 7001);
+  const secondAnswer = sentMessages.find((m) => m.url.endsWith('/answerCallbackQuery'));
+  check('tapping accept again is answered with an error toast, not applied twice',
+    Boolean(secondAnswer) && /ko‘rib chiqilgan/.test(secondAnswer.body.text));
+
+  // Fresh offer, this time rejected.
+  store.set('order:OF10', JSON.stringify({
+    code: 'OF10', ownerIdentity: 'owner@example.com', fromCity: 'Andijon', toCity: 'Namangan',
+    weightKg: 2000, amount: 300000, status: 'NEW', groupMessageId: 56,
+  }));
+  store.set('offer:offB', JSON.stringify({
+    id: 'offB', orderCode: 'OF10', driverIdentity: 'driver2@example.com',
+    driverName: 'Sardor', price: 250000, status: 'PENDING', createdAt: Date.now(),
+  }));
+  store.set('tgChat:driver2@example.com', '8002');
+  await tapDm('offer_reject:offB', 7001);
+  check('the owner can reject an offer the same way',
+    JSON.parse(store.get('offer:offB')).status === 'REJECTED');
+  check('rejecting it leaves the load open',
+    JSON.parse(store.get('order:OF10')).status === 'NEW');
+  const driverTold = sentMessages.find((m) =>
+    m.url.endsWith('/sendMessage') && m.body.text.includes('Taklifingiz rad etildi'));
+  check('the declined driver is notified too', Boolean(driverTold));
 }
 
 console.log('\n== home statistics ==');
