@@ -11053,9 +11053,22 @@
     chatPollTimer = setInterval(function(){ loadChatThread(false); }, 4000);
   }
 
+  /**
+   * Xabarning o'zgarishi mumkin bo'lgan qismlari. Shu satr o'zgarmasa
+   * — xabar ham o'zgarmagan, demak uni qaytadan chizish shart emas.
+   */
+  function chatBubbleSig(m){
+    return [
+      m.deleted ? "d" : "",
+      m.text || "",
+      m.editedAt || "",
+      (m.reactions || []).map(function(r){ return r.emoji + r.count + (r.mine ? "1" : "0"); }).join(",")
+    ].join("|");
+  }
+
   function chatBubbleHtml(m){
     if(m.deleted){
-      return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+' deleted" data-id="'+m.id+'">'
+      return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+' deleted" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'">'
         + '<div class="cb-text"><em>Xabar o\'chirildi</em></div>'
         + '<div class="cb-meta">'+formatChatTime(m.at)+'</div>'
         + '</div>';
@@ -11070,46 +11083,113 @@
         + '<button type="button" class="cb-del" data-id="'+m.id+'">'+icon("iconTrash")+'</button>';
     }
 
-    return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+'" data-id="'+m.id+'">'
+    return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'">'
       + '<div class="cb-text">'+escapeHtml(m.text)+'</div>'
       + '<div class="cb-meta">'+metaHtml+'</div>'
       + '<div class="cb-reactions">'+reactionsHtml+'</div>'
       + '</div>';
   }
 
+  /**
+   * Tugmalar har bir xabarga alohida bog'lanmaydi — butun ro'yxatga
+   * bitta tinglovchi qo'yiladi. Ilgari har yangilanishda yuzlab
+   * tinglovchi qaytadan yaratilardi; aynan shu suhbatni og'irlashtirib,
+   * uzun yozishmada sezilarli to'xtalishlar berardi.
+   */
   function bindChatBubbleActions(body){
-    body.querySelectorAll(".cb-react-pill").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        toggleChatReaction(btn.getAttribute("data-id"), btn.getAttribute("data-emoji"));
-      });
-    });
-    body.querySelectorAll(".cb-react-add").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        var id = btn.getAttribute("data-id");
+    if(body.getAttribute("data-bound") === "1") return;
+    body.setAttribute("data-bound", "1");
+
+    body.addEventListener("click", function(ev){
+      var pill = ev.target.closest(".cb-react-pill");
+      if(pill){
+        toggleChatReaction(pill.getAttribute("data-id"), pill.getAttribute("data-emoji"));
+        return;
+      }
+      var opt = ev.target.closest(".cb-emoji-opt");
+      if(opt){
+        toggleChatReaction(opt.getAttribute("data-id"), opt.getAttribute("data-emoji"));
+        return;
+      }
+      var add = ev.target.closest(".cb-react-add");
+      if(add){
+        var id = add.getAttribute("data-id");
         var picker = document.createElement("span");
         picker.className = "cb-emoji-picker";
         picker.innerHTML = CHAT_EMOJIS.map(function(e){
           return '<button type="button" class="cb-emoji-opt" data-id="'+id+'" data-emoji="'+e+'">'+chatReactionIcon(e)+'</button>';
         }).join("");
-        btn.replaceWith(picker);
-        picker.querySelectorAll(".cb-emoji-opt").forEach(function(opt){
-          opt.addEventListener("click", function(){
-            toggleChatReaction(opt.getAttribute("data-id"), opt.getAttribute("data-emoji"));
-          });
-        });
-      });
-    });
-    body.querySelectorAll(".cb-edit").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        beginChatEdit(btn.getAttribute("data-id"), btn.getAttribute("data-text"));
-      });
-    });
-    body.querySelectorAll(".cb-del").forEach(function(btn){
-      btn.addEventListener("click", function(){
+        add.replaceWith(picker);
+        return;
+      }
+      var edit = ev.target.closest(".cb-edit");
+      if(edit){
+        beginChatEdit(edit.getAttribute("data-id"), edit.getAttribute("data-text"));
+        return;
+      }
+      var del = ev.target.closest(".cb-del");
+      if(del){
         if(!confirm("Xabarni o'chirasizmi?")) return;
-        deleteChatMessage(btn.getAttribute("data-id"));
-      });
+        deleteChatMessage(del.getAttribute("data-id"));
+      }
     });
+  }
+
+  /**
+   * Suhbatni yangilash — Telegramdagi kabi.
+   *
+   * Ilgari har 4 soniyada butun yozishma `innerHTML` bilan qaytadan
+   * chizilardi. Natijada: ekran sakrab ketardi, yuqoriga surib
+   * o'qiyotgan odam pastga tashlanardi, belgilangan matn yo'qolardi,
+   * ochilgan emoji tanlagich yopilardi va uzun yozishmada sezilarli
+   * to'xtalish bo'lardi.
+   *
+   * Endi faqat haqiqatan o'zgargani yangilanadi: yangi xabar
+   * qo'shiladi, tahrirlangani almashtiriladi, o'chirilgani olib
+   * tashlanadi. Hech narsa o'zgarmagan bo'lsa — DOM'ga umuman
+   * tegilmaydi, ya'ni eng ko'p uchraydigan holatda ish nolga teng.
+   */
+  function renderChatMessages(body, messages){
+    if(!messages.length){
+      if(!body.querySelector(".chat-empty")){
+        body.innerHTML = '<p class="note chat-empty" style="margin:0;">Hali xabar yo\'q. Birinchi bo\'lib yozing!</p>';
+      }
+      return false;
+    }
+    var empty = body.querySelector(".chat-empty");
+    if(empty) empty.remove();
+
+    var existing = {};
+    body.querySelectorAll(".chat-bubble").forEach(function(el){
+      existing[el.getAttribute("data-id")] = el;
+    });
+
+    var changed = false;
+    var node = body.firstElementChild;
+
+    messages.forEach(function(m){
+      var current = existing[m.id];
+      delete existing[m.id];
+
+      if(current && current.getAttribute("data-sig") === chatBubbleSig(m)){
+        // O'zgarmagan: faqat joyi to'g'rimi, shuni tekshiramiz.
+        if(node !== current){ body.insertBefore(current, node); changed = true; }
+        else node = node.nextElementSibling;
+        return;
+      }
+
+      var holder = document.createElement("div");
+      holder.innerHTML = chatBubbleHtml(m);
+      var fresh = holder.firstElementChild;
+      if(current){ current.replaceWith(fresh); }
+      else { body.insertBefore(fresh, node); }
+      if(node === current) node = fresh.nextElementSibling;
+      changed = true;
+    });
+
+    // Ro'yxatda qolmagan xabarlar (masalan butunlay o'chirilgani).
+    Object.keys(existing).forEach(function(id){ existing[id].remove(); changed = true; });
+    return changed;
   }
 
   function loadChatThread(scrollDown){
@@ -11126,11 +11206,13 @@
         titleEl.insertAdjacentHTML("beforeend", chatVerifiedBadgeHtml(true));
       }
       var messages = data.messages || [];
-      body.innerHTML = messages.length
-        ? messages.map(chatBubbleHtml).join("")
-        : '<p class="note" style="margin:0;">Hali xabar yo\'q. Birinchi bo\'lib yozing!</p>';
+      // Odam yuqoriga surib eski xabarlarni o'qiyotgan bo'lsa, yangi
+      // xabar kelgani uni pastga tashlab yubormasin. Telegram ham
+      // shunday: faqat pastda turganingda o'zi suriladi.
+      var atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
       bindChatBubbleActions(body);
-      if(scrollDown) body.scrollTop = body.scrollHeight;
+      var changed = renderChatMessages(body, messages);
+      if(scrollDown || (changed && atBottom)) body.scrollTop = body.scrollHeight;
       if(messages.length){
         var last = messages[messages.length - 1];
         // Skip the sound on the initial open (chatLastSeenId is still null then)
