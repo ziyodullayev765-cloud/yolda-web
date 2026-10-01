@@ -70,7 +70,7 @@ const isThrottled = (key) => {
 };
 
 const searchUsers = async (req, res) => {
-  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const q = String(req.query.q || '').trim().toLowerCase();
@@ -102,7 +102,7 @@ const searchUsers = async (req, res) => {
 };
 
 const getInbox = async (req, res) => {
-  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const others = await kvSmembers(`inbox:${myEmail}`);
@@ -128,7 +128,7 @@ const getInbox = async (req, res) => {
 };
 
 const getThread = async (req, res) => {
-  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   let withEmail = String(req.query.withEmail || '').trim();
@@ -206,7 +206,7 @@ const notifyNewMessage = async (fromIdentity, toIdentity, text) => {
 
 const sendMessage = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
   if (await kvSismember('banned', myEmail.toLowerCase())) {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
@@ -240,7 +240,7 @@ const sendMessage = async (req, res) => {
 /** Shared guard for edit/delete/react: loads the message and checks the caller is a participant. */
 const loadOwnMessage = async (req, res, { requireSender } = {}) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const myEmail = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!myEmail) {
     res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
     return null;

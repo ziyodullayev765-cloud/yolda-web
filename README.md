@@ -71,6 +71,19 @@ git push -u origin main
 | `TELEGRAM_BOT_TOKEN` | BotFather bergan token |
 | `TELEGRAM_GROUP_ID` | `-100...` guruh id'si |
 | `TELEGRAM_WEBHOOK_SECRET` | ixtiyoriy tasodifiy so'z, masalan `yolda-2026-xyz` |
+| `TELEGRAM_BOT_USERNAME` | botning `@`siz nomi, masalan `yolda_bot` |
+| `AUTH_SECRET` | telefon orqali kirish tokenlarini imzolash uchun uzun tasodifiy satr |
+
+`AUTH_SECRET` qo'yilmasa, imzo kaliti `TELEGRAM_BOT_TOKEN` dan hosil
+qilinadi — ishlaydi, lekin bot tokenini almashtirgan kuningiz telefon
+orqali kirganlarning hammasi qaytadan kirishiga to'g'ri keladi. Shuning
+uchun alohida qiymat qo'ygan ma'qul (`openssl rand -base64 48`).
+
+**Telefon orqali kirish qanday ishlaydi.** SMS xizmati yo'q: tasdiqlash
+kodini botning o'zi yuboradi. Bot telefon raqamiga emas, faqat suhbatga
+yoza oladi, shuning uchun odam birinchi marta botda «Raqamni ulashish»
+tugmasini bosadi — shundan keyin kodlar darhol yetib boradi. Saytdagi
+kod ekranidagi «Kodni Telegramda olish» havolasi aynan shu uchun.
 
 4. **Deployments → ⋯ → Redeploy** bosing (o'zgaruvchilar kuchga kirishi uchun)
 

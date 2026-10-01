@@ -852,18 +852,17 @@
   .welcome--prompt #welcomeGuestBtn{display:none;}
   .welcome:not(.welcome--prompt) #welcomeLaterBtn{display:none;}
   .welcome-guest{
-    display:block;width:100%;min-height:48px;margin-top:12px;
-    border-radius:999px;border:1px solid var(--border);
-    background:transparent;color:var(--ink);cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;
-    transition:background 0.2s var(--ease), transform 0.2s var(--ease);
+    display:block;width:100%;min-height:46px;margin-top:10px;
+    border-radius:14px;border:none;
+    background:transparent;color:var(--au-muted);cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
+    transition:color 0.2s var(--ease);
   }
-  .welcome-guest:hover{background:var(--tint);}
-  .welcome-guest:active{transform:scale(0.985);}
+  .welcome-guest:hover{color:var(--au-ink);}
   .welcome-later{
-    display:block;margin:14px auto 0;padding:8px 12px;background:none;border:none;
-    color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
-    cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+    display:block;margin:12px auto 0;padding:8px 12px;background:none;border:none;
+    color:var(--au-muted);font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
+    cursor:pointer;
   }
 
   /* ---------- O'qilishi (kontrast) ----------
@@ -1942,25 +1941,32 @@
      xiralashgan — kirmagan odam nima borligini ko'radi-yu, ichiga
      kira olmaydi.
      ============================================================ */
+  /* Kirish ekrani har doim oq — qorong'i rejimda ham. Bu ilovaning
+     birinchi ko'rinishi va u bitta, o'zgarmas ko'rinishga ega
+     bo'lsin deb shunday qilingan; shu sababli bu yerda o'z
+     ranglari ishlatiladi, umumiy mavzu tokenlari emas. */
   .welcome{
+    --au-bg:#FFFFFF;
+    --au-page:#EDEFF0;
+    --au-ink:#111827;
+    --au-muted:#8A9199;
+    --au-line:#E8EAEC;
+    --au-field:#F6F7F8;
+    --au-green:#45B45F;
+    --au-green-dark:#3BA053;
+    --au-green-soft:#EAF7EE;
+
     /* Leaflet xaritasining o'z ichki qatlamlari (belgi, yorliq, boshqaruv
        tugmalari) z-index:1000 gacha yetadi. Bu oyna ulardan pastroq
        turgan bo'lsa, xarita pinlar/yorliqlar bilan uning ustidan
        "teshib" chiqib ko'rinardi — xuddi shu holat sodir bo'lgan edi. */
     position:fixed;inset:0;z-index:2000;
     display:flex;align-items:center;justify-content:center;
-    padding:24px 20px;
-    background:rgba(244,248,246,0.72);
-    -webkit-backdrop-filter:saturate(160%) blur(22px);
-    backdrop-filter:saturate(160%) blur(22px);
+    padding:20px;
+    background:var(--au-page);
+    color:var(--au-ink);
+    font-family:'Inter',sans-serif;
     animation:welcomeIn 0.4s var(--ease) both;
-  }
-  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .welcome{background:#F4F8F6;}
-  }
-  :root[data-theme="dark"] .welcome{background:rgba(0,0,0,0.84);}
-  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    :root[data-theme="dark"] .welcome{background:#000000;}
   }
   .welcome[hidden]{display:none;}
   @keyframes welcomeIn{from{opacity:0;}to{opacity:1;}}
@@ -1968,23 +1974,197 @@
   @keyframes welcomeOut{from{opacity:1;}to{opacity:0;transform:scale(1.02);}}
 
   .welcome-card{
-    width:100%;max-width:400px;text-align:center;
-    background:var(--card);border:1px solid var(--border);
-    border-radius:26px;padding:34px 22px 26px;
-    box-shadow:0 20px 60px rgba(15,23,42,0.16);
+    position:relative;overflow:hidden;
+    width:100%;max-width:400px;
+    height:min(760px, calc(100dvh - 40px));
+    background:var(--au-bg);
+    border-radius:28px;
+    box-shadow:0 18px 50px rgba(17,24,39,0.10);
     animation:welcomeCardIn 0.5s cubic-bezier(0.34,1.32,0.5,1) 0.05s both;
   }
   @keyframes welcomeCardIn{from{opacity:0;transform:translateY(18px) scale(0.97);}to{opacity:1;transform:none;}}
   :root[data-reduce-motion="1"] .welcome,
-  :root[data-reduce-motion="1"] .welcome-card{animation:none;}
+  :root[data-reduce-motion="1"] .welcome-card,
+  :root[data-reduce-motion="1"] .au-screen{animation:none;}
 
-  .welcome-mark{width:52px;height:52px;display:block;margin:0 auto 12px;}
-  .welcome-brand{
-    font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:700;
-    letter-spacing:-0.02em;color:var(--route);line-height:1;
+  @media (max-width:430px){
+    .welcome{padding:0;}
+    .welcome-card{height:100dvh;max-width:none;border-radius:0;box-shadow:none;}
   }
-  .welcome-title{margin:18px 0 4px;font-size:23px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);}
-  .welcome-sub{margin:0 0 24px;font-size:14px;color:var(--ink-soft);line-height:1.5;}
+
+  /* ---------- Ekranlar ----------
+     Hammasi bitta kartada turadi, bittasi ko'rinadi. O'tish —
+     yon tomonga siljish, ya'ni odam qayerga borayotganini ko'radi. */
+  .au-screen{
+    position:absolute;inset:0;display:none;
+    flex-direction:column;
+    padding:26px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  .au-screen.is-on{display:flex;animation:auIn 0.34s cubic-bezier(0.22,0.9,0.3,1) both;}
+  .au-screen.is-on.from-back{animation-name:auInBack;}
+  @keyframes auIn{from{opacity:0;transform:translateX(22px);}to{opacity:1;transform:none;}}
+  @keyframes auInBack{from{opacity:0;transform:translateX(-22px);}to{opacity:1;transform:none;}}
+
+  .au-spacer{flex:1 1 auto;min-height:18px;}
+
+  .au-logo{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .au-logo-mark{
+    width:38px;height:38px;flex:none;display:grid;place-items:center;
+    background:var(--au-green);border-radius:11px;
+  }
+  .au-logo-mark svg{width:22px;height:22px;fill:#fff;}
+  .au-logo-word{
+    font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;
+    letter-spacing:-0.03em;color:var(--au-ink);
+  }
+
+  .au-hero{
+    border-radius:18px;overflow:hidden;background:var(--au-field);
+    aspect-ratio:4/3;max-height:40vh;margin-bottom:26px;flex:none;
+  }
+  .au-hero svg{display:block;width:100%;height:100%;}
+
+  .au-back{
+    width:38px;height:38px;flex:none;margin:0 0 20px;
+    display:grid;place-items:center;
+    border:none;border-radius:12px;background:var(--au-field);
+    color:var(--au-ink);cursor:pointer;
+    transition:background 0.2s var(--ease);
+  }
+  .au-back:hover{background:#ECEEF0;}
+  .au-back .ic-svg{width:18px;height:18px;font-size:18px;}
+
+  .au-title{margin:0 0 6px;font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--au-ink);line-height:1.22;}
+  .au-title--lg{font-size:22px;}
+  .au-sub{margin:0 0 22px;font-size:13.5px;line-height:1.5;color:var(--au-muted);}
+
+  .au-label{display:block;margin:0 0 7px;font-size:12.5px;font-weight:500;color:var(--au-ink);}
+
+  .au-input{
+    width:100%;min-height:50px;box-sizing:border-box;
+    padding:0 14px;margin:0 0 16px;
+    border:1px solid var(--au-line);border-radius:13px;
+    background:var(--au-field);color:var(--au-ink);
+    font-family:'Inter',sans-serif;font-size:14.5px;
+    transition:border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .au-input::placeholder{color:#AEB4BA;}
+  .au-input:focus{outline:none;border-color:var(--au-green);background:#fff;}
+
+  .au-field{position:relative;}
+  .au-field .au-input{padding-right:46px;}
+  .au-eye{
+    position:absolute;right:6px;top:7px;width:36px;height:36px;
+    display:grid;place-items:center;border:none;background:none;
+    color:var(--au-muted);cursor:pointer;
+  }
+  .au-eye .ic-svg{width:19px;height:19px;font-size:19px;}
+
+  /* Telefon maydoni: +998 doim ko'rinib turadi, odam uni yozmaydi. */
+  .au-phone{
+    display:flex;align-items:center;gap:9px;
+    min-height:50px;padding:0 6px 0 12px;margin:0 0 16px;
+    border:1px solid var(--au-green);border-radius:13px;
+    background:var(--au-green-soft);
+  }
+  .au-phone .au-input{margin:0;border:none;background:none;min-height:46px;padding-left:0;}
+  .au-phone .au-input:focus{background:none;}
+  .au-code{font-size:14.5px;font-weight:600;color:var(--au-ink);}
+  .au-flag{
+    width:20px;height:14px;flex:none;display:flex;flex-direction:column;
+    border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px rgba(17,24,39,0.08);
+  }
+  .au-flag i{flex:1;}
+  .au-flag i:nth-child(1){background:#0099B5;}
+  .au-flag i:nth-child(2){background:#fff;}
+  .au-flag i:nth-child(3){background:#1EB53A;}
+
+  .au-check{display:flex;align-items:flex-start;gap:10px;margin:4px 0 0;cursor:pointer;}
+  .au-check input{position:absolute;opacity:0;width:0;height:0;}
+  .au-check-box{
+    width:20px;height:20px;flex:none;margin-top:1px;display:grid;place-items:center;
+    border:1.5px solid var(--au-line);border-radius:6px;background:#fff;
+    transition:background 0.18s var(--ease), border-color 0.18s var(--ease);
+  }
+  .au-check-box .ic-svg{width:13px;height:13px;font-size:13px;color:#fff;opacity:0;transition:opacity 0.18s var(--ease);}
+  .au-check input:checked + .au-check-box{background:var(--au-green);border-color:var(--au-green);}
+  .au-check input:checked + .au-check-box .ic-svg{opacity:1;}
+  .au-check input:focus-visible + .au-check-box{box-shadow:0 0 0 3px rgba(69,180,95,0.25);}
+  .au-check-text{font-size:12.5px;line-height:1.45;color:var(--au-ink);}
+
+  .au-link{
+    background:none;border:none;padding:0;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:inherit;font-weight:600;
+    color:var(--au-green);
+  }
+  .au-link:hover{color:var(--au-green-dark);}
+
+  .au-btn{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    width:100%;min-height:52px;flex:none;
+    border-radius:14px;border:1px solid transparent;
+    font-family:'Inter',sans-serif;font-size:15px;font-weight:600;
+    cursor:pointer;
+    transition:background 0.2s var(--ease), transform 0.14s var(--ease), box-shadow 0.2s var(--ease);
+  }
+  .au-btn + .au-btn{margin-top:10px;}
+  .au-btn:active{transform:scale(0.985);}
+  .au-btn--primary{background:var(--au-green);color:#fff;box-shadow:0 6px 16px rgba(69,180,95,0.26);}
+  .au-btn--primary:hover{background:var(--au-green-dark);}
+  .au-btn--primary[disabled]{opacity:0.6;cursor:default;box-shadow:none;}
+  .au-btn--ghost{background:#fff;color:var(--au-ink);border-color:var(--au-line);}
+  .au-btn--ghost:hover{background:var(--au-field);}
+
+  .au-foot{margin:14px 0 0;text-align:center;font-size:12.5px;color:var(--au-muted);}
+  .au-forgot{margin:-6px 0 0;text-align:right;font-size:12.5px;}
+
+  .au-error{
+    margin:0 0 12px;padding:10px 12px;border-radius:11px;
+    background:#FDECEC;color:#C0392B;font-size:12.5px;line-height:1.45;
+  }
+  .au-error[hidden]{display:none;}
+
+  /* ---------- Tasdiqlash kodi ---------- */
+  .au-otp{display:flex;align-items:flex-start;gap:12px;margin:6px 0 18px;}
+  .au-otp-box{
+    flex:1 1 0;max-width:70px;aspect-ratio:1;min-height:62px;
+    text-align:center;box-sizing:border-box;
+    border:1.5px solid var(--au-line);border-radius:15px;
+    background:#fff;color:var(--au-ink);
+    font-family:'Inter',sans-serif;font-size:22px;font-weight:600;
+    transition:border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+  }
+  .au-otp-box:focus{outline:none;border-color:var(--au-green);box-shadow:0 0 0 3px rgba(69,180,95,0.18);}
+  .au-otp-box.filled{border-color:var(--au-green);}
+
+  .au-resend{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin:0 0 16px;font-size:12.5px;color:var(--au-muted);
+  }
+  .au-resend .ic-svg{width:15px;height:15px;font-size:15px;}
+  .au-resend-time{color:var(--au-green);font-weight:600;}
+  .au-resend-time[hidden],.au-resend .au-link[hidden]{display:none;}
+
+  .au-botlink{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    min-height:46px;margin:0 0 16px;border-radius:13px;
+    background:#E8F4FB;color:#1C7FB3;text-decoration:none;
+    font-size:13.5px;font-weight:600;
+  }
+  .au-botlink[hidden]{display:none;}
+  .au-botlink .ic-svg{width:18px;height:18px;font-size:18px;}
+
+  .au-or{
+    display:flex;align-items:center;gap:12px;
+    margin:18px 0 14px;font-size:12px;color:var(--au-muted);
+  }
+  .au-or::before,.au-or::after{content:"";flex:1;height:1px;background:var(--au-line);}
+
+  .au-legal{font-size:13px;line-height:1.6;color:var(--au-ink);}
+  .au-legal h3{margin:18px 0 6px;font-size:14.5px;font-weight:700;}
+  .au-legal p,.au-legal li{color:#4B5563;}
+  .au-legal ul{margin:6px 0 0;padding-left:18px;}
 
   /* Google o'z tugmasini iframe ichida chizadi — uni to'liq
      bo'yash mumkin emas. Shuning uchun o'lchami va joyi shu yerda
@@ -1997,25 +2177,23 @@
 
   .welcome-btn{
     display:flex;align-items:center;justify-content:center;gap:10px;
-    width:100%;min-height:50px;border-radius:14px;
-    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;
-    text-decoration:none;cursor:pointer;border:1px solid var(--border);
-    background:var(--card);color:var(--ink);
-    transition:transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+    width:100%;min-height:48px;border-radius:13px;
+    font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+    text-decoration:none;cursor:pointer;border:1px solid var(--au-line);
+    background:#fff;color:var(--au-ink);
+    transition:transform 0.2s var(--ease), background 0.2s var(--ease);
   }
   .welcome-btn[hidden]{display:none;}
-  .welcome-btn:hover{box-shadow:var(--sh-2);transform:translateY(-1px);}
   .welcome-btn:active{transform:scale(0.985);}
   .welcome-btn .ic-svg{font-size:20px;}
   .welcome-btn--tg{color:#fff;background:#229ED9;border-color:#229ED9;}
   .welcome-btn--tg:hover{background:#1E8CC0;}
 
   .welcome-hint{
-    margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--warn);
-    background:rgba(245,158,11,0.1);border-radius:12px;padding:10px 12px;
+    margin:12px 0 0;font-size:12px;line-height:1.5;color:#9A6400;
+    background:#FFF5E0;border-radius:11px;padding:10px 12px;
   }
   .welcome-hint[hidden]{display:none;}
-  .welcome-legal{margin:22px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5;}
 
   /* ============================================================
      BOSH SAHIFA
@@ -3584,6 +3762,10 @@
     </symbol>
     <symbol id="iconInfo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11V16.4M12 7.8H12.01"/></symbol>
     <symbol id="iconArrowRight" viewBox="0 0 24 24"><path d="M4 12H20M14 6 20 12 14 18"/></symbol>
+    <symbol id="iconArrowLeft" viewBox="0 0 24 24"><path d="M20 12H4M10 6 4 12 10 18"/></symbol>
+    <symbol id="iconClock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12.3L15 14.4"/></symbol>
+    <symbol id="iconEye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></symbol>
+    <symbol id="iconEyeOff" viewBox="0 0 24 24"><path d="M4 12s3.5-6.2 8-6.2a8 8 0 0 1 3.3.7M20 12s-1.3 2.4-3.6 4.2"/><path d="M9.8 9.9a3.1 3.1 0 0 0 4.3 4.3"/><path d="M4 4 20 20"/></symbol>
     <symbol id="iconSearch" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7"/><path d="M20 20 15.5 15.5"/></symbol>
     <symbol id="iconChat" viewBox="0 0 24 24"><path d="M4 5H20V16H9L4 20V16H4V5Z"/><path d="M8 9.5H16M8 13H13"/></symbol>
     <symbol id="iconSliders" viewBox="0 0 24 24"><path d="M4 7H14M18 7H20M4 17H10M14 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="12" cy="17" r="2.3"/></symbol>
@@ -3802,35 +3984,217 @@
      ============================================================ -->
 <div class="welcome" id="welcomeGate" hidden>
   <div class="welcome-card" role="dialog" aria-labelledby="welcomeTitle" aria-modal="true">
-    <svg class="welcome-mark" aria-hidden="true"><use href="#logoMarkFlat"/></svg>
-    <div class="welcome-brand">YO'LDA</div>
-    <h1 class="welcome-title" id="welcomeTitle">
-      <span class="wg-d" data-i18n="welcome.title">Xush kelibsiz!</span>
-      <span class="wg-p" data-i18n="welcome.promptTitle">Davom etish uchun kiring</span>
-    </h1>
-    <p class="welcome-sub">
-      <span class="wg-d" data-i18n="welcome.sub">Davom etish uchun tizimga kiring</span>
-      <span class="wg-p" data-i18n="welcome.promptSub">Yuk joylash, taklif yuborish va profil uchun Telegram yoki Google orqali kiring.</span>
-    </p>
 
-    <!-- Google o'z tugmasini o'zi chizadi (xavfsizlik talabi) —
-         initGoogleSignIn() shu joyga joylashtiradi. -->
-    <div class="welcome-google" id="welcomeGoogleGate"></div>
+    <!-- 1. Tanishtiruv -->
+    <section class="au-screen is-on" data-screen="intro">
+      <div class="au-logo">
+        <span class="au-logo-mark"><svg aria-hidden="true"><use href="#logoMarkFlat"/></svg></span>
+        <span class="au-logo-word">Yo'lda</span>
+      </div>
 
-    <a class="welcome-btn welcome-btn--tg" id="welcomeTelegramBtn" href="#" hidden target="_blank" rel="noopener">
-      <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
-      <span data-i18n="welcome.telegram">Telegram bilan davom etish</span>
-    </a>
+      <!-- Shahar manzarasi: shu yerda chizilgan, hech qayerdan olinmagan. -->
+      <div class="au-hero" aria-hidden="true">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMax slice">
+          <defs>
+            <linearGradient id="auSky" x1="0" y1="0" x2="0.35" y2="1">
+              <stop offset="0%" stop-color="#8FC9A8"/>
+              <stop offset="52%" stop-color="#E7D9B4"/>
+              <stop offset="100%" stop-color="#F0C89A"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="180" fill="url(#auSky)"/>
+          <circle cx="248" cy="58" r="20" fill="#F7E3B8" opacity="0.85"/>
+          <path d="M0 152 L46 118 L92 152 Z" fill="#CBB68C" opacity="0.55"/>
+          <path d="M60 152 L108 112 L156 152 Z" fill="#BFA87B" opacity="0.5"/>
+          <g fill="#2F6B4F">
+            <rect x="18" y="96" width="26" height="60" rx="3"/>
+            <rect x="50" y="78" width="20" height="78" rx="3"/>
+            <rect x="214" y="88" width="24" height="68" rx="3"/>
+            <rect x="268" y="104" width="30" height="52" rx="3"/>
+          </g>
+          <g fill="#3E8A66">
+            <rect x="76" y="54" width="18" height="102" rx="3"/>
+            <rect x="180" y="70" width="26" height="86" rx="3"/>
+            <rect x="244" y="74" width="18" height="82" rx="3"/>
+          </g>
+          <!-- Teleminora -->
+          <g fill="#2F6B4F">
+            <rect x="130" y="40" width="7" height="116" rx="3"/>
+            <ellipse cx="133.5" cy="58" rx="16" ry="6"/>
+            <ellipse cx="133.5" cy="76" rx="11" ry="5"/>
+            <rect x="131" y="20" width="5" height="22" rx="2"/>
+          </g>
+          <!-- Gumbaz -->
+          <g>
+            <rect x="150" y="112" width="24" height="44" fill="#4E9B74"/>
+            <path d="M150 112 Q162 86 174 112 Z" fill="#6FB894"/>
+            <rect x="160" y="104" width="4" height="10" fill="#6FB894"/>
+          </g>
+          <g fill="#FFFFFF" opacity="0.5">
+            <rect x="24" y="104" width="5" height="7" rx="1"/><rect x="33" y="104" width="5" height="7" rx="1"/>
+            <rect x="24" y="118" width="5" height="7" rx="1"/><rect x="33" y="118" width="5" height="7" rx="1"/>
+            <rect x="56" y="88" width="4" height="7" rx="1"/><rect x="63" y="88" width="4" height="7" rx="1"/>
+            <rect x="56" y="102" width="4" height="7" rx="1"/><rect x="63" y="102" width="4" height="7" rx="1"/>
+            <rect x="81" y="66" width="4" height="7" rx="1"/><rect x="88" y="66" width="4" height="7" rx="1"/>
+            <rect x="81" y="82" width="4" height="7" rx="1"/><rect x="88" y="82" width="4" height="7" rx="1"/>
+            <rect x="186" y="82" width="5" height="7" rx="1"/><rect x="195" y="82" width="5" height="7" rx="1"/>
+            <rect x="186" y="96" width="5" height="7" rx="1"/><rect x="195" y="96" width="5" height="7" rx="1"/>
+            <rect x="220" y="100" width="5" height="7" rx="1"/><rect x="229" y="100" width="5" height="7" rx="1"/>
+            <rect x="274" y="116" width="5" height="7" rx="1"/><rect x="283" y="116" width="5" height="7" rx="1"/>
+          </g>
+          <rect y="156" width="320" height="24" fill="#D9C79C"/>
+        </svg>
+      </div>
 
-    <!-- Mehmon: ilovani kirmasdan ko'rish. Faqat oddiy kirish ekranida
-         ko'rinadi; yuk joylash kabi joyda kirish so'ralganda o'rniga
-         "Hozircha kerak emas" turadi. -->
-    <button type="button" class="welcome-guest" id="welcomeGuestBtn" data-i18n="welcome.guest">Mehmon sifatida davom etish</button>
-    <button type="button" class="welcome-later" id="welcomeLaterBtn" data-i18n="welcome.later">Hozircha kerak emas</button>
+      <h1 class="au-title au-title--lg" id="welcomeTitle" data-i18n="au.introTitle">Har qanday manzilga — tez va qulay</h1>
+      <p class="au-sub" data-i18n="au.introSub">O'zbekistondagi eng ishonchli va tezkor haydovchilar hamda xavfsiz sayohatlar platformasi.</p>
 
-    <p class="welcome-hint" id="welcomeHint" hidden data-i18n="welcome.inAppHint">Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.</p>
+      <div class="au-spacer"></div>
+      <button type="button" class="au-btn au-btn--primary" data-go="login" data-i18n="au.signIn">Kirish</button>
+      <button type="button" class="au-btn au-btn--ghost" data-go="register" data-i18n="au.signUp">Ro'yxatdan o'tish</button>
 
-    <p class="welcome-legal" data-i18n="welcome.legal">Davom etish orqali foydalanish shartlariga rozilik bildirasiz.</p>
+      <!-- Mehmon: ilovani kirmasdan ko'rish. Faqat oddiy kirish
+           ekranida ko'rinadi; yuk joylash kabi joyda kirish
+           so'ralganda o'rniga "Hozircha kerak emas" turadi. -->
+      <button type="button" class="welcome-guest" id="welcomeGuestBtn" data-i18n="welcome.guest">Mehmon sifatida davom etish</button>
+    </section>
+
+    <!-- 2. Ro'yxatdan o'tish -->
+    <section class="au-screen" data-screen="register">
+      <button type="button" class="au-back" data-go="intro" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg></button>
+      <h1 class="au-title" data-i18n="au.registerTitle">Ro'yxatdan o'tish</h1>
+      <p class="au-sub" data-i18n="au.registerSub">Sayohatlarni boshlash uchun ma'lumotlaringizni kiriting</p>
+
+      <label class="au-label" for="auRegPhone" data-i18n="au.phone">Telefon raqamingiz</label>
+      <div class="au-phone">
+        <span class="au-flag" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="au-code">+998</span>
+        <input class="au-input au-input--phone" id="auRegPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="90 123 45 67" maxlength="12">
+      </div>
+
+      <label class="au-label" for="auRegFirst" data-i18n="au.firstName">Ismingiz</label>
+      <input class="au-input" id="auRegFirst" type="text" autocomplete="given-name" data-i18n-placeholder="au.firstNamePh" placeholder="Ismingizni kiriting" maxlength="40">
+
+      <label class="au-label" for="auRegLast" data-i18n="au.lastName">Familiyangiz</label>
+      <input class="au-input" id="auRegLast" type="text" autocomplete="family-name" data-i18n-placeholder="au.lastNamePh" placeholder="Familiyangizni kiriting" maxlength="40">
+
+      <label class="au-check">
+        <input type="checkbox" id="auRegTerms" checked>
+        <span class="au-check-box" aria-hidden="true"><svg class="ic-svg"><use href="#iconCheck"/></svg></span>
+        <span class="au-check-text"><span data-i18n="au.termsPre">Foydalanish</span> <button type="button" class="au-link" data-open="terms" data-i18n="au.termsLink">shartlariga</button> <span data-i18n="au.termsPost">roziman</span></span>
+      </label>
+
+      <p class="au-error" data-error hidden></p>
+      <div class="au-spacer"></div>
+      <button type="button" class="au-btn au-btn--primary" id="auRegSubmit" data-i18n="au.continue">Davom etish</button>
+      <p class="au-foot"><span data-i18n="au.haveAccount">Hisobingiz bormi?</span> <button type="button" class="au-link" data-go="login" data-i18n="au.signIn">Kirish</button></p>
+    </section>
+
+    <!-- 3. Tasdiqlash kodi -->
+    <section class="au-screen" data-screen="otp">
+      <button type="button" class="au-back" data-go="back" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg></button>
+      <h1 class="au-title" data-i18n="au.otpTitle">Tasdiqlash kodi</h1>
+      <p class="au-sub" id="auOtpSub"></p>
+
+      <div class="au-otp" id="auOtpBoxes">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="1">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="2">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="3">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="4">
+      </div>
+
+      <p class="au-resend">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconClock"/></svg>
+        <span data-i18n="au.resendIn">Kodni qayta yuborish:</span>
+        <span class="au-resend-time" id="auResendTime">0:59</span>
+        <button type="button" class="au-link" id="auResendBtn" hidden data-i18n="au.resendNow">Qayta yuborish</button>
+      </p>
+
+      <a class="au-botlink" id="auBotLink" href="#" target="_blank" rel="noopener" hidden>
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+        <span data-i18n="au.getCodeInTelegram">Kodni Telegramda olish</span>
+      </a>
+
+      <p class="au-error" data-error hidden></p>
+      <div class="au-spacer"></div>
+      <button type="button" class="au-btn au-btn--primary" id="auOtpSubmit" data-i18n="au.verify">Tasdiqlash</button>
+    </section>
+
+    <!-- 4. Parol -->
+    <section class="au-screen" data-screen="password">
+      <button type="button" class="au-back" data-go="intro" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg></button>
+      <h1 class="au-title" data-i18n="au.passwordTitle">Parol yarating</h1>
+      <p class="au-sub" data-i18n="au.passwordSub">Keyingi safar shu parol bilan kirasiz. Kamida 8 ta belgi, harf va raqam.</p>
+
+      <label class="au-label" for="auPw1" data-i18n="au.password">Parol</label>
+      <div class="au-field">
+        <input class="au-input" id="auPw1" type="password" autocomplete="new-password" data-i18n-placeholder="au.passwordPh" placeholder="Yangi parol" maxlength="128">
+        <button type="button" class="au-eye" data-eye="auPw1" aria-label="Parolni ko'rsatish"><svg class="ic-svg"><use href="#iconEye"/></svg></button>
+      </div>
+
+      <label class="au-label" for="auPw2" data-i18n="au.passwordAgain">Parolni takrorlang</label>
+      <div class="au-field">
+        <input class="au-input" id="auPw2" type="password" autocomplete="new-password" data-i18n-placeholder="au.passwordAgainPh" placeholder="Parolni qayta kiriting" maxlength="128">
+        <button type="button" class="au-eye" data-eye="auPw2" aria-label="Parolni ko'rsatish"><svg class="ic-svg"><use href="#iconEye"/></svg></button>
+      </div>
+
+      <p class="au-error" data-error hidden></p>
+      <div class="au-spacer"></div>
+      <button type="button" class="au-btn au-btn--primary" id="auPwSubmit" data-i18n="au.save">Saqlash</button>
+    </section>
+
+    <!-- 5. Kirish -->
+    <section class="au-screen" data-screen="login">
+      <button type="button" class="au-back" data-go="intro" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg></button>
+      <h1 class="au-title">
+        <span class="wg-d" data-i18n="au.loginTitle">Kirish</span>
+        <span class="wg-p" data-i18n="welcome.promptTitle">Davom etish uchun kiring</span>
+      </h1>
+      <p class="au-sub">
+        <span class="wg-d" data-i18n="au.loginSub">Hush kelibsiz! Yo'lga chiqishga tayyormisiz?</span>
+        <span class="wg-p" data-i18n="welcome.promptSub">Yuk joylash, taklif yuborish va profil uchun raqamingiz, Telegram yoki Google orqali kiring.</span>
+      </p>
+
+      <label class="au-label" for="auLogPhone" data-i18n="au.phone">Telefon raqamingiz</label>
+      <div class="au-phone">
+        <span class="au-flag" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="au-code">+998</span>
+        <input class="au-input au-input--phone" id="auLogPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="90 123 45 67" maxlength="12">
+      </div>
+
+      <label class="au-label" for="auLogPw" data-i18n="au.password">Parol</label>
+      <div class="au-field">
+        <input class="au-input" id="auLogPw" type="password" autocomplete="current-password" data-i18n-placeholder="au.passwordPh2" placeholder="Parolingiz" maxlength="128">
+        <button type="button" class="au-eye" data-eye="auLogPw" aria-label="Parolni ko'rsatish"><svg class="ic-svg"><use href="#iconEye"/></svg></button>
+      </div>
+      <p class="au-forgot"><button type="button" class="au-link" id="auForgotBtn" data-i18n="au.forgot">Parolni unutdingizmi?</button></p>
+
+      <p class="au-error" data-error hidden></p>
+
+      <!-- Google va Telegram orqali kirish o'z joyida qoladi: bu
+           ekran faqat uchinchi yo'l qo'shadi, borini almashtirmaydi. -->
+      <div class="au-or"><span data-i18n="au.or">yoki</span></div>
+      <div class="welcome-google" id="welcomeGoogleGate"></div>
+      <a class="welcome-btn welcome-btn--tg" id="welcomeTelegramBtn" href="#" hidden target="_blank" rel="noopener">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconTelegram"/></svg>
+        <span data-i18n="welcome.telegram">Telegram bilan davom etish</span>
+      </a>
+      <p class="welcome-hint" id="welcomeHint" hidden data-i18n="welcome.inAppHint">Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.</p>
+
+      <div class="au-spacer"></div>
+      <button type="button" class="au-btn au-btn--primary" id="auLogSubmit" data-i18n="au.signIn">Kirish</button>
+      <button type="button" class="welcome-later" id="welcomeLaterBtn" data-i18n="welcome.later">Hozircha kerak emas</button>
+      <p class="au-foot"><span data-i18n="au.noAccount">Hisobingiz yo'qmi?</span> <button type="button" class="au-link" data-go="register" data-i18n="au.signUp">Ro'yxatdan o'tish</button></p>
+    </section>
+
+    <!-- Foydalanish shartlari. Matn Sozlamalardagi bilan bitta manbadan
+         (terms.body) olinadi — ikkinchi nusxa yozilmagan. -->
+    <section class="au-screen" data-screen="terms">
+      <button type="button" class="au-back" data-go="register" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg></button>
+      <h1 class="au-title" data-i18n="terms.title">Foydalanish shartlari</h1>
+      <div class="au-legal" id="auTermsBody"></div>
+    </section>
+
   </div>
 </div>
 
@@ -4663,10 +5027,43 @@
       "rev.comments": "Sharhlar", "rev.empty": "Hozircha sharh yo'q.",
       "act.loads": "Yuklar", "act.trips": "Tashuvlar", "act.deals": "Kelishuvlar", "act.rating": "Reyting",
       "verify.google": "Google",
-      "welcome.guest": "Mehmon sifatida davom etish", "welcome.later": "Hozircha kerak emas", "welcome.promptTitle": "Davom etish uchun kiring", "welcome.promptSub": "Yuk joylash, taklif yuborish va profil uchun Telegram yoki Google orqali kiring.", "welcome.title": "Xush kelibsiz!", "welcome.sub": "Davom etish uchun tizimga kiring",
+      "welcome.guest": "Mehmon sifatida davom etish", "welcome.later": "Hozircha kerak emas", "welcome.promptTitle": "Davom etish uchun kiring", "welcome.promptSub": "Yuk joylash, taklif yuborish va profil uchun raqamingiz, Telegram yoki Google orqali kiring.", "welcome.title": "Xush kelibsiz!", "welcome.sub": "Davom etish uchun tizimga kiring",
       "welcome.telegram": "Telegram bilan davom etish",
       "welcome.inAppHint": "Google bu brauzerda ishlamaydi. Havolani nusxalab, Safari yoki Chrome'da oching.",
       "welcome.legal": "Davom etish orqali foydalanish shartlariga rozilik bildirasiz.",
+
+      "au.introTitle": "Har qanday manzilga — tez va qulay",
+      "au.introSub": "O'zbekistondagi eng ishonchli va tezkor haydovchilar hamda xavfsiz sayohatlar platformasi.",
+      "au.signIn": "Kirish", "au.signUp": "Ro'yxatdan o'tish",
+      "au.registerTitle": "Ro'yxatdan o'tish",
+      "au.registerSub": "Sayohatlarni boshlash uchun ma'lumotlaringizni kiriting",
+      "au.phone": "Telefon raqamingiz",
+      "au.firstName": "Ismingiz", "au.firstNamePh": "Ismingizni kiriting",
+      "au.lastName": "Familiyangiz", "au.lastNamePh": "Familiyangizni kiriting",
+      "au.termsPre": "Foydalanish", "au.termsLink": "shartlariga", "au.termsPost": "roziman",
+      "au.continue": "Davom etish", "au.haveAccount": "Hisobingiz bormi?",
+      "au.otpTitle": "Tasdiqlash kodi",
+      "au.otpSubPre": "{phone} raqamiga Telegramdagi YO'LDA boti yuborgan 4 xonali kodni kiriting",
+      "au.resendIn": "Kodni qayta yuborish:", "au.resendNow": "Qayta yuborish",
+      "au.getCodeInTelegram": "Kodni Telegramda olish",
+      "au.verify": "Tasdiqlash",
+      "au.passwordTitle": "Parol yarating",
+      "au.passwordSub": "Keyingi safar shu parol bilan kirasiz. Kamida 8 ta belgi, harf va raqam.",
+      "au.password": "Parol", "au.passwordPh": "Yangi parol", "au.passwordPh2": "Parolingiz",
+      "au.passwordAgain": "Parolni takrorlang", "au.passwordAgainPh": "Parolni qayta kiriting",
+      "au.save": "Saqlash",
+      "au.loginTitle": "Kirish", "au.loginSub": "Hush kelibsiz! Yo'lga chiqishga tayyormisiz?",
+      "au.forgot": "Parolni unutdingizmi?", "au.noAccount": "Hisobingiz yo'qmi?", "au.or": "yoki",
+      "au.wait": "Kuting...", "au.failed": "Xatolik yuz berdi",
+      "au.codeSentTitle": "Kod yuborildi", "au.codeSentText": "Telegramdagi YO'LDA botini tekshiring.",
+      "au.errPhone": "Telefon raqamini to'liq kiriting",
+      "au.errPhoneFirst": "Avval telefon raqamingizni kiriting",
+      "au.errFirst": "Ismingizni kiriting", "au.errLast": "Familiyangizni kiriting",
+      "au.errTerms": "Foydalanish shartlariga rozilik kerak",
+      "au.errCode": "Kodni to'liq kiriting",
+      "au.errPwMatch": "Parollar bir xil emas",
+      "au.errPwShort": "Parol kamida 8 ta belgidan iborat bo'lsin",
+      "au.errPwEmpty": "Parolingizni kiriting",
       "home.detail": "Batafsil", "home.ton": "tonna",
       "home.legendPickup": "Yuklash nuqtasi", "home.legendDrop": "Yetkazish nuqtasi",
       "home.howTitle": "Qanday ishlaydi?", "home.howSub": "4 ta oddiy qadamda yukingiz yo'lga chiqadi",
@@ -5112,10 +5509,43 @@
       "rev.comments": "Отзывы", "rev.empty": "Отзывов пока нет.",
       "act.loads": "Грузы", "act.trips": "Перевозки", "act.deals": "Сделки", "act.rating": "Рейтинг",
       "verify.google": "Google",
-      "welcome.guest": "Продолжить как гость", "welcome.later": "Не сейчас", "welcome.promptTitle": "Войдите, чтобы продолжить", "welcome.promptSub": "Чтобы разместить груз, отправить предложение и пользоваться профилем, войдите через Telegram или Google.", "welcome.title": "Добро пожаловать!", "welcome.sub": "Войдите, чтобы продолжить",
+      "welcome.guest": "Продолжить как гость", "welcome.later": "Не сейчас", "welcome.promptTitle": "Войдите, чтобы продолжить", "welcome.promptSub": "Чтобы разместить груз, отправить предложение и пользоваться профилем, войдите по номеру, через Telegram или Google.", "welcome.title": "Добро пожаловать!", "welcome.sub": "Войдите, чтобы продолжить",
       "welcome.telegram": "Продолжить с Telegram",
       "welcome.inAppHint": "Google не работает в этом браузере. Скопируйте ссылку и откройте в Safari или Chrome.",
       "welcome.legal": "Продолжая, вы соглашаетесь с условиями использования.",
+
+      "au.introTitle": "В любую точку — быстро и удобно",
+      "au.introSub": "Самая надёжная платформа Узбекистана: проверенные водители и безопасные поездки.",
+      "au.signIn": "Войти", "au.signUp": "Регистрация",
+      "au.registerTitle": "Регистрация",
+      "au.registerSub": "Введите данные, чтобы начать поездки",
+      "au.phone": "Ваш номер телефона",
+      "au.firstName": "Имя", "au.firstNamePh": "Введите имя",
+      "au.lastName": "Фамилия", "au.lastNamePh": "Введите фамилию",
+      "au.termsPre": "Согласен с", "au.termsLink": "условиями", "au.termsPost": "использования",
+      "au.continue": "Продолжить", "au.haveAccount": "Уже есть аккаунт?",
+      "au.otpTitle": "Код подтверждения",
+      "au.otpSubPre": "Введите 4-значный код, который бот YO'LDA отправил в Telegram для номера {phone}",
+      "au.resendIn": "Отправить код повторно:", "au.resendNow": "Отправить снова",
+      "au.getCodeInTelegram": "Получить код в Telegram",
+      "au.verify": "Подтвердить",
+      "au.passwordTitle": "Придумайте пароль",
+      "au.passwordSub": "В следующий раз вы войдёте с этим паролем. Минимум 8 символов, буквы и цифры.",
+      "au.password": "Пароль", "au.passwordPh": "Новый пароль", "au.passwordPh2": "Ваш пароль",
+      "au.passwordAgain": "Повторите пароль", "au.passwordAgainPh": "Введите пароль ещё раз",
+      "au.save": "Сохранить",
+      "au.loginTitle": "Вход", "au.loginSub": "С возвращением! Готовы отправиться в путь?",
+      "au.forgot": "Забыли пароль?", "au.noAccount": "Нет аккаунта?", "au.or": "или",
+      "au.wait": "Подождите...", "au.failed": "Произошла ошибка",
+      "au.codeSentTitle": "Код отправлен", "au.codeSentText": "Проверьте бот YO'LDA в Telegram.",
+      "au.errPhone": "Введите номер телефона полностью",
+      "au.errPhoneFirst": "Сначала введите номер телефона",
+      "au.errFirst": "Введите имя", "au.errLast": "Введите фамилию",
+      "au.errTerms": "Нужно согласие с условиями использования",
+      "au.errCode": "Введите код полностью",
+      "au.errPwMatch": "Пароли не совпадают",
+      "au.errPwShort": "Пароль должен быть не короче 8 символов",
+      "au.errPwEmpty": "Введите пароль",
       "home.detail": "Подробнее", "home.ton": "тонн",
       "home.legendPickup": "Точка погрузки", "home.legendDrop": "Точка доставки",
       "home.howTitle": "Как это работает?", "home.howSub": "Ваш груз выезжает за 4 простых шага",
@@ -5557,10 +5987,43 @@
       "rev.comments": "Reviews", "rev.empty": "No reviews yet.",
       "act.loads": "Loads", "act.trips": "Deliveries", "act.deals": "Deals", "act.rating": "Rating",
       "verify.google": "Google",
-      "welcome.guest": "Continue as guest", "welcome.later": "Not now", "welcome.promptTitle": "Sign in to continue", "welcome.promptSub": "Sign in with Telegram or Google to post a load, send offers and use your profile.", "welcome.title": "Welcome!", "welcome.sub": "Sign in to continue",
+      "welcome.guest": "Continue as guest", "welcome.later": "Not now", "welcome.promptTitle": "Sign in to continue", "welcome.promptSub": "Sign in with your phone number, Telegram or Google to post a load, send offers and use your profile.", "welcome.title": "Welcome!", "welcome.sub": "Sign in to continue",
       "welcome.telegram": "Continue with Telegram",
       "welcome.inAppHint": "Google sign-in does not work in this browser. Copy the link and open it in Safari or Chrome.",
       "welcome.legal": "By continuing you agree to the terms of use.",
+
+      "au.introTitle": "Anywhere you need — fast and easy",
+      "au.introSub": "Uzbekistan's most reliable platform for trusted drivers and safe journeys.",
+      "au.signIn": "Sign in", "au.signUp": "Sign up",
+      "au.registerTitle": "Sign up",
+      "au.registerSub": "Enter your details to start travelling",
+      "au.phone": "Your phone number",
+      "au.firstName": "First name", "au.firstNamePh": "Enter your first name",
+      "au.lastName": "Last name", "au.lastNamePh": "Enter your last name",
+      "au.termsPre": "I agree to the", "au.termsLink": "terms", "au.termsPost": "of use",
+      "au.continue": "Continue", "au.haveAccount": "Already have an account?",
+      "au.otpTitle": "Verification code",
+      "au.otpSubPre": "Enter the 4-digit code the YO'LDA bot sent in Telegram for {phone}",
+      "au.resendIn": "Resend the code in:", "au.resendNow": "Resend now",
+      "au.getCodeInTelegram": "Get the code in Telegram",
+      "au.verify": "Verify",
+      "au.passwordTitle": "Create a password",
+      "au.passwordSub": "You'll sign in with this password next time. At least 8 characters, letters and digits.",
+      "au.password": "Password", "au.passwordPh": "New password", "au.passwordPh2": "Your password",
+      "au.passwordAgain": "Repeat password", "au.passwordAgainPh": "Enter the password again",
+      "au.save": "Save",
+      "au.loginTitle": "Sign in", "au.loginSub": "Welcome back! Ready to hit the road?",
+      "au.forgot": "Forgot your password?", "au.noAccount": "No account yet?", "au.or": "or",
+      "au.wait": "Please wait...", "au.failed": "Something went wrong",
+      "au.codeSentTitle": "Code sent", "au.codeSentText": "Check the YO'LDA bot in Telegram.",
+      "au.errPhone": "Enter the full phone number",
+      "au.errPhoneFirst": "Enter your phone number first",
+      "au.errFirst": "Enter your first name", "au.errLast": "Enter your last name",
+      "au.errTerms": "You need to accept the terms of use",
+      "au.errCode": "Enter the whole code",
+      "au.errPwMatch": "The passwords do not match",
+      "au.errPwShort": "The password must be at least 8 characters",
+      "au.errPwEmpty": "Enter your password",
       "home.detail": "Details", "home.ton": "tonnes",
       "home.legendPickup": "Pickup point", "home.legendDrop": "Delivery point",
       "home.howTitle": "How does it work?", "home.howSub": "Your load is on the road in 4 simple steps",
@@ -5886,6 +6349,11 @@
     document.querySelectorAll("[data-i18n-aria]").forEach(function(el){
       var val = t(el.getAttribute("data-i18n-aria"));
       if(val !== null){ el.setAttribute("aria-label", val); el.setAttribute("title", val); }
+    });
+    // Xuddi shu narsa, lekin maydon ichidagi ko'rsatma matni uchun.
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(function(el){
+      var val = t(el.getAttribute("data-i18n-placeholder"));
+      if(val !== null) el.setAttribute("placeholder", val);
     });
     document.documentElement.setAttribute("lang", currentLang === "uz-cyrl" ? "uz" : currentLang);
     document.querySelectorAll(".lang-btn").forEach(function(b){
@@ -6997,7 +7465,7 @@
     if(!raw) return null;
     var saved = null;
     try{ saved = JSON.parse(raw); }catch(e){}
-    if(!saved || !saved.token || (saved.kind !== "google" && saved.kind !== "telegram")){ clearStoredAuth(); return null; }
+    if(!saved || !saved.token || (saved.kind !== "google" && saved.kind !== "telegram" && saved.kind !== "phone")){ clearStoredAuth(); return null; }
     if(!(Number(saved.expiresAt) > Date.now())){ clearStoredAuth(); return null; }
     return saved;
   }
@@ -7138,12 +7606,457 @@
     if(lb) lb.addEventListener("click", closeSignInPrompt);
   })();
 
+  /* ============================================================
+     Telefon raqami orqali kirish
+     ------------------------------------------------------------
+     Ketma-ketlik: tanishtiruv -> ro'yxatdan o'tish -> Telegramdan
+     kelgan kod -> parol. Keyingi safar esa raqam + parol.
+
+     Tasdiqlash kodi SMS bilan emas, YO'LDA boti orqali keladi.
+     Sabablari va chekloblari: lib/phoneAuth.js. Bu yerda faqat
+     ko'rinish va so'rovlar — hech qanday tekshiruv brauzerda
+     bo'lmaydi, token serverda imzolanadi va har so'rovda qaytadan
+     tekshiriladi (lib/identity.js).
+     ============================================================ */
+  var phoneToken = null;
+  var phoneProfile = null;        // {name, phone} — faqat ko'rsatish uchun
+  var PHONE_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;   // lib/phoneAuth.js: SESSION_TTL_MS
+
+  var auState = { screen: "intro", prev: "intro", mode: "register", phone: "", pretty: "", setup: "", timer: null, left: 0 };
+
+  function auEl(name){ return document.querySelector('.au-screen[data-screen="' + name + '"]'); }
+
+  function auError(screen, message){
+    var box = screen && screen.querySelector("[data-error]");
+    if(!box) return;
+    if(message){ box.textContent = message; box.hidden = false; }
+    else { box.textContent = ""; box.hidden = true; }
+  }
+
+  function auClearErrors(){
+    document.querySelectorAll(".au-screen [data-error]").forEach(function(b){ b.textContent = ""; b.hidden = true; });
+  }
+
+  /** Ekranlar o'rtasida o'tish. `back` — chapdan o'ngga siljish. */
+  function auGo(name, back){
+    var target = auEl(name);
+    if(!target) return;
+    auClearErrors();
+    document.querySelectorAll(".au-screen").forEach(function(s){
+      s.classList.remove("is-on"); s.classList.remove("from-back");
+    });
+    if(auState.screen !== name) auState.prev = auState.screen;
+    auState.screen = name;
+    if(back) target.classList.add("from-back");
+    target.classList.add("is-on");
+    if(name !== "otp") auStopTimer();
+    // Google o'z tugmasini iframe ichida chizadi. Ekran yashirin
+    // turganda chizilgan bo'lsa bo'sh qolishi mumkin — shuning uchun
+    // kirish ekrani birinchi marta ochilganda qaytadan so'raymiz.
+    if(name === "login" && !isSignedIn()){
+      var g = document.getElementById("welcomeGoogleGate");
+      if(g && !g.querySelector("iframe")){ try{ initGoogleSignIn(); }catch(e){} }
+    }
+    var first = target.querySelector("input:not([type=checkbox])");
+    // Avtomatik fokus faqat kattaroq ekranlarda: telefonda u
+    // klaviaturani darhol ochib, ekranning yarmini yopib qo'yadi.
+    if(first && window.matchMedia("(min-width:760px)").matches) setTimeout(function(){ try{ first.focus(); }catch(e){} }, 220);
+  }
+
+  /** Raqamni "90 123 45 67" ko'rinishida yozadi. */
+  function auFormatPhone(value){
+    var d = String(value || "").replace(/\D/g, "").replace(/^998/, "").slice(0, 9);
+    var out = d.slice(0, 2);
+    if(d.length > 2) out += " " + d.slice(2, 5);
+    if(d.length > 5) out += " " + d.slice(5, 7);
+    if(d.length > 7) out += " " + d.slice(7, 9);
+    return out;
+  }
+
+  function auPhoneDigits(input){
+    return String(input && input.value || "").replace(/\D/g, "").replace(/^998/, "");
+  }
+
+  function auBusy(button, busy){
+    if(!button) return;
+    button.disabled = Boolean(busy);
+    if(busy){
+      if(!button.getAttribute("data-label")) button.setAttribute("data-label", button.textContent);
+      button.textContent = t("au.wait") || "Kuting...";
+    } else if(button.getAttribute("data-label")){
+      button.textContent = button.getAttribute("data-label");
+      button.removeAttribute("data-label");
+    }
+  }
+
+  function auPost(action, data){
+    var body = { action: action };
+    for(var k in data){ if(Object.prototype.hasOwnProperty.call(data, k)) body[k] = data[k]; }
+    return fetch("/api/auth-phone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(json){
+        if(!r.ok) throw new Error((json && json.error) || (t("au.failed") || "Xatolik yuz berdi"));
+        return json;
+      });
+    });
+  }
+
+  /* ---------- Kodni kutish taymeri ---------- */
+  function auStopTimer(){
+    if(auState.timer){ clearInterval(auState.timer); auState.timer = null; }
+  }
+
+  function auStartTimer(seconds){
+    auStopTimer();
+    auState.left = Number(seconds) || 60;
+    var label = document.getElementById("auResendTime");
+    var btn = document.getElementById("auResendBtn");
+    var tick = function(){
+      if(auState.left <= 0){
+        auStopTimer();
+        if(label) label.hidden = true;
+        if(btn) btn.hidden = false;
+        return;
+      }
+      if(label){
+        label.hidden = false;
+        label.textContent = Math.floor(auState.left / 60) + ":" + ("0" + (auState.left % 60)).slice(-2);
+      }
+      if(btn) btn.hidden = true;
+      auState.left -= 1;
+    };
+    tick();
+    auState.timer = setInterval(tick, 1000);
+  }
+
+  /** Kod so'ralgandan keyingi ekran. */
+  function auShowOtp(result){
+    auState.phone = result.phone;
+    auState.pretty = result.prettyPhone || result.phone;
+    var sub = document.getElementById("auOtpSub");
+    if(sub){
+      var template = t("au.otpSubPre") || "{phone}";
+      sub.textContent = template.indexOf("{phone}") !== -1
+        ? template.replace("{phone}", auState.pretty)
+        : auState.pretty;
+    }
+    var link = document.getElementById("auBotLink");
+    if(link){
+      // Raqam hali botga ulanmagan bo'lsa, kodni olish uchun avval
+      // botga kirib raqamni ulashish kerak — havola shu uchun.
+      if(result.delivery === "bot" && result.botLink){
+        link.href = result.botLink;
+        link.hidden = false;
+      } else {
+        link.hidden = true;
+      }
+    }
+    auOtpClear();
+    auStartTimer(result.resendInSeconds || 60);
+    auGo("otp");
+  }
+
+  function auOtpInputs(){
+    return Array.prototype.slice.call(document.querySelectorAll("#auOtpBoxes .au-otp-box"));
+  }
+
+  function auOtpClear(){
+    auOtpInputs().forEach(function(box){ box.value = ""; box.classList.remove("filled"); });
+  }
+
+  function auOtpValue(){
+    return auOtpInputs().map(function(b){ return b.value.replace(/\D/g, ""); }).join("");
+  }
+
+  /* ---------- So'rovlar ---------- */
+  function auRegister(){
+    var screen = auEl("register");
+    var button = document.getElementById("auRegSubmit");
+    var digits = auPhoneDigits(document.getElementById("auRegPhone"));
+    var first = (document.getElementById("auRegFirst") || {}).value || "";
+    var last = (document.getElementById("auRegLast") || {}).value || "";
+    var terms = (document.getElementById("auRegTerms") || {}).checked;
+
+    auError(screen, "");
+    if(digits.length !== 9) return auError(screen, t("au.errPhone") || "Telefon raqamini to'liq kiriting");
+    if(first.trim().length < 2) return auError(screen, t("au.errFirst") || "Ismingizni kiriting");
+    if(last.trim().length < 2) return auError(screen, t("au.errLast") || "Familiyangizni kiriting");
+    if(!terms) return auError(screen, t("au.errTerms") || "Foydalanish shartlariga rozilik kerak");
+
+    auState.mode = "register";
+    auBusy(button, true);
+    auPost("register-start", { phone: "998" + digits, firstName: first, lastName: last, terms: true })
+      .then(auShowOtp)
+      .catch(function(err){ auError(screen, err.message); })
+      .then(function(){ auBusy(button, false); });
+  }
+
+  function auStartReset(){
+    var screen = auEl("login");
+    var button = document.getElementById("auLogSubmit");
+    var digits = auPhoneDigits(document.getElementById("auLogPhone"));
+    auError(screen, "");
+    if(digits.length !== 9) return auError(screen, t("au.errPhoneFirst") || "Avval telefon raqamingizni kiriting");
+
+    auState.mode = "reset";
+    auBusy(button, true);
+    auPost("login-start", { phone: "998" + digits })
+      .then(auShowOtp)
+      .catch(function(err){ auError(screen, err.message); })
+      .then(function(){ auBusy(button, false); });
+  }
+
+  function auResend(){
+    var screen = auEl("otp");
+    auError(screen, "");
+    auPost("resend", { phone: auState.phone, mode: auState.mode })
+      .then(function(result){
+        auShowOtp(result);
+        toast(t("au.codeSentTitle") || "Kod yuborildi", t("au.codeSentText") || "Telegramdagi YO'LDA botini tekshiring.", "success");
+      })
+      .catch(function(err){ auError(screen, err.message); });
+  }
+
+  function auVerify(){
+    var screen = auEl("otp");
+    var button = document.getElementById("auOtpSubmit");
+    var code = auOtpValue();
+    auError(screen, "");
+    if(code.length !== 4) return auError(screen, t("au.errCode") || "Kodni to'liq kiriting");
+
+    auBusy(button, true);
+    auPost("verify", { phone: auState.phone, code: code })
+      .then(function(result){
+        auState.setup = result.setupToken;
+        auStopTimer();
+        auGo("password");
+      })
+      .catch(function(err){ auError(screen, err.message); auOtpClear(); })
+      .then(function(){ auBusy(button, false); });
+  }
+
+  function auSavePassword(){
+    var screen = auEl("password");
+    var button = document.getElementById("auPwSubmit");
+    var pw1 = (document.getElementById("auPw1") || {}).value || "";
+    var pw2 = (document.getElementById("auPw2") || {}).value || "";
+    auError(screen, "");
+    if(pw1 !== pw2) return auError(screen, t("au.errPwMatch") || "Parollar bir xil emas");
+    if(pw1.length < 8) return auError(screen, t("au.errPwShort") || "Parol kamida 8 ta belgidan iborat bo'lsin");
+
+    auBusy(button, true);
+    auPost("set-password", { phone: auState.phone, setupToken: auState.setup, password: pw1 })
+      .then(function(result){ applyPhoneCredential(result, "fresh"); })
+      .catch(function(err){ auError(screen, err.message); })
+      .then(function(){ auBusy(button, false); });
+  }
+
+  function auLogin(){
+    var screen = auEl("login");
+    var button = document.getElementById("auLogSubmit");
+    var digits = auPhoneDigits(document.getElementById("auLogPhone"));
+    var pw = (document.getElementById("auLogPw") || {}).value || "";
+    auError(screen, "");
+    if(digits.length !== 9) return auError(screen, t("au.errPhone") || "Telefon raqamini to'liq kiriting");
+    if(!pw) return auError(screen, t("au.errPwEmpty") || "Parolingizni kiriting");
+
+    auBusy(button, true);
+    auPost("login", { phone: "998" + digits, password: pw })
+      .then(function(result){ applyPhoneCredential(result, "fresh"); })
+      .catch(function(err){ auError(screen, err.message); })
+      .then(function(){ auBusy(button, false); });
+  }
+
+  /**
+   * Kirish tugadi. Google va Telegram'dagi kabi: interfeys bitta
+   * joydan yangilanadi, token esa saqlanadi.
+   */
+  function applyPhoneCredential(result, source){
+    if(!result || !result.phoneToken) return false;
+    phoneToken = result.phoneToken;
+    phoneProfile = { name: result.name || "", phone: result.phone || "", pretty: result.prettyPhone || "" };
+    try{
+      if(!state.name && phoneProfile.name) state.name = phoneProfile.name;
+      if(!state.phone && phoneProfile.phone) state.phone = phoneProfile.phone;
+
+      var label = phoneProfile.name || phoneProfile.pretty || "YO'LDA";
+      var gate = document.getElementById("googleGate");
+      if(gate) gate.innerHTML = '<span class="stamp-badge">'+icon("iconCheck")+' '+escapeHtml(label)+'</span>';
+      renderNavAvatar("", label);
+      hideWelcomeGate();
+      finishSignInIntent();
+
+      renderProfile();
+      renderHomeMatch();
+      updateAccountLinkRows();
+      refreshNotifBadge();
+    }catch(e){}
+    if(source !== "restored"){
+      storeAuth("phone", JSON.stringify(phoneProfile ? { token: phoneToken, profile: phoneProfile } : { token: phoneToken }), Date.now() + PHONE_TOKEN_TTL_MS);
+    }
+    render();
+    return true;
+  }
+
+  /** Saqlangan yozuvdan tiklash. Token haqiqiyligini baribir server aytadi. */
+  function restorePhoneAuth(raw){
+    var saved = null;
+    try{ saved = JSON.parse(raw); }catch(e){ return false; }
+    if(!saved || !saved.token) return false;
+    return applyPhoneCredential({
+      phoneToken: saved.token,
+      name: saved.profile && saved.profile.name,
+      phone: saved.profile && saved.profile.phone,
+      prettyPhone: saved.profile && saved.profile.pretty
+    }, "restored");
+  }
+
+  /* ---------- Hodisalar ---------- */
+  (function bindAuthFlow(){
+    var card = document.querySelector(".welcome-card");
+    if(!card) return;
+
+    card.addEventListener("click", function(ev){
+      var go = ev.target.closest("[data-go]");
+      if(go){
+        var name = go.getAttribute("data-go");
+        if(name === "back"){
+          // Kod ekranidan orqaga — qayerdan kelgan bo'lsa, o'sha yerga.
+          auGo(auState.mode === "reset" ? "login" : "register", true);
+        } else {
+          auGo(name, name === "intro");
+        }
+        return;
+      }
+      var open = ev.target.closest("[data-open]");
+      if(open && open.getAttribute("data-open") === "terms"){
+        ev.preventDefault();
+        var body = document.getElementById("auTermsBody");
+        if(body) body.innerHTML = t("terms.body") || "";
+        auGo("terms");
+        return;
+      }
+      var eye = ev.target.closest("[data-eye]");
+      if(eye){
+        var field = document.getElementById(eye.getAttribute("data-eye"));
+        if(!field) return;
+        var show = field.type === "password";
+        field.type = show ? "text" : "password";
+        var use = eye.querySelector("use");
+        if(use) use.setAttribute("href", show ? "#iconEyeOff" : "#iconEye");
+      }
+    });
+
+    ["auRegPhone", "auLogPhone"].forEach(function(id){
+      var input = document.getElementById(id);
+      if(!input) return;
+      input.addEventListener("input", function(){
+        var before = input.value;
+        var formatted = auFormatPhone(before);
+        if(formatted !== before){
+          input.value = formatted;
+          try{ input.setSelectionRange(formatted.length, formatted.length); }catch(e){}
+        }
+      });
+    });
+
+    var boxes = auOtpInputs();
+    boxes.forEach(function(box, i){
+      box.addEventListener("input", function(){
+        box.value = box.value.replace(/\D/g, "").slice(0, 1);
+        box.classList.toggle("filled", Boolean(box.value));
+        if(box.value && boxes[i + 1]) boxes[i + 1].focus();
+        if(auOtpValue().length === 4) auVerify();
+      });
+      box.addEventListener("keydown", function(ev){
+        if(ev.key === "Backspace" && !box.value && boxes[i - 1]){
+          boxes[i - 1].focus();
+          boxes[i - 1].value = "";
+          boxes[i - 1].classList.remove("filled");
+          ev.preventDefault();
+        }
+      });
+      box.addEventListener("paste", function(ev){
+        var text = (ev.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 4);
+        if(!text) return;
+        ev.preventDefault();
+        boxes.forEach(function(b, j){
+          b.value = text.charAt(j) || "";
+          b.classList.toggle("filled", Boolean(b.value));
+        });
+        if(text.length === 4) auVerify();
+      });
+    });
+
+    var bind = function(id, fn){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener("click", fn);
+    };
+    bind("auRegSubmit", auRegister);
+    bind("auOtpSubmit", auVerify);
+    bind("auResendBtn", auResend);
+    bind("auPwSubmit", auSavePassword);
+    bind("auLogSubmit", auLogin);
+    bind("auForgotBtn", auStartReset);
+
+    // Enter bosilganda ham xuddi tugmadek ishlasin.
+    card.addEventListener("keydown", function(ev){
+      if(ev.key !== "Enter") return;
+      var screen = ev.target.closest(".au-screen");
+      if(!screen) return;
+      var main = screen.querySelector(".au-btn--primary");
+      if(main){ ev.preventDefault(); main.click(); }
+    });
+  })();
+
+  /* ============================================================
+     Telefon tokenini har bir so'rovga qo'shish
+     ------------------------------------------------------------
+     Ilovada ~30 joyda `googleIdToken`/`telegramInitData` qo'lda
+     qo'shiladi. Uchinchi usul uchun o'sha joylarni qaytadan yozish
+     o'rniga token shu yerda, bitta joyda qo'shiladi — shunda ikki
+     xil nusxa paydo bo'lmaydi va mavjud kod umuman o'zgarmaydi.
+     ============================================================ */
+  (function attachPhoneToken(){
+    var nativeFetch = window.fetch;
+    if(!nativeFetch) return;
+    window.fetch = function(input, init){
+      try{
+        var url = typeof input === "string" ? input : (input && input.url) || "";
+        if(phoneToken && url.indexOf("/api/") === 0 && url.indexOf("/api/auth-phone") !== 0){
+          // GET: faqat allaqachon token olib yuradigan manzillarga.
+          if(typeof input === "string" && url.indexOf("googleIdToken=") !== -1 && url.indexOf("phoneToken=") === -1){
+            input = url + "&phoneToken=" + encodeURIComponent(phoneToken);
+          }
+          // POST: JSON tanasiga qo'shiladi.
+          if(init && typeof init.body === "string" && init.body.charAt(0) === "{" && init.body.indexOf('"phoneToken"') === -1){
+            var parsed = JSON.parse(init.body);
+            if(parsed && typeof parsed === "object" && !(parsed instanceof Array)){
+              parsed.phoneToken = phoneToken;
+              var next = {};
+              for(var k in init){ if(Object.prototype.hasOwnProperty.call(init, k)) next[k] = init[k]; }
+              next.body = JSON.stringify(parsed);
+              init = next;
+            }
+          }
+        }
+      }catch(e){ /* so'rovni hech qachon to'xtatmaymiz */ }
+      return nativeFetch.call(window, input, init);
+    };
+  })();
+
   function showWelcomeGate(){
     var gate = document.getElementById("welcomeGate");
     if(!gate) return;
     gate.classList.remove("leaving");
     gate.hidden = false;
     document.body.style.overflow = "hidden";
+    // Kirish so'ralganda darhol kirish ekrani ochiladi; birinchi
+    // kirishda esa tanishtiruvdan boshlanadi.
+    auGo(gate.classList.contains("welcome--prompt") ? "login" : "intro");
     applyLang();
   }
 
@@ -7302,7 +8215,7 @@
   var TELEGRAM_BOT_USERNAME = "";
 
   /** True once signed in by either method — the one check every gate below uses. */
-  function isSignedIn(){ return !!googleIdToken || !!telegramInitData; }
+  function isSignedIn(){ return !!googleIdToken || !!telegramInitData || !!phoneToken; }
 
   function onTelegramSignIn(){
     var label = (telegramUser && (telegramUser.firstName || telegramUser.username)) || "Telegram";
@@ -7372,6 +8285,7 @@
     var saved = readStoredAuth();
     if(!saved) return false;
     if(saved.kind === "google") return applyGoogleCredential(saved.token, "restored");
+    if(saved.kind === "phone") return restorePhoneAuth(saved.token);
     return applyTelegramCredential(saved.token, telegramUserFromInitData(saved.token));
   }
 
@@ -8671,6 +9585,8 @@
     googleProfile = null;
     telegramInitData = null;
     telegramUser = null;
+    phoneToken = null;
+    phoneProfile = null;
     clearStoredAuth();
     if(!expired){
       try{ localStorage.removeItem(AUTH_HINT_KEY); }catch(e){}

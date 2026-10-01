@@ -202,7 +202,7 @@ const getDetail = async (req, res) => {
 };
 
 const getMine = async (req, res) => {
-  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const all = await loadAllTrucks();
@@ -214,7 +214,7 @@ const getMine = async (req, res) => {
 };
 
 const getFavorites = async (req, res) => {
-  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const ids = await kvSmembers(`truck_favs:${email}`);
@@ -370,7 +370,7 @@ const applyFields = (body, next, { requireCore }) => {
 
 const create = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
   if (await kvSismember('banned', email.toLowerCase())) {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
@@ -398,7 +398,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const id = String(body.id || '');
@@ -423,7 +423,7 @@ const update = async (req, res) => {
 
 const setStatus = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const id = String(body.id || '');
@@ -449,7 +449,7 @@ const setStatus = async (req, res) => {
 
 const remove = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const id = String(body.id || '');
@@ -466,7 +466,7 @@ const remove = async (req, res) => {
 
 const favorite = async (req, res, add) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const id = String(body.id || '');
