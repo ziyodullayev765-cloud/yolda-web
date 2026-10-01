@@ -71,9 +71,20 @@ export default async function handler(req, res) {
   // Short cache: settings change rarely, but flipping maintenance mode
   // shouldn't take minutes to reach visitors.
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=60');
+  // Admin paneldan almashtirilgan ikonkalar. Bo'sh bo'lsa ilova o'z
+  // chizilgan ikonkalarini ishlatadi — bu jadval faqat ustiga yozadi.
+  let icons = {};
+  try {
+    const parsed = JSON.parse((await kvGet('icon_overrides')) || '{}');
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) icons = parsed;
+  } catch {
+    icons = {};
+  }
+
   res.status(200).json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || '',
+    icons,
     platformName: settings.platformName,
     supportPhone: settings.supportPhone,
     supportTelegram: settings.supportTelegram,

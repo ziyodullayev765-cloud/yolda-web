@@ -33,6 +33,7 @@ import { requireAdmin } from '../lib/adminAuth.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
 import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/life.js';
+import { uploadImage, keyFromUrl, deleteObject, storageConfigured } from '../lib/storage.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -687,6 +688,87 @@ const deleteLife = async (req, res) => {
   return res.status(200).json({ ok: true });
 };
 
+/* ---------- Ikonkalar ----------
+   Ilovadagi har bir ikonka (SVG sprite'dagi `<symbol>`) o'z rasmi
+   bilan almashtirilishi mumkin. Bazada faqat {id: havola} jadvali
+   turadi; rasmning o'zi R2'da.
+
+   Nega base64 qabul qilinmaydi: bu jadval har bir tashrifchiga
+   /api/config orqali boradi. Rasmlar uning ichiga kirsa, har
+   ochilishda yuz kilobaytlab ortiqcha ma'lumot ketardi — ya'ni
+   ikonka almashtirish saytni sekinlashtirardi. Shuning uchun
+   saqlash sozlanmagan bo'lsa, sabab ochiq aytiladi. */
+const ICONS_KEY = 'icon_overrides';
+const ICON_ID_RE = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
+const MAX_ICON_BYTES = 200 * 1024;
+const MAX_ICONS = 200;
+
+const readIcons = async () => {
+  try {
+    const parsed = JSON.parse((await kvGet(ICONS_KEY)) || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const getIcons = async (res) =>
+  res.status(200).json({ ok: true, icons: await readIcons(), storage: storageConfigured() });
+
+const saveIcon = async (req, res) => {
+  if (!storageConfigured()) {
+    return res.status(503).json({
+      error: 'Avval fayl saqlash sozlansin (R2). Sozlamalar README’da yozilgan.',
+    });
+  }
+
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const id = String(body.id || '').trim();
+  if (!ICON_ID_RE.test(id)) return res.status(400).json({ error: 'Ikonka nomi noto‘g‘ri' });
+
+  const icons = await readIcons();
+  if (!icons[id] && Object.keys(icons).length >= MAX_ICONS) {
+    return res.status(400).json({ error: 'Juda ko‘p ikonka almashtirilgan' });
+  }
+
+  const uploaded = await uploadImage(body.dataUrl, 'icon', MAX_ICON_BYTES);
+  if (!uploaded || uploaded.error) {
+    return res.status(400).json({ error: (uploaded && uploaded.error) || 'Rasm yuklanmadi' });
+  }
+
+  const previous = icons[id];
+  icons[id] = uploaded.url;
+  if (!(await kvSet(ICONS_KEY, JSON.stringify(icons)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+
+  // Eski rasm endi hech qayerda ishlatilmaydi.
+  const oldKey = keyFromUrl(previous);
+  if (oldKey && previous !== uploaded.url) deleteObject(oldKey).catch(() => {});
+
+  return res.status(200).json({ ok: true, id, url: uploaded.url });
+};
+
+const deleteIcon = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const id = String(body.id || '').trim();
+  if (!ICON_ID_RE.test(id)) return res.status(400).json({ error: 'Ikonka nomi noto‘g‘ri' });
+
+  const icons = await readIcons();
+  if (!icons[id]) return res.status(404).json({ error: 'Bu ikonka almashtirilmagan' });
+
+  const previous = icons[id];
+  delete icons[id];
+  if (!(await kvSet(ICONS_KEY, JSON.stringify(icons)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+  const oldKey = keyFromUrl(previous);
+  if (oldKey) deleteObject(oldKey).catch(() => {});
+
+  // Asl (chizilgan) ikonka qaytadi — hech narsa yo'qolmaydi.
+  return res.status(200).json({ ok: true, id });
+};
+
 /** Read permission required per GET resource. */
 const READ_PERMISSIONS = {
   orders: 'orders:read',
@@ -698,6 +780,7 @@ const READ_PERMISSIONS = {
   settings: 'settings:read',
   verifydoc: 'users:read',
   life: 'life:read',
+  icons: 'icons:read',
 };
 
 /** Write permission required per POST action. */
@@ -711,6 +794,8 @@ const WRITE_PERMISSIONS = {
   'requeue-legacy': 'trucks:write',
   'save-life': 'life:write',
   'delete-life': 'life:write',
+  'save-icon': 'icons:write',
+  'delete-icon': 'icons:write',
 };
 
 export default async function handler(req, res) {
@@ -733,6 +818,7 @@ export default async function handler(req, res) {
     if (resource === 'settings') return getSettings(res);
     if (resource === 'verifydoc') return getVerifyDoc(req, res);
     if (resource === 'life') return getLife(res);
+    if (resource === 'icons') return getIcons(res);
   }
 
   if (req.method === 'POST') {
@@ -753,6 +839,8 @@ export default async function handler(req, res) {
     if (action === 'requeue-legacy') return requeueLegacy(req, res);
     if (action === 'save-life') return saveLife(req, res);
     if (action === 'delete-life') return deleteLife(req, res);
+    if (action === 'save-icon') return saveIcon(req, res);
+    if (action === 'delete-icon') return deleteIcon(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

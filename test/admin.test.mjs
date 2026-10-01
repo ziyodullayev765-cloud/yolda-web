@@ -50,13 +50,34 @@ export const kvKeys = async () => [...store.keys()].filter(k => k.startsWith('pr
  * purpose: a handler that picks up a new lib import should not break
  * these tests.
  */
-const loadHandler = async (relPath, name) => {
+const loadHandler = async (relPath, name, libQuery = '') => {
+  // libQuery — lib modulining yangi nusxasini olish uchun. Bitta
+  // test ichida lib/storage.js ni ham sozlangan, ham sozlanmagan
+  // holatda sinash kerak; modul esa env ni yuklanish paytida o'qiydi.
   const src = readFileSync(join(repo, relPath), 'utf8')
     .replaceAll("'../lib/kv.js'", JSON.stringify(join(work, 'kvmock.mjs')))
-    .replace(/'\.\.\/lib\/([\w.]+)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)));
+    .replace(/'\.\.\/lib\/([\w.]+)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f) + libQuery));
   const out = join(work, `${name}.mjs`);
   writeFileSync(out, src);
   return (await import(out)).default;
+};
+
+// Ikonka yuklash uchun R2 sozlangan bo'lishi kerak. Haqiqiy so'rov
+// ketmaydi — global.fetch quyida yozib oluvchiga almashtirilgan.
+process.env.R2_ACCOUNT_ID = 'acc-test';
+process.env.R2_ACCESS_KEY_ID = 'key-test';
+process.env.R2_SECRET_ACCESS_KEY = 'secret-test';
+process.env.R2_BUCKET = 'yolda-test';
+process.env.R2_PUBLIC_URL = 'https://pub-test.r2.dev';
+
+let r2Calls = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  if (String(url).includes('r2.cloudflarestorage.com')) {
+    r2Calls.push({ url: String(url), method: init.method });
+    return { ok: true, status: 200, text: async () => '', json: async () => ({}) };
+  }
+  return realFetch(url, init);
 };
 
 const adminData = await loadHandler('api/admin-data.js', 'admin_data');
@@ -671,6 +692,83 @@ console.log('\n== lib/verification.js: edges ==');
     try { const r = {}; setVerification(r, 'GOD', { status: 'VERIFIED' }); return !r.verifications?.GOD; }
     catch { return true; }
   })(), 'chaqiruvchilar turni o‘zlari tekshiradi; lib ichida himoya yo‘q');
+}
+
+/* ==========================================================
+   Ikonkalar — ilovadagi belgini o'z rasmi bilan almashtirish
+   ========================================================== */
+console.log('\n== ikonkalar ==');
+{
+  const PNG = 'data:image/png;base64,' + Buffer.from('fake-png').toString('base64');
+
+  // Ruxsatlar
+  const anon = await call(adminData, 'GET', { resource: 'icons' });
+  check('kirmasdan ko‘rib bo‘lmaydi', anon.statusCode === 401, String(anon.statusCode));
+  const modWrite = await call(adminData, 'POST', { action: 'save-icon' },
+    { id: 'iconHome', dataUrl: PNG }, cookieFor('MODERATOR'));
+  check('moderator almashtira olmaydi', modWrite.statusCode === 403, String(modWrite.statusCode));
+  const modRead = await call(adminData, 'GET', { resource: 'icons' }, null, cookieFor('MODERATOR'));
+  check('moderator ko‘ra oladi', modRead.statusCode === 200);
+
+  // Saqlash
+  r2Calls = [];
+  const saved = await call(adminData, 'POST', { action: 'save-icon' },
+    { id: 'iconHome', dataUrl: PNG }, cookieFor('ADMIN'));
+  check('admin almashtira oladi', saved.statusCode === 200, JSON.stringify(saved.body));
+  check('havola qaytdi', typeof saved.body.url === 'string' && saved.body.url.startsWith('https://pub-test.r2.dev/icon/'),
+    saved.body && saved.body.url);
+  check('rasm R2 ga yuborildi', r2Calls.length === 1 && r2Calls[0].method === 'PUT', JSON.stringify(r2Calls));
+  check('bazada rasm emas, havola saqlanadi',
+    !String(store.get('icon_overrides')).includes('base64'), store.get('icon_overrides'));
+
+  const listed = await call(adminData, 'GET', { resource: 'icons' }, null, cookieFor('ADMIN'));
+  check('ro‘yxatda ko‘rinadi', listed.body.icons.iconHome === saved.body.url);
+  check('saqlash yoqilgani aytiladi', listed.body.storage === true);
+
+  // Ilovaga yetib boradimi
+  const cfg = await call(config, 'GET', {});
+  check('ilovaga /api/config orqali boradi', cfg.body.icons.iconHome === saved.body.url, JSON.stringify(cfg.body.icons));
+
+  // Noto'g'ri kiritmalar
+  check('nomi noto‘g‘ri bo‘lsa rad etiladi',
+    (await call(adminData, 'POST', { action: 'save-icon' }, { id: '../../etc', dataUrl: PNG }, cookieFor('ADMIN'))).statusCode === 400);
+  check('rasm o‘rniga matn rad etiladi',
+    (await call(adminData, 'POST', { action: 'save-icon' }, { id: 'iconBox', dataUrl: 'salom' }, cookieFor('ADMIN'))).statusCode === 400);
+  check('zararli turdagi fayl rad etiladi',
+    (await call(adminData, 'POST', { action: 'save-icon' },
+      { id: 'iconBox', dataUrl: 'data:image/svg+xml;base64,PHN2Zz4=' }, cookieFor('ADMIN'))).statusCode === 400);
+
+  // Almashtirilganda eskisi o'chiriladi
+  r2Calls = [];
+  const again = await call(adminData, 'POST', { action: 'save-icon' },
+    { id: 'iconHome', dataUrl: 'data:image/png;base64,' + Buffer.from('boshqa').toString('base64') }, cookieFor('ADMIN'));
+  check('qayta almashtirish ishlaydi', again.statusCode === 200);
+  await new Promise((r) => setTimeout(r, 10));
+  check('eski rasm bucket‘dan o‘chiriladi', r2Calls.some((c) => c.method === 'DELETE'), JSON.stringify(r2Calls));
+
+  // Asliga qaytarish
+  const reset = await call(adminData, 'POST', { action: 'delete-icon' }, { id: 'iconHome' }, cookieFor('ADMIN'));
+  check('asliga qaytariladi', reset.statusCode === 200);
+  const after = await call(adminData, 'GET', { resource: 'icons' }, null, cookieFor('ADMIN'));
+  check('jadvaldan chiqib ketdi', after.body.icons.iconHome === undefined, JSON.stringify(after.body.icons));
+  check('almashtirilmaganini o‘chirib bo‘lmaydi',
+    (await call(adminData, 'POST', { action: 'delete-icon' }, { id: 'iconHome' }, cookieFor('ADMIN'))).statusCode === 404);
+}
+
+console.log('\n== saqlash sozlanmaganda ==');
+{
+  // R2 kalitlari yo'q bo'lsa ikonka almashtirish ishlamaydi va buning
+  // sababi ochiq aytiladi — jimgina "saqlandi" deb ko'rsatilmaydi.
+  const keep = { ...process.env };
+  delete process.env.R2_ACCOUNT_ID;
+  const bare = await loadHandler('api/admin-data.js', 'admin_data_nostore', '?nostore');
+  const res = await call(bare, 'POST', { action: 'save-icon' },
+    { id: 'iconHome', dataUrl: 'data:image/png;base64,AAAA' }, cookieFor('ADMIN'));
+  check('sozlanmaganda rad etiladi', res.statusCode === 503, String(res.statusCode));
+  check('sababi aytiladi', String(res.body.error).includes('R2'), res.body && res.body.error);
+  const read = await call(bare, 'GET', { resource: 'icons' }, null, cookieFor('ADMIN'));
+  check('ko‘rish baribir ishlaydi', read.statusCode === 200 && read.body.storage === false, JSON.stringify(read.body));
+  Object.assign(process.env, keep);
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed, ${gaps} known gaps ====`);

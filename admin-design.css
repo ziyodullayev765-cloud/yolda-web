@@ -190,3 +190,32 @@ select.inline{border-radius:8px;padding:6px 10px;}
   .card-pad{padding:18px;}
   th,td{padding:12px 13px;}
 }
+
+/* ---------- Ikonkalar bo'limi ----------
+   Ilovadagi har bir belgi bitta kartochka: ko'rinishi, nomi va
+   almashtirish tugmasi. */
+.icon-grid{
+  display:grid;gap:12px;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+}
+.icon-card{
+  background:var(--card2);border:1px solid var(--line);border-radius:14px;
+  padding:14px 12px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+}
+.icon-card.is-custom{border-color:var(--accent);}
+.icon-card-pic{
+  width:52px;height:52px;border-radius:12px;background:var(--card-hi);
+  display:flex;align-items:center;justify-content:center;color:var(--text);
+}
+.icon-card-name{
+  font-size:11.5px;color:var(--text-soft);word-break:break-all;line-height:1.3;
+}
+.icon-card-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.btn.small{min-height:30px;padding:0 10px;font-size:12px;border-radius:9px;}
+
+.note-box{
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  font-size:13px;line-height:1.5;color:var(--text);background:var(--card2);
+}
+.note-box.warn{border-color:#8A6D1F;background:rgba(234,179,8,0.08);}

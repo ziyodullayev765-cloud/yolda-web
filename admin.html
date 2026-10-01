@@ -850,11 +850,13 @@
       "orders:read","users:read","users:write","reports:read","reports:write",
       "trucks:read","trucks:write","messages:read","analytics:read",
       "settings:read","settings:write",
-      "life:read","life:write"
+      "life:read","life:write",
+      "icons:read","icons:write"
     ],
     MODERATOR: [
       "orders:read","users:read","reports:read","reports:write",
-      "trucks:read","trucks:write","messages:read","life:read"
+      "trucks:read","trucks:write","messages:read","life:read",
+      "icons:read"
     ]
   };
   var session = { role: null };
@@ -876,16 +878,22 @@
     reports:  { query:"resource=reports",  perm:"reports:read",  key:"reports" },
     messages: { query:"resource=messages", perm:"messages:read", key:"messages" },
     settings: { query:"resource=settings", perm:"settings:read", key:"settings" },
-    life:     { query:"resource=life",     perm:"life:read",     key:"life" }
+    life:     { query:"resource=life",     perm:"life:read",     key:"life" },
+    // Javobi ro'yxat emas, {id: havola} jadvali — Store.list emas,
+    // Store.data.icons o'qiladi.
+    icons:    { query:"resource=icons",    perm:"icons:read",    key:"icons" }
   };
   var Store = {
     data: {},
+    // Javobning o'zi: ba'zi resurslar ro'yxatdan tashqari bayroq ham
+    // qaytaradi (masalan ikonkalar uchun `storage`).
+    raw: {},
     state: {},   // idle | loading | ready | error | denied
     error: {},
     loadedAt: {},
 
     reset: function(){
-      Store.data = {}; Store.state = {}; Store.error = {}; Store.loadedAt = {};
+      Store.data = {}; Store.raw = {}; Store.state = {}; Store.error = {}; Store.loadedAt = {};
       Object.keys(RESOURCES).forEach(function(n){ Store.state[n] = "idle"; });
       oneOff = {};
     },
@@ -901,6 +909,7 @@
       return Api.get(def.query).then(function(body){
         var value = body[def.key];
         Store.data[name] = value === undefined ? null : value;
+        Store.raw[name] = body;
         Store.state[name] = "ready";
         Store.loadedAt[name] = Date.now();
         Store.error[name] = null;
@@ -1274,6 +1283,7 @@
     { name:"messages",      label:"Murojaatlar",      icon:"mail",      group:"Moderatsiya",perm:"messages:read",  view:viewMessages },
     { name:"analytics",     label:"Tahlil",           icon:"chart",     group:"Tizim",      perm:"analytics:read", view:viewAnalytics },
     { name:"life",          label:"YO'LDA LIFE",      icon:"play",      group:"Mazmun",     perm:"life:read",      view:viewLife },
+    { name:"icons",         label:"Ikonkalar",        icon:"edit",      group:"Mazmun",     perm:"icons:read",     view:viewIcons },
     { name:"settings",      label:"Sozlamalar",       icon:"gear",      group:"Tizim",      perm:"settings:read",  view:viewSettings }
   ];
   function routeByName(name){
@@ -2759,6 +2769,169 @@
   }
 
   /** Qo'shish va tahrirlash — bitta oyna, ikkalasiga ham. */
+  /* ==========================================================
+     Ikonkalar — ilovadagi har bir belgini o'z rasmi bilan
+     almashtirish.
+     ------------------------------------------------------------
+     Ro'yxat bu yerda qo'lda yozilmaydi: index.html ning o'zidan
+     o'qiladi. Aks holda ilovaga yangi ikonka qo'shilganda bu
+     ro'yxat orqada qolib ketardi va hech kim sezmasdi.
+     ========================================================== */
+  var iconSprite = { state:"idle", ids:[], error:"" };
+
+  function loadIconSprite(){
+    if(iconSprite.state === "loading" || iconSprite.state === "ready") return;
+    iconSprite.state = "loading";
+    fetch("/index.html", { cache:"no-cache" }).then(function(r){
+      if(!r.ok) throw new Error("Ilova sahifasi o'qilmadi");
+      return r.text();
+    }).then(function(html){
+      // Sprite — <symbol> lar turgan yagona yashirin <svg>.
+      var ids = [];
+      var re = /<symbol\s+id="([A-Za-z][A-Za-z0-9_]*)"/g;
+      var m;
+      while((m = re.exec(html))){ if(ids.indexOf(m[1]) === -1) ids.push(m[1]); }
+
+      // Ko'rinishini chizish uchun sprite'ning o'zi ham kerak.
+      var start = html.indexOf("<symbol");
+      var end = html.lastIndexOf("</symbol>");
+      if(start !== -1 && end !== -1 && !document.getElementById("adminIconSprite")){
+        var holder = document.createElement("div");
+        holder.id = "adminIconSprite";
+        holder.setAttribute("aria-hidden", "true");
+        holder.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;";
+        holder.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg">'
+          + html.slice(start, end + 9) + "</svg>";
+        document.body.appendChild(holder);
+      }
+
+      iconSprite.ids = ids;
+      iconSprite.state = ids.length ? "ready" : "error";
+      if(!ids.length) iconSprite.error = "Ikonkalar topilmadi";
+      render();
+    }).catch(function(e){
+      iconSprite.state = "error";
+      iconSprite.error = e.message;
+      render();
+    });
+  }
+
+  function iconOverrides(){
+    var data = Store.data.icons;
+    return (data && typeof data === "object") ? data : {};
+  }
+
+  function viewIcons(){
+    var writable = can("icons:write");
+    return pageHead("Ikonkalar", "Ilovadagi har bir belgini o'z rasmingiz bilan almashtiring",
+      refreshBtn("icons"))
+      + withData(["icons"], function(){
+        var map = iconOverrides();
+        var changed = Object.keys(map).length;
+        var storageOn = !(Store.raw.icons && Store.raw.icons.storage === false);
+
+        if(iconSprite.state === "idle"){ loadIconSprite(); }
+        if(iconSprite.state === "loading"){
+          return stateBox("refresh", "Yuklanmoqda", "Ilovadagi ikonkalar ro'yxati o'qilmoqda.");
+        }
+        if(iconSprite.state === "error"){
+          return stateBox("warn", "Ro'yxat o'qilmadi", esc(iconSprite.error || ""));
+        }
+
+        var warn = storageOn ? "" :
+          '<div class="note-box warn" style="margin-bottom:16px;">'
+          + "<b>Fayl saqlash sozlanmagan.</b> Ikonka almashtirish uchun Cloudflare R2 "
+          + "kalitlari kerak (README’da yozilgan). Hozircha faqat ko‘rish mumkin."
+          + "</div>";
+
+        var stats = '<div class="stat-grid">'
+          + stat("Jami", String(iconSprite.ids.length), "ikonka", "star")
+          + stat("Almashtirilgan", String(changed), "o'z rasmingiz", "check", changed ? "ok" : "")
+          + "</div>";
+
+        var cards = iconSprite.ids.map(function(id){
+          var url = map[id];
+          var preview = url
+            ? '<img src="' + esc(url) + '" alt="" style="width:30px;height:30px;object-fit:contain;">'
+            : '<svg style="width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;'
+              + 'stroke-linecap:round;stroke-linejoin:round;"><use href="#' + esc(id) + '"></use></svg>';
+
+          var actions = "";
+          if(writable && storageOn){
+            actions = '<label class="btn small" style="cursor:pointer;">'
+              + "Rasm"
+              + '<input type="file" accept="image/png,image/jpeg,image/webp" hidden '
+              + 'data-icon-file="' + esc(id) + '"></label>'
+              + (url
+                  ? '<button type="button" class="btn small ghost" data-act="icon-reset" '
+                    + 'data-id="' + esc(id) + '">Asliga</button>'
+                  : "");
+          }
+
+          return '<div class="icon-card' + (url ? " is-custom" : "") + '">'
+            + '<div class="icon-card-pic">' + preview + "</div>"
+            + '<div class="icon-card-name">' + esc(id) + "</div>"
+            + '<div class="icon-card-acts">' + actions + "</div>"
+            + "</div>";
+        }).join("");
+
+        return warn + stats + '<div class="icon-grid">' + cards + "</div>";
+      });
+  }
+
+  /** Rasm tanlangach: kichraytirib, serverga yuboramiz. */
+  function uploadIconFile(id, file){
+    if(!file) return;
+    if(file.size > 4 * 1024 * 1024){ toast("Rasm juda katta", "bad"); return; }
+
+    var reader = new FileReader();
+    reader.onerror = function(){ toast("Rasm o'qilmadi", "bad"); };
+    reader.onload = function(){
+      var img = new Image();
+      img.onerror = function(){ toast("Bu rasm emas", "bad"); };
+      img.onload = function(){
+        // 128x128 — ikonka ekranda 16-24px bo'lib chiqadi, kattasi
+        // behuda joy va trafik. Shaffoflik saqlanishi uchun PNG.
+        var size = 128;
+        var canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        var scale = Math.min(size / img.width, size / img.height);
+        var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        ctx.drawImage(img, Math.round((size - w) / 2), Math.round((size - h) / 2), w, h);
+
+        Api.post("save-icon", { id: id, dataUrl: canvas.toDataURL("image/png") })
+          .then(function(){
+            toast("Ikonka almashtirildi", "ok");
+            Store.load("icons", true);
+          }).catch(function(e){
+            if(handleApiError(e)) return;
+            toast(e.message, "bad");
+          });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetIcon(id){
+    openModal({
+      title: "Asliga qaytarish",
+      body: '<p style="margin:0;">“' + esc(id) + '” uchun yuklangan rasm o‘chiriladi '
+        + "va ilovadagi asl belgi qaytadi.</p>",
+      onSave: function(){
+        Api.post("delete-icon", { id: id }).then(function(){
+          closeModal();
+          toast("Asliga qaytarildi", "ok");
+          Store.load("icons", true);
+        }).catch(function(e){
+          if(handleApiError(e)) return;
+          toast(e.message, "bad");
+        });
+      }
+    });
+  }
+
   function openLifeModal(id){
     var x = id ? lifeById(id) : null;
     if(id && !x) return;
@@ -3257,6 +3430,7 @@
     if(act === "life-publish"){ setLifeFlag(t.getAttribute("data-id"), "published", t.getAttribute("data-on") !== "1"); return; }
     if(act === "life-feature"){ setLifeFlag(t.getAttribute("data-id"), "featured", t.getAttribute("data-on") !== "1"); return; }
     if(act === "life-delete"){ confirmDeleteLife(t.getAttribute("data-id")); return; }
+    if(act === "icon-reset"){ resetIcon(t.getAttribute("data-id")); return; }
     if(act === "settings-save"){ saveSettings(); return; }
     if(act === "requeue-legacy"){ confirmRequeueLegacy(); return; }
 
@@ -3266,6 +3440,14 @@
   });
 
   document.addEventListener("change", function(e){
+    // Ikonka uchun rasm tanlandi. `[data-act]` emas, alohida belgi —
+    // bu <input type="file">, uning o'z "amali" yo'q.
+    var picker = e.target.closest("[data-icon-file]");
+    if(picker){
+      uploadIconFile(picker.getAttribute("data-icon-file"), picker.files && picker.files[0]);
+      picker.value = "";   // bir xil faylni qayta tanlash ham ishlasin
+      return;
+    }
     var t = e.target.closest("[data-act]");
     if(!t) return;
     var act = t.getAttribute("data-act");

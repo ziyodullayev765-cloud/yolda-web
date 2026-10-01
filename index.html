@@ -8339,6 +8339,7 @@
 
     fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
       TELEGRAM_BOT_USERNAME = cfg.telegramBotUsername || "";
+      applyIconOverrides(cfg.icons);
 
       // Platform settings an admin can change from /admin → Sozlamalar.
       // Each one falls back to the value already in the markup, so an
@@ -13516,6 +13517,32 @@
      "filled" (yurak/yulduz ichi bo'yalgan holati). */
   function icon(id, cls){
     return '<svg class="ic-svg'+(cls ? ' '+cls : '')+'" aria-hidden="true"><use href="#'+id+'"></use></svg>';
+  }
+
+  /* ============================================================
+     Admin paneldan almashtirilgan ikonkalar
+     ------------------------------------------------------------
+     Ikonka ilovada ikki xil chiqadi: `icon()` orqali chizilgan
+     HTML'da va to'g'ridan-to'g'ri sahifa matnida. Ikkalasi ham
+     oxir-oqibat bitta joyga — sprite ichidagi `<symbol>` ga
+     murojaat qiladi.
+
+     Shuning uchun ikonka almashtirilganda `<use>` larni qidirib
+     yurmaymiz: symbol'ning ichini rasmga almashtiramiz. Shunda
+     mavjud va keyin chiziladigan hamma nusxa o'z-o'zidan yangi
+     rasmni ko'rsatadi, hech qayerda qo'shimcha kod kerak emas.
+     ============================================================ */
+  function applyIconOverrides(map){
+    if(!map) return;
+    Object.keys(map).forEach(function(id){
+      var url = map[id];
+      if(!url || !/^https:\/\//.test(String(url))) return;
+      var symbol = document.getElementById(id);
+      if(!symbol || String(symbol.nodeName).toLowerCase() !== "symbol") return;
+      symbol.setAttribute("viewBox", "0 0 24 24");
+      symbol.innerHTML = '<image href="'+escapeHtml(url)+'" x="0" y="0" width="24" height="24" '
+        + 'preserveAspectRatio="xMidYMid meet"></image>';
+    });
   }
   /** Small green check badge next to a verified profile's @username in chat (search/inbox/thread). */
   function chatVerifiedBadgeHtml(verified){
