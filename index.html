@@ -405,6 +405,22 @@
 
      Rang tokendan olinadi, ya'ni yorug'da oq, tunda qora shisha
      bo'ladi — orqasidagi sahifa xiralashib ko'rinib turadi. */
+  /* ============================================================
+     Telegram ichida (Mini App)
+     ------------------------------------------------------------
+     Telegram o'z yo'lagini ("Close", "⌄", "···") sahifaning
+     USTIDAN chizadi, telefonning holat qatori ham shu yerda.
+     Shu ikkisining balandligini Telegram o'zi aytadi
+     (safeAreaInset + contentSafeAreaInset) — biz esa shuncha joy
+     bo'shatamiz. Telegram'dan tashqarida ikkala qiymat ham 0,
+     ya'ni bu qoidalar hech narsani o'zgartirmaydi.
+     ============================================================ */
+  :root{--tg-top:0px;--tg-bottom:0px;}
+  :root[data-tg="1"] .nav{padding-top:calc(var(--s3) + var(--tg-top));}
+  :root[data-tg="1"] .bottom-nav{bottom:calc(20px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
+  :root[data-tg="1"] .welcome-card{padding-top:var(--tg-top);}
+  :root[data-tg="1"] .sheet{padding-bottom:calc(var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
+
   .nav{
     position:sticky;top:0;z-index:50;
     display:flex;align-items:center;justify-content:space-between;
@@ -934,6 +950,9 @@
   /* Suzib turgan panel uchun ko'proq joy kerak: balandligi + pastdagi
      bo'shliq + telefonning o'z chekkasi. */
   body{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
+  /* Telegram ichida pastda uning o'z chizig'i ham bor — panel bir
+     oz tepaga ko'tariladi, demak ro'yxat ham shuncha pastroq tugaydi. */
+  :root[data-tg="1"] body{padding-bottom:calc(96px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
 
   @media(max-width:760px){
     .nav{padding:var(--s3) var(--s4);}
@@ -6245,6 +6264,12 @@
      ============================================================ */
   var THEME_KEY = "yolda_theme";
 
+  /** Mavzu o'zgarganda Telegram yo'lagini ham ergashtiradi. */
+  function syncTelegramTheme(){
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if(tg && isTelegramWebApp) applyTelegramColors(tg);
+  }
+
   function applyThemeButtons(){
     var theme = document.documentElement.getAttribute("data-theme") || "light";
     var isAuto = true;
@@ -6261,11 +6286,13 @@
       theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", theme);
       applyThemeButtons();
+      syncTelegramTheme();
       return;
     }
     document.documentElement.setAttribute("data-theme", theme);
     try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
     applyThemeButtons();
+    syncTelegramTheme();
   }
 
   /* ============================================================
@@ -6447,7 +6474,10 @@
       }
       root.hidden = false;
       // rAF so "hidden -> visible" and the "open" transition don't collapse into one frame.
-      requestAnimationFrame(function(){ root.classList.add("open"); });
+      requestAnimationFrame(function(){
+        root.classList.add("open");
+        syncTelegramBackButton();
+      });
       document.body.style.overflow = "hidden";
       document.addEventListener("keydown", onKeydown, true);
       // Faqat yuqoridagi tutqich va sarlavha qatori pastga tortib yopadi.
@@ -6486,6 +6516,7 @@
       if(currentOnClose){ currentOnClose(bodyEl); currentOnClose = null; }
       currentOnBack = null;
       root.classList.remove("open");
+      syncTelegramBackButton();
       document.removeEventListener("keydown", onKeydown, true);
       document.body.style.overflow = "";
       var toRestore = lastFocused;
@@ -8173,13 +8204,81 @@
    * simply won't exist there — the script tag in <head> loads fine
    * everywhere but only Telegram's own in-app browser populates it).
    */
+  /**
+   * Telegram yo'lagi va telefon holat qatori sahifa ustida turadi.
+   * Ularning balandligi Telegram'dan keladi va to'liq ekran rejimiga
+   * o'tilganda, burilganda yoki klaviatura ochilganda o'zgaradi —
+   * shuning uchun bir marta emas, har o'zgarishda qayta hisoblanadi.
+   *
+   * Eski mijozlarda bu maydonlar umuman yo'q. Unda qiymat 0 bo'lib
+   * qoladi va hech narsa o'zgarmaydi — eski Telegram'da yo'lak
+   * sahifaning ustida emas, tepasida turadi, ya'ni joy ham shart emas.
+   */
+  function applyTelegramInsets(tg){
+    var root = document.documentElement;
+    var num = function(v){ var n = Number(v); return n > 0 ? n : 0; };
+    var top = 0, bottom = 0;
+    try{
+      var device = tg.safeAreaInset || {};
+      var content = tg.contentSafeAreaInset || {};
+      top = num(device.top) + num(content.top);
+      bottom = num(device.bottom) + num(content.bottom);
+    }catch(e){}
+    root.style.setProperty("--tg-top", top + "px");
+    root.style.setProperty("--tg-bottom", bottom + "px");
+  }
+
+  /** Telegram'ning o'z yo'lagi va foni ilova mavzusi bilan bir xil bo'lsin. */
+  function applyTelegramColors(tg){
+    var dark = document.documentElement.getAttribute("data-theme") === "dark";
+    var colour = dark ? "#000000" : "#FFFFFF";
+    try{ tg.setHeaderColor(colour); }catch(e){}
+    try{ tg.setBackgroundColor(colour); }catch(e){}
+    try{ tg.setBottomBarColor(colour); }catch(e){}
+  }
+
+  /**
+   * Telegram'da brauzerning "orqaga" tugmasi yo'q — uning o'rniga
+   * yo'lakdagi tugma ishlatiladi. Ochiq oyna bo'lsa avval o'sha
+   * yopiladi, bo'lmasa Asosiyga qaytiladi; Asosiyda esa tugma
+   * umuman ko'rinmaydi (u yerdan orqaga qaytadigan joy yo'q).
+   */
+  function syncTelegramBackButton(){
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if(!tg || !tg.BackButton || !isTelegramWebApp) return;
+    try{
+      var sheetOpen = Boolean(document.querySelector(".sheet-root.open"));
+      if(sheetOpen || visibleTabName() !== "home") tg.BackButton.show();
+      else tg.BackButton.hide();
+    }catch(e){}
+  }
+
   function initTelegramWebApp(){
     var tg = window.Telegram && window.Telegram.WebApp;
     if(!tg || !tg.initData) return;
 
     isTelegramWebApp = true;
+    document.documentElement.setAttribute("data-tg", "1");
     try{ tg.ready(); }catch(e){}
     try{ tg.expand(); }catch(e){}
+    // Pastga surish ilovani yopib yuborardi — ro'yxatni aylantirganda
+    // ham, pastki paneldagi tomchini surganda ham. 7.7 dan eskiroq
+    // mijozlarda bu metod yo'q, shuning uchun jimgina o'tkazib yuboriladi.
+    try{ tg.disableVerticalSwipes(); }catch(e){}
+
+    applyTelegramInsets(tg);
+    applyTelegramColors(tg);
+    ["safeAreaChanged", "contentSafeAreaChanged", "fullscreenChanged", "viewportChanged"].forEach(function(ev){
+      try{ tg.onEvent(ev, function(){ applyTelegramInsets(tg); }); }catch(e){}
+    });
+    try{ tg.onEvent("themeChanged", function(){ applyTelegramColors(tg); }); }catch(e){}
+    try{
+      tg.BackButton.onClick(function(){
+        if(document.querySelector(".sheet-root.open")) Sheet.close();
+        else switchTab("home");
+      });
+    }catch(e){}
+    syncTelegramBackButton();
 
     var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
     applyTelegramCredential(tg.initData, u
@@ -14508,6 +14607,7 @@
     });
     moveNavBlob();
     rememberTab(name);
+    syncTelegramBackButton();
     var active = document.getElementById("tab-" + name);
     if(active){
       // IntersectionObserver never fires for content that was hidden —
