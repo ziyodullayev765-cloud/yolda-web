@@ -751,18 +751,20 @@
   .bn-item:active .ic-svg{transform:scale(0.9);}
   :root[data-reduce-motion="1"] .bn-item .ic-svg{transition:none;transform:none;}
 
-  /* "Yuk joylash" is the app's main action — a raised, filled circular
-     icon in the middle of the bar, like a marketplace app's primary FAB. */
+  /* "Yuk joylash" — ilovaning asosiy amali. Ilgari u paneldan
+     yuqoriga bo'rtib chiqib turardi; endi panel ichida, qolgan
+     bo'limlar bilan bir qatorda. Ajralib turishi uchun bo'rtish
+     emas, rang yetarli. */
   .bn-item--primary{color:var(--route);}
   .bn-item--primary .bn-fab{
     display:flex;align-items:center;justify-content:center;
-    width:52px;height:52px;border-radius:50%;margin-top:-28px;
+    width:38px;height:38px;border-radius:50%;margin-top:0;
     background:var(--route);
-    box-shadow:0 6px 18px rgba(10,159,91,0.4), 0 0 0 4px rgba(255,255,255,0.55);
+    box-shadow:0 2px 8px rgba(10,159,91,0.32);
     transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s var(--ease);
   }
-  :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 6px 18px rgba(10,159,91,0.5), 0 0 0 4px rgba(10,10,10,0.8);}
-  .bn-item--primary .bn-fab .ic-svg{font-size:26px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
+  :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 2px 8px rgba(10,159,91,0.45);}
+  .bn-item--primary .bn-fab .ic-svg{font-size:21px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
   .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
   .bn-item--primary.active .bn-fab{transform:scale(1.06);}
   .bn-item--primary:active .bn-fab{transform:scale(0.94);}
@@ -2509,55 +2511,167 @@
     font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
     white-space:nowrap;text-align:left;
   }
-  /* Suhbat sarlavhasi: doira avatar + ism, ilovaning o'z app-bar'iga o'xshash. */
+  /* ============================================================
+     SUHBAT — Telegramdagi kabi
+     ------------------------------------------------------------
+     Suhbat ochilganda butun ekranni egallaydi: sayt sarlavhasi ham,
+     pastki panel ham yashiriladi. Yozishma — ilovaning ichidagi
+     kichik quticha emas, alohida ekran.
+
+     Xabar ostida na soat, na reaksiya qatori turadi — ular xabarni
+     uzoq bosganda chiqadi (Telegram ham shunday). Soatlarni ko'rish
+     uchun yozishmani yon tomonga surish kifoya: hamma soat chap
+     tomonda bir ustun bo'lib chiqadi.
+     ============================================================ */
+  .chat-fullscreen{
+    position:fixed;inset:0;z-index:1400;
+    display:flex;flex-direction:column;
+    background:var(--paper);
+    border:none;border-radius:0;box-shadow:none;
+    padding:0;margin:0;max-width:none;
+  }
+  /* Suhbat ochiq turganda ilovaning o'z yo'laklari chalg'itmasin. */
+  :root[data-chat-open="1"] .nav,
+  :root[data-chat-open="1"] .bottom-nav{display:none !important;}
+  :root[data-chat-open="1"] body{padding-bottom:0;}
+
   .chat-thread-head{
-    display:flex;align-items:center;gap:10px;margin:0 0 var(--s3);
-    padding-bottom:var(--s3);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;flex:none;
+    padding:calc(10px + var(--tg-top, 0px) + env(safe-area-inset-top, 0px)) 14px 10px;
+    border-bottom:1px solid var(--border);
+    background:var(--chrome-glass);
+    -webkit-backdrop-filter:saturate(180%) blur(24px);
+    backdrop-filter:saturate(180%) blur(24px);
   }
   .chat-back{
-    background:var(--tint);border:none;color:var(--route);
+    background:none;border:none;color:var(--route);
     width:34px;height:34px;border-radius:50%;flex-shrink:0;
     cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
-  .chat-back .ic-svg{font-size:18px;transform:scaleX(-1);}
-  .chat-thread-title{margin:0 !important;font-size:15.5px;}
+  .chat-back .ic-svg{font-size:20px;transform:scaleX(-1);}
+  .chat-thread-title{margin:0 !important;font-size:16px;}
+
   .chat-thread{
-    display:flex;flex-direction:column;gap:6px;max-height:360px;overflow-y:auto;
-    margin:var(--s3) 0;padding:4px 4px 4px 0;
+    flex:1 1 auto;min-height:0;
+    display:flex;flex-direction:column;gap:2px;
+    overflow-y:auto;overflow-x:hidden;
+    margin:0;padding:12px 12px 6px;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   }
-  .chat-bubble{max-width:78%;padding:9px 13px;border-radius:17px;font-size:14px;line-height:1.4;word-wrap:break-word;}
-  .chat-bubble.mine{align-self:flex-end;background:var(--route);color:#fff;border-bottom-right-radius:5px;}
-  .chat-bubble.theirs{align-self:flex-start;background:var(--paper-dark);color:var(--ink);border-bottom-left-radius:5px;}
-  .chat-bubble.deleted .cb-text{opacity:0.65;}
-  .cb-meta{
-    display:flex;align-items:center;flex-wrap:wrap;gap:5px;
-    font-size:10.5px;opacity:0.75;margin-top:3px;
+  /* Xabarlar pastdan to'planadi — Telegramdagi kabi. Bo'sh joy
+     tepada qoladi, yozishma to'lganda esa bu bo'shliq yo'qoladi. */
+  .chat-thread::before{content:"";flex:1 1 auto;}
+
+  /* Bitta qator: chapda soat uchun joy, o'ngda yoki chapda xabar. */
+  .chat-bubble{
+    position:relative;display:flex;align-items:flex-end;
+    width:100%;max-width:none;padding:0 0 2px;
+    background:none;border-radius:0;
+    transition:padding-left 0.22s var(--ease);
   }
-  .cb-meta button{background:none;border:none;font-size:11px;cursor:pointer;padding:0;color:inherit;opacity:0.9;}
-  .cb-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+  .chat-bubble.mine{justify-content:flex-end;}
+  .chat-bubble.theirs{justify-content:flex-start;}
+
+  .cb-body{
+    position:relative;max-width:76%;
+    padding:7px 12px 8px;border-radius:16px;
+    font-size:14.5px;line-height:1.35;word-wrap:break-word;
+    cursor:default;
+    -webkit-user-select:none;user-select:none;
+    transition:transform 0.16s var(--ease);
+  }
+  .chat-bubble.mine .cb-body{
+    background:var(--route);color:#fff;border-bottom-right-radius:5px;
+  }
+  .chat-bubble.theirs .cb-body{
+    background:var(--paper-dark);color:var(--ink);border-bottom-left-radius:5px;
+  }
+  .chat-bubble.deleted .cb-body{opacity:0.7;font-style:italic;}
+  .cb-body.held{transform:scale(0.97);}
+
+  /* Soat: odatda ko'rinmaydi. Yozishma yon tomonga surilganda
+     hamma qator uchun bir xil joyda — chap chekkada — chiqadi. */
+  .cb-time{
+    position:absolute;left:0;bottom:6px;
+    font-size:11px;color:var(--muted);
+    opacity:0;transform:translateX(-8px);pointer-events:none;
+    transition:opacity 0.2s var(--ease), transform 0.2s var(--ease);
+    white-space:nowrap;
+  }
+  .chat-thread.times-on .chat-bubble{padding-left:46px;}
+  .chat-thread.times-on .cb-time{opacity:1;transform:none;}
+
+  /* Qo'yilgan reaksiyalar — xabarning pastki chetiga yopishgan
+     kichkina belgi. Alohida qator egallamaydi. */
+  .cb-reactions{
+    position:absolute;bottom:-9px;display:flex;gap:3px;
+    pointer-events:auto;
+  }
+  .chat-bubble.mine .cb-reactions{right:8px;}
+  .chat-bubble.theirs .cb-reactions{left:8px;}
+  .cb-reactions:empty{display:none;}
   .cb-react-pill{
-    background:rgba(255,255,255,0.22);border:none;border-radius:999px;padding:1px 7px;
-    font-size:11px;cursor:pointer;color:inherit;
+    display:inline-flex;align-items:center;gap:3px;
+    background:var(--card);border:1px solid var(--border);border-radius:999px;
+    padding:1px 6px;font-size:11.5px;line-height:1.5;cursor:pointer;color:var(--ink);
+    box-shadow:0 1px 3px rgba(15,23,42,0.12);
   }
-  .chat-bubble.theirs .cb-react-pill{background:var(--border);}
-  .cb-react-pill.mine{outline:1.5px solid currentColor;}
-  .cb-react-add{background:none;border:none;font-size:14px;line-height:0;cursor:pointer;opacity:0.75;padding:0 2px;color:inherit;}
-  .cb-react-pill .ic-svg{font-size:13px;vertical-align:-0.2em;}
-  .cb-edit .ic-svg,.cb-del .ic-svg{font-size:13px;vertical-align:-0.15em;}
-  .cb-emoji-picker{display:inline-flex;gap:3px;}
-  .cb-emoji-opt{background:none;border:none;font-size:15px;cursor:pointer;padding:0 2px;}
-  /* Dumaloq, shisha-kartaga o'xshash yozish qatori + aylana yuborish
-     tugmasi — pastki navigatsiya panelining o'zi bilan bir xil uslubda. */
-  .chat-input-row{display:flex;gap:8px;align-items:center;margin-top:var(--s2);}
+  .cb-react-pill.mine{border-color:var(--route);color:var(--route);}
+  .cb-react-emoji{font-size:12px;line-height:1;}
+
+  /* Uzoq bosilganda chiqadigan oyna: rangli emojilar va amallar. */
+  .cb-menu{
+    position:fixed;z-index:1600;
+    display:flex;flex-direction:column;gap:6px;
+    animation:cbMenuIn 0.18s var(--ease) both;
+  }
+  @keyframes cbMenuIn{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:none;}}
+  :root[data-reduce-motion="1"] .cb-menu{animation:none;}
+  .cb-menu-emojis{
+    display:flex;gap:2px;padding:6px 8px;border-radius:999px;
+    background:var(--card);border:1px solid var(--border);
+    box-shadow:0 10px 30px rgba(15,23,42,0.22);
+  }
+  .cb-emoji-opt{
+    background:none;border:none;cursor:pointer;padding:3px 5px;
+    font-size:24px;line-height:1;border-radius:50%;
+    transition:transform 0.16s var(--ease), background 0.16s var(--ease);
+  }
+  .cb-emoji-opt:hover{transform:scale(1.22);}
+  .cb-emoji-opt.on{background:var(--tint);}
+  .cb-menu-acts{
+    display:flex;flex-direction:column;overflow:hidden;
+    border-radius:13px;background:var(--card);border:1px solid var(--border);
+    box-shadow:0 10px 30px rgba(15,23,42,0.22);min-width:160px;
+  }
+  .cb-menu-acts button{
+    display:flex;align-items:center;gap:9px;
+    background:none;border:none;cursor:pointer;text-align:left;
+    padding:11px 14px;font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);
+  }
+  .cb-menu-acts button + button{border-top:1px solid var(--border);}
+  .cb-menu-acts button:hover{background:var(--tint);}
+  .cb-menu-acts .cb-act-del{color:#DC2626;}
+  .cb-menu-acts .ic-svg{font-size:17px;}
+  .cb-menu-veil{position:fixed;inset:0;z-index:1590;background:rgba(15,23,42,0.18);}
+
+  /* Yozish qatori: dumaloq maydon + aylana yuborish tugmasi. */
+  .chat-input-row{
+    display:flex;gap:8px;align-items:center;flex:none;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    margin:0;border-top:1px solid var(--border);background:var(--paper);
+  }
   .chat-input-row input{
-    flex:1;border-radius:999px;background:var(--card);border:1px solid var(--border);
-    padding:11px 16px;height:auto;
+    flex:1;min-width:0;border-radius:999px;background:var(--card);
+    border:1px solid var(--border);padding:11px 16px;height:auto;
   }
-  .chat-input-row .btn{
-    width:40px;height:40px;flex-shrink:0;padding:0 !important;border-radius:50%;
+  .chat-input-row .btn.chat-send{
+    width:44px;height:44px;min-height:44px;flex:none;
+    padding:0 !important;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
   }
+  .chat-input-row .btn.chat-send .ic-svg{font-size:20px;}
+
   .field{margin-bottom:var(--s4);}
   .field label{
     display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
@@ -11069,6 +11183,9 @@
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
     stopChatPoll();
+    // Qaysi yo'l bilan qaytilgan bo'lmasin, to'liq ekran yopiladi —
+    // aks holda sarlavha va pastki panel yashiringancha qolardi.
+    closeChatFullscreen();
     chatWithEmail = null;
     chatWithUsername = null;
 
@@ -11159,6 +11276,12 @@
     if(!chatCard) return;
     stopChatPoll();
 
+    // Suhbat butun ekranni egallaydi: sayt sarlavhasi ham, pastki
+    // panel ham yashiriladi (CSS: [data-chat-open]).
+    chatCard.classList.add("chat-fullscreen");
+    document.documentElement.setAttribute("data-chat-open", "1");
+    syncTelegramBackButton();
+
     chatCard.innerHTML =
       '<div class="chat-thread-head">'
       +   '<button type="button" class="chat-back" id="btnChatBack" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></button>'
@@ -11169,11 +11292,14 @@
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
       + '<div class="chat-input-row">'
       +   '<input type="text" id="fChatMessage" maxlength="1000" placeholder="Xabar yozing...">'
-      +   '<button class="btn" id="btnChatSend" style="width:auto;padding:0 var(--s5);">'+icon("iconArrowRight")+'</button>'
+      +   '<button class="btn chat-send" id="btnChatSend" aria-label="Yuborish">'+icon("iconArrowRight")+'</button>'
       + '</div>'
       + '<p class="note" id="chatSendNote"></p>';
 
-    document.getElementById("btnChatBack").addEventListener("click", renderChatShell);
+    document.getElementById("btnChatBack").addEventListener("click", function(){
+      closeChatFullscreen();
+      renderChatShell();
+    });
     document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
     document.getElementById("fChatMessage").addEventListener("keydown", function(e){
@@ -11198,72 +11324,220 @@
   }
 
   function chatBubbleHtml(m){
+    var side = m.fromMe ? "mine" : "theirs";
+    var time = '<span class="cb-time">'+formatChatTime(m.at)+'</span>';
+
     if(m.deleted){
-      return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+' deleted" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'">'
-        + '<div class="cb-text"><em>Xabar o\'chirildi</em></div>'
-        + '<div class="cb-meta">'+formatChatTime(m.at)+'</div>'
+      return '<div class="chat-bubble '+side+' deleted" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'">'
+        + time
+        + '<div class="cb-body">Xabar o\'chirildi</div>'
         + '</div>';
     }
-    var reactionsHtml = (m.reactions || []).map(function(r){
-      return '<button type="button" class="cb-react-pill'+(r.mine ? " mine" : "")+'" data-id="'+m.id+'" data-emoji="'+r.emoji+'">'+chatReactionIcon(r.emoji)+' '+r.count+'</button>';
-    }).join("") + '<button type="button" class="cb-react-add" data-id="'+m.id+'">'+icon("iconReactSmile")+'</button>';
 
-    var metaHtml = formatChatTime(m.at) + (m.editedAt ? " · tahrirlangan" : "");
-    if(m.fromMe){
-      metaHtml += ' <button type="button" class="cb-edit" data-id="'+m.id+'" data-text="'+escapeHtml(m.text)+'">'+icon("iconEdit")+'</button>'
-        + '<button type="button" class="cb-del" data-id="'+m.id+'">'+icon("iconTrash")+'</button>';
-    }
+    // Qo'yilgan reaksiyalar xabarning pastki chetiga yopishadi —
+    // alohida qator egallamaydi va hech narsani surib yubormaydi.
+    var reactions = (m.reactions || []).map(function(r){
+      return '<button type="button" class="cb-react-pill'+(r.mine ? " mine" : "")+'" '
+        + 'data-id="'+m.id+'" data-emoji="'+escapeHtml(r.emoji)+'">'
+        + '<span class="cb-react-emoji">'+escapeHtml(r.emoji)+'</span>'+r.count+'</button>';
+    }).join("");
 
-    return '<div class="chat-bubble '+(m.fromMe ? "mine" : "theirs")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'">'
-      + '<div class="cb-text">'+escapeHtml(m.text)+'</div>'
-      + '<div class="cb-meta">'+metaHtml+'</div>'
-      + '<div class="cb-reactions">'+reactionsHtml+'</div>'
+    return '<div class="chat-bubble '+side+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
+      + ' data-text="'+escapeHtml(m.text)+'">'
+      + time
+      + '<div class="cb-body">'+escapeHtml(m.text)
+      +   (m.editedAt ? ' <span style="opacity:0.6;font-size:11px;">tahrirlangan</span>' : "")
+      +   '<span class="cb-reactions">'+reactions+'</span>'
+      + '</div>'
       + '</div>';
   }
 
+  /* ---------- Uzoq bosish: reaksiya va amallar ---------- */
+  var chatMenuEl = null, chatMenuVeil = null;
+
+  function closeChatMenu(){
+    if(chatMenuEl){ chatMenuEl.remove(); chatMenuEl = null; }
+    if(chatMenuVeil){ chatMenuVeil.remove(); chatMenuVeil = null; }
+    document.querySelectorAll(".cb-body.held").forEach(function(el){ el.classList.remove("held"); });
+  }
+
   /**
-   * Tugmalar har bir xabarga alohida bog'lanmaydi — butun ro'yxatga
-   * bitta tinglovchi qo'yiladi. Ilgari har yangilanishda yuzlab
-   * tinglovchi qaytadan yaratilardi; aynan shu suhbatni og'irlashtirib,
-   * uzun yozishmada sezilarli to'xtalishlar berardi.
+   * Xabar ustida ushlab turilganda chiqadigan oyna. Emojilar —
+   * haqiqiy rangli belgilar, chizilgan bir rangli ikonka emas.
+   */
+  function openChatMenu(row){
+    closeChatMenu();
+    var id = row.getAttribute("data-id");
+    var mine = row.classList.contains("mine");
+    var deleted = row.classList.contains("deleted");
+    var bodyEl = row.querySelector(".cb-body");
+    if(!bodyEl) return;
+
+    var active = {};
+    row.querySelectorAll(".cb-react-pill.mine").forEach(function(p){
+      active[p.getAttribute("data-emoji")] = true;
+    });
+
+    chatMenuVeil = document.createElement("div");
+    chatMenuVeil.className = "cb-menu-veil";
+    document.body.appendChild(chatMenuVeil);
+
+    chatMenuEl = document.createElement("div");
+    chatMenuEl.className = "cb-menu";
+    chatMenuEl.innerHTML =
+      (deleted ? "" :
+        '<div class="cb-menu-emojis">'
+        + CHAT_EMOJIS.map(function(e){
+            return '<button type="button" class="cb-emoji-opt'+(active[e] ? " on" : "")+'" '
+              + 'data-id="'+id+'" data-emoji="'+escapeHtml(e)+'">'+e+'</button>';
+          }).join("")
+        + '</div>')
+      + '<div class="cb-menu-acts">'
+      +   '<button type="button" class="cb-act-copy">'+icon("iconClipboard")+'Nusxalash</button>'
+      +   (mine && !deleted
+            ? '<button type="button" class="cb-act-edit">'+icon("iconEdit")+'Tahrirlash</button>'
+              + '<button type="button" class="cb-act-del">'+icon("iconTrash")+'O\'chirish</button>'
+            : "")
+      + '</div>';
+    document.body.appendChild(chatMenuEl);
+
+    // Joylashuv: xabarning yonida, ekrandan chiqib ketmasin.
+    var r = bodyEl.getBoundingClientRect();
+    var mw = chatMenuEl.offsetWidth, mh = chatMenuEl.offsetHeight;
+    var top = r.top - mh - 8;
+    if(top < 10) top = Math.min(r.bottom + 8, window.innerHeight - mh - 10);
+    var left = mine ? r.right - mw : r.left;
+    left = Math.max(10, Math.min(left, window.innerWidth - mw - 10));
+    chatMenuEl.style.top = Math.max(10, top) + "px";
+    chatMenuEl.style.left = left + "px";
+
+    bodyEl.classList.add("held");
+    haptic("medium");
+
+    chatMenuVeil.addEventListener("click", closeChatMenu);
+    chatMenuEl.addEventListener("click", function(ev){
+      var emoji = ev.target.closest(".cb-emoji-opt");
+      if(emoji){
+        toggleChatReaction(emoji.getAttribute("data-id"), emoji.getAttribute("data-emoji"));
+        closeChatMenu();
+        return;
+      }
+      if(ev.target.closest(".cb-act-copy")){
+        var text = row.getAttribute("data-text") || "";
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(function(){ toast("Nusxalandi", "", "success"); }).catch(function(){});
+        }
+        closeChatMenu();
+        return;
+      }
+      if(ev.target.closest(".cb-act-edit")){
+        beginChatEdit(id, row.getAttribute("data-text") || "");
+        closeChatMenu();
+        return;
+      }
+      if(ev.target.closest(".cb-act-del")){
+        closeChatMenu();
+        if(confirm("Xabarni o'chirasizmi?")) deleteChatMessage(id);
+      }
+    });
+  }
+
+  /**
+   * Yozishmadagi hamma hodisa shu yerda, bitta joyda bog'lanadi:
+   * uzoq bosish, reaksiya belgisini bosish va soatlarni ko'rsatish
+   * uchun yon tomonga surish.
    */
   function bindChatBubbleActions(body){
     if(body.getAttribute("data-bound") === "1") return;
     body.setAttribute("data-bound", "1");
 
+    /* --- Uzoq bosish --- */
+    var holdTimer = null, holdRow = null, holdX = 0, holdY = 0;
+    var cancelHold = function(){
+      if(holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
+      if(holdRow){
+        var b = holdRow.querySelector(".cb-body");
+        if(b) b.classList.remove("held");
+        holdRow = null;
+      }
+    };
+
+    body.addEventListener("pointerdown", function(ev){
+      var pill = ev.target.closest(".cb-react-pill");
+      if(pill) return;                       // reaksiyani bosish — alohida
+      var row = ev.target.closest(".chat-bubble");
+      if(!row) return;
+      holdRow = row; holdX = ev.clientX; holdY = ev.clientY;
+      var b = row.querySelector(".cb-body");
+      holdTimer = setTimeout(function(){
+        holdTimer = null;
+        if(b) b.classList.add("held");
+        openChatMenu(row);
+        holdRow = null;
+      }, 380);
+    }, { passive: true });
+
+    body.addEventListener("pointermove", function(ev){
+      if(!holdTimer) return;
+      if(Math.abs(ev.clientX - holdX) > 8 || Math.abs(ev.clientY - holdY) > 8) cancelHold();
+    }, { passive: true });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function(e){
+      body.addEventListener(e, cancelHold, { passive: true });
+    });
+    body.addEventListener("scroll", function(){ cancelHold(); closeChatMenu(); }, { passive: true });
+
+    // Sichqoncha bilan — o'ng tugma ham xuddi shu oynani ochadi.
+    body.addEventListener("contextmenu", function(ev){
+      var row = ev.target.closest(".chat-bubble");
+      if(!row) return;
+      ev.preventDefault();
+      openChatMenu(row);
+    });
+
+    /* --- Reaksiyani olib tashlash / qo'shish --- */
     body.addEventListener("click", function(ev){
       var pill = ev.target.closest(".cb-react-pill");
-      if(pill){
-        toggleChatReaction(pill.getAttribute("data-id"), pill.getAttribute("data-emoji"));
-        return;
-      }
-      var opt = ev.target.closest(".cb-emoji-opt");
-      if(opt){
-        toggleChatReaction(opt.getAttribute("data-id"), opt.getAttribute("data-emoji"));
-        return;
-      }
-      var add = ev.target.closest(".cb-react-add");
-      if(add){
-        var id = add.getAttribute("data-id");
-        var picker = document.createElement("span");
-        picker.className = "cb-emoji-picker";
-        picker.innerHTML = CHAT_EMOJIS.map(function(e){
-          return '<button type="button" class="cb-emoji-opt" data-id="'+id+'" data-emoji="'+e+'">'+chatReactionIcon(e)+'</button>';
-        }).join("");
-        add.replaceWith(picker);
-        return;
-      }
-      var edit = ev.target.closest(".cb-edit");
-      if(edit){
-        beginChatEdit(edit.getAttribute("data-id"), edit.getAttribute("data-text"));
-        return;
-      }
-      var del = ev.target.closest(".cb-del");
-      if(del){
-        if(!confirm("Xabarni o'chirasizmi?")) return;
-        deleteChatMessage(del.getAttribute("data-id"));
-      }
+      if(pill) toggleChatReaction(pill.getAttribute("data-id"), pill.getAttribute("data-emoji"));
     });
+
+    /* --- Yon tomonga surish: soatlar chiqadi ---
+       Vertikal aylantirishga xalaqit bermasligi uchun faqat
+       yotiq harakat hisobga olinadi. */
+    var swipeX = 0, swipeY = 0, swiping = false;
+    body.addEventListener("touchstart", function(ev){
+      if(ev.touches.length !== 1) return;
+      swipeX = ev.touches[0].clientX;
+      swipeY = ev.touches[0].clientY;
+      swiping = false;
+    }, { passive: true });
+
+    body.addEventListener("touchmove", function(ev){
+      if(ev.touches.length !== 1) return;
+      var dx = ev.touches[0].clientX - swipeX;
+      var dy = ev.touches[0].clientY - swipeY;
+      if(!swiping && Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.6){
+        swiping = true;
+        body.classList.add("times-on");
+        cancelHold();
+      }
+    }, { passive: true });
+
+    ["touchend", "touchcancel"].forEach(function(e){
+      body.addEventListener(e, function(){
+        if(!swiping) return;
+        swiping = false;
+        setTimeout(function(){ body.classList.remove("times-on"); }, 1400);
+      }, { passive: true });
+    });
+
+    // Sichqonchali qurilmada: ro'yxat ustida turib yon tomonga
+    // aylantirish ham soatlarni ko'rsatadi.
+    body.addEventListener("wheel", function(ev){
+      if(Math.abs(ev.deltaX) < 12 || Math.abs(ev.deltaX) < Math.abs(ev.deltaY)) return;
+      body.classList.add("times-on");
+      clearTimeout(body.__timesTimer);
+      body.__timesTimer = setTimeout(function(){ body.classList.remove("times-on"); }, 1400);
+    }, { passive: true });
   }
 
   /**
@@ -11289,6 +11563,10 @@
     }
     var empty = body.querySelector(".chat-empty");
     if(empty) empty.remove();
+    // Birinchi yuklanishdagi "skelet" chiziqlari xabarlar kelgach
+    // qolib ketmasin: ular xabar emas, shuning uchun quyidagi
+    // taqqoslashga tushmaydi.
+    body.querySelectorAll(".skeleton").forEach(function(el){ el.remove(); });
 
     var existing = {};
     body.querySelectorAll(".chat-bubble").forEach(function(el){
@@ -11352,6 +11630,15 @@
         chatLastSeenId = last.id;
       }
     }).catch(function(){});
+  }
+
+  /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
+  function closeChatFullscreen(){
+    closeChatMenu();
+    var chatCard = document.getElementById("chatCard");
+    if(chatCard) chatCard.classList.remove("chat-fullscreen");
+    document.documentElement.removeAttribute("data-chat-open");
+    syncTelegramBackButton();
   }
 
   function beginChatEdit(id, text){
@@ -14839,6 +15126,8 @@
     document.querySelectorAll(".bn-item").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
     });
+    // Boshqa bo'limga o'tilsa suhbat to'liq ekranda qolib ketmasin.
+    if(name !== "chat") closeChatFullscreen();
     moveNavBlob();
     rememberTab(name);
     syncTelegramBackButton();
