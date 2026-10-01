@@ -948,7 +948,11 @@
      Every Settings sub-page — Language, Theme, Notifications, Privacy,
      Terms, About, Feedback — renders into this same shell via Sheet.open()
      (see the JS "SETTINGS" section near the end of the file). */
-  .sheet-root{position:fixed;inset:0;z-index:300;}
+  /* Oyna pastki paneldan (z-index:1500) balandroq turishi shart —
+     aks holda panel oynaning pastki qismini, ya'ni tugmalarini yopib
+     qo'yardi. Xabarnomalar (1600) va kirish oynasi (2000) esa baribir
+     undan baland qoladi. */
+  .sheet-root{position:fixed;inset:0;z-index:1550;}
   .sheet-root[hidden]{display:none;}
   .sheet-backdrop{
     position:absolute;inset:0;background:rgba(11,21,38,0.44);
