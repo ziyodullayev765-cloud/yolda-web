@@ -108,7 +108,7 @@ const linkTelegramStart = async (req, res) => {
 /** POST ?action=link-telegram-finish — step 2, see the file header comment. */
 const linkTelegramFinish = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const result = await redeemTelegramLinkCode({ code: body.code, telegramInitData: body.telegramInitData });
+  const result = await redeemTelegramLinkCode({ code: body.code, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (result.error) return res.status(400).json({ error: result.error });
   return res.status(200).json({ ok: true });
 };
@@ -128,7 +128,7 @@ const linkTelegramFinish = async (req, res) => {
  */
 const requestVerification = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const kind = KINDS.includes(body.kind) ? body.kind : 'IDENTITY';
@@ -198,7 +198,7 @@ const savedKey = (kind, identity) => `${SAVED_KINDS[kind]}:${identity}`;
 const toggleSaved = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
   });
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
@@ -234,7 +234,7 @@ const toggleSaved = async (req, res) => {
 const listSaved = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
   });
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
@@ -284,7 +284,7 @@ const handleProfile = async (req, res) => {
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData });
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const profileKey = `profile:${email}`;
@@ -558,7 +558,7 @@ const handleNotifications = async (req, res, action) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const identity = await resolveEmail({
     googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData,
+    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
   });
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
@@ -574,7 +574,7 @@ const handleSearches = async (req, res, action) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const identity = await resolveEmail({
     googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData,
+    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
   });
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
@@ -598,7 +598,7 @@ const handleSearches = async (req, res, action) => {
 const listReviews = async (req, res) => {
   const identity = await resolveEmail({
     googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData,
+    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
   });
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 

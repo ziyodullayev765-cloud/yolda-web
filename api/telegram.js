@@ -21,6 +21,7 @@ import {
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { setVerification } from '../lib/verification.js';
+import { normalisePhone, peekUndeliveredCode, markOtpDelivered } from '../lib/phoneAuth.js';
 import { decideOfferCore } from './order.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -539,6 +540,33 @@ const handleContact = async (message) => {
     text: `✅ Raqam tasdiqlandi: ${profile.phone}\n\nProfilingizda «Telefon tasdiqlangan» belgisi ko‘rinadi.`,
     reply_markup: { remove_keyboard: true },
   }).catch(() => {});
+
+  await linkPhoneToChat(profile.phone, message.chat.id);
+};
+
+/* ============================================================
+   Saytdagi telefon orqali kirish uchun kod
+   ------------------------------------------------------------
+   Bot telefon raqamiga yoza olmaydi — faqat `chat_id` ga yoza
+   oladi. Shuning uchun raqam ulashilganda `phoneChat:<raqam>`
+   indeksi yoziladi; saytdan so'ralgan kod shu indeks orqali yetib
+   boradi (api/auth-phone.js). Indeks hali yo'q bo'lsa, kod KV'da
+   kutib turadi va aynan shu yerda — odam botga raqamini ulashgan
+   zahoti — yuboriladi.
+   ============================================================ */
+const linkPhoneToChat = async (phone, chatId) => {
+  const normalised = normalisePhone(phone);
+  if (!normalised) return;
+  await kvSet(`phoneChat:${normalised}`, String(chatId));
+
+  const code = await peekUndeliveredCode(normalised);
+  if (!code) return;
+  const sent = await telegram('sendMessage', {
+    chat_id: chatId,
+    text: `<b>${code}</b> — YO‘LDA tasdiqlash kodi.\n\nKod 5 daqiqa amal qiladi. Uni hech kimga aytmang.`,
+    parse_mode: 'HTML',
+  }).catch(() => null);
+  if (sent) await markOtpDelivered(normalised);
 };
 
 const handleCommand = async (message) => {
@@ -548,6 +576,18 @@ const handleCommand = async (message) => {
   }
 
   const text = (message.text || '').trim();
+
+  // Saytdagi «Telegramda kodni olish» tugmasi shu havolani ochadi.
+  // Raqam ulashilishi bilan kutayotgan kod o'sha yerga yuboriladi.
+  if (text.startsWith('/start kod') || text.startsWith('/kod')) {
+    await telegram('sendMessage', {
+      chat_id: message.chat.id,
+      text: 'Tasdiqlash kodini olish uchun raqamingizni ulashing. '
+        + 'Kod shu yerga darhol keladi.',
+      reply_markup: CONTACT_KEYBOARD,
+    }).catch(() => {});
+    return;
+  }
 
   if (text.startsWith('/start')) {
     await telegram('sendMessage', {
