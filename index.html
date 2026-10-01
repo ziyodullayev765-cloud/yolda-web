@@ -893,6 +893,30 @@
      ular ikki qatorga tushib, joyni ko'p olardi). Faqat yuqori qism
      nishonga olingan — "Ko'proq filtr" oynasidagi maydonlarga tegilmaydi. */
   .loads-search-card{padding:14px;}
+  .loads-quick-row{display:flex;gap:10px;align-items:stretch;}
+  .loads-quick-input{
+    flex:1;min-width:0;display:flex;align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:0 14px;height:48px;
+  }
+  .loads-quick-input .ic-svg{color:var(--muted);flex-shrink:0;font-size:19px;}
+  .loads-quick-input input{
+    flex:1;min-width:0;border:none;background:none;outline:none;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--ink);height:100%;
+  }
+  .loads-quick-input input::placeholder{color:var(--muted);}
+  .loads-quick-filter-btn{
+    flex-shrink:0;width:48px;height:48px;border:none;border-radius:14px;
+    background:var(--route);color:#fff;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .loads-quick-filter-btn .ic-svg{font-size:20px;}
+  .loads-quick-filter-btn:hover{background:var(--route-dark);}
+  .loads-quick-filter-btn:active{transform:scale(0.94);}
+  /* Filtr sheet ichida qaytadan ishlatiladigan qismlar endi kartaning
+     tashqi ko'rinishiga hissa qo'shmaydi — shuning uchun ular uchun
+     alohida tashqi bo'shliq (margin) shu yerda beriladi. */
+  #loadsMoreFiltersBox > .row2:first-child{margin-top:0;}
   .loads-search-card > .row2{gap:10px;}
   .loads-search-card > .row2 .field{margin-bottom:0;}
   .loads-search-card > .row2 .field label{font-size:11px;margin-bottom:5px;color:var(--muted);}
@@ -2337,13 +2361,29 @@
     line-height:0;flex-shrink:0;
   }
   .saved-driver .sd-remove:hover{color:#DC2626;}
+  /* ---------- XABARLAR — Telegram uslubidagi dizayn ----------
+     Ilgari bu yerda katta marketing sarlavhasi (eyebrow+title+subtitle)
+     va qatorlari oddiy matndan iborat ro'yxat bor edi — xabar ilovasiga
+     emas, landing bo'limiga o'xshardi. Endi: doira avatar + ism/oxirgi
+     xabar qatori (ro'yxat), va suhbat ichida ilova-uslubidagi sarlavha
+     (orqaga strelka + doira avatar + ism) va dumaloq yuborish tugmali
+     pastki qator — Telegram'dagi kabi. */
+  .chat-avatar{
+    width:40px;height:40px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:#fff;
+    background:linear-gradient(150deg, var(--route) 0%, var(--route-dark) 100%);
+  }
+  .chat-avatar.sm{width:32px;height:32px;font-size:13px;}
   .chat-row{
-    display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
-    padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;
+    display:flex;align-items:center;gap:12px;
+    padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer;
+    transition:background 0.15s var(--ease);
   }
   .chat-row:last-child{border-bottom:none;}
-  .chat-row:hover{opacity:0.8;}
-  .chat-row .u{font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;}
+  .chat-row:hover{background:var(--tint);}
+  .chat-row-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px;}
+  .chat-row .u{font-weight:700;font-size:14.5px;color:var(--ink);white-space:nowrap;}
   .chat-verified-badge{
     display:inline-flex;align-items:center;justify-content:center;
     width:16px;height:16px;margin-left:4px;vertical-align:-3px;flex-shrink:0;
@@ -2353,17 +2393,29 @@
     filter:drop-shadow(0 1px 1.5px rgba(15,23,42,0.28));
   }
   .chat-row .preview{
-    font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
-    white-space:nowrap;margin-left:var(--s3);flex:1;text-align:right;
+    font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;text-align:left;
   }
+  /* Suhbat sarlavhasi: doira avatar + ism, ilovaning o'z app-bar'iga o'xshash. */
+  .chat-thread-head{
+    display:flex;align-items:center;gap:10px;margin:0 0 var(--s3);
+    padding-bottom:var(--s3);border-bottom:1px solid var(--border);
+  }
+  .chat-back{
+    background:var(--tint);border:none;color:var(--route);
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .chat-back .ic-svg{font-size:18px;transform:scaleX(-1);}
+  .chat-thread-title{margin:0 !important;font-size:15.5px;}
   .chat-thread{
-    display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;
-    margin:var(--s3) 0;padding-right:4px;
+    display:flex;flex-direction:column;gap:6px;max-height:360px;overflow-y:auto;
+    margin:var(--s3) 0;padding:4px 4px 4px 0;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   }
-  .chat-bubble{max-width:78%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4;word-wrap:break-word;}
-  .chat-bubble.mine{align-self:flex-end;background:var(--route);color:#fff;border-bottom-right-radius:4px;}
-  .chat-bubble.theirs{align-self:flex-start;background:var(--paper-dark);color:var(--ink);border-bottom-left-radius:4px;}
+  .chat-bubble{max-width:78%;padding:9px 13px;border-radius:17px;font-size:14px;line-height:1.4;word-wrap:break-word;}
+  .chat-bubble.mine{align-self:flex-end;background:var(--route);color:#fff;border-bottom-right-radius:5px;}
+  .chat-bubble.theirs{align-self:flex-start;background:var(--paper-dark);color:var(--ink);border-bottom-left-radius:5px;}
   .chat-bubble.deleted .cb-text{opacity:0.65;}
   .cb-meta{
     display:flex;align-items:center;flex-wrap:wrap;gap:5px;
@@ -2382,11 +2434,16 @@
   .cb-edit .ic-svg,.cb-del .ic-svg{font-size:13px;vertical-align:-0.15em;}
   .cb-emoji-picker{display:inline-flex;gap:3px;}
   .cb-emoji-opt{background:none;border:none;font-size:15px;cursor:pointer;padding:0 2px;}
-  .chat-input-row{display:flex;gap:8px;}
-  .chat-input-row input{flex:1;}
-  .chat-back{
-    background:none;border:none;color:var(--route);font-weight:600;font-size:13px;
-    cursor:pointer;padding:0;margin-bottom:var(--s3);display:flex;align-items:center;gap:4px;
+  /* Dumaloq, shisha-kartaga o'xshash yozish qatori + aylana yuborish
+     tugmasi — pastki navigatsiya panelining o'zi bilan bir xil uslubda. */
+  .chat-input-row{display:flex;gap:8px;align-items:center;margin-top:var(--s2);}
+  .chat-input-row input{
+    flex:1;border-radius:999px;background:var(--card);border:1px solid var(--border);
+    padding:11px 16px;height:auto;
+  }
+  .chat-input-row .btn{
+    width:40px;height:40px;flex-shrink:0;padding:0 !important;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
   }
   .field{margin-bottom:var(--s4);}
   .field label{
@@ -2627,26 +2684,36 @@
   }
 
   /* ---------- YO'LDA LIFE ----------
-     Bu bo'lim ilovaning qolganidan ajralib turadi: har doim qorong'i
-     yuza, ustida yashil aksent. Kunduzgi mavzuda ham qorong'i qoladi —
-     bu tasodif emas, media bo'limi shunday tanilsin. Shuning uchun bu
-     yerdagi ranglar `--ink`/`--paper` tokenlariga bog'lanmaydi:
-     ular mavzuga qarab o'zgaradi, bu yuza esa o'zgarmasligi kerak. */
+     Ilgari bu bo'lim qat'iy qorong'i edi — mavzu (light/dark) qanday
+     bo'lishidan qat'iy nazar. Endi u ham qolgan ilova kabi joriy
+     mavzuga moslashadi: pastdagi qiymatlar — kunduzgi (standart) holat,
+     :root[data-theme="dark"] ostidagilari esa avvalgi qorong'i palitra. */
   .life{
-    --lf-bg:#07100C;        /* asosiy qora-yashil fon */
-    --lf-card:#0F1A15;      /* kartochka */
-    --lf-card-2:#16241D;    /* ikkinchi darajali yuza */
-    --lf-line:rgba(255,255,255,0.09);
-    --lf-ink:#F1F5F2;
-    --lf-soft:#9FB0A6;
-    --lf-dim:#6B7C72;
-    --lf-green:#2DD480;
-    --lf-green-dp:#0D2B1D;  /* yashil belgilar ostidagi to'q yuza */
+    --lf-bg:#F4F9F6;        /* asosiy fon */
+    --lf-card:#FFFFFF;      /* kartochka */
+    --lf-card-2:#EAF3ED;    /* ikkinchi darajali yuza */
+    --lf-line:rgba(20,38,29,0.10);
+    --lf-ink:#0F2318;
+    --lf-soft:#4F6459;
+    --lf-dim:#8CA097;
+    --lf-green:#0A9F5B;
+    --lf-green-dp:#E1F5EA;  /* yashil belgilar ostidagi och yuza */
     background:var(--lf-bg);
     color:var(--lf-ink);
     min-height:100vh;
     margin:0 calc(var(--s5) * -1);
     padding:var(--s5) var(--s5) var(--s7);
+  }
+  :root[data-theme="dark"] .life{
+    --lf-bg:#07100C;
+    --lf-card:#0F1A15;
+    --lf-card-2:#16241D;
+    --lf-line:rgba(255,255,255,0.09);
+    --lf-ink:#F1F5F2;
+    --lf-soft:#9FB0A6;
+    --lf-dim:#6B7C72;
+    --lf-green:#2DD480;
+    --lf-green-dp:#0D2B1D;
   }
   .life a{color:inherit;}
 
@@ -2805,17 +2872,24 @@
 
   /* Bosh sahifadagi kirish kartochkasi — statistika turgan joyda,
      xuddi o'sha o'lchamda. */
+  /* Ilgari doim qorong'i-yashil edi (Life bo'limining o'zi kabi), mavzuga
+     qaramasdan. Bu — Bosh sahifada, .life ichida emas, shuning uchun
+     --lf-* o'zgaruvchilaridan foydalana olmaydi; mavzuga alohida moslandi. */
   .life-entry{
     display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-    background:linear-gradient(135deg, #0F2A1D 0%, #07100C 100%);
-    border:1px solid rgba(45,212,128,0.22);border-radius:16px;
-    padding:14px;cursor:pointer;color:#F1F5F2;font-family:'Inter',sans-serif;
+    background:linear-gradient(135deg, rgba(10,159,91,0.10) 0%, rgba(10,159,91,0.03) 100%);
+    border:1px solid rgba(10,159,91,0.22);border-radius:16px;
+    padding:14px;cursor:pointer;color:var(--ink);font-family:'Inter',sans-serif;
     transition:transform 0.2s var(--ease), border-color 0.22s var(--ease);
+  }
+  :root[data-theme="dark"] .life-entry{
+    background:linear-gradient(135deg, #0F2A1D 0%, #07100C 100%);
+    border-color:rgba(45,212,128,0.22);color:#F1F5F2;
   }
   .life-entry:active{transform:scale(0.985);}
   .life-entry-ico{
     width:40px;height:40px;border-radius:13px;flex-shrink:0;
-    background:rgba(45,212,128,0.14);color:#2DD480;
+    background:rgba(10,159,91,0.12);color:var(--route);
     display:flex;align-items:center;justify-content:center;
   }
   .life-entry-ico .ic-svg{font-size:19px;}
@@ -2823,10 +2897,14 @@
   .life-entry-t{
     font-family:'Sora',sans-serif;font-size:14.5px;font-weight:700;letter-spacing:-0.01em;
   }
-  .life-entry-t em{font-style:normal;color:#2DD480;}
-  .life-entry-s{font-size:11.5px;color:#9FB0A6;line-height:1.35;overflow-wrap:normal;word-break:normal;}
-  .life-entry-go{margin-left:auto;flex-shrink:0;color:#2DD480;}
+  .life-entry-t em{font-style:normal;color:var(--route);}
+  .life-entry-s{font-size:11.5px;color:var(--ink-soft);line-height:1.35;overflow-wrap:normal;word-break:normal;}
+  .life-entry-go{margin-left:auto;flex-shrink:0;color:var(--route);}
   .life-entry-go .ic-svg{font-size:18px;}
+  :root[data-theme="dark"] .life-entry-ico{background:rgba(45,212,128,0.14);color:#2DD480;}
+  :root[data-theme="dark"] .life-entry-t em,
+  :root[data-theme="dark"] .life-entry-go{color:#2DD480;}
+  :root[data-theme="dark"] .life-entry-s{color:#9FB0A6;}
 
   @media(max-width:359px){
     .lf-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -3968,21 +4046,20 @@
 <section class="tabview" id="tab-loads" data-tab="loads" hidden>
   <div class="section" id="loadsSection" style="padding-top:var(--s4);padding-bottom:var(--s8);">
     <div class="card reveal loads-search-card">
-      <div class="row2">
-        <div class="field"><label for="fLoadsFrom" data-i18n="loads.from">Qayerdan</label>
-          <select id="fLoadsFrom"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
-        <div class="field"><label for="fLoadsTo" data-i18n="loads.to">Qayerga</label>
-          <select id="fLoadsTo"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
-      </div>
-      <div class="chip-row" id="loadsQuickFilters">
-        <button type="button" class="chip" data-quick="today" data-i18n="loads.qToday">Bugun</button>
-        <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
-        <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
-        <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
-        <button type="button" class="chip" id="chipMatchOnly" hidden><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span data-i18n="loads.matchOnly">Faqat mos yuklar</span></button>
+      <!-- Yagona qidiruv qatori + filtr tugmasi. Aniq (shahar/yuk turi/
+           og'irlik/narx) filtrlar endi pastdagi "Ko'proq filtr" oynasida —
+           ular hech qayerga yo'qolmagan, faqat asosiy ko'rinishdan
+           bo'shatib, o'sha oynaga jamlangan. -->
+      <div class="loads-quick-row">
+        <div class="loads-quick-input">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg>
+          <input type="text" id="fLoadsQuickText" data-i18n-placeholder="loads.quickPlaceholder" placeholder="Shahar yoki yuk turi…">
+        </div>
+        <button type="button" class="loads-quick-filter-btn" id="btnLoadsMoreFilters" data-i18n-aria="loads.moreFilters" aria-label="Ko'proq filtr">
+          <svg class="ic-svg" aria-hidden="true"><use href="#iconSliders"/></svg>
+        </button>
       </div>
       <div style="display:flex;gap:var(--s4);flex-wrap:wrap;align-items:center;">
-        <button type="button" class="link-btn" id="btnLoadsMoreFilters" data-i18n="loads.moreFilters">Ko'proq filtr</button>
         <button type="button" class="link-btn" id="btnSaveSearch" hidden>
           <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"></use></svg>
           <span data-i18n="search.save">Bu qidiruvni saqlash va xabar olish</span>
@@ -3993,6 +4070,19 @@
            filter Sheet just relocates this whole node into itself while
            open (see openLoadsFilterSheet) and moves it back on close. -->
       <div id="loadsMoreFiltersBox" hidden>
+        <div class="row2">
+          <div class="field"><label for="fLoadsFrom" data-i18n="loads.from">Qayerdan</label>
+            <select id="fLoadsFrom"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
+          <div class="field"><label for="fLoadsTo" data-i18n="loads.to">Qayerga</label>
+            <select id="fLoadsTo"><option value="" data-i18n="loads.anyCity">Barchasi</option></select></div>
+        </div>
+        <div class="chip-row" id="loadsQuickFilters">
+          <button type="button" class="chip" data-quick="today" data-i18n="loads.qToday">Bugun</button>
+          <button type="button" class="chip" data-quick="tomorrow" data-i18n="loads.qTomorrow">Ertaga</button>
+          <button type="button" class="chip" data-quick="fura" data-i18n="loads.qFura">Fura</button>
+          <button type="button" class="chip" data-quick="heavy" data-i18n="loads.qHeavy">10+ tonna</button>
+          <button type="button" class="chip" id="chipMatchOnly" hidden><svg class="ic-svg" aria-hidden="true"><use href="#iconFlame"></use></svg> <span data-i18n="loads.matchOnly">Faqat mos yuklar</span></button>
+        </div>
         <div class="row2">
           <div class="field"><label for="fLoadsCargo" data-i18n="loads.cargoType">Yuk turi</label>
             <select id="fLoadsCargo"><option value="" data-i18n="loads.anyType">Barchasi</option></select></div>
@@ -4105,12 +4195,7 @@
 </section>
 
 <section class="tabview" id="tab-chat" data-tab="chat" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:520px;">
-    <div class="section-head reveal">
-      <div class="section-eyebrow" data-i18n="chatTab.eyebrow">Xabarlar</div>
-      <h2 class="section-title"><span data-i18n="chatTab.titleA">To'g'ridan-to'g'ri</span> <span class="accent" data-i18n="chatTab.titleB">yozishing</span></h2>
-      <p class="section-sub" data-i18n="chatTab.sub">Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.</p>
-    </div>
+  <div class="section" style="padding-top:var(--s6);padding-bottom:var(--s8);max-width:520px;">
     <div class="card reveal" id="chatCard"></div>
   </div>
 </section>
@@ -4456,7 +4541,7 @@
       "loads.sub": "Ochiq buyurtmalarni ko'ring, filtrlang va telegram guruhida oling.",
       "loads.from": "Qayerdan", "loads.to": "Qayerga", "loads.anyCity": "Barchasi",
       "loads.qToday": "Bugun", "loads.qTomorrow": "Ertaga", "loads.qFura": "Fura", "loads.qHeavy": "10+ tonna",
-      "loads.moreFilters": "Ko'proq filtr", "loads.cargoType": "Yuk turi", "loads.truckType": "Mashina turi",
+      "loads.moreFilters": "Ko'proq filtr", "loads.quickPlaceholder": "Shahar yoki yuk turi…", "loads.cargoType": "Yuk turi", "loads.truckType": "Mashina turi",
       "loads.anyType": "Barchasi", "loads.clearFilters": "Filtrlarni tozalash",
       "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
       "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
@@ -4905,7 +4990,7 @@
       "loads.sub": "Смотрите открытые заказы, фильтруйте и берите в группе Telegram.",
       "loads.from": "Откуда", "loads.to": "Куда", "loads.anyCity": "Любой",
       "loads.qToday": "Сегодня", "loads.qTomorrow": "Завтра", "loads.qFura": "Фура", "loads.qHeavy": "10+ тонн",
-      "loads.moreFilters": "Больше фильтров", "loads.cargoType": "Тип груза", "loads.truckType": "Тип машины",
+      "loads.moreFilters": "Больше фильтров", "loads.quickPlaceholder": "Город или тип груза…", "loads.cargoType": "Тип груза", "loads.truckType": "Тип машины",
       "loads.anyType": "Любой", "loads.clearFilters": "Сбросить фильтры",
       "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
       "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
@@ -5350,7 +5435,7 @@
       "loads.sub": "Browse open orders, filter them, and take one in the Telegram group.",
       "loads.from": "From", "loads.to": "To", "loads.anyCity": "Any",
       "loads.qToday": "Today", "loads.qTomorrow": "Tomorrow", "loads.qFura": "Semi-trailer", "loads.qHeavy": "10+ tons",
-      "loads.moreFilters": "More filters", "loads.cargoType": "Cargo type", "loads.truckType": "Truck type",
+      "loads.moreFilters": "More filters", "loads.quickPlaceholder": "City or cargo type…", "loads.cargoType": "Cargo type", "loads.truckType": "Truck type",
       "loads.anyType": "Any", "loads.clearFilters": "Clear filters",
       "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
       "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
@@ -8555,7 +8640,16 @@
         var cancelBtn = document.getElementById("btnCancelSignOut");
         if(cancelBtn) cancelBtn.addEventListener("click", Sheet.close);
         var confirmBtn = document.getElementById("btnConfirmSignOut");
-        if(confirmBtn) confirmBtn.addEventListener("click", function(){ Sheet.close(); performSignOut(); });
+        if(confirmBtn) confirmBtn.addEventListener("click", function(){
+          // Avval chiqish bajariladi (bu allaqachon o'zining to'liq ekranli
+          // kirish oynasini ochadi — u sozlamalar panelidan balandroq
+          // turadi), KEYIN panel yopiladi. Ilgari tartib teskari edi:
+          // panel yopilishi boshlanishi bilan (320ms animatsiya) darhol
+          // chiqish ishga tushirilardi — ikkalasi bir vaqtda sodir bo'lib,
+          // panel ba'zan yarim yopiq holatda "osilib" qolardi.
+          performSignOut();
+          Sheet.close();
+        });
       }
     });
   }
@@ -9887,6 +9981,12 @@
     return h + ":" + m;
   }
 
+  /** Avatar doirasi uchun bitta harf — ism/username'ning o'zidan. */
+  function chatAvatarHtml(label, size){
+    var ch = String(label || "?").trim().charAt(0).toUpperCase() || "?";
+    return '<div class="chat-avatar'+(size === "sm" ? " sm" : "")+'">'+escapeHtml(ch)+'</div>';
+  }
+
   function stopChatPoll(){
     if(chatPollTimer){ clearInterval(chatPollTimer); chatPollTimer = null; }
   }
@@ -9932,8 +10032,9 @@
         results.innerHTML = users.length
           ? users.map(function(u){
               return '<div class="chat-row" data-username="'+escapeHtml(u.username)+'">'
-                + '<span class="u">@'+escapeHtml(u.username)+chatVerifiedBadgeHtml(u.verified)+'</span>'
-                + '<span class="preview">'+escapeHtml(ROLE_LABELS[u.role] || "")+'</span>'
+                + chatAvatarHtml(u.username)
+                + '<div class="chat-row-txt"><span class="u">@'+escapeHtml(u.username)+chatVerifiedBadgeHtml(u.verified)+'</span>'
+                + '<span class="preview">'+escapeHtml(ROLE_LABELS[u.role] || "")+'</span></div>'
                 + '</div>';
             }).join("")
           : '<p class="note" style="margin:8px 0 0;">Hech kim topilmadi</p>';
@@ -9961,8 +10062,9 @@
           ? conversations.map(function(c){
               var preview = (c.lastFromMe ? "Siz: " : "") + (c.lastText || "");
               return '<div class="chat-row" data-email="'+escapeHtml(c.email)+'" data-username="'+escapeHtml(c.username)+'">'
-                + '<span class="u">@'+escapeHtml(c.username)+chatVerifiedBadgeHtml(c.verified)+'</span>'
-                + '<span class="preview">'+escapeHtml(preview)+'</span>'
+                + chatAvatarHtml(c.username)
+                + '<div class="chat-row-txt"><span class="u">@'+escapeHtml(c.username)+chatVerifiedBadgeHtml(c.verified)+'</span>'
+                + '<span class="preview">'+escapeHtml(preview)+'</span></div>'
                 + '</div>';
             }).join("")
           : "";
@@ -9984,8 +10086,11 @@
     stopChatPoll();
 
     chatCard.innerHTML =
-      '<button type="button" class="chat-back" id="btnChatBack">&larr; Orqaga</button>'
-      + '<h3 class="card-title chat-thread-title" id="chatThreadTitle" style="margin-top:0;">@'+escapeHtml(username)+'</h3>'
+      '<div class="chat-thread-head">'
+      +   '<button type="button" class="chat-back" id="btnChatBack" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></button>'
+      +   chatAvatarHtml(username, "sm")
+      +   '<h3 class="card-title chat-thread-title" id="chatThreadTitle">@'+escapeHtml(username)+'</h3>'
+      + '</div>'
       + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
       + '<div class="chat-input-row">'
@@ -10176,7 +10281,7 @@
      ============================================================ */
   var loadsState = {
     fromCity: "", toCity: "", cargoType: "", truckType: "", quick: "", matchOnly: false,
-    minWeight: null, maxWeight: null, minPrice: null, maxPrice: null, exactDate: ""
+    minWeight: null, maxWeight: null, minPrice: null, maxPrice: null, exactDate: "", quickText: ""
   };
   var loadsInitialized = false;
   var lastLoadsResult = [];
@@ -10297,6 +10402,18 @@
     if(loadsInitialized) return;
     loadsInitialized = true;
 
+    var quickTextInput = document.getElementById("fLoadsQuickText");
+    if(quickTextInput){
+      var quickTextTimer = null;
+      quickTextInput.addEventListener("input", function(){
+        clearTimeout(quickTextTimer);
+        var val = quickTextInput.value;
+        quickTextTimer = setTimeout(function(){
+          loadsState.quickText = val.trim();
+          fetchLoads();
+        }, 250);
+      });
+    }
     var fromSel = document.getElementById("fLoadsFrom");
     var toSel = document.getElementById("fLoadsTo");
     var cargoSel = document.getElementById("fLoadsCargo");
@@ -10669,6 +10786,16 @@
         if(loadsState.minPrice) loads = loads.filter(function(o){ return o.amount >= loadsState.minPrice; });
         if(loadsState.maxPrice) loads = loads.filter(function(o){ return o.amount <= loadsState.maxPrice; });
         if(loadsState.exactDate) loads = loads.filter(function(o){ return o.pickupDate === loadsState.exactDate; });
+        // Asosiy ko'rinishdagi yagona qidiruv qatori: shahar yoki yuk
+        // turi bo'yicha, allaqachon kelgan ro'yxat ustida — API'ga
+        // alohida parametr sifatida yuborilmaydi.
+        if(loadsState.quickText){
+          var q = loadsState.quickText.toLowerCase();
+          loads = loads.filter(function(o){
+            return [o.fromCity, o.toCity, o.cargoType, o.customCargoLabel, o.truckType]
+              .some(function(v){ return v && String(v).toLowerCase().indexOf(q) !== -1; });
+          });
+        }
         if(driverMatchProfile){
           loads.forEach(function(o){ o._match = computeMatchScore(o); });
           if(loadsState.matchOnly) loads = loads.filter(function(o){ return o._match >= 55; });
@@ -12744,8 +12871,16 @@
      Toasts
      ============================================================ */
   var toastHost = document.getElementById("toastHost");
+  /* Muhim natijalarda kichik tebranish — faqat qo'llab-quvvatlaydigan
+     qurilmalarda (asosan Android; iOS Safari/PWA'da navigator.vibrate
+     umuman yo'q, shuning uchun bu yerda jimgina hech narsa qilmaydi). */
+  function vibrate(pattern){
+    try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+  }
+
   function toast(title, detail, kind){
     if(!toastHost) return;
+    if(kind === "success") vibrate(30);
     var el = document.createElement("div");
     el.className = "toast " + (kind || "info");
     el.innerHTML = icon(kind === "success" ? "iconCheck" : "iconInfo")
