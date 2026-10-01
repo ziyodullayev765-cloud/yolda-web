@@ -34,6 +34,7 @@ import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/revie
 // tashiyman" deb tanlagan turlar buyurtmadagi turlar bilan bir xil
 // bo'lishi kerak, aks holda ular hech qachon mos kelmasdi.
 import { CARGO } from '../lib/orderMessage.js';
+import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
 import {
   KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
   publicVerifications, canSubmit, docKey,
@@ -46,10 +47,12 @@ const CITIES = [
   'Farg\'ona', 'Jizzax', 'Navoiy', 'Guliston', 'Termiz',
 ];
 const VEHICLE_TYPES = ['ISUZU', 'GAZEL', 'FURGON', 'YARIM_TREYLER', 'SAMOSVAL', 'BOSHQA'];
-// This app has no blob/file storage, so a picked avatar is just stored as a
-// data: URL string inline in the profile JSON — the client (fileToAvatarDataUrl
-// in index.html) already resizes it to a small square JPEG before sending it,
-// this cap is just the server-side backstop against a client that skips that.
+// R2 sozlangan bo'lsa rasm o'sha yerga yuklanadi va profilda faqat
+// havola qoladi (lib/storage.js). Sozlanmagan bo'lsa — avvalgidek
+// `data:` matni profil JSON'ining ichida saqlanadi. Mijoz tomoni
+// (fileToAvatarDataUrl, index.html) rasmni baribir kichik kvadrat
+// JPEG'ga keltiradi; bu yerdagi cheklov esa buni o'tkazib yuborgan
+// mijozga qarshi zaxira.
 const AVATAR_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/;
 const MAX_AVATAR_BYTES = 400 * 1024;
 
@@ -412,16 +415,26 @@ const handleProfile = async (req, res) => {
   }
 
   if (body.avatarDataUrl !== undefined && body.avatarDataUrl !== null && body.avatarDataUrl !== '') {
-    const match = AVATAR_DATA_URL_RE.exec(String(body.avatarDataUrl));
-    if (!match) return res.status(400).json({ error: 'Rasm formati noto‘g‘ri' });
-    // Decoded byte length from the base64 payload, padding-adjusted — no
-    // need to actually decode it just to size-check it.
-    const b64 = match[2];
-    const decodedBytes = Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
-    if (decodedBytes > MAX_AVATAR_BYTES) {
-      return res.status(400).json({ error: 'Rasm hajmi katta, boshqasini tanlang' });
+    const uploaded = await uploadImage(body.avatarDataUrl, 'avatar', MAX_AVATAR_BYTES);
+    if (uploaded && uploaded.error) return res.status(400).json({ error: uploaded.error });
+    if (uploaded) {
+      // Eski rasm endi kerak emas — bucket'da axlat yig'ilib qolmasin.
+      const oldKey = keyFromUrl(existing.avatarUrl);
+      if (oldKey && uploaded.url !== existing.avatarUrl) deleteObject(oldKey).catch(() => {});
+      next.avatarUrl = uploaded.url;
+    } else {
+      // Saqlash sozlanmagan: avvalgi yo'l — `data:` matni profilda.
+      const match = AVATAR_DATA_URL_RE.exec(String(body.avatarDataUrl));
+      if (!match) return res.status(400).json({ error: 'Rasm formati noto‘g‘ri' });
+      // Decoded byte length from the base64 payload, padding-adjusted — no
+      // need to actually decode it just to size-check it.
+      const b64 = match[2];
+      const decodedBytes = Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
+      if (decodedBytes > MAX_AVATAR_BYTES) {
+        return res.status(400).json({ error: 'Rasm hajmi katta, boshqasini tanlang' });
+      }
+      next.avatarUrl = String(body.avatarDataUrl);
     }
-    next.avatarUrl = String(body.avatarDataUrl);
   }
 
   // Links this account to a Telegram @username so /api/telegram can show a

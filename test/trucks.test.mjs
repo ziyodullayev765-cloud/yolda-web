@@ -47,7 +47,9 @@ writeFileSync(join(work, 'identitymock.mjs'), identityMock);
 
 let src = readFileSync(join(repo, 'api/trucks.js'), 'utf8')
   .replace("'../lib/identity.js'", JSON.stringify(join(work, 'identitymock.mjs')))
-  .replace("'../lib/kv.js'", JSON.stringify(join(work, 'kvmock.mjs')));
+  .replace("'../lib/kv.js'", JSON.stringify(join(work, 'kvmock.mjs')))
+  // Qolgan lib/ importlari nusxa yonida emas, repozitoriyda turibdi.
+  .replace(/'\.\.\/lib\/([\w.]+)'/g, (_, f) => JSON.stringify(join(repo, 'lib', f)));
 writeFileSync(join(work, 'trucks_under_test.mjs'), src);
 const { default: handler } = await import(join(work, 'trucks_under_test.mjs'));
 

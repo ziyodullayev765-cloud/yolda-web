@@ -20,12 +20,11 @@
  * PENDING, and only an admin approving it via /api/admin-data can make it
  * ACTIVE and therefore publicly visible. See the status block below.
  *
- * `photos` is up to 5 data: URLs — this app has no blob/file storage (see
- * api/profile.js's avatar comment for the same constraint), so each photo
- * is just a small resized JPEG stored inline as a string, same trick as
- * the profile avatar. The client (fileToPhotoDataUrl in index.html)
- * already keeps these small; the size caps below are the server-side
- * backstop against a client that skips that.
+ * `photos` — ko'pi bilan 5 ta rasm. R2 sozlangan bo'lsa ular bucket'ga
+ * yuklanadi va e'londa faqat havola qoladi (lib/storage.js); sozlanmagan
+ * bo'lsa avvalgidek `data:` matni e'lon ichida saqlanadi. Mijoz tomoni
+ * (fileToPhotoDataUrl, index.html) rasmni baribir kichraytiradi,
+ * quyidagi cheklovlar esa buni o'tkazib yuborgan mijozga qarshi zaxira.
  *
  * Storage: `truck:<id>` is the listing JSON; `truck_ids` is a *set* (not
  * a list) of every listing id ever created (active or not) — sets support
@@ -42,6 +41,7 @@
  */
 import { resolveEmail } from '../lib/identity.js';
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvSismember } from '../lib/kv.js';
+import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
 
 /**
  * Only freight vehicles are sold here — YO'LDA is a logistics platform,
@@ -229,7 +229,7 @@ const getFavorites = async (req, res) => {
 };
 
 /** Shared field validation/extraction for create and update. `next` is the object being built (either fresh or the existing record being patched). */
-const applyFields = (body, next, { requireCore }) => {
+const applyFields = async (body, next, { requireCore }) => {
   if (requireCore || body.category !== undefined) {
     const category = String(body.category || '');
     if (!CATEGORIES.includes(category)) return 'Turkumni tanlang';
@@ -355,13 +355,26 @@ const applyFields = (body, next, { requireCore }) => {
   if (body.photos !== undefined) {
     const rawPhotos = Array.isArray(body.photos) ? body.photos : [];
     if (rawPhotos.length > MAX_PHOTOS) return `Ko‘pi bilan ${MAX_PHOTOS} ta rasm yuklash mumkin`;
+    const before = Array.isArray(next.photos) ? next.photos : [];
     const photos = [];
     for (const raw of rawPhotos) {
+      const uploaded = await uploadImage(raw, 'truck', MAX_PHOTO_BYTES);
+      if (uploaded) {
+        if (uploaded.error) return uploaded.error;
+        photos.push(uploaded.url);
+        continue;
+      }
+      // Saqlash sozlanmagan — avvalgi yo'l.
       const match = PHOTO_DATA_URL_RE.exec(String(raw));
       if (!match) return 'Rasm formati noto‘g‘ri';
       if (decodedBase64Length(match[2]) > MAX_PHOTO_BYTES) return 'Rasm hajmi katta, boshqasini tanlang';
       photos.push(String(raw));
     }
+    // Tahrirlashda olib tashlangan rasmlar bucket'da qolib ketmasin.
+    before.filter((url) => !photos.includes(url)).forEach((url) => {
+      const key = keyFromUrl(url);
+      if (key) deleteObject(key).catch(() => {});
+    });
     next.photos = photos;
   }
 
@@ -379,7 +392,7 @@ const create = async (req, res) => {
   // PENDING, not ACTIVE — every new listing goes through admin review
   // before it can appear in the public list.
   const truck = { id: generateId(), sellerIdentity: email, status: 'PENDING', verified: false, promoted: false, viewCount: 0, createdAt: Date.now() };
-  const error = applyFields(body, truck, { requireCore: true });
+  const error = await applyFields(body, truck, { requireCore: true });
   if (error) return res.status(400).json({ error });
   if (!truck.photos) truck.photos = [];
 
@@ -407,7 +420,7 @@ const update = async (req, res) => {
   if (!truck) return res.status(404).json({ error: 'E’lon topilmadi' });
   if (truck.sellerIdentity !== email) return res.status(403).json({ error: 'Bu amalga huquqingiz yo‘q' });
 
-  const error = applyFields(body, truck, { requireCore: false });
+  const error = await applyFields(body, truck, { requireCore: false });
   if (error) return res.status(400).json({ error });
 
   // Any content edit goes back into the review queue — otherwise a seller

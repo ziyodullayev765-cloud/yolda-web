@@ -85,6 +85,32 @@ yoza oladi, shuning uchun odam birinchi marta botda «Raqamni ulashish»
 tugmasini bosadi — shundan keyin kodlar darhol yetib boradi. Saytdagi
 kod ekranidagi «Kodni Telegramda olish» havolasi aynan shu uchun.
 
+### Rasmlar uchun joy (Cloudflare R2) — ixtiyoriy, lekin tavsiya etiladi
+
+Rasmsiz ham ishlaydi, lekin bu holda har bir rasm `base64` matn bo'lib
+Redis'ga yoziladi: e'lonlar sekin ochiladi, trafik ortadi va brauzer
+rasmlarni keshlay olmaydi.
+
+Cloudflare'da: **R2 → Create bucket** (masalan `yolda`) →
+**Settings → Public access** ni yoqing (yoki o'z domeningizni ulang) →
+**Manage API Tokens** dan kalit oling. Keyin Vercel'ga qo'shing:
+
+| Nomi | Qiymati |
+| --- | --- |
+| `R2_ACCOUNT_ID` | Cloudflare hisob id'si (R2 sahifasining o'ng tomonida) |
+| `R2_ACCESS_KEY_ID` | API token'dagi Access Key ID |
+| `R2_SECRET_ACCESS_KEY` | API token'dagi Secret Access Key |
+| `R2_BUCKET` | bucket nomi, masalan `yolda` |
+| `R2_PUBLIC_URL` | bucket'ning ochiq manzili, masalan `https://pub-xxxx.r2.dev` |
+
+Beshtasi ham qo'yilgach, yangi rasmlar R2'ga tushadi va bazada faqat
+havola qoladi. Eski rasmlar joyida qoladi va ishlayveradi — ularni
+ko'chirish shart emas.
+
+Tasdiqlash hujjatlari (pasport, guvohnoma) ataylab R2'ga
+ko'chirilmadi: bucket ochiq, hujjatlar esa ochiq bo'lmasligi kerak.
+Ular avvalgidek bazada, faqat admin ko'radigan joyda qoladi.
+
 4. **Deployments → ⋯ → Redeploy** bosing (o'zgaruvchilar kuchga kirishi uchun)
 
 Saytingiz `https://yolda-xxx.vercel.app` manzilida ochiladi.
