@@ -4798,6 +4798,15 @@
       "loads.minWeight": "Og'irlik, min (kg)", "loads.maxWeight": "Og'irlik, max (kg)",
       "loads.minPrice": "Narx, min (so'm)", "loads.maxPrice": "Narx, max (so'm)",
       "price.hintLead": "Shu yo'nalishda odatdagi narx", "price.hintSample": "ta buyurtma asosida",
+      "crit.AS_DESCRIBED": "E'londagidek chiqdi", "crit.FAIR_PRICE": "Narxi haqqoniy edi",
+      "crit.PAPERS_OK": "Hujjatlari joyida", "crit.NO_HAGGLE": "Narxni cho'zmadi",
+      "crit.CAME_ONTIME": "Vaqtida keldi",
+      "trucks.soldTo": "Xaridor", "trucks.buyerLabel": "Xaridorning username'i (baho almashish uchun)",
+      "trucks.buyerSave": "Saqlash", "trucks.buyerNeeded": "Username kiriting",
+      "trucks.buyerHint": "Ko'rsatsangiz, ikkalangiz bir-biringizga baho qoldira olasiz.",
+      "trucks.dealReviewHeading": "Savdo yakunlandi",
+      "trucks.rateBuyer": "Xaridorni baholang:", "trucks.rateSeller": "Sotuvchini baholang:",
+      "trucks.reviewDone": "Baho qoldirildi. Rahmat!", "trucks.reviewSent": "Baho yuborildi",
       "crit.ONTIME": "Vaqtida yetkazdi", "crit.CARE": "Yukka ehtiyot bo'ldi",
       "crit.COMMUNICATION": "Aloqaga oson chiqdi", "crit.PRICE_KEPT": "Narxni o'zgartirmadi",
       "crit.PAID_ONTIME": "To'lovni vaqtida qildi", "crit.ACCURATE": "Yukni to'g'ri ko'rsatdi",
@@ -5281,6 +5290,15 @@
       "loads.minWeight": "Вес, мин (кг)", "loads.maxWeight": "Вес, макс (кг)",
       "loads.minPrice": "Цена, мин (сум)", "loads.maxPrice": "Цена, макс (сум)",
       "price.hintLead": "Обычная цена на этом маршруте", "price.hintSample": "заказов учтено",
+      "crit.AS_DESCRIBED": "Соответствует объявлению", "crit.FAIR_PRICE": "Честная цена",
+      "crit.PAPERS_OK": "Документы в порядке", "crit.NO_HAGGLE": "Не торговался до бесконечности",
+      "crit.CAME_ONTIME": "Приехал вовремя",
+      "trucks.soldTo": "Покупатель", "trucks.buyerLabel": "Username покупателя (чтобы обменяться оценками)",
+      "trucks.buyerSave": "Сохранить", "trucks.buyerNeeded": "Введите username",
+      "trucks.buyerHint": "Укажите его — и вы сможете оценить друг друга.",
+      "trucks.dealReviewHeading": "Сделка завершена",
+      "trucks.rateBuyer": "Оцените покупателя:", "trucks.rateSeller": "Оцените продавца:",
+      "trucks.reviewDone": "Оценка оставлена. Спасибо!", "trucks.reviewSent": "Оценка отправлена",
       "crit.ONTIME": "Доставил вовремя", "crit.CARE": "Бережно обошёлся с грузом",
       "crit.COMMUNICATION": "Легко выходил на связь", "crit.PRICE_KEPT": "Не менял цену",
       "crit.PAID_ONTIME": "Заплатил вовремя", "crit.ACCURATE": "Груз описан верно",
@@ -5760,6 +5778,15 @@
       "loads.minWeight": "Weight, min (kg)", "loads.maxWeight": "Weight, max (kg)",
       "loads.minPrice": "Price, min (UZS)", "loads.maxPrice": "Price, max (UZS)",
       "price.hintLead": "Usual price on this route", "price.hintSample": "orders used",
+      "crit.AS_DESCRIBED": "Matched the listing", "crit.FAIR_PRICE": "Fair price",
+      "crit.PAPERS_OK": "Paperwork in order", "crit.NO_HAGGLE": "Did not haggle endlessly",
+      "crit.CAME_ONTIME": "Turned up on time",
+      "trucks.soldTo": "Buyer", "trucks.buyerLabel": "Buyer's username (so you can rate each other)",
+      "trucks.buyerSave": "Save", "trucks.buyerNeeded": "Enter a username",
+      "trucks.buyerHint": "Add it and the two of you can rate each other.",
+      "trucks.dealReviewHeading": "Deal completed",
+      "trucks.rateBuyer": "Rate the buyer:", "trucks.rateSeller": "Rate the seller:",
+      "trucks.reviewDone": "Rating left. Thank you!", "trucks.reviewSent": "Rating sent",
       "crit.ONTIME": "Delivered on time", "crit.CARE": "Handled the cargo carefully",
       "crit.COMMUNICATION": "Easy to reach", "crit.PRICE_KEPT": "Kept to the agreed price",
       "crit.PAID_ONTIME": "Paid on time", "crit.ACCURATE": "Described the load accurately",
@@ -8484,6 +8511,7 @@
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
     }).then(function(r){ return r.json(); }).then(function(data){
+      if(data.profile && data.profile.username) myProfileUsername = data.profile.username;
       renderProfileForm(data.profile || {});
     }).catch(function(){
       card.innerHTML = '<p class="note">Yuklab bo‘lmadi, qayta urinib ko‘ring.</p>';
@@ -10301,9 +10329,12 @@
                     }).join("")
                   + '</div>'
                 : '')
+            + truckBuyerFieldHtml(tk)
             + '<button type="button" class="btn ghost" id="btnEditTruck" style="margin-bottom:var(--s2);" data-i18n="trucks.editBtn">Tahrirlash</button>'
             + '<button type="button" class="btn ghost" id="btnDeleteTruckDetail" style="color:#DC2626;" data-i18n="trucks.deleteBtn">E\'lonni o\'chirish</button>'
           : '<button type="button" class="link-btn" id="btnReportTruck" style="display:block;margin:var(--s5) auto 0;" data-i18n="trucks.reportBtn">Shubhali e\'lon haqida xabar berish</button>')
+
+      + truckDealReviewHtml(tk, isMine)
 
       + (similar.length
           ? '<div class="edit-section-heading" style="margin-top:var(--s6);">'
@@ -10331,6 +10362,8 @@
         }, 400);
       }, 60);
     });
+
+    bindTruckDealReview(body, tk);
 
     var loadsBtn = body.querySelector("#btnTruckFindLoads");
     if(loadsBtn) loadsBtn.addEventListener("click", function(){
@@ -10831,12 +10864,110 @@
     });
   }
 
+  /* ============================================================
+     Savdodan keyingi baho
+     ------------------------------------------------------------
+     Ish tugagandan keyin ikki tomon bir-birini baholaydi — yuk
+     yetkazilgandan keyingi baho qanday bo'lsa, mashina savdosida
+     ham shunday. Farqi shundaki, bu yerda "ish tugadi" degan
+     belgini sotuvchi o'zi qo'yadi: e'lonni "Sotildi" qilib,
+     xaridorning username'ini ko'rsatadi. Shundan keyingina baho
+     bo'limi ochiladi — kimni baholashni bilmasdan baho so'rash
+     ma'nosiz.
+     ============================================================ */
+  function truckBuyerFieldHtml(tk){
+    if((tk.status || "") !== "SOLD") return "";
+    if(tk.soldToUsername){
+      return '<p class="note" style="margin:0 0 var(--s3);">'
+        + icon("iconCheck") + ' <span data-i18n="trucks.soldTo">Xaridor</span>: @'
+        + escapeHtml(tk.soldToUsername) + '</p>';
+    }
+    return '<div class="field" style="margin-bottom:var(--s3);">'
+      + '<label for="fTruckBuyer" data-i18n="trucks.buyerLabel">Xaridorning username\'i (baho almashish uchun)</label>'
+      + '<input type="text" id="fTruckBuyer" placeholder="username" maxlength="32">'
+      + '<button type="button" class="btn ghost" id="btnTruckBuyerSave" style="margin-top:var(--s2);" '
+      +   'data-i18n="trucks.buyerSave">Saqlash</button>'
+      + '<p class="note" style="margin:6px 0 0;" data-i18n="trucks.buyerHint">'
+      + 'Ko\'rsatsangiz, ikkalangiz bir-biringizga baho qoldira olasiz.</p>'
+      + '</div>';
+  }
+
+  /** Baho bo'limi: faqat savdoda qatnashgan va hali baholamagan odamga. */
+  function truckDealReviewHtml(tk, isMine){
+    if((tk.status || "") !== "SOLD" || !tk.soldToUsername) return "";
+    var isSeller = Boolean(isMine);
+    var isBuyer = Boolean(myProfileUsername) && tk.soldToUsername === myProfileUsername;
+    if(!isSeller && !isBuyer) return "";
+    if(isSeller && tk.sellerReviewed) return truckReviewDoneHtml();
+    if(isBuyer && tk.buyerReviewed) return truckReviewDoneHtml();
+
+    var side = isSeller ? "BUYER" : "SELLER";
+    var who = isSeller ? "@" + escapeHtml(tk.soldToUsername) : "@" + escapeHtml(tk.sellerUsername || "");
+    return '<div class="edit-section-heading" style="margin-top:var(--s6);" data-i18n="trucks.dealReviewHeading">Savdo yakunlandi</div>'
+      + ratingPickerHtml("dealRate", DEAL_CRITERIA[side],
+          isSeller ? "trucks.rateBuyer" : "trucks.rateSeller",
+          (isSeller ? "Xaridorni baholang: " : "Sotuvchini baholang: ") + who);
+  }
+
+  function truckReviewDoneHtml(){
+    return '<p class="note" style="margin-top:var(--s5);" data-i18n="trucks.reviewDone">'
+      + 'Baho qoldirildi. Rahmat!</p>';
+  }
+
+  /* lib/reviews.js dagi CRITERIA bilan bir xil bo'lishi shart. */
+  /* Profil so'ralganda eslab qolinadi: savdo bahosida "bu men
+     emasmi" degan savolga javob kerak, har safar profil so'rab
+     o'tirmaslik uchun. */
+  var myProfileUsername = "";
+
+  var DEAL_CRITERIA = {
+    SELLER: ["AS_DESCRIBED", "FAIR_PRICE", "COMMUNICATION", "PAPERS_OK"],
+    BUYER: ["PAID_ONTIME", "COMMUNICATION", "NO_HAGGLE", "CAME_ONTIME"]
+  };
+
+  function bindTruckDealReview(body, tk){
+    var saveBuyer = body.querySelector("#btnTruckBuyerSave");
+    if(saveBuyer) saveBuyer.addEventListener("click", function(){
+      var input = body.querySelector("#fTruckBuyer");
+      var username = (input && input.value || "").trim().replace(/^@/, "");
+      if(!username){ toast(t("trucks.buyerNeeded") || "Username kiriting", "", "info"); return; }
+      setTruckStatus(tk.id, "SOLD", username);
+    });
+
+    if(!body.querySelector("#dealRateBox")) return;
+    bindRatingPicker("dealRate", function(review, btn){
+      btn.disabled = true;
+      fetch("/api/trucks?action=review-deal", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          googleIdToken: googleIdToken, telegramInitData: telegramInitData,
+          id: tk.id, stars: review.stars, tags: review.tags, comment: review.comment
+        })
+      }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+        .then(function(res){
+          if(!res.ok){
+            btn.disabled = false;
+            toast(res.body.error || (t("au.failed") || "Xatolik"), "", "info");
+            return;
+          }
+          toast(t("trucks.reviewSent") || "Baho yuborildi", "", "success");
+          Sheet.close();
+          fetchTrucks();
+        }).catch(function(){ btn.disabled = false; });
+    });
+  }
+
   /* ---------- Listing management ---------- */
-  function setTruckStatus(id, status){
+  function setTruckStatus(id, status, soldToUsername){
     fetch("/api/trucks?action=set-status", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id, status: status })
+      body: JSON.stringify({
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData,
+        id: id, status: status,
+        soldToUsername: soldToUsername === undefined ? undefined : soldToUsername
+      })
     }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
       .then(function(res){
         if(!res.ok){ toast(res.body.error || "Saqlanmadi", "", "info"); return; }
@@ -11332,6 +11463,7 @@
       body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData })
     }).then(function(r){ return r.json(); }).then(function(data){
       var p = data.profile || {};
+      if(p.username) myProfileUsername = p.username;
       driverMatchProfile = (p.city || p.vehicleType) ? { city: p.city || "", vehicleType: p.vehicleType || "" } : null;
       cb();
     }).catch(function(){ driverMatchProfile = null; cb(); });

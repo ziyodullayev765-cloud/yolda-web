@@ -191,6 +191,77 @@ console.log('\n== ban check ==');
 sets.set('banned', new Set(['banned@x.com']));
 check('banned user cannot create', (await call('POST', {action:'create'}, {...VALID, googleIdToken:'banned@x.com'})).statusCode === 403);
 
+/* ==========================================================
+   Savdodan keyingi baho: faqat ikki tomon, faqat bir marta
+   ========================================================== */
+console.log('\n== savdodan keyingi baho ==');
+{
+  const sale = await call('POST', {action:'create'}, {...VALID, googleIdToken:'alice@x.com'});
+  const sid = sale.body.truck.id;
+  approve(sid, 'ACTIVE');
+  store.set('username:bob', 'bob@x.com');
+  store.set('username:alice', 'alice@x.com');
+  store.set('profile:bob@x.com', JSON.stringify({ username:'bob' }));
+  store.set('profile:alice@x.com', JSON.stringify({ username:'alice' }));
+
+  // Savdo yakunlanmagan — baho yo'q.
+  check('sotilmagan e\'longa baho berib bo\'lmaydi',
+    (await call('POST', {action:'review-deal'}, {googleIdToken:'bob@x.com', id:sid, stars:5})).statusCode === 400);
+
+  // Noto'g'ri username.
+  check('mavjud bo\'lmagan xaridor rad etiladi',
+    (await call('POST', {action:'set-status'},
+      {googleIdToken:'alice@x.com', id:sid, status:'SOLD', soldToUsername:'yoq'})).statusCode === 404);
+  check('o\'ziga sotib bo\'lmaydi',
+    (await call('POST', {action:'set-status'},
+      {googleIdToken:'alice@x.com', id:sid, status:'SOLD', soldToUsername:'alice'})).statusCode === 400);
+
+  const sold = await call('POST', {action:'set-status'},
+    {googleIdToken:'alice@x.com', id:sid, status:'SOLD', soldToUsername:'bob'});
+  check('sotuvchi savdoni yakunlaydi', sold.statusCode === 200, sold.body);
+  check('xaridor yozib qo\'yildi', sold.body.truck.soldToUsername === 'bob', sold.body.truck);
+
+  // Begona odam
+  check('begona odam baho qoldira olmaydi',
+    (await call('POST', {action:'review-deal'}, {googleIdToken:'carol@x.com', id:sid, stars:5})).statusCode === 403);
+
+  // Xaridor sotuvchini baholaydi
+  const byBuyer = await call('POST', {action:'review-deal'},
+    {googleIdToken:'bob@x.com', id:sid, stars:5, tags:['AS_DESCRIBED','PAPERS_OK','ONTIME'], comment:'Yaxshi savdo'});
+  check('xaridor sotuvchini baholaydi', byBuyer.statusCode === 200, byBuyer.body);
+  check('baho SELLER tomoniga tushdi', byBuyer.body.side === 'SELLER', byBuyer.body);
+  const alice = JSON.parse(store.get('profile:alice@x.com'));
+  check('savdo bahosi alohida hisoblanadi', alice.dealRatingCount === 1 && alice.dealRatingSum === 5, alice);
+  check('haydovchilik bahosiga tegmaydi', !alice.ratingCount, alice);
+  check('begona teg tashlab yuborildi', !alice.tags.ONTIME && alice.tags.AS_DESCRIBED === 1, alice.tags);
+
+  // Ikkinchi marta bo'lmaydi
+  check('ikkinchi marta baho qoldirib bo\'lmaydi',
+    (await call('POST', {action:'review-deal'}, {googleIdToken:'bob@x.com', id:sid, stars:4})).statusCode === 409);
+
+  // Sotuvchi xaridorni baholaydi
+  const bySeller = await call('POST', {action:'review-deal'},
+    {googleIdToken:'alice@x.com', id:sid, stars:4, tags:['PAID_ONTIME'], comment:''});
+  check('sotuvchi xaridorni baholaydi', bySeller.statusCode === 200 && bySeller.body.side === 'BUYER', bySeller.body);
+  const bob = JSON.parse(store.get('profile:bob@x.com'));
+  check('xaridorning bahosi yozildi', bob.dealRatingCount === 1 && bob.dealRatingSum === 4, bob);
+
+  // Yulduz chegarasi
+  const sale2 = await call('POST', {action:'create'}, {...VALID, googleIdToken:'alice@x.com'});
+  const sid2 = sale2.body.truck.id;
+  approve(sid2, 'ACTIVE');
+  await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id:sid2, status:'SOLD', soldToUsername:'bob'});
+  check('0 yulduz rad etiladi',
+    (await call('POST', {action:'review-deal'}, {googleIdToken:'bob@x.com', id:sid2, stars:0})).statusCode === 400);
+  check('6 yulduz rad etiladi',
+    (await call('POST', {action:'review-deal'}, {googleIdToken:'bob@x.com', id:sid2, stars:6})).statusCode === 400);
+
+  // Holat qaytarilsa savdo yozuvi ham ketadi
+  await call('POST', {action:'set-status'}, {googleIdToken:'alice@x.com', id:sid2, status:'ACTIVE'});
+  const back = JSON.parse(store.get(`truck:${sid2}`));
+  check('holat qaytarilsa xaridor yozuvi o\'chadi', !back.soldTo && !back.soldToUsername, back.soldTo);
+}
+
 console.log('\n== method / action guards ==');
 check('PUT rejected', (await call('PUT', {action:'list'}, null)).statusCode === 405);
 check('unknown GET action rejected', (await call('GET', {action:'nope'}, null)).statusCode === 400);

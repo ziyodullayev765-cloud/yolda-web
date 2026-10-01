@@ -13,6 +13,7 @@
  *   POST /api/trucks?action=update        { googleIdToken|telegramInitData, id, ...fields }
  *   POST /api/trucks?action=delete        { googleIdToken|telegramInitData, id }
  *   POST /api/trucks?action=set-status    { googleIdToken|telegramInitData, id, status }   (ACTIVE|PAUSED|SOLD)
+ *   POST /api/trucks?action=review-deal   { id, stars, tags, comment }  — savdodan keyin, ikki tomon bir-biriga
  *   POST /api/trucks?action=favorite      { googleIdToken|telegramInitData, id }
  *   POST /api/trucks?action=unfavorite    { googleIdToken|telegramInitData, id }
  *
@@ -40,7 +41,8 @@
  * frontend simply never shows a badge while they're false, honestly.
  */
 import { resolveEmail } from '../lib/identity.js';
-import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvSismember } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvSismember, kvPush } from '../lib/kv.js';
+import { validateReview, applyReview, reviewsKey } from '../lib/reviews.js';
 import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
 
 /**
@@ -151,6 +153,12 @@ const publicShape = (t) => ({
   description: t.description,
   photos: t.photos || [],
   status: t.status || 'ACTIVE',
+  // Savdo yakuni: kim sotib olgani va kim baho qoldirgani. Ikki
+  // tomon o'z sahifasida nima qilish kerakligini shu bilan biladi.
+  soldToUsername: t.soldToUsername || null,
+  soldAt: t.soldAt || null,
+  sellerReviewed: Boolean(t.sellerReview),
+  buyerReviewed: Boolean(t.buyerReview),
   rejectionReason: t.rejectionReason || null,
   verified: Boolean(t.verified),
   promoted: Boolean(t.promoted),
@@ -455,9 +463,90 @@ const setStatus = async (req, res) => {
   }
 
   truck.status = status;
+
+  /* "Sotildi" deb belgilanganda sotuvchi xaridorning username'ini
+     ham ko'rsatishi mumkin. Shundan keyin ikkalasi bir-biriga baho
+     qoldira oladi — ish tugaganini tasdiqlagan odam sotuvchining
+     o'zi, ya'ni baho havodan olinmaydi.
+
+     Xaridor ko'rsatilmasa e'lon baribir "Sotildi" bo'ladi, faqat
+     baho bo'limi ochilmaydi: kimni baholashni bilmaymiz. */
+  if (status === 'SOLD' && body.soldToUsername !== undefined) {
+    const username = String(body.soldToUsername || '').trim().replace(/^@/, '').toLowerCase();
+    if (username) {
+      const buyer = await kvGet(`username:${username}`);
+      if (!buyer) return res.status(404).json({ error: 'Bunday username topilmadi' });
+      if (buyer === email) return res.status(400).json({ error: 'O‘zingizga sota olmaysiz' });
+      truck.soldTo = buyer;
+      truck.soldToUsername = username;
+      truck.soldAt = Date.now();
+    } else {
+      delete truck.soldTo;
+      delete truck.soldToUsername;
+    }
+  }
+  if (status !== 'SOLD') {
+    // Holat qaytarilsa, savdo yozuvi ham qolmasin.
+    delete truck.soldTo;
+    delete truck.soldToUsername;
+  }
+
   const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
   if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
   return res.status(200).json({ ok: true, truck: publicShape(truck) });
+};
+
+/* ============================================================
+   Savdodan keyingi baho
+   ------------------------------------------------------------
+   Mashina sotilgach sotuvchi bilan xaridor bir-birini baholaydi.
+   Uchta qoida:
+     - faqat shu savdoning ikki tomoni baho qoldira oladi;
+     - har tomon bir marta — ikkinchi urinish rad etiladi;
+     - baho profilda alohida hisoblanadi (dealRating), chunki
+       yaxshi haydovchi yomon sotuvchi bo'lishi mumkin.
+   ============================================================ */
+const reviewDeal = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
+  if (!email) return res.status(401).json({ error: 'Avval kiring' });
+
+  const id = String(body.id || '');
+  const truck = parseJson(await kvGet(`truck:${id}`));
+  if (!truck) return res.status(404).json({ error: 'E’lon topilmadi' });
+  if (truck.status !== 'SOLD' || !truck.soldTo) {
+    return res.status(400).json({ error: 'Bu e’lon bo‘yicha savdo yakunlanmagan' });
+  }
+
+  const isSeller = truck.sellerIdentity === email;
+  const isBuyer = truck.soldTo === email;
+  if (!isSeller && !isBuyer) return res.status(403).json({ error: 'Siz bu savdoda qatnashmagansiz' });
+
+  // Sotuvchi xaridorni baholaydi, xaridor sotuvchini.
+  const side = isSeller ? 'BUYER' : 'SELLER';
+  const field = isSeller ? 'sellerReview' : 'buyerReview';
+  if (truck[field]) return res.status(409).json({ error: 'Siz allaqachon baho qoldirgansiz' });
+
+  const { value, error } = validateReview(body, side);
+  if (error) return res.status(400).json({ error });
+
+  const target = isSeller ? truck.soldTo : truck.sellerIdentity;
+  const profileKey = `profile:${target}`;
+  const profile = parseJson(await kvGet(profileKey)) || {};
+  applyReview(profile, value, side);
+  if (!(await kvSet(profileKey, JSON.stringify(profile)))) {
+    return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  }
+
+  // Izoh profilning baholar ro'yxatiga ham tushadi.
+  await kvPush(reviewsKey(target), JSON.stringify({
+    ...value, side, truckId: id, fromUsername: (parseJson(await kvGet(`profile:${email}`)) || {}).username || '',
+  })).catch(() => {});
+
+  truck[field] = { stars: value.stars, at: value.ratedAt };
+  await kvSet(`truck:${id}`, JSON.stringify(truck)).catch(() => {});
+
+  return res.status(200).json({ ok: true, side });
 };
 
 const remove = async (req, res) => {
@@ -505,6 +594,7 @@ export default async function handler(req, res) {
     if (action === 'update') return update(req, res);
     if (action === 'delete') return remove(req, res);
     if (action === 'set-status') return setStatus(req, res);
+    if (action === 'review-deal') return reviewDeal(req, res);
     if (action === 'favorite') return favorite(req, res, true);
     if (action === 'unfavorite') return favorite(req, res, false);
     return res.status(400).json({ error: 'Noto‘g‘ri action' });
