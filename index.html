@@ -418,7 +418,11 @@
   :root{--tg-top:0px;--tg-bottom:0px;}
   :root[data-tg="1"] .nav{padding-top:calc(var(--s3) + var(--tg-top));}
   :root[data-tg="1"] .bottom-nav{bottom:calc(20px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
-  :root[data-tg="1"] .welcome-card{padding-top:var(--tg-top);}
+  /* Oyna ichidagi ekranlar `position:absolute; inset:0` bilan turadi,
+     ya'ni kartaning o'z ichki bo'shlig'i ularni pastga surmaydi —
+     joyni aynan ekranning o'ziga qo'shish kerak. Telegram yo'lagi
+     ("Close") logotipni yopib qo'ygan xato shundan edi. */
+  :root[data-tg="1"] .au-screen{padding-top:calc(26px + var(--tg-top));}
   :root[data-tg="1"] .sheet{padding-bottom:calc(var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
 
   .nav{
@@ -4276,12 +4280,6 @@
 <section class="tabview" id="tab-order" data-tab="order" hidden>
   <div class="app-shell">
     <svg class="bg-truck bg-truck--app" aria-hidden="true"><use href="#truckIcon"/></svg>
-    <div class="section-head reveal" style="margin-bottom:var(--s5);">
-      <div class="section-eyebrow" data-i18n="order.eyebrow">Buyurtma</div>
-      <h2 class="section-title"><span data-i18n="order.titleA">Hisoblang va</span> <span class="accent" data-i18n="order.titleB">yuboring</span></h2>
-      <p class="section-sub" data-i18n="order.sub">Buyurtmangiz haydovchilarga chiqadi. Ular narx bilan taklif yuboradi, siz esa taqqoslab tanlaysiz.</p>
-    </div>
-
     <div id="appBrowserHint" class="app-browser-hint" style="display:none;">
       <p>Google orqali kirish Telegram/Instagram kabi ilovalar ichidagi brauzerda ishlamaydi. Havolani nusxalab, <strong>Safari</strong> yoki <strong>Chrome</strong>da oching:</p>
       <button type="button" class="btn ghost small" id="copyLinkBtn">Havolani nusxalash</button>
@@ -6733,7 +6731,7 @@
       hapticBtn.setAttribute("aria-checked", String(next.haptics));
       // Yoqilgan zahoti bir marta sezdiramiz — kalit nima qilishini
       // tushuntirishdan ko'ra ko'rsatgan yaxshi.
-      if(next.haptics) haptic("medium");
+      if(next.haptics) haptic("light");
     });
   }
 
@@ -7585,7 +7583,7 @@
   function auError(screen, message){
     var box = screen && screen.querySelector("[data-error]");
     if(!box) return;
-    if(message){ box.textContent = message; box.hidden = false; haptic("error"); }
+    if(message){ box.textContent = message; box.hidden = false; }
     else { box.textContent = ""; box.hidden = true; }
   }
 
@@ -7832,7 +7830,6 @@
    */
   function applyPhoneCredential(result, source){
     if(!result || !result.phoneToken) return false;
-    if(source !== "restored") haptic("success");
     phoneToken = result.phoneToken;
     phoneProfile = { name: result.name || "", phone: result.phone || "", pretty: result.prettyPhone || "" };
     try{
@@ -13547,12 +13544,8 @@
      Toasts
      ============================================================ */
   var toastHost = document.getElementById("toastHost");
-  /* Muhim natijalarda kichik tebranish — faqat qo'llab-quvvatlaydigan
-     qurilmalarda (asosan Android; iOS Safari/PWA'da navigator.vibrate
-     umuman yo'q, shuning uchun bu yerda jimgina hech narsa qilmaydi). */
   function toast(title, detail, kind){
     if(!toastHost) return;
-    haptic(kind === "success" ? "success" : kind === "error" ? "error" : "light");
     var el = document.createElement("div");
     el.className = "toast " + (kind || "info");
     el.innerHTML = icon(kind === "success" ? "iconCheck" : "iconInfo")
@@ -14789,21 +14782,36 @@
   populateCityDatalist();
   renderHomeTrucks();
 
-  /* Teginish sezgisi butun ilovada bitta joydan beriladi: har bir
-     tugmaga alohida qo'shish o'rniga, bosilgan narsa bosiladiganmi —
-     shu yerda aniqlanadi. `pointerdown` tanlandi, chunki `click`
-     barmoq uzilganda keladi va javob kechikkanday tuyulardi.
-     Asosiy (yashil) tugmalar biroz kuchliroq sezdiradi. */
+  /* Teginish sezgisi sanoqli joyda beriladi — hamma tugmada emas.
+     Ro'yxat ataylab qisqa: bo'lim almashuvi, Mashinalar, Yuklardagi
+     filtr, yuk joylashdagi "Davom etish" va profildagi Sozlamalar.
+     Hammasi bitta joydan boshqariladi, aks holda har bir tugmaga
+     alohida qo'shib chiqishga to'g'ri kelardi.
+
+     `pointerdown` tanlandi: `click` barmoq uzilganda keladi, ya'ni
+     javob kechikkanday tuyulardi. Pastki paneldagi "Yuk joylash"
+     tugmasi biroz kuchliroq sezdiradi. */
+  var HAPTIC_TARGETS = [
+    ".bn-item",                       // Asosiy, Yuklar, Yuk joylash, Life, Profil
+    "#btnOpenTrucks",                 // Mashinalar
+    "#btnLoadsMoreFilters",           // Yuklar: filtr
+    "#btnWizardNext",                 // Yuk joylash: Davom etish
+    "[data-pf-section='settings']",   // Profil: Sozlamalar
+    "#btnOpenAccountMenu"             // Profil: sozlamalar belgisi
+  ].join(",");
+
   document.addEventListener("pointerdown", function(ev){
-    var el = ev.target && ev.target.closest
-      ? ev.target.closest("button, a.btn, [role='button'], .chip, .bn-item, .switch-track, .au-otp-box")
-      : null;
+    var el = ev.target && ev.target.closest ? ev.target.closest(HAPTIC_TARGETS) : null;
     if(!el || el.disabled) return;
-    var strong = el.classList.contains("au-btn--primary")
-      || (el.classList.contains("btn") && !el.classList.contains("ghost"))
-      || el.classList.contains("bn-item--primary");
-    haptic(strong ? "medium" : "light");
+    haptic(el.classList.contains("bn-item--primary") ? "medium" : "light");
   }, { passive: true });
+
+  /* Qayerdan / qayerga tanlanganda. Bu <select>, ya'ni tanlov bosilganda
+     emas, o'zgarganda bo'ladi — shuning uchun alohida hodisa. */
+  document.addEventListener("change", function(ev){
+    var el = ev.target;
+    if(el && (el.id === "fFrom" || el.id === "fTo")) haptic("light");
+  });
 
   // Tomchini boshlang'ich joyiga qo'yamiz va o'lcham o'zgarganda
   // (burilish, tilni almashtirish) qayta hisoblaymiz.
