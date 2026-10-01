@@ -1084,7 +1084,16 @@ const submitOffer = async (req, res) => {
       + `\n<b>${esc(formatNum(value.price))} so'm</b>`
       + (value.eta ? `\nYetib borish: ${esc(value.eta)}` : '')
       + (value.note ? `\n\n${esc(value.note)}` : '')
-      + `\n\nSaytda «Kelgan takliflar» bo'limidan ko'ring.`,
+      + `\n\nQuyidagi tugmalardan bevosita javob bering — saytga kirish shart emas.`,
+    // Yuk egasi saytga kirmasdan, shu yerning o'zida hal qilsin: taklif
+    // qabul qilinsa yuk shu haydovchiga biriktiriladi (decideOfferCore,
+    // api/telegram.js dagi `offer_accept:`/`offer_reject:` orqali).
+    replyMarkup: {
+      inline_keyboard: [[
+        { text: '✅ Qabul qilish', callback_data: `offer_accept:${id}` },
+        { text: '❌ Rad etish', callback_data: `offer_reject:${id}` },
+      ]],
+    },
   });
 
   return res.status(200).json({ ok: true, offer: publicOfferShape(offer) });
@@ -1301,48 +1310,50 @@ const advanceOrder = async (req, res) => {
   });
 };
 
-/** Taklifni qabul qilish yoki rad etish — faqat yuk egasi. */
-const decideOffer = async (req, res, accept) => {
-  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData,
-  });
-  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
-
-  const offer = await readOffer(String(body.id || ''));
-  if (!offer) return res.status(404).json({ error: 'Taklif topilmadi' });
+/**
+ * Taklifni qabul qilish yoki rad etish — asosiy mantiq, HTTP'dan mustaqil.
+ *
+ * Ikki chaqiruvchisi bor: pastdagi `decideOffer` (saytdan, POST orqali,
+ * identity so'rov tanasidan) va `api/telegram.js` (yuk egasi Telegram'dagi
+ * «✅ Qabul qilish» / «❌ Rad etish» tugmasini bosganda, identity Telegram
+ * autentifikatsiyasidan). Ikkalasi ham identity'ni O'ZI aniqlab, faqat shu
+ * funksiyaga uzatadi — bu yerda hech qanday tokenni qayta tekshirish yo'q,
+ * faqat kim ekani allaqachon isbotlangan identity qabul qilinadi.
+ */
+const decideOfferCore = async (identity, offerId, accept) => {
+  const offer = await readOffer(String(offerId || ''));
+  if (!offer) return { status: 404, body: { error: 'Taklif topilmadi' } };
 
   const order = await readJson(`order:${offer.orderCode}`, null);
-  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+  if (!order) return { status: 404, body: { error: 'Buyurtma topilmadi' } };
   const ownerKey = order.ownerIdentity || order.googleEmail;
   if (!ownerKey || ownerKey !== identity) {
-    return res.status(404).json({ error: 'Taklif topilmadi' });
+    return { status: 404, body: { error: 'Taklif topilmadi' } };
   }
   if (offer.status !== 'PENDING') {
-    return res.status(409).json({ error: 'Bu taklif allaqachon ko‘rib chiqilgan' });
+    return { status: 409, body: { error: 'Bu taklif allaqachon ko‘rib chiqilgan' } };
   }
 
   if (!accept) {
     const rejected = { ...offer, status: 'REJECTED', updatedAt: Date.now() };
     if (!(await kvSet(offerKey(offer.id), JSON.stringify(rejected)))) {
-      return res.status(500).json({ error: 'Saqlanmadi' });
+      return { status: 500, body: { error: 'Saqlanmadi' } };
     }
     await notifyUser(offer.driverIdentity, {
       category: 'offers',
       text: `<b>Taklifingiz rad etildi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
         + `${esc(order.fromCity)} → ${esc(order.toCity)}`,
     });
-    return res.status(200).json({ ok: true, offer: publicOfferShape(rejected) });
+    return { status: 200, body: { ok: true, offer: publicOfferShape(rejected) } };
   }
 
   if (!OFFERABLE_ORDER_STATUSES.includes(order.status || 'NEW')) {
-    return res.status(409).json({ error: 'Bu buyurtmada allaqachon haydovchi bor' });
+    return { status: 409, body: { error: 'Bu buyurtmada allaqachon haydovchi bor' } };
   }
 
   const accepted = { ...offer, status: 'ACCEPTED', updatedAt: Date.now() };
   if (!(await kvSet(offerKey(offer.id), JSON.stringify(accepted)))) {
-    return res.status(500).json({ error: 'Saqlanmadi' });
+    return { status: 500, body: { error: 'Saqlanmadi' } };
   }
 
   order.status = 'DRIVER_FOUND';
@@ -1359,7 +1370,7 @@ const decideOffer = async (req, res, accept) => {
   order.agreedAmount = offer.price;
   order.updatedAt = Date.now();
   if (!(await kvSet(`order:${offer.orderCode}`, JSON.stringify(order)))) {
-    return res.status(500).json({ error: 'Buyurtma saqlanmadi' });
+    return { status: 500, body: { error: 'Buyurtma saqlanmadi' } };
   }
 
   // Qolgan kutilayotgan takliflar avtomatik rad etiladi — yuk band.
@@ -1394,7 +1405,20 @@ const decideOffer = async (req, res, accept) => {
   });
 
   await editGroupMessage(order, []);
-  return res.status(200).json({ ok: true, offer: publicOfferShape(accepted), status: order.status });
+  return { status: 200, body: { ok: true, offer: publicOfferShape(accepted), status: order.status } };
+};
+
+/** Taklifni qabul qilish yoki rad etish — faqat yuk egasi (saytdan, POST). */
+const decideOffer = async (req, res, accept) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const { status, body: outBody } = await decideOfferCore(identity, body.id, accept);
+  return res.status(status).json(outBody);
 };
 
 /** POST ?action=withdraw-offer — haydovchi o'z taklifini qaytarib oladi. */
@@ -1580,6 +1604,8 @@ const releaseDriver = async (req, res) => {
 
   return res.status(200).json({ ok: true, status: order.status });
 };
+
+export { decideOfferCore };
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
