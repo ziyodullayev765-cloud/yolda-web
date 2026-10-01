@@ -21,6 +21,7 @@ import {
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { setVerification } from '../lib/verification.js';
+import { decideOfferCore } from './order.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 // /api/order.js dagi bilan bir xil qiymat: guruh xabarini shu yerdan ham yangilaymiz.
@@ -322,6 +323,46 @@ const handleDeliver = async (query, code) => {
  * ola oladi. Yuk beruvchiga xabar boradi — aks holda u haydovchi
  * kutayotganini o'ylab o'tiraverardi.
  */
+/**
+ * Yuk egasi, Telegram'dagi «Yangi taklif» xabaridagi ✅/❌ tugmasini
+ * bosganda. Identity Telegram autentifikatsiyasidan (tgIdToEmail orqali)
+ * keladi — hech qanday tashqi token kerak emas, chunki bu odam
+ * allaqachon shu botga o'zi yozgan (o'z chat'ida tugma bosmoqda).
+ * Asosiy mantiq (offer/order yozish, ikkala tomonga xabar) api/order.js
+ * dagi decideOfferCore'da — bu yerda faqat identity aniqlanadi va
+ * natija shu xabarning o'zida ko'rsatiladi.
+ */
+const handleOfferDecision = async (query, offerId, accept) => {
+  const identity = await identityForTelegram(query.from.id);
+  if (!identity) {
+    await answer(query, 'Avval saytda Google yoki Telegram orqali kiring.', true);
+    return;
+  }
+
+  const { status, body } = await decideOfferCore(identity, offerId, accept);
+  if (status !== 200) {
+    await answer(query, body.error || 'Xatolik yuz berdi.', true);
+    return;
+  }
+
+  await answer(query, accept ? 'Taklif qabul qilindi ✅' : 'Taklif rad etildi ❌');
+
+  const resultLine = accept
+    ? `✅ <b>Qabul qilindi</b> — yukka biriktirildi.`
+    : `❌ <b>Rad etildi.</b>`;
+  // query.message.text — Telegram'ning aslidagi formatlashni olib
+  // tashlagan xom matni; uni HTML rejimida qayta yuborishdan oldin
+  // albatta esc() qilish kerak (masalan, izohda "<" belgisi bo'lsa,
+  // aks holda u teg deb noto'g'ri o'qilib qolardi).
+  await telegram('editMessageText', {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id,
+    text: `${esc(query.message.text || '')}\n\n${resultLine}`,
+    parse_mode: 'HTML',
+    reply_markup: { inline_keyboard: [] },
+  }).catch((err) => console.error('offer message edit failed:', err.message));
+};
+
 const handleGiveUp = async (query, code) => {
   const order = await getOrder(code);
   if (!order) {
@@ -565,6 +606,8 @@ export default async function handler(req, res) {
         await handleGiveUp(update.callback_query, code);
       } else if (action === 'next' && code) {
         await handleAdvance(update.callback_query, code);
+      } else if ((action === 'offer_accept' || action === 'offer_reject') && code) {
+        await handleOfferDecision(update.callback_query, code, action === 'offer_accept');
       }
     } else if (update.message) {
       await handleCommand(update.message);
