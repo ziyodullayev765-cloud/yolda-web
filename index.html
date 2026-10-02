@@ -6855,10 +6855,56 @@
     if(tg && isTelegramWebApp) applyTelegramColors(tg);
   }
 
+  /** "Avto" rejimdami? Saqlangan tanlov bo'lmasa — ha. */
+  function isAutoTheme(){
+    try{ return !localStorage.getItem(THEME_KEY); }catch(e){ return true; }
+  }
+
+  /* Tizim qaysi rejimda turibdi.
+
+     Telegram ichida brauzerning `prefers-color-scheme` qiymati
+     telefonning sozlamasiga ergashmasligi mumkin — Telegram o'z
+     mavzusini alohida uzatadi. Shuning uchun Telegram ichida uning
+     qiymati ustun turadi. */
+  function systemTheme(){
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if(isTelegramWebApp && tg && tg.colorScheme){
+      return tg.colorScheme === "dark" ? "dark" : "light";
+    }
+    return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  }
+
+  /* Telefondagi rejim o'zgarganda chaqiriladi. Faqat "Avto" da ishlaydi:
+     odam qo'lda kunduzgi yoki tungi rejimni tanlagan bo'lsa, uning
+     tanlovi tizimga qarab o'zgarib ketmasligi kerak. */
+  function applyAutoTheme(){
+    if(!isAutoTheme()) return;
+    var next = systemTheme();
+    if(document.documentElement.getAttribute("data-theme") === next) return;
+    document.documentElement.setAttribute("data-theme", next);
+    applyThemeButtons();
+    syncTelegramTheme();
+  }
+
+  /* Ilgari tizim rejimi faqat sahifa ochilganda bir marta o'qilardi va
+     keyin umuman qayta tekshirilmasdi — telefonda kunduzgi rejimga
+     o'tilsa, ilova sahifa yangilanmaguncha qorong'i qolaverardi.
+     Endi o'zgarish tinglanadi. */
+  function initThemeWatch(){
+    if(!window.matchMedia) return;
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if(mq.addEventListener) mq.addEventListener("change", applyAutoTheme);
+    else if(mq.addListener) mq.addListener(applyAutoTheme);
+    // Ilova fonga ketib qaytganda ham tekshiramiz: ba'zi brauzerlar
+    // sahifa ko'rinmay turganda `change` hodisasini yubormaydi.
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden) applyAutoTheme();
+    });
+  }
+
   function applyThemeButtons(){
     var theme = document.documentElement.getAttribute("data-theme") || "light";
-    var isAuto = true;
-    try{ isAuto = !localStorage.getItem(THEME_KEY); }catch(e){}
+    var isAuto = isAutoTheme();
     document.querySelectorAll(".theme-btn").forEach(function(b){
       var choice = b.getAttribute("data-theme-choice");
       b.classList.toggle("active", choice === "auto" ? isAuto : (!isAuto && choice === theme));
@@ -6868,7 +6914,7 @@
   function setTheme(theme){
     if(theme === "auto"){
       try{ localStorage.removeItem(THEME_KEY); }catch(e){}
-      theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+      theme = systemTheme();
       document.documentElement.setAttribute("data-theme", theme);
       applyThemeButtons();
       syncTelegramTheme();
@@ -8860,7 +8906,7 @@
     ["safeAreaChanged", "contentSafeAreaChanged", "fullscreenChanged", "viewportChanged"].forEach(function(ev){
       try{ tg.onEvent(ev, function(){ applyTelegramInsets(tg); }); }catch(e){}
     });
-    try{ tg.onEvent("themeChanged", function(){ applyTelegramColors(tg); }); }catch(e){}
+    try{ tg.onEvent("themeChanged", function(){ applyAutoTheme(); applyTelegramColors(tg); }); }catch(e){}
     try{
       tg.BackButton.onClick(function(){
         if(document.querySelector(".sheet-root.open")) Sheet.close();
@@ -16281,6 +16327,7 @@
   window.addEventListener("orientationchange", function(){ setTimeout(moveNavBlob, 250); });
   initNavDrag();
   initNavPick();
+  initThemeWatch();
 
   var bellBtn = document.getElementById("btnNotifications");
   if(bellBtn) bellBtn.addEventListener("click", openNotifications);
