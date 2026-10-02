@@ -30,6 +30,7 @@ import {
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
+import { deleteAccount, activeOrdersFor } from '../lib/deleteAccount.js';
 // Yuk turlari ro'yxati bitta joydan olinadi — haydovchi "nima
 // tashiyman" deb tanlagan turlar buyurtmadagi turlar bilan bir xil
 // bo'lishi kerak, aks holda ular hech qachon mos kelmasdi.
@@ -717,6 +718,46 @@ const getPublicProfile = async (req, res) => {
   return res.status(200).json({ ok: true, profile: publicProfileShape(identity, profile), reviews });
 };
 
+/**
+ * POST ?action=delete-account — odam o'z akkauntini o'chiradi.
+ *
+ * Apple 5.1.1(v) va Google Play talabi: o'chirish ilovaning ichidan
+ * boshlanishi kerak. Shuning uchun bu endpoint bor.
+ *
+ * Xavfsizlik: identity har so'rovdagi kabi qaytadan tekshiriladi, ya'ni
+ * odam faqat O'ZINING akkauntini o'chira oladi — boshqasiniki uchun
+ * hech qanday parametr yo'q, atayin. Tasodifan bosilib ketmasligi
+ * uchun `confirm: true` ham talab qilinadi.
+ */
+const handleDeleteAccount = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval tizimga kiring' });
+  if (body.confirm !== true) {
+    return res.status(400).json({ error: 'O‘chirish tasdiqlanmadi' });
+  }
+
+  // Yo'ldagi buyurtma bo'lsa to'xtatamiz: haydovchi ketayotganda yuk
+  // beruvchining raqami yo'qolsa, u bog'lana olmay qoladi. Sababi
+  // aytiladi — do'konlar bunday vaqtinchalik to'siqqa ruxsat beradi.
+  const codes = await kvRange('order_codes', 0, 299);
+  const active = await activeOrdersFor(identity, codes);
+  if (active.length) {
+    return res.status(409).json({
+      error: 'Hozir yo‘lda turgan buyurtmangiz bor. U yakunlangach akkauntni o‘chirish mumkin.',
+      activeOrders: active,
+    });
+  }
+
+  const truckIds = await kvSmembers('truck_ids');
+  const result = await deleteAccount(identity, { orderCodes: codes, truckIds });
+  return res.status(200).json({ ok: true, anonymised: result.anonymised });
+};
+
 export default async function handler(req, res) {
   // Faqat o'qiydigan ikkita GET yo'l; qolgani hamma vaqt POST.
   if (req.method === 'GET') {
@@ -737,5 +778,6 @@ export default async function handler(req, res) {
   if (action === 'request-verification') return requestVerification(req, res);
   if (action === 'save') return toggleSaved(req, res);
   if (action === 'saved') return listSaved(req, res);
+  if (action === 'delete-account') return handleDeleteAccount(req, res);
   return handleProfile(req, res);
 }

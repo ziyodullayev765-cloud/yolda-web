@@ -3909,6 +3909,33 @@
     color:#EF4444;font-size:14.5px;font-weight:600;text-align:left;
   }
   .danger-row .ic-svg{font-size:18px;}
+  /* Akkauntni o'chirish — "Chiqish" dan ajralib tursin: ustida
+     chiziq, ostida izoh uchun joy. Tasodifan bosilmasligi uchun
+     ataylab pastda. */
+  .danger-row--hard{
+    margin-top:var(--s2);padding-top:var(--s4);
+    border-top:1px solid var(--border);
+  }
+
+  /* ---- Akkauntni o'chirish tasdiqlash varag'i ---- */
+  .del-acc-lead{
+    margin:0 0 var(--s4);font-size:15px;font-weight:700;color:#EF4444;
+  }
+  .del-acc-list{
+    margin:0 0 var(--s5);padding:0 0 0 20px;
+    font-size:14px;line-height:1.7;color:var(--ink-soft);
+  }
+  .del-acc-list li{margin-bottom:4px;}
+  .del-acc-label{
+    display:block;font-size:13.5px;color:var(--ink-soft);margin:0 0 var(--s2);
+  }
+  .del-acc-label b{color:var(--ink);}
+  #fDelConfirm{width:100%;}
+  .btn.danger{
+    background:#EF4444;color:#fff;width:100%;margin-top:var(--s3);
+  }
+  .btn.danger:hover:not(:disabled){background:#DC2626;}
+  .btn.danger:disabled{opacity:0.45;cursor:not-allowed;}
 
   .edit-section-heading{
     font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
@@ -5464,6 +5491,18 @@
       "order.trackTitle": "Buyurtmani kuzatish", "order.trackNote": "Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.",
       "order.trackCodeLabel": "Buyurtma kodi", "order.trackPhoneLabel": "Telefon", "order.trackBtn": "Holatni tekshirish",
       "order.trackHead": "Yuk qayerdaligini biling", "order.trackSafe": "Ma'lumotlaringiz himoyalangan",
+      "profile.deleteAccount": "Akkauntni o‘chirish",
+      "profile.deleteLead": "Bu amalni qaytarib bo‘lmaydi.",
+      "profile.deleteItem1": "Profil, telefon va Telegram bog‘lanishi o‘chadi",
+      "profile.deleteItem2": "Tasdiqlash hujjatlaringiz o‘chadi",
+      "profile.deleteItem3": "Saqlangan qidiruvlar va saralanganlar o‘chadi",
+      "profile.deleteItem4": "Mashina e‘lonlaringiz sotuvdan olinadi",
+      "profile.deleteItem5": "Tugagan buyurtmalar tarixda qoladi, lekin ismingizsiz",
+      "profile.deleteTypePrefix": "Tasdiqlash uchun yozing:",
+      "profile.deleteWord": "O‘CHIRISH",
+      "profile.deleteConfirm": "Akkauntni butunlay o‘chirish",
+      "profile.deleteWorking": "O‘chirilmoqda...",
+      "profile.deleteFailed": "O‘chirilmadi, qayta urinib ko‘ring",
       "wizard.route": "Yo'nalish", "wizard.cargo": "Yuk", "wizard.truck": "Mashina", "wizard.price": "Narx", "wizard.publish": "Yuborish",
       "wizard.routeTitle": "Qayerdan qayerga?", "wizard.sameCity": "Qayerdan va qayerga turli shaharlarni tanlang.",
       "wizard.cargoTitle": "Yukingiz haqida", "wizard.truckTitle": "Mashina va sana", "wizard.priceTitle": "Narx va aloqa",
@@ -5961,6 +6000,18 @@
       "order.trackTitle": "Отследить заказ", "order.trackNote": "Проверьте статус по коду заказа и номеру телефона.",
       "order.trackCodeLabel": "Код заказа", "order.trackPhoneLabel": "Телефон", "order.trackBtn": "Проверить статус",
       "order.trackHead": "Узнайте, где ваш груз", "order.trackSafe": "Ваши данные защищены",
+      "profile.deleteAccount": "Удалить аккаунт",
+      "profile.deleteLead": "Это действие необратимо.",
+      "profile.deleteItem1": "Профиль, телефон и связь с Telegram будут удалены",
+      "profile.deleteItem2": "Ваши документы для верификации будут удалены",
+      "profile.deleteItem3": "Сохранённые поиски и избранное будут удалены",
+      "profile.deleteItem4": "Ваши объявления о технике снимутся с продажи",
+      "profile.deleteItem5": "Завершённые заказы останутся в истории, но без вашего имени",
+      "profile.deleteTypePrefix": "Для подтверждения введите:",
+      "profile.deleteWord": "УДАЛИТЬ",
+      "profile.deleteConfirm": "Удалить аккаунт навсегда",
+      "profile.deleteWorking": "Удаление...",
+      "profile.deleteFailed": "Не удалось удалить, попробуйте снова",
       "wizard.route": "Маршрут", "wizard.cargo": "Груз", "wizard.truck": "Машина", "wizard.price": "Цена", "wizard.publish": "Отправить",
       "wizard.routeTitle": "Откуда куда?", "wizard.sameCity": "Выберите разные города отправления и назначения.",
       "wizard.cargoTitle": "О вашем грузе", "wizard.truckTitle": "Машина и дата", "wizard.priceTitle": "Цена и контакты",
@@ -6454,6 +6505,18 @@
       "order.trackTitle": "Track your order", "order.trackNote": "Check the status with your order code and phone number.",
       "order.trackCodeLabel": "Order code", "order.trackPhoneLabel": "Phone", "order.trackBtn": "Check status",
       "order.trackHead": "See where your cargo is", "order.trackSafe": "Your data is protected",
+      "profile.deleteAccount": "Delete account",
+      "profile.deleteLead": "This cannot be undone.",
+      "profile.deleteItem1": "Profile, phone and Telegram link are deleted",
+      "profile.deleteItem2": "Your verification documents are deleted",
+      "profile.deleteItem3": "Saved searches and favourites are deleted",
+      "profile.deleteItem4": "Your vehicle listings are taken off sale",
+      "profile.deleteItem5": "Completed orders stay in history, but without your name",
+      "profile.deleteTypePrefix": "Type this to confirm:",
+      "profile.deleteWord": "DELETE",
+      "profile.deleteConfirm": "Permanently delete account",
+      "profile.deleteWorking": "Deleting...",
+      "profile.deleteFailed": "Could not delete, please try again",
       "wizard.route": "Route", "wizard.cargo": "Cargo", "wizard.truck": "Truck", "wizard.price": "Price", "wizard.publish": "Publish",
       "wizard.routeTitle": "From where to where?", "wizard.sameCity": "Choose different departure and destination cities.",
       "wizard.cargoTitle": "About your cargo", "wizard.truckTitle": "Truck and date", "wizard.priceTitle": "Price and contact",
@@ -7655,6 +7718,8 @@
         applyLang();
         var signOutBtn = container.querySelector("#btnSignOut");
         if(signOutBtn) signOutBtn.addEventListener("click", confirmSignOut);
+        var delBtn = container.querySelector("#btnDeleteAccount");
+        if(delBtn) delBtn.addEventListener("click", confirmDeleteAccount);
         var shareBtn = container.querySelector("#btnShareProfile");
         if(shareBtn) shareBtn.addEventListener("click", function(){
           shareProfile(lastLoadedProfile || {});
@@ -9331,7 +9396,83 @@
   function renderDangerZone(){
     return '<div class="danger-zone">'
       + '<button type="button" class="danger-row" id="btnSignOut">'+icon("iconLogout")+'<span data-i18n="profile.signOut">Chiqish</span></button>'
+      /* Akkauntni o'chirish ilovaning ichida bo'lishi shart — Apple
+         (5.1.1(v)) va Google Play ikkalasi ham shuni talab qiladi.
+         "Chiqish" bilan yonma-yon turadi, lekin ataylab qizilroq va
+         pastda: tasodifan bosilmasin. */
+      + '<button type="button" class="danger-row danger-row--hard" id="btnDeleteAccount">'+icon("iconTrash")+'<span data-i18n="profile.deleteAccount">Akkauntni o\'chirish</span></button>'
       + '</div>';
+  }
+
+  /* Ikki qadamli tasdiqlash: birinchisi nima bo'lishini aytadi,
+     ikkinchisida odam o'z username'ini (yoki "O'CHIRISH" so'zini)
+     yozib beradi. Bitta bosishda ketib qolmasligi uchun. */
+  function confirmDeleteAccount(){
+    var p = lastLoadedProfile || {};
+    var word = p.username ? String(p.username) : (t("profile.deleteWord") || "O'CHIRISH");
+    Sheet.open({
+      title: t("profile.deleteAccount") || "Akkauntni o'chirish",
+      html: '<div class="del-acc">'
+        + '<p class="del-acc-lead" data-i18n="profile.deleteLead">Bu amalni qaytarib bo\'lmaydi.</p>'
+        + '<ul class="del-acc-list">'
+        +   '<li data-i18n="profile.deleteItem1">Profil, telefon va Telegram bog\'lanishi o\'chadi</li>'
+        +   '<li data-i18n="profile.deleteItem2">Tasdiqlash hujjatlaringiz o\'chadi</li>'
+        +   '<li data-i18n="profile.deleteItem3">Saqlangan qidiruvlar va saralanganlar o\'chadi</li>'
+        +   '<li data-i18n="profile.deleteItem4">Mashina e\'lonlaringiz sotuvdan olinadi</li>'
+        +   '<li data-i18n="profile.deleteItem5">Tugagan buyurtmalar tarixda qoladi, lekin ismingizsiz</li>'
+        + '</ul>'
+        + '<label class="del-acc-label" for="fDelConfirm">'
+        +   '<span data-i18n="profile.deleteTypePrefix">Tasdiqlash uchun yozing:</span> <b>'+escapeHtml(word)+'</b>'
+        + '</label>'
+        + '<input type="text" id="fDelConfirm" autocomplete="off" autocapitalize="off" spellcheck="false">'
+        + '<p class="note" id="delAccNote"></p>'
+        + '<button type="button" class="btn danger" id="btnDelAccConfirm" disabled>'
+        +   '<span data-i18n="profile.deleteConfirm">Akkauntni butunlay o\'chirish</span>'
+        + '</button>'
+        + '</div>',
+      onOpen: function(container){
+        applyLang();
+        var input = container.querySelector("#fDelConfirm");
+        var go = container.querySelector("#btnDelAccConfirm");
+        var note = container.querySelector("#delAccNote");
+        input.addEventListener("input", function(){
+          go.disabled = input.value.trim().toLowerCase() !== word.toLowerCase();
+        });
+        go.addEventListener("click", function(){
+          go.disabled = true;
+          note.style.color = "";
+          note.textContent = t("profile.deleteWorking") || "O'chirilmoqda...";
+          fetch("/api/profile?action=delete-account", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              confirm: true,
+              googleIdToken: googleIdToken || undefined,
+              telegramInitData: telegramInitData || undefined,
+              phoneToken: phoneToken || undefined
+            })
+          }).then(function(r){
+            return r.json().then(function(body){ return { ok: r.ok, body: body }; });
+          }).then(function(res){
+            if(!res.ok){
+              go.disabled = false;
+              note.style.color = "#DC2626";
+              note.textContent = res.body.error || (t("profile.deleteFailed") || "O'chirilmadi");
+              return;
+            }
+            // Mahalliy saqlangan hamma narsa ham ketsin — qurilmada
+            // o'chirilgan akkauntning izi qolmasin.
+            try{ localStorage.clear(); sessionStorage.clear(); }catch(e){}
+            Sheet.close();
+            location.replace(location.origin + location.pathname);
+          }).catch(function(){
+            go.disabled = false;
+            note.style.color = "#DC2626";
+            note.textContent = t("profile.deleteFailed") || "O'chirilmadi, qayta urinib ko'ring";
+          });
+        });
+      }
+    });
   }
 
   function renderProfileForm(p){

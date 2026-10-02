@@ -122,13 +122,19 @@ const getInbox = async (req, res) => {
         const lastIds = await kvRange(pairKey(myEmail, otherEmail), 0, 0);
         const unread = Number(await kvGet(unreadKey(myEmail, otherEmail))) || 0;
         const lastMsg = lastIds[0] ? parseMessage(await kvGet(`msg:${lastIds[0]}`)) : null;
+        // Profil yo'q = odam akkauntini o'chirgan. Zaxira sifatida
+        // identity ko'rsatib bo'lmaydi: Google bilan kirganlarda u —
+        // haqiqiy pochta manzili, ya'ni ro'yxatda begona odamning
+        // manzili chiqib qolardi. Yozishma qoladi, nom esa umumiy.
+        const gone = !profile.username && !profile.displayName && !profile.name;
         return {
           email: otherEmail,
-          username: profile.username || otherEmail,
+          username: profile.username || (gone ? 'deleted' : otherEmail),
+          deleted: gone,
           // Ro'yxatda username emas, odamning ismi ko'rinadi —
           // "@dilshod_driver" dan ko'ra "Dilshod Tursunov" tushunarli.
           // Ism yo'q bo'lsa username zaxira bo'lib qoladi.
-          name: profile.displayName || profile.name || '',
+          name: profile.displayName || profile.name || (gone ? 'O‘chirilgan foydalanuvchi' : ''),
           avatarUrl: profile.avatarUrl || '',
           verified: Boolean(profile.verified),
           lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : lastMsg.text) : '',
