@@ -11839,9 +11839,72 @@
     return (readChatDrafts() || {})[username] || "";
   }
 
+  /* ------------------------------------------------------------
+     Suhbatni yangilab turish — "adaptiv".
+
+     Ilgari qat'iy har 4 soniyada so'rov ketardi. Natijada javob 4
+     soniyagacha kechikardi (odam undan oldin sahifani yangilab
+     yuborardi), fonda turganda esa bejiz so'rov ketaverardi.
+
+     Endi:
+       - suhbat qizigan paytda (oxirgi 40 soniya ichida xabar bo'lgan)
+         har 1,5 soniyada — deyarli darhol;
+       - jim turganda har 6 soniyada;
+       - sahifa ko'rinmay qolsa — umuman to'xtaydi, qaytganda esa
+         darhol bir marta so'raydi.
+
+     Narxi: faol yozishayotgan paytda so'rov eskidan ko'proq ketadi
+     (4 s o'rniga 1,5 s), jim turganda va fonda esa ancha kamroq
+     (6 s va 0). Ya'ni pul suhbat qizigan bir necha daqiqaga sarflanadi,
+     bo'sh ochiq turgan oynaga emas — aynan shunday bo'lishi kerak.
+     ------------------------------------------------------------ */
+  var CHAT_POLL_FAST = 1500;
+  var CHAT_POLL_SLOW = 6000;
+  var CHAT_ACTIVE_MS = 40000;
+  var chatLastActivityAt = 0;
+  var chatPollDelay = 0;
+
+  function chatPollInterval(){
+    return (Date.now() - chatLastActivityAt < CHAT_ACTIVE_MS) ? CHAT_POLL_FAST : CHAT_POLL_SLOW;
+  }
+
+  /** Yangi xabar bo'ldi — bir muddat tez-tez so'raymiz. */
+  function markChatActivity(){
+    chatLastActivityAt = Date.now();
+    // Tezlik darhol kuchga kirsin, keyingi urinishni kutmasin.
+    if(chatPollTimer && chatPollDelay !== CHAT_POLL_FAST) startChatPoll();
+  }
+
+  function startChatPoll(){
+    stopChatPoll();
+    if(!chatWithUsername) return;
+    chatPollDelay = chatPollInterval();
+    chatPollTimer = setInterval(function(){
+      if(document.hidden) return;              // fonda bejiz so'ramaymiz
+      loadChatThread(false);
+      // Suhbat jimib qolsa — sekin rejimga o'tamiz va aksincha.
+      var want = chatPollInterval();
+      if(want !== chatPollDelay) startChatPoll();
+    }, chatPollDelay);
+  }
+
   function stopChatPoll(){
     if(chatPollTimer){ clearInterval(chatPollTimer); chatPollTimer = null; }
+    chatPollDelay = 0;
   }
+
+  /* Ilovaga qaytganda kutib o'tirmasdan darhol yangilaymiz: fonda
+     turganda so'rov to'xtagan edi, qaytganda esa eski holat ko'rinib
+     turishi kerak emas. */
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden || !chatWithUsername) return;
+    loadChatThread(false);
+    startChatPoll();
+  });
+  window.addEventListener("focus", function(){
+    if(!chatWithUsername) return;
+    loadChatThread(false);
+  });
 
   function renderChatShell(){
     var chatCard = document.getElementById("chatCard");
@@ -12073,7 +12136,9 @@
     });
 
     loadChatThread(true);
-    chatPollTimer = setInterval(function(){ loadChatThread(false); }, 4000);
+    // Suhbat endi ochildi — bu ham faollik, demak tez rejimda boshlanadi.
+    markChatActivity();
+    startChatPoll();
   }
 
   /**
@@ -12400,7 +12465,11 @@
         var last = messages[messages.length - 1];
         // Skip the sound on the initial open (chatLastSeenId is still null then)
         // and for anything the user sent themselves.
-        if(!scrollDown && chatLastSeenId !== null && last.id !== chatLastSeenId && !last.fromMe) playNotifSound();
+        if(last.id !== chatLastSeenId){
+          // Yangi xabar bor — suhbat jonli, tez rejimni uzaytiramiz.
+          if(chatLastSeenId !== null) markChatActivity();
+          if(!scrollDown && chatLastSeenId !== null && !last.fromMe) playNotifSound();
+        }
         chatLastSeenId = last.id;
       }
     }).catch(function(){});
@@ -12515,6 +12584,8 @@
       input.value = "";
       saveChatDraft(chatWithUsername, "");
       if(isEdit) cancelChatEdit();
+      // Yozdim — javob tez kelishi mumkin, tez rejimga o'tamiz.
+      markChatActivity();
       loadChatThread(true);
     }).catch(function(){
       if(btn) btn.disabled = false;
