@@ -1090,6 +1090,25 @@
     select,input[type=number],input[type=text],input[type=tel],input[type=date]{font-size:16px;}
   }
 
+  /* iOS maydonga bosilganda, agar yozuv 16px dan kichik bo'lsa,
+     sahifani o'zi kattalashtirib yuboradi — Telegram ichida bu
+     ayniqsa bezovta qiladi, chunki u yerda kattalashtirishni
+     o'chirib bo'lmaydi. Yagona to'g'ri yechim — maydon yozuvini
+     16px qilish; kattalashtirishni umuman taqiqlash esa ko'zi
+     ojiz odamlarga zarar.
+
+     `!important` ataylab: bu qoida keyinroq yozilgan har qanday
+     aniqroq qoidadan ham ustun turishi kerak, aks holda yangi
+     qo'shilgan maydon yana kattalashtirib yuborardi. */
+  @media(pointer:coarse){
+    input:not([type=checkbox]):not([type=radio]):not([type=file]):not(.au-otp-box),
+    select,
+    textarea{font-size:16px !important;}
+    /* Kod kataklari kattaroq — ular ham 16px dan katta, demak
+       kattalashtirishga sabab bo'lmaydi. */
+    .au-otp-box{font-size:22px !important;}
+  }
+
   /* ---------- HERO ---------- */
   .hero-wrap{max-width:1000px;margin:0 auto;padding:var(--s9) var(--s5) var(--s6);text-align:center;}
   .eyebrow{
@@ -2472,6 +2491,69 @@
      xabar qatori (ro'yxat), va suhbat ichida ilova-uslubidagi sarlavha
      (orqaga strelka + doira avatar + ism) va dumaloq yuborish tugmali
      pastki qator — Telegram'dagi kabi. */
+  /* ---------- Xabarlar ro'yxati ----------
+     Sarlavha, qidiruv va filtrlar — messenjerlarda qanday bo'lsa
+     shunday. Saytning o'z yo'lagi (YO'LDA) joyida qoladi: bu ro'yxat,
+     to'liq ekran emas; to'liq ekranga faqat suhbatning o'zi o'tadi. */
+  .chat-head{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;margin:0 0 var(--s4);
+  }
+  .chat-head-title{
+    margin:0;display:flex;align-items:center;gap:9px;
+    font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;
+    letter-spacing:-0.02em;color:var(--ink);
+  }
+  .chat-head-count{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:30px;height:24px;padding:0 8px;border-radius:999px;
+    background:var(--tint);color:var(--route);
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;
+  }
+  .chat-head-count[hidden]{display:none;}
+  .chat-compose{
+    width:42px;height:42px;flex:none;border:none;border-radius:13px;
+    background:var(--route);color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px rgba(10,159,91,0.3);
+    transition:transform 0.18s var(--ease);
+  }
+  .chat-compose:active{transform:scale(0.94);}
+  .chat-compose .ic-svg{font-size:20px;}
+
+  .chat-search{
+    display:flex;align-items:center;gap:9px;
+    background:var(--paper-dark);border-radius:999px;
+    padding:0 16px;margin:0 0 var(--s4);
+  }
+  .chat-search .ic-svg{font-size:18px;color:var(--muted);flex:none;}
+  .chat-search input{
+    flex:1;min-width:0;border:none;background:none;box-shadow:none;
+    padding:12px 0;height:auto;font-size:15px;color:var(--ink);
+  }
+  .chat-search input:focus{outline:none;box-shadow:none;}
+
+  .chat-filters{display:flex;gap:8px;margin:0 0 var(--s3);flex-wrap:wrap;}
+  .chat-chip{
+    border:none;border-radius:999px;padding:8px 16px;cursor:pointer;
+    background:var(--paper-dark);color:var(--ink-soft);
+    font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
+    transition:background 0.18s var(--ease), color 0.18s var(--ease);
+  }
+  .chat-chip.active{background:var(--ink);color:var(--paper);}
+  .chat-chip[hidden]{display:none;}
+
+  /* O'qilmagan xabarlar soni — o'ng tomonda, qizil doira. */
+  .chat-row-bottom{display:flex;align-items:center;gap:8px;min-width:0;}
+  .chat-row-bottom .preview{flex:1;min-width:0;}
+  .chat-unread{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:22px;height:22px;padding:0 6px;border-radius:999px;flex:none;
+    background:#E5484D;color:#fff;font-size:12px;font-weight:700;
+  }
+  .chat-row.unread .u{color:var(--ink);}
+  .chat-row.unread .preview{color:var(--ink);}
+
   /* Avatar rangi ismdan hosil bo'ladi (chatAvatarColor) — shuning
      uchun bu yerda fon berilmaydi, faqat o'lchov va shakl. */
   .chat-avatar{
@@ -2940,13 +3022,16 @@
     background:var(--lf-bg);
     color:var(--lf-ink);
     min-height:100vh;
-    margin:0 calc(var(--s5) * -1);
-    padding:var(--s5) var(--s5) var(--s7);
+    /* Chekka bo'shlig'i ilovaning qolgan qismidagi kartochkalar bilan bir xil
+       (16px). Ilgari bu yerda manfiy margin bor edi — u bo'limni ekrandan
+       24px chapga surib, yozuvlarni chekkaga yopishtirib qo'yardi. */
+    margin:0;
+    padding:var(--s5) var(--s4) var(--s7);
   }
   :root[data-theme="dark"] .life{
-    --lf-bg:#07100C;
-    --lf-card:#0F1A15;
-    --lf-card-2:#16241D;
+    --lf-bg:#000000;
+    --lf-card:#101010;
+    --lf-card-2:#191919;
     --lf-line:rgba(255,255,255,0.09);
     --lf-ink:#F1F5F2;
     --lf-soft:#9FB0A6;
@@ -3419,10 +3504,7 @@
     overflow-wrap:normal;word-break:normal;
   }
   /* Bosiladigan telefon raqami. */
-  .phone-link{
-    color:inherit;text-decoration:none;
-    border-bottom:1px dashed currentColor;padding-bottom:1px;
-  }
+  .phone-link{color:inherit;text-decoration:none;}
   .phone-link:hover{color:var(--route);}
   .pf-id-phone{
     font-size:14px;color:var(--ink-soft);margin-top:3px;
@@ -4933,6 +5015,8 @@
       "crit.AS_DESCRIBED": "E'londagidek chiqdi", "crit.FAIR_PRICE": "Narxi haqqoniy edi",
       "crit.PAPERS_OK": "Hujjatlari joyida", "crit.NO_HAGGLE": "Narxni cho'zmadi",
       "crit.CAME_ONTIME": "Vaqtida keldi",
+      "chat.title": "Xabarlar", "chat.searchPh": "Qidirish", "chat.filterAll": "Barchasi",
+      "chat.filterUnread": "O'qilmagan", "chat.noUnread": "O'qilmagan xabar yo'q",
       "chat.yesterday": "Kecha",
       "trucks.soldTo": "Xaridor", "trucks.buyerLabel": "Xaridorning username'i (baho almashish uchun)",
       "trucks.buyerSave": "Saqlash", "trucks.buyerNeeded": "Username kiriting",
@@ -5426,6 +5510,8 @@
       "crit.AS_DESCRIBED": "Соответствует объявлению", "crit.FAIR_PRICE": "Честная цена",
       "crit.PAPERS_OK": "Документы в порядке", "crit.NO_HAGGLE": "Не торговался до бесконечности",
       "crit.CAME_ONTIME": "Приехал вовремя",
+      "chat.title": "Сообщения", "chat.searchPh": "Поиск", "chat.filterAll": "Все",
+      "chat.filterUnread": "Непрочитанные", "chat.noUnread": "Непрочитанных нет",
       "chat.yesterday": "Вчера",
       "trucks.soldTo": "Покупатель", "trucks.buyerLabel": "Username покупателя (чтобы обменяться оценками)",
       "trucks.buyerSave": "Сохранить", "trucks.buyerNeeded": "Введите username",
@@ -5915,6 +6001,8 @@
       "crit.AS_DESCRIBED": "Matched the listing", "crit.FAIR_PRICE": "Fair price",
       "crit.PAPERS_OK": "Paperwork in order", "crit.NO_HAGGLE": "Did not haggle endlessly",
       "crit.CAME_ONTIME": "Turned up on time",
+      "chat.title": "Messages", "chat.searchPh": "Search", "chat.filterAll": "All",
+      "chat.filterUnread": "Unread", "chat.noUnread": "No unread messages",
       "chat.yesterday": "Yesterday",
       "trucks.soldTo": "Buyer", "trucks.buyerLabel": "Buyer's username (so you can rate each other)",
       "trucks.buyerSave": "Save", "trucks.buyerNeeded": "Enter a username",
@@ -11301,14 +11389,44 @@
     chatWithUsername = null;
 
     chatCard.innerHTML =
-      '<h3 class="card-title">'+icon("iconTelegram")+' Xabarlashuv</h3>'
-      + '<div class="field"><label for="fChatSearch">Username qidirish</label>'
-      +   '<input type="text" id="fChatSearch" placeholder="masalan: dilshod_driver"></div>'
+      '<div class="chat-head">'
+      +   '<h2 class="chat-head-title">'
+      +     '<span data-i18n="chat.title">Xabarlar</span>'
+      +     '<span class="chat-head-count" id="chatHeadCount" hidden></span>'
+      +   '</h2>'
+      +   '<button type="button" class="chat-compose" id="btnChatCompose" aria-label="Yangi suhbat">'
+      +     icon("iconEdit")
+      +   '</button>'
+      + '</div>'
+      + '<div class="chat-search">'
+      +   icon("iconSearch")
+      +   '<input type="text" id="fChatSearch" data-i18n-placeholder="chat.searchPh" placeholder="Qidirish">'
+      + '</div>'
+      + '<div class="chat-filters" id="chatFilters">'
+      +   '<button type="button" class="chat-chip active" data-chat-filter="all" data-i18n="chat.filterAll">Barchasi</button>'
+      +   '<button type="button" class="chat-chip" data-chat-filter="unread" id="chipChatUnread" hidden></button>'
+      + '</div>'
       + '<div id="chatSearchResults"></div>'
       + '<div id="chatInboxWrap">'
-      +   '<p class="note" id="chatInboxLabel" style="margin:var(--s3) 0 0;">Suhbatlar</p>'
+      +   '<p class="note" id="chatInboxLabel" hidden>Suhbatlar</p>'
       +   '<div id="chatInboxList"></div>'
       + '</div>';
+
+    var compose = document.getElementById("btnChatCompose");
+    if(compose) compose.addEventListener("click", function(){
+      var box = document.getElementById("fChatSearch");
+      if(box) box.focus();
+    });
+
+    document.getElementById("chatFilters").addEventListener("click", function(ev){
+      var chip = ev.target.closest("[data-chat-filter]");
+      if(!chip) return;
+      chatFilter = chip.getAttribute("data-chat-filter");
+      document.querySelectorAll("#chatFilters .chat-chip").forEach(function(c){
+        c.classList.toggle("active", c === chip);
+      });
+      renderChatInbox();
+    });
 
     var search = document.getElementById("fChatSearch");
     search.addEventListener("input", function(){
@@ -11350,6 +11468,84 @@
       }).catch(function(){});
   }
 
+  /* Yozishmalar ro'yxati. Serverdan bir marta olinadi, so'ngra
+     filtr almashganda qaytadan chizilади — yangi so'rovsiz. */
+  var chatInbox = [];
+  var chatFilter = "all";
+
+  function chatRowHtml(c){
+    // Ro'yxatda username emas, ism turadi. Ism yo'q bo'lsa
+    // username zaxira bo'ladi — bo'sh qator chiqmasin.
+    var title = c.name || ("@" + c.username);
+    var draft = readChatDraft(c.username);
+    var preview = draft
+      ? '<span class="draft">Qoralama:</span> ' + escapeHtml(draft)
+      : escapeHtml((c.lastFromMe ? "Siz: " : "") + (c.lastText || ""));
+    var unread = Number(c.unread) || 0;
+
+    return '<div class="chat-row'+(unread ? " unread" : "")+'" data-email="'+escapeHtml(c.email)+'" '
+      + 'data-username="'+escapeHtml(c.username)+'" data-name="'+escapeHtml(c.name || "")+'">'
+      + chatAvatarHtml(title, "", c.avatarUrl)
+      + '<div class="chat-row-txt">'
+      +   '<span class="chat-row-top">'
+      +     '<span class="u">'+escapeHtml(title)+chatVerifiedBadgeHtml(c.verified)+'</span>'
+      +     '<span class="chat-row-time">'+escapeHtml(chatListTime(c.lastAt))+'</span>'
+      +   '</span>'
+      +   '<span class="chat-row-bottom">'
+      +     '<span class="preview">'+preview+'</span>'
+      +     (unread ? '<span class="chat-unread">'+(unread > 99 ? "99+" : unread)+'</span>' : "")
+      +   '</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  /** Ro'yxatni qaytadan chizadi: filtr, o'qilmaganlar soni va sarlavha. */
+  function renderChatInbox(){
+    var list = document.getElementById("chatInboxList");
+    if(!list) return;
+
+    var unreadTotal = chatInbox.reduce(function(sum, c){ return sum + (Number(c.unread) || 0); }, 0);
+
+    var countEl = document.getElementById("chatHeadCount");
+    if(countEl){
+      countEl.textContent = unreadTotal ? String(unreadTotal) : "";
+      countEl.hidden = !unreadTotal;
+    }
+
+    // "O'qilmagan" filtri o'qilmagani bo'lmasa umuman ko'rinmaydi —
+    // bosib bo'lmaydigan tugma turgandan ko'ra yo'q bo'lgani yaxshi.
+    var unreadChip = document.getElementById("chipChatUnread");
+    if(unreadChip){
+      unreadChip.hidden = !unreadTotal;
+      unreadChip.textContent = (t("chat.filterUnread") || "O'qilmagan") + " " + unreadTotal;
+      if(!unreadTotal && chatFilter === "unread"){
+        chatFilter = "all";
+        document.querySelectorAll("#chatFilters .chat-chip").forEach(function(c){
+          c.classList.toggle("active", c.getAttribute("data-chat-filter") === "all");
+        });
+      }
+    }
+
+    var rows = chatFilter === "unread"
+      ? chatInbox.filter(function(c){ return Number(c.unread) > 0; })
+      : chatInbox;
+
+    if(!rows.length){
+      list.innerHTML = chatInbox.length
+        ? '<p class="note" style="margin:var(--s4) 0;">'+escapeHtml(t("chat.noUnread") || "O'qilmagan xabar yo'q")+'</p>'
+        : "";
+      return;
+    }
+
+    list.innerHTML = rows.map(chatRowHtml).join("");
+    list.querySelectorAll("[data-email]").forEach(function(row){
+      row.addEventListener("click", function(){
+        openChatThread(row.getAttribute("data-email"), row.getAttribute("data-username"),
+                       row.getAttribute("data-name"));
+      });
+    });
+  }
+
   function loadChatInbox(){
     var list = document.getElementById("chatInboxList");
     if(!list) return;
@@ -11357,37 +11553,8 @@
     fetch("/api/chat?action=inbox&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
       .then(function(r){ return r.json(); })
       .then(function(data){
-        var conversations = data.conversations || [];
-        var label = document.getElementById("chatInboxLabel");
-        if(label) label.style.display = conversations.length ? "" : "none";
-        list.innerHTML = conversations.length
-          ? conversations.map(function(c){
-              // Ro'yxatda username emas, ism turadi. Ism yo'q bo'lsa
-              // username zaxira bo'ladi — bo'sh qator chiqmasin.
-              var title = c.name || ("@" + c.username);
-              var draft = readChatDraft(c.username);
-              var preview = draft
-                ? '<span class="draft">Qoralama:</span> ' + escapeHtml(draft)
-                : escapeHtml((c.lastFromMe ? "Siz: " : "") + (c.lastText || ""));
-              return '<div class="chat-row" data-email="'+escapeHtml(c.email)+'" '
-                + 'data-username="'+escapeHtml(c.username)+'" data-name="'+escapeHtml(c.name || "")+'">'
-                + chatAvatarHtml(title, "", c.avatarUrl)
-                + '<div class="chat-row-txt">'
-                +   '<span class="chat-row-top">'
-                +     '<span class="u">'+escapeHtml(title)+chatVerifiedBadgeHtml(c.verified)+'</span>'
-                +     '<span class="chat-row-time">'+escapeHtml(chatListTime(c.lastAt))+'</span>'
-                +   '</span>'
-                +   '<span class="preview">'+preview+'</span>'
-                + '</div>'
-                + '</div>';
-            }).join("")
-          : "";
-        list.querySelectorAll("[data-email]").forEach(function(row){
-          row.addEventListener("click", function(){
-            openChatThread(row.getAttribute("data-email"), row.getAttribute("data-username"),
-                           row.getAttribute("data-name"));
-          });
-        });
+        chatInbox = data.conversations || [];
+        renderChatInbox();
       }).catch(function(){ list.innerHTML = ""; });
   }
 
@@ -15114,7 +15281,21 @@
     var downItem = null;
 
     nav.addEventListener("pointerdown", function(e){
-      if(pointerId !== null) return;
+      // Yangi teginish boshlandi — oldingi sudrashdan qolgan
+      // "bosishni yutish" qoidasi bekor bo'ladi. Ilgari u 350 ms
+      // davom etardi va shu vaqt ichida tez bosilgan ikkinchi
+      // bo'lim ochilmay qolardi (masalan Profil, keyin darhol
+      // Yuklar).
+      dragEndedAt = 0;
+      // Bir teginish tugaganini brauzer ba'zan bildirmay qoladi
+      // (DOM qayta chizilsa). Shunda pointerId osilib qolar va
+      // keyingi teginishlar umuman hisobga olinmasdi.
+      if(pointerId !== null && e.isPrimary !== false){
+        dragging = false;
+        try{ nav.releasePointerCapture(pointerId); }catch(err){}
+      } else if(pointerId !== null){
+        return;
+      }
       pointerId = e.pointerId;
       startX = e.clientX;
       dragging = false;

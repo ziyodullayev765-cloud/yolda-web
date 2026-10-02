@@ -26,7 +26,7 @@
  * /api/order already makes for phone numbers — acceptable at this app's
  * scale, and verified server-side on every call regardless.
  */
-import { kvGet, kvSet, kvPush, kvRange, kvSadd, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvIncr, kvPush, kvRange, kvSadd, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { resolveEmail } from '../lib/identity.js';
 
@@ -35,6 +35,15 @@ const MAX_SEARCH_RESULTS = 20;
 const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 const pairKey = (a, b) => `convo:${[a, b].sort().join('|')}`;
+
+/**
+ * O'qilmagan xabarlar hisoblagichi: `chatUnread:<kimga>:<kimdan>`.
+ *
+ * Har safar butun yozishmani sanab chiqish qimmat — shuning uchun
+ * xabar yuborilganda bitta oshiriladi, suhbat ochilganda esa
+ * nolga tushadi. Ya'ni ro'yxat uchun bitta o'qish yetarli.
+ */
+const unreadKey = (to, from) => `chatUnread:${to}:${from}`;
 const generateId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 /** profile:<email> used to just be the plain username string — read old and new shapes. */
@@ -111,6 +120,7 @@ const getInbox = async (req, res) => {
       others.map(async (otherEmail) => {
         const profile = parseProfile(await kvGet(`profile:${otherEmail}`));
         const lastIds = await kvRange(pairKey(myEmail, otherEmail), 0, 0);
+        const unread = Number(await kvGet(unreadKey(myEmail, otherEmail))) || 0;
         const lastMsg = lastIds[0] ? parseMessage(await kvGet(`msg:${lastIds[0]}`)) : null;
         return {
           email: otherEmail,
@@ -124,6 +134,7 @@ const getInbox = async (req, res) => {
           lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : lastMsg.text) : '',
           lastAt: lastMsg ? lastMsg.at : 0,
           lastFromMe: lastMsg ? lastMsg.from === myEmail : false,
+          unread,
         };
       }),
     )
@@ -142,6 +153,9 @@ const getThread = async (req, res) => {
     withEmail = (await kvGet(`username:${withUsername}`)) || '';
   }
   if (!withEmail) return res.status(400).json({ error: 'Bunday foydalanuvchi topilmadi' });
+
+  // Suhbat ochildi — bu yozishma o'qilgan hisoblanadi.
+  await kvDel(unreadKey(myEmail, withEmail)).catch(() => {});
 
   const ids = await kvRange(pairKey(myEmail, withEmail), 0, 99);
   const raw = (await Promise.all(ids.map((id) => kvGet(`msg:${id}`)))).map(parseMessage).filter(Boolean);
@@ -236,6 +250,7 @@ const sendMessage = async (req, res) => {
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
   await kvPush(pairKey(myEmail, toEmail), id);
+  await kvIncr(unreadKey(toEmail, myEmail)).catch(() => {});
   await kvSadd(`inbox:${myEmail}`, toEmail);
   await kvSadd(`inbox:${toEmail}`, myEmail);
 
