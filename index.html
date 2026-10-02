@@ -733,7 +733,7 @@
     /* Balandlik qat'iy: shunda barcha bo'limlar — "Yuk joylash" ham —
        bir xil o'lchamda bo'ladi va panel ularning eng balandiga
        qarab semirib ketmaydi. Panel past va cho'ziq bo'lib qoladi. */
-    flex:1;height:52px;
+    flex:1;height:62px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     background:none;border:none;cursor:pointer;
     padding:0 4px;position:relative;z-index:1;
@@ -762,13 +762,13 @@
   .bn-item--primary{color:var(--route);}
   .bn-item--primary .bn-fab{
     display:flex;align-items:center;justify-content:center;
-    width:30px;height:30px;border-radius:50%;margin-top:0;flex:0 0 auto;
+    width:34px;height:34px;border-radius:50%;margin-top:0;flex:0 0 auto;
     background:var(--route);
     box-shadow:0 2px 8px rgba(10,159,91,0.32);
     transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s var(--ease);
   }
   :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 2px 8px rgba(10,159,91,0.45);}
-  .bn-item--primary .bn-fab .ic-svg{font-size:18px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
+  .bn-item--primary .bn-fab .ic-svg{font-size:20px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
   .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
   .bn-item--primary.active .bn-fab{transform:scale(1.06);}
   .bn-item--primary:active .bn-fab{transform:scale(0.94);}
@@ -784,7 +784,7 @@
      ko'rinib turadi — tabletka ularning ORTIDA, ustida emas. */
   .bn-blob{
     --ld:64px;                       /* tabletka eni (JS shuni o'qiydi) */
-    height:44px;margin-top:-22px;
+    height:52px;margin-top:-26px;
     border-radius:999px;
     z-index:0;                       /* belgilar ostida */
   }
@@ -2515,15 +2515,6 @@
     font-family:'Inter',sans-serif;font-size:13px;font-weight:700;
   }
   .chat-head-count[hidden]{display:none;}
-  .chat-compose{
-    width:42px;height:42px;flex:none;border:none;border-radius:13px;
-    background:var(--route);color:#fff;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 4px 12px rgba(10,159,91,0.3);
-    transition:transform 0.18s var(--ease);
-  }
-  .chat-compose:active{transform:scale(0.94);}
-  .chat-compose .ic-svg{font-size:20px;}
 
   .chat-search{
     display:flex;align-items:center;gap:9px;
@@ -2531,11 +2522,16 @@
     padding:0 16px;margin:0 0 var(--s4);
   }
   .chat-search .ic-svg{font-size:18px;color:var(--muted);flex:none;}
-  .chat-search input{
-    flex:1;min-width:0;border:none;background:none;box-shadow:none;
-    padding:12px 0;height:auto;font-size:15px;color:var(--ink);
+  /* Maydon qidiruv "tabletkasi"ning ichidagi alohida quticha bo'lib
+     ko'rinmasligi kerak — umumiy `input` qoidalari bergan fon, ramka,
+     burchak va soyaning hammasi olib tashlanadi. Tanlovchi ataylab
+     kuchliroq (#chatCard), aks holda keyinroq turgan qoidalar yutadi. */
+  #chatCard .chat-search input,
+  #chatCard .chat-search input:focus{
+    flex:1;min-width:0;
+    border:none;border-radius:0;background:none;box-shadow:none;outline:none;
+    padding:12px 0;height:auto;font-size:16px;color:var(--ink);
   }
-  .chat-search input:focus{outline:none;box-shadow:none;}
 
   .chat-filters{display:flex;gap:8px;margin:0 0 var(--s3);flex-wrap:wrap;}
   .chat-chip{
@@ -2575,6 +2571,23 @@
     transition:background 0.15s var(--ease);
   }
   .chat-row:last-child{border-bottom:none;}
+
+  /* Ro'yxat messenjerdagidek ko'rinsin: kartochka ramkasi, foni va
+     ichki bo'shliqlari olib tashlanadi — qatorlar chetdan chetga
+     cho'ziladi, ajratuvchi chiziq esa avatardan keyin boshlanadi.
+     Bu faqat ro'yxatga tegishli; suhbatning ichki ekraniga emas. */
+  #chatCard.chat-list-view{
+    background:none;border:none;box-shadow:none;
+    padding:0;overflow:visible;
+  }
+  #chatCard.chat-list-view .chat-row{
+    position:relative;padding:9px 0;border-bottom:none;border-radius:12px;
+  }
+  #chatCard.chat-list-view .chat-row::after{
+    content:"";position:absolute;left:58px;right:0;bottom:0;
+    height:1px;background:var(--border);
+  }
+  #chatCard.chat-list-view .chat-row:last-child::after{display:none;}
   .chat-row:hover{background:var(--tint);}
   .chat-row-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
   /* Ism chapda, vaqt o'ngda — bitta qatorda. */
@@ -8762,6 +8775,7 @@
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
     if(!isSignedIn()){
+      chatCard.classList.remove("chat-list-view");
       chatCard.innerHTML = '<p style="font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin:0;">'
         + 'Xabarlashuv uchun avval "Yuk joylash" bo‘limidagi tugma orqali Google yoki Telegram bilan kiring.</p>';
       stopChatPoll();
@@ -11391,6 +11405,7 @@
     closeChatFullscreen();
     chatWithEmail = null;
     chatWithUsername = null;
+    chatCard.classList.add("chat-list-view");
 
     chatCard.innerHTML =
       '<div class="chat-head">'
@@ -11398,9 +11413,6 @@
       +     '<span data-i18n="chat.title">Xabarlar</span>'
       +     '<span class="chat-head-count" id="chatHeadCount" hidden></span>'
       +   '</h2>'
-      +   '<button type="button" class="chat-compose" id="btnChatCompose" aria-label="Yangi suhbat">'
-      +     icon("iconEdit")
-      +   '</button>'
       + '</div>'
       + '<div class="chat-search">'
       +   icon("iconSearch")
@@ -11415,12 +11427,6 @@
       +   '<p class="note" id="chatInboxLabel" hidden>Suhbatlar</p>'
       +   '<div id="chatInboxList"></div>'
       + '</div>';
-
-    var compose = document.getElementById("btnChatCompose");
-    if(compose) compose.addEventListener("click", function(){
-      var box = document.getElementById("fChatSearch");
-      if(box) box.focus();
-    });
 
     document.getElementById("chatFilters").addEventListener("click", function(ev){
       var chip = ev.target.closest("[data-chat-filter]");
@@ -11576,6 +11582,7 @@
 
     // Suhbat butun ekranni egallaydi: sayt sarlavhasi ham, pastki
     // panel ham yashiriladi (CSS: [data-chat-open]).
+    chatCard.classList.remove("chat-list-view");
     chatCard.classList.add("chat-fullscreen");
     document.documentElement.setAttribute("data-chat-open", "1");
     syncTelegramBackButton();
