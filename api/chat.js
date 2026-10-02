@@ -115,6 +115,11 @@ const getInbox = async (req, res) => {
         return {
           email: otherEmail,
           username: profile.username || otherEmail,
+          // Ro'yxatda username emas, odamning ismi ko'rinadi —
+          // "@dilshod_driver" dan ko'ra "Dilshod Tursunov" tushunarli.
+          // Ism yo'q bo'lsa username zaxira bo'lib qoladi.
+          name: profile.displayName || profile.name || '',
+          avatarUrl: profile.avatarUrl || '',
           verified: Boolean(profile.verified),
           lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : lastMsg.text) : '',
           lastAt: lastMsg ? lastMsg.at : 0,
@@ -160,6 +165,8 @@ const getThread = async (req, res) => {
     messages,
     withEmail,
     withUsername: profile.username || withUsername,
+    withName: profile.displayName || profile.name || '',
+    withAvatarUrl: profile.avatarUrl || '',
     withVerified: Boolean(profile.verified),
   });
 };

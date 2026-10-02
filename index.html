@@ -816,20 +816,9 @@
     box-shadow:0 2px 12px rgba(0,0,0,0.45);
   }
 
-  /* "Yuk joylash" tugmasi ixchamroq: 52 → 42 px. */
-  .bn-item--primary .bn-fab{
-    width:42px;height:42px;margin-top:-20px;
-    box-shadow:0 4px 12px rgba(10,159,91,0.36), 0 0 0 3px rgba(255,255,255,0.55);
-  }
-  :root[data-theme="dark"] .bn-item--primary .bn-fab{
-    box-shadow:0 4px 12px rgba(10,159,91,0.45), 0 0 0 3px rgba(10,10,10,0.8);
-  }
-  .bn-item--primary .bn-fab .ic-svg{font-size:21px;}
-  /* 3) Markaziy tugma bilan yozuv orasida aniq bo'shliq, tugma esa
-        panel chetidan yaqqol chiqib turadi (ilgari yozuvga tegib turardi). */
-  .bn-item--primary{gap:7px;}
-  .bn-item--primary .bn-fab{margin-top:-27px;}
-  .bn-item--primary .bn-fab + span{margin-top:1px;white-space:nowrap;}
+  /* "Yuk joylash" paneldan bo'rtib chiqmaydi — qolgan bo'limlar
+     bilan bir qatorda, bir xil balandlikda turadi. */
+  .bn-item--primary .bn-fab + span{white-space:nowrap;}
 
   /* ---------- Qanday ishlaydi? — yangi dizayn ----------
      To'rt tor ustun o'rniga vertikal "yo'l": har qadam o'z qatorida,
@@ -2483,22 +2472,33 @@
      xabar qatori (ro'yxat), va suhbat ichida ilova-uslubidagi sarlavha
      (orqaga strelka + doira avatar + ism) va dumaloq yuborish tugmali
      pastki qator — Telegram'dagi kabi. */
+  /* Avatar rangi ismdan hosil bo'ladi (chatAvatarColor) — shuning
+     uchun bu yerda fon berilmaydi, faqat o'lchov va shakl. */
   .chat-avatar{
-    width:40px;height:40px;border-radius:50%;flex-shrink:0;
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;overflow:hidden;
     display:flex;align-items:center;justify-content:center;
     font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:#fff;
-    background:linear-gradient(150deg, var(--route) 0%, var(--route-dark) 100%);
+    background:var(--route);
   }
-  .chat-avatar.sm{width:32px;height:32px;font-size:13px;}
+  .chat-avatar.sm{width:36px;height:36px;font-size:13px;}
+  .chat-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+
   .chat-row{
     display:flex;align-items:center;gap:12px;
-    padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer;
+    padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;
     transition:background 0.15s var(--ease);
   }
   .chat-row:last-child{border-bottom:none;}
   .chat-row:hover{background:var(--tint);}
-  .chat-row-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px;}
-  .chat-row .u{font-weight:700;font-size:14.5px;color:var(--ink);white-space:nowrap;}
+  .chat-row-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
+  /* Ism chapda, vaqt o'ngda — bitta qatorda. */
+  .chat-row-top{display:flex;align-items:center;gap:8px;min-width:0;}
+  .chat-row .u{
+    font-weight:700;font-size:15px;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;
+  }
+  .chat-row-time{font-size:12px;color:var(--muted);flex-shrink:0;}
+  .chat-row .draft{color:#DC2626;font-weight:600;}
   .chat-verified-badge{
     display:inline-flex;align-items:center;justify-content:center;
     width:16px;height:16px;margin-left:4px;vertical-align:-3px;flex-shrink:0;
@@ -2549,11 +2549,20 @@
     cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
   .chat-back .ic-svg{font-size:20px;transform:scaleX(-1);}
-  .chat-thread-title{margin:0 !important;font-size:16px;}
+  /* Ism bosiladigan: profilga olib boradi. */
+  .chat-thread-who{
+    background:none;border:none;padding:0;text-align:left;cursor:pointer;
+    display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;
+  }
+  .chat-thread-title{
+    margin:0 !important;font-size:16px;font-weight:700;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .chat-thread-sub{font-size:12px;color:var(--muted);}
 
   .chat-thread{
     flex:1 1 auto;min-height:0;
-    display:flex;flex-direction:column;gap:2px;
+    display:flex;flex-direction:column;gap:4px;
     overflow-y:auto;overflow-x:hidden;
     margin:0;padding:12px 12px 6px;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -2569,6 +2578,9 @@
     background:none;border-radius:0;
     transition:padding-left 0.22s var(--ease);
   }
+  /* Reaksiyasi bor xabar ostida biroz joy qoladi — belgi keyingi
+     xabarga tegib ketmasin. */
+  .chat-bubble.has-react{padding-bottom:12px;}
   .chat-bubble.mine{justify-content:flex-end;}
   .chat-bubble.theirs{justify-content:flex-start;}
 
@@ -3406,6 +3418,12 @@
     letter-spacing:-0.015em;color:var(--ink);margin:0;line-height:1.25;
     overflow-wrap:normal;word-break:normal;
   }
+  /* Bosiladigan telefon raqami. */
+  .phone-link{
+    color:inherit;text-decoration:none;
+    border-bottom:1px dashed currentColor;padding-bottom:1px;
+  }
+  .phone-link:hover{color:var(--route);}
   .pf-id-phone{
     font-size:14px;color:var(--ink-soft);margin-top:3px;
     font-variant-numeric:tabular-nums;
@@ -4915,6 +4933,7 @@
       "crit.AS_DESCRIBED": "E'londagidek chiqdi", "crit.FAIR_PRICE": "Narxi haqqoniy edi",
       "crit.PAPERS_OK": "Hujjatlari joyida", "crit.NO_HAGGLE": "Narxni cho'zmadi",
       "crit.CAME_ONTIME": "Vaqtida keldi",
+      "chat.yesterday": "Kecha",
       "trucks.soldTo": "Xaridor", "trucks.buyerLabel": "Xaridorning username'i (baho almashish uchun)",
       "trucks.buyerSave": "Saqlash", "trucks.buyerNeeded": "Username kiriting",
       "trucks.buyerHint": "Ko'rsatsangiz, ikkalangiz bir-biringizga baho qoldira olasiz.",
@@ -5407,6 +5426,7 @@
       "crit.AS_DESCRIBED": "Соответствует объявлению", "crit.FAIR_PRICE": "Честная цена",
       "crit.PAPERS_OK": "Документы в порядке", "crit.NO_HAGGLE": "Не торговался до бесконечности",
       "crit.CAME_ONTIME": "Приехал вовремя",
+      "chat.yesterday": "Вчера",
       "trucks.soldTo": "Покупатель", "trucks.buyerLabel": "Username покупателя (чтобы обменяться оценками)",
       "trucks.buyerSave": "Сохранить", "trucks.buyerNeeded": "Введите username",
       "trucks.buyerHint": "Укажите его — и вы сможете оценить друг друга.",
@@ -5895,6 +5915,7 @@
       "crit.AS_DESCRIBED": "Matched the listing", "crit.FAIR_PRICE": "Fair price",
       "crit.PAPERS_OK": "Paperwork in order", "crit.NO_HAGGLE": "Did not haggle endlessly",
       "crit.CAME_ONTIME": "Turned up on time",
+      "chat.yesterday": "Yesterday",
       "trucks.soldTo": "Buyer", "trucks.buyerLabel": "Buyer's username (so you can rate each other)",
       "trucks.buyerSave": "Save", "trucks.buyerNeeded": "Enter a username",
       "trucks.buyerHint": "Add it and the two of you can rate each other.",
@@ -8632,6 +8653,19 @@
     });
   }
 
+  /**
+   * Sahifa yangilanganda odam qayerda bo'lsa, o'sha yerda qoladi:
+   * ochiq suhbat qaytadan ochiladi, yozilgan xabar esa joyida
+   * turadi (qoralama alohida saqlanadi).
+   */
+  function restoreOpenChat(){
+    var saved = null;
+    try{ saved = JSON.parse(sessionStorage.getItem(CHAT_OPEN_KEY) || "null"); }catch(e){ saved = null; }
+    if(!saved || !saved.username) return false;
+    openChatThread(saved.email || null, saved.username, saved.name || "");
+    return true;
+  }
+
   function renderChatTab(){
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
@@ -8641,6 +8675,8 @@
       stopChatPoll();
       return;
     }
+    // Yangilashdan oldin ochiq suhbat bo'lgan bo'lsa — o'sha ochiladi.
+    if(restoreOpenChat()) return;
     renderChatShell();
   }
 
@@ -8766,7 +8802,7 @@
       +   '<span class="pf-id-main">'
       +     '<span class="profile-name">'+escapeHtml(name)+'</span>'
       +     (p.phone
-              ? '<span class="pf-id-phone">'+escapeHtml(p.phone)+'</span>'
+              ? phoneLinkHtml(p.phone, "pf-id-phone")
               : '<span class="pf-id-phone muted" data-i18n="profile.addPhone">Telefon qo\'shing</span>')
       +     '<span class="pf-id-row">'
       +       (p.ratingCount
@@ -11170,9 +11206,84 @@
   }
 
   /** Avatar doirasi uchun bitta harf — ism/username'ning o'zidan. */
-  function chatAvatarHtml(label, size){
-    var ch = String(label || "?").trim().charAt(0).toUpperCase() || "?";
-    return '<div class="chat-avatar'+(size === "sm" ? " sm" : "")+'">'+escapeHtml(ch)+'</div>';
+  /* Avatar rangi ismdan hosil qilinadi: bir odam har doim bir xil
+     rangda chiqadi, ro'yxat esa bir xil yashil doiralar devori
+     bo'lib qolmaydi. */
+  var CHAT_AVATAR_COLORS = [
+    "#2F6FED", "#7C3AED", "#0F9D58", "#D97706", "#DC2626",
+    "#0891B2", "#DB2777", "#4F46E5", "#059669", "#B45309"
+  ];
+  /**
+   * Ekranda ko'rsatilgan raqam bosilsa telefon ochilsin. Raqamni
+   * qo'lda ko'chirib yozish — ortiqcha ish va xato manbai.
+   * `tel:` da faqat raqam va "+" qoladi.
+   */
+  function phoneLinkHtml(phone, cls){
+    var text = String(phone || "").trim();
+    if(!text) return "";
+    var dial = text.replace(/[^\d+]/g, "");
+    if(!dial) return escapeHtml(text);
+    return '<a class="phone-link'+(cls ? " "+cls : "")+'" href="tel:'+escapeHtml(dial)+'">'
+      + escapeHtml(text) + '</a>';
+  }
+
+  function chatAvatarColor(label){
+    var text = String(label || "?");
+    var sum = 0;
+    for(var i = 0; i < text.length; i++) sum = (sum * 31 + text.charCodeAt(i)) % 100000;
+    return CHAT_AVATAR_COLORS[sum % CHAT_AVATAR_COLORS.length];
+  }
+
+  /** Ikki harfli bosh harflar: "Dilshod Tursunov" -> "DT". */
+  function chatInitials(label){
+    var parts = String(label || "?").trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return "?";
+    var first = parts[0].charAt(0);
+    var second = parts.length > 1 ? parts[1].charAt(0) : "";
+    return (first + second).toUpperCase();
+  }
+
+  function chatAvatarHtml(label, size, photoUrl){
+    var cls = "chat-avatar" + (size === "sm" ? " sm" : "");
+    if(photoUrl){
+      return '<div class="'+cls+' photo"><img src="'+escapeHtml(photoUrl)+'" alt="" referrerpolicy="no-referrer"></div>';
+    }
+    return '<div class="'+cls+'" style="background:'+chatAvatarColor(label)+';">'
+      + escapeHtml(chatInitials(label)) + '</div>';
+  }
+
+  /** Ro'yxatdagi vaqt: bugun — soat, kecha — "Kecha", oldinroq — sana. */
+  function chatListTime(ts){
+    if(!ts) return "";
+    var d = new Date(ts);
+    var now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    if(sameDay) return formatChatTime(ts);
+    var yesterday = new Date(now.getTime() - 86400000);
+    if(d.toDateString() === yesterday.toDateString()) return t("chat.yesterday") || "Kecha";
+    return d.getDate() + "." + String(d.getMonth() + 1).padStart(2, "0");
+  }
+
+  /* ---------- Yozilgan, lekin yuborilmagan xabar ----------
+     Suhbat yopilib qayta ochilganda yoki sahifa yangilanganda
+     yozilgani yo'qolmasin: har suhbat uchun alohida saqlanadi. */
+  var CHAT_DRAFT_KEY = "yolda_chat_drafts";
+
+  function readChatDrafts(){
+    try{ return JSON.parse(localStorage.getItem(CHAT_DRAFT_KEY) || "{}") || {}; }
+    catch(e){ return {}; }
+  }
+
+  function saveChatDraft(username, text){
+    if(!username) return;
+    var all = readChatDrafts();
+    if(text) all[username] = String(text).slice(0, 1000);
+    else delete all[username];
+    try{ localStorage.setItem(CHAT_DRAFT_KEY, JSON.stringify(all)); }catch(e){}
+  }
+
+  function readChatDraft(username){
+    return (readChatDrafts() || {})[username] || "";
   }
 
   function stopChatPoll(){
@@ -11251,25 +11362,41 @@
         if(label) label.style.display = conversations.length ? "" : "none";
         list.innerHTML = conversations.length
           ? conversations.map(function(c){
-              var preview = (c.lastFromMe ? "Siz: " : "") + (c.lastText || "");
-              return '<div class="chat-row" data-email="'+escapeHtml(c.email)+'" data-username="'+escapeHtml(c.username)+'">'
-                + chatAvatarHtml(c.username)
-                + '<div class="chat-row-txt"><span class="u">@'+escapeHtml(c.username)+chatVerifiedBadgeHtml(c.verified)+'</span>'
-                + '<span class="preview">'+escapeHtml(preview)+'</span></div>'
+              // Ro'yxatda username emas, ism turadi. Ism yo'q bo'lsa
+              // username zaxira bo'ladi — bo'sh qator chiqmasin.
+              var title = c.name || ("@" + c.username);
+              var draft = readChatDraft(c.username);
+              var preview = draft
+                ? '<span class="draft">Qoralama:</span> ' + escapeHtml(draft)
+                : escapeHtml((c.lastFromMe ? "Siz: " : "") + (c.lastText || ""));
+              return '<div class="chat-row" data-email="'+escapeHtml(c.email)+'" '
+                + 'data-username="'+escapeHtml(c.username)+'" data-name="'+escapeHtml(c.name || "")+'">'
+                + chatAvatarHtml(title, "", c.avatarUrl)
+                + '<div class="chat-row-txt">'
+                +   '<span class="chat-row-top">'
+                +     '<span class="u">'+escapeHtml(title)+chatVerifiedBadgeHtml(c.verified)+'</span>'
+                +     '<span class="chat-row-time">'+escapeHtml(chatListTime(c.lastAt))+'</span>'
+                +   '</span>'
+                +   '<span class="preview">'+preview+'</span>'
+                + '</div>'
                 + '</div>';
             }).join("")
           : "";
         list.querySelectorAll("[data-email]").forEach(function(row){
           row.addEventListener("click", function(){
-            openChatThread(row.getAttribute("data-email"), row.getAttribute("data-username"));
+            openChatThread(row.getAttribute("data-email"), row.getAttribute("data-username"),
+                           row.getAttribute("data-name"));
           });
         });
       }).catch(function(){ list.innerHTML = ""; });
   }
 
-  function openChatThread(email, username){
+  function openChatThread(email, username, name){
     chatWithEmail = email;
     chatWithUsername = username;
+    chatWithName = name || "";
+    // Sahifa yangilansa shu suhbat qaytadan ochilsin.
+    try{ sessionStorage.setItem(CHAT_OPEN_KEY, JSON.stringify({ email: email || "", username: username, name: chatWithName })); }catch(e){}
     chatEditingId = null;
     chatLastSeenId = null;
     var chatCard = document.getElementById("chatCard");
@@ -11285,8 +11412,13 @@
     chatCard.innerHTML =
       '<div class="chat-thread-head">'
       +   '<button type="button" class="chat-back" id="btnChatBack" aria-label="Orqaga"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowRight"/></svg></button>'
-      +   chatAvatarHtml(username, "sm")
-      +   '<h3 class="card-title chat-thread-title" id="chatThreadTitle">@'+escapeHtml(username)+'</h3>'
+      +   chatAvatarHtml(chatWithName || username, "sm")
+      // Ism bosilsa profil ochiladi — odamni tekshirish uchun
+      // suhbatdan chiqish shart emas.
+      +   '<button type="button" class="chat-thread-who" id="btnChatWho">'
+      +     '<span class="chat-thread-title" id="chatThreadTitle">'+escapeHtml(chatWithName || ("@" + username))+'</span>'
+      +     '<span class="chat-thread-sub" id="chatThreadSub">@'+escapeHtml(username)+'</span>'
+      +   '</button>'
       + '</div>'
       + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
@@ -11302,7 +11434,15 @@
     });
     document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
-    document.getElementById("fChatMessage").addEventListener("keydown", function(e){
+
+    var whoBtn = document.getElementById("btnChatWho");
+    if(whoBtn) whoBtn.addEventListener("click", function(){ openPublicProfile(username); });
+
+    var input = document.getElementById("fChatMessage");
+    // Yozilgan, lekin yuborilmagan xabar joyida turadi.
+    input.value = readChatDraft(username);
+    input.addEventListener("input", function(){ saveChatDraft(username, input.value); });
+    input.addEventListener("keydown", function(e){
       if(e.key === "Enter") sendChatMessage();
     });
 
@@ -11342,7 +11482,7 @@
         + '<span class="cb-react-emoji">'+escapeHtml(r.emoji)+'</span>'+r.count+'</button>';
     }).join("");
 
-    return '<div class="chat-bubble '+side+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
+    return '<div class="chat-bubble '+side+(reactions ? " has-react" : "")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
       + ' data-text="'+escapeHtml(m.text)+'">'
       + time
       + '<div class="cb-body">'+escapeHtml(m.text)
@@ -11354,6 +11494,8 @@
 
   /* ---------- Uzoq bosish: reaksiya va amallar ---------- */
   var chatMenuEl = null, chatMenuVeil = null;
+  var chatWithName = "";
+  var CHAT_OPEN_KEY = "yolda.chatOpen";
 
   function closeChatMenu(){
     if(chatMenuEl){ chatMenuEl.remove(); chatMenuEl = null; }
@@ -11610,6 +11752,12 @@
     fetch(url).then(function(r){ return r.json(); }).then(function(data){
       if(!chatWithUsername) return; // user navigated away while this was in flight
       if(data.withEmail) chatWithEmail = data.withEmail;
+      // Server ismni bilsa — sarlavhada o'sha turadi.
+      if(data.withName && data.withName !== chatWithName){
+        chatWithName = data.withName;
+        var nameEl = document.getElementById("chatThreadTitle");
+        if(nameEl) nameEl.textContent = chatWithName;
+      }
       var titleEl = document.getElementById("chatThreadTitle");
       if(titleEl && !titleEl.querySelector(".chat-verified-badge") && data.withVerified){
         titleEl.insertAdjacentHTML("beforeend", chatVerifiedBadgeHtml(true));
@@ -11635,6 +11783,7 @@
   /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
   function closeChatFullscreen(){
     closeChatMenu();
+    try{ sessionStorage.removeItem(CHAT_OPEN_KEY); }catch(e){}
     var chatCard = document.getElementById("chatCard");
     if(chatCard) chatCard.classList.remove("chat-fullscreen");
     document.documentElement.removeAttribute("data-chat-open");
@@ -11708,6 +11857,7 @@
         return;
       }
       input.value = "";
+      saveChatDraft(chatWithUsername, "");
       if(isEdit) cancelChatEdit();
       loadChatThread(true);
     }).catch(function(){
@@ -14160,7 +14310,7 @@
       + '<p style="margin:8px 0 4px;font-family:\'Space Grotesk\',sans-serif;font-size:19px;letter-spacing:-0.02em;">Buyurtmangiz haydovchilarga yuborildi</p>'
       + '<div class="code">№ '+escapeHtml(s.code)+' · '+escapeHtml(s.from)+' → '+escapeHtml(s.to)+'</div>'
       + '<p style="font-size:14px;color:var(--ink-soft);margin:12px 0 0;line-height:1.6;">'
-      +   'Haydovchi qabul qilgach, <strong>'+escapeHtml(s.phone)+'</strong> raqamiga qo\'ng\'iroq qiladi.'
+      +   'Haydovchi qabul qilgach, <strong>'+phoneLinkHtml(s.phone)+'</strong> raqamiga qo\'ng\'iroq qiladi.'
       + '</p>'
       + '<button class="btn ghost" id="btnNew" style="max-width:280px;margin:20px auto 0;">Yana buyurtma berish</button>'
       + '</div>';
@@ -15621,8 +15771,6 @@
     if(wanted === visibleTabName()) return;
     switchTab(wanted);
   }
-  openTabFromUrl();
-
   /* "Orqaga" bosilganda sahifadan chiqib ketmasin — avval ochilgan
      bo'limga qaytsin. Ilgari popstate umuman tinglanmasdi, shuning
      uchun YO'LDA LIFE ga kirgan odam uchun qaytish yo'li yo'q edi. */
@@ -15651,6 +15799,12 @@
   // o'zidayoq odam kirgan holatda ko'rinsin, "kirmagansiz" ekrani
   // ko'rinib keyin almashmasin.
   restoreAuth();
+  /* Manzildagi ?tab= shundan KEYIN o'qiladi.
+     Ilgari u sessiya tiklanishidan oldin o'qilardi: o'sha paytda
+     odam hali "kirmagan" hisoblanardi, Profil/Xabarlar/Yuk joylash
+     esa kirishni talab qiladi — natijada F5 bosgan odam har safar
+     bosh sahifaga otilib ketardi. */
+  openTabFromUrl();
   // Saqlangan sessiya tiklangandan keyin qaraymiz: kirgan odamga
   // kirish ekrani bir zumga ham ko'rinib ketmasin.
   syncWelcomeGate();
