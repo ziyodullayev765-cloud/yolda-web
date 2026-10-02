@@ -1379,17 +1379,16 @@
      shisha oddiy kulrang qutiga aylanadi. Shuning uchun bo'lim fonida
      ikkita yumshoq yorug'lik dog'i turadi: biri yashil (brend rangi),
      ikkinchisi sovuqroq. Ular qimirlamaydi va hech narsani to'smaydi. */
-  #tab-order{position:relative;isolation:isolate;}
+  #tab-order{position:relative;isolation:isolate;background:var(--paper);}
+  /* Fon sof qora (kunduzi — sof oq). Yashil nur faqat eng tepada,
+     tor yo'l bo'lib turadi: pastga tushib fonni kulrang qilib
+     yubormaydi. */
   #tab-order::before{
-    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-    background:
-      radial-gradient(60% 38% at 16% 4%, rgba(10,159,91,0.16), transparent 70%),
-      radial-gradient(52% 32% at 92% 24%, rgba(56,132,255,0.10), transparent 72%);
+    content:"";position:absolute;inset:0 0 auto;height:260px;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 100% at 50% 0%, rgba(10,159,91,0.10), transparent 72%);
   }
   :root[data-theme="dark"] #tab-order::before{
-    background:
-      radial-gradient(60% 38% at 16% 4%, rgba(45,212,128,0.17), transparent 70%),
-      radial-gradient(52% 32% at 92% 24%, rgba(70,140,255,0.11), transparent 72%);
+    background:radial-gradient(120% 100% at 50% 0%, rgba(45,212,128,0.13), transparent 72%);
   }
 
   .tabs{
@@ -1648,7 +1647,7 @@
 
   /* ---------- Yuk joylash: 5-step wizard ---------- */
   /* Qadamlar yo'lagi — alohida, past shisha yo'lak. */
-  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:0;padding:14px var(--s5) 12px;}
+  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:0;padding:0;}
   .wizard-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:30px;}
   .wizard-step .ws-dot{
     width:30px;height:30px;border-radius:50%;background:var(--paper-dark);color:var(--muted);
@@ -1669,45 +1668,143 @@
 
      Shishaning o'zi iOS 27 ga moslandi: shaffofligi kamaytirilgan,
      chekkasi quyuqroq — ya'ni ustidagi yozuv aniq o'qiladi. */
-  .wiz{display:flex;flex-direction:column;gap:var(--s4);}
+  .wiz{display:flex;flex-direction:column;gap:var(--s5);}
 
-  .wiz-glass{
-    background:var(--glass);
-    -webkit-backdrop-filter:saturate(180%) blur(22px);
-    backdrop-filter:saturate(180%) blur(22px);
-    border:1px solid var(--glass-brd);
-    border-radius:26px;
-    box-shadow:0 1px 0 rgba(255,255,255,0.18) inset,
-               0 10px 30px rgba(15,23,42,0.10);
+  /* Qadam — quti emas: ochiq maydon, elementlar ingichka chiziqlar
+     bilan ajraladi. Shisha guruh olib tashlandi, maketdagidek. */
+  .ord-step{animation:wizardIn 0.28s var(--ease);}
+  /* 2-5 qadamlarning sarlavhasi — "Buyurtmani kuzatish" dagi kabi
+     kichik, yashil, katta harfli yozuv. Katta qalin sarlavha emas. */
+  .ord-step > .card-title{
+    display:flex;align-items:center;gap:8px;margin:0 0 var(--s5);
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--route);
   }
-  :root[data-theme="dark"] .wiz-glass{
-    box-shadow:0 1px 0 rgba(255,255,255,0.07) inset,
-               0 12px 34px rgba(0,0,0,0.55);
+  .ord-step > .card-title .ic-svg{font-size:15px;}
+
+  /* ---- Yo'nalish: doira belgi + chiziq ostidagi tanlov ---- */
+  .ord-route{display:flex;flex-direction:column;}
+  .ord-point{display:flex;align-items:flex-start;gap:14px;}
+  .ord-badge{
+    width:44px;height:44px;flex:none;border-radius:50%;margin-top:14px;
+    display:flex;align-items:center;justify-content:center;
   }
-  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .wiz-glass{background:var(--card);}
+  .ord-badge .ic-svg{font-size:19px;}
+  /* Ikkala belgi ham yashil: chiqish nuqtasi — to'q yashil doira
+     ichida yorqin belgi, borish nuqtasi — to'la yashil doira. */
+  .ord-badge--from{background:rgba(10,159,91,0.16);color:var(--route);box-shadow:inset 0 0 0 1.5px rgba(10,159,91,0.34);}
+  .ord-badge--to{background:var(--route);color:#fff;}
+  :root[data-theme="dark"] .ord-badge--from{
+    background:#0E3A26;color:#2DD480;box-shadow:inset 0 0 0 1.5px rgba(45,212,128,0.38);
+  }
+  :root[data-theme="dark"] .ord-badge--to{background:#2DD480;color:#06281A;}
+  /* Ikki belgini bog'lab turadigan tik chiziq — u ham yashil. */
+  .ord-link{
+    width:2px;height:34px;margin:2px 0 2px 21px;border-radius:2px;
+    background:linear-gradient(rgba(10,159,91,0.55), rgba(10,159,91,0.08));
+  }
+  :root[data-theme="dark"] .ord-link{
+    background:linear-gradient(rgba(45,212,128,0.55), rgba(45,212,128,0.08));
+  }
+  .ord-field{flex:1;min-width:0;}
+  .ord-field > label{
+    display:block;font-size:13px;color:var(--muted);font-weight:500;
+    margin:0 0 2px;letter-spacing:0;
+  }
+  /* <select> ning o'z ko'rinishi olib tashlanadi — o'zi joyida
+     qoladi, shuning uchun klaviatura va ekran o'quvchi ishlayveradi. */
+  .ord-pick{position:relative;display:flex;align-items:center;}
+  #tab-order .ord-pick select{
+    flex:1;min-width:0;height:auto;
+    -webkit-appearance:none;appearance:none;
+    background:none;border:none;border-radius:0;box-shadow:none;
+    border-bottom:1px solid var(--border);
+    padding:0 30px 11px 0;
+    font-family:'Inter',sans-serif;font-size:19px;font-weight:600;
+    color:var(--ink);letter-spacing:-0.01em;
+  }
+  #tab-order .ord-pick select:focus{outline:none;border-bottom-color:var(--route);}
+  .ord-pick .ord-chev{
+    position:absolute;right:2px;bottom:12px;pointer-events:none;
+    font-size:18px;color:var(--muted);
   }
 
-  .wizard-panel{animation:wizardIn 0.28s var(--ease);}
-  .wizard-panel.wiz-glass,
-  .wiz-card{padding:var(--s5);}
-  .wiz-card > .card-title{
-    font-family:'Inter',sans-serif;
-    font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-    color:var(--ink-soft);margin:0 0 var(--s3);gap:7px;
+  /* ---- Masofa va taxminiy vaqt ---- */
+  .ord-meta{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    margin:16px 0 22px 58px;
+    font-size:13.5px;font-weight:600;color:var(--ink-soft);
   }
-  .wiz-card > .card-title .ic-svg{font-size:14px;color:var(--route);}
-  /* Guruh sarlavhasi — iOS dagidek kichik va bosiq, katta qalin
-     sarlavha emas: asosiy e'tibor maydonlarda bo'lishi kerak. */
-  .wizard-panel.wiz-glass > .card-title{
-    font-family:'Inter',sans-serif;
-    font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-    color:var(--ink-soft);margin:0 0 var(--s4);gap:7px;
+  .ord-meta .ic-svg{font-size:16px;color:var(--route);}
+  .ord-dotsep{color:var(--muted);font-weight:400;}
+  .ord-meta--warn{color:#DC2626;margin-left:58px;}
+  .ord-meta--warn .ic-svg{color:#DC2626;}
+
+  /* ---- Manzil maydonlari: chiziq ostida, quti yo'q ---- */
+  .ord-addr{margin-bottom:18px;}
+  .ord-addr > label{
+    display:block;font-size:13px;color:var(--muted);font-weight:500;margin:0 0 2px;
   }
-  .wizard-panel.wiz-glass > .card-title .ic-svg{font-size:14px;color:var(--route);}
-  /* Guruh ichidagi oxirgi maydon ostida ortiqcha bo'shliq qolmasin. */
-  .wizard-panel.wiz-glass > .field:last-child,
-  .wizard-panel.wiz-glass > .row2:last-child{margin-bottom:0;}
+  .ord-addr-row{
+    display:flex;align-items:center;gap:10px;
+    border-bottom:1px solid var(--border);
+  }
+  .ord-addr-row:focus-within{border-bottom-color:var(--route);}
+  .ord-addr-ico{font-size:17px;color:var(--muted);flex:none;}
+  #tab-order .ord-addr-row input{
+    flex:1;min-width:0;height:auto;
+    background:none;border:none;border-radius:0;box-shadow:none;outline:none;
+    padding:0 0 11px;
+    font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--ink);
+  }
+  #tab-order .ord-addr-row input:focus{outline:none;box-shadow:none;}
+
+  /* ---- Asosiy tugma: chapda amal, o'ngda keyingi qadam nomi ---- */
+  #tab-order .ord-next{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    width:100%;border-radius:999px;padding:17px 22px;
+    font-size:16px;font-weight:700;
+  }
+  .ord-next-hint{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:13.5px;font-weight:600;opacity:0.72;
+  }
+  .ord-next-hint .ic-svg{font-size:17px;}
+  #tab-order .ord-back{border-radius:999px;padding:17px 22px;}
+
+  /* ---- Buyurtmani kuzatish ---- */
+  .ord-track{
+    margin-top:var(--s7);padding-top:var(--s6);
+    border-top:1px solid var(--border);
+  }
+  .ord-kicker{
+    display:flex;align-items:center;gap:8px;margin:0 0 10px;
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--route);
+  }
+  .ord-kicker .ic-svg{font-size:15px;}
+  .ord-track-h{
+    font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:700;
+    letter-spacing:-0.02em;color:var(--ink);margin:0 0 var(--s5);
+  }
+  .ord-track-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);}
+  .ord-track-foot{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-top:var(--s3);
+  }
+  .ord-safe{
+    display:inline-flex;align-items:center;gap:7px;min-width:0;
+    font-size:12.5px;color:var(--muted);
+  }
+  .ord-safe .ic-svg{font-size:15px;flex:none;}
+  #tab-order .ord-check{
+    flex:none;width:auto;min-width:0;border-radius:999px;padding:13px 22px;
+    font-size:14.5px;font-weight:700;
+    background:var(--ink);color:var(--paper);box-shadow:none;
+  }
+  #tab-order .ord-check:hover{background:var(--ink);filter:brightness(1.12);}
 
   @keyframes wizardIn{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:none;}}
   .wizard-actions{display:flex;gap:var(--s3);margin-top:0;}
@@ -4658,17 +4755,23 @@
 
     <!-- Sehrgar bilan bir xil shisha guruh — pastda yolg'iz eski
          uslubdagi to'rtburchak qolib ketmasin. -->
-    <div class="wiz-glass wiz-card reveal" style="margin-top:var(--s5);">
-      <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg> <span data-i18n="order.trackTitle">Buyurtmani kuzatish</span></h3>
-      <p class="note" style="margin-top:0;margin-bottom:var(--s4);" data-i18n="order.trackNote">Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.</p>
-      <div class="row2">
-        <div class="field"><label for="fTrackCode" data-i18n="order.trackCodeLabel">Buyurtma kodi</label>
-          <input type="text" id="fTrackCode" placeholder="YL-XXXXX"></div>
-        <div class="field"><label for="fTrackPhone" data-i18n="order.trackPhoneLabel">Telefon</label>
-          <input type="tel" id="fTrackPhone" placeholder="90 123 45 67"></div>
+    <div class="ord-track reveal">
+      <p class="ord-kicker"><svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg> <span data-i18n="order.trackTitle">Buyurtmani kuzatish</span></p>
+      <h3 class="ord-track-h" data-i18n="order.trackHead">Yuk qayerdaligini biling</h3>
+      <div class="ord-track-row">
+        <div class="ord-addr"><label for="fTrackCode" data-i18n="order.trackCodeLabel">Buyurtma kodi</label>
+          <div class="ord-addr-row"><input type="text" id="fTrackCode" placeholder="YL-XXXXX"></div></div>
+        <div class="ord-addr"><label for="fTrackPhone" data-i18n="order.trackPhoneLabel">Telefon</label>
+          <div class="ord-addr-row"><input type="tel" id="fTrackPhone" placeholder="90 123 45 67"></div></div>
       </div>
       <p class="note" id="trackNote"></p>
-      <button class="btn ghost" id="btnTrack" data-i18n="order.trackBtn">Holatni tekshirish</button>
+      <div class="ord-track-foot">
+        <span class="ord-safe"><svg class="ic-svg" aria-hidden="true"><use href="#iconShield"/></svg>
+          <span data-i18n="order.trackSafe">Ma'lumotlaringiz himoyalangan</span></span>
+        <button class="btn ord-check" id="btnTrack">
+          <span data-i18n="order.trackBtn">Holatni tekshirish</span>
+        </button>
+      </div>
       <div id="trackResult"></div>
     </div>
 
@@ -5360,6 +5463,7 @@
       "order.how4": "Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Aloqa</button> bo'limidan yozing.",
       "order.trackTitle": "Buyurtmani kuzatish", "order.trackNote": "Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.",
       "order.trackCodeLabel": "Buyurtma kodi", "order.trackPhoneLabel": "Telefon", "order.trackBtn": "Holatni tekshirish",
+      "order.trackHead": "Yuk qayerdaligini biling", "order.trackSafe": "Ma'lumotlaringiz himoyalangan",
       "wizard.route": "Yo'nalish", "wizard.cargo": "Yuk", "wizard.truck": "Mashina", "wizard.price": "Narx", "wizard.publish": "Yuborish",
       "wizard.routeTitle": "Qayerdan qayerga?", "wizard.sameCity": "Qayerdan va qayerga turli shaharlarni tanlang.",
       "wizard.cargoTitle": "Yukingiz haqida", "wizard.truckTitle": "Mashina va sana", "wizard.priceTitle": "Narx va aloqa",
@@ -5367,6 +5471,7 @@
       "wizard.publishTitle": "Tekshirib chiqing", "wizard.reviewRoute": "Yo'nalish", "wizard.reviewPrice": "Narx", "wizard.reviewContact": "Aloqa",
       "wizard.reviewIncomplete": "Avvalgi bosqichlarni to'ldirib chiqing.", "wizard.sending": "Yuborilmoqda…",
       "wizard.sendBtn": "Haydovchilarga yuborish", "wizard.back": "Orqaga", "wizard.next": "Davom etish",
+      "wizard.approx": "taxm.", "wizard.hoursShort": "soat",
       "install.ios1": "Pastdagi <b>Ulashish</b> tugmasini bosing (yuqoriga qaragan strelkali kvadrat).",
       "install.ios2": "Ro'yxatni pastga suring va <b>«Asosiy ekranga qo'shish»</b> ni tanlang.",
       "install.ios3": "O'ng yuqoridagi <b>Qo'shish</b> ni bosing — YO'LDA ikonkasi ekranda paydo bo'ladi.",
@@ -5855,6 +5960,7 @@
       "order.how4": "Если возникла проблема (водитель не приехал, не сошлись в цене) — напишите нам в разделе <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Контакты</button>.",
       "order.trackTitle": "Отследить заказ", "order.trackNote": "Проверьте статус по коду заказа и номеру телефона.",
       "order.trackCodeLabel": "Код заказа", "order.trackPhoneLabel": "Телефон", "order.trackBtn": "Проверить статус",
+      "order.trackHead": "Узнайте, где ваш груз", "order.trackSafe": "Ваши данные защищены",
       "wizard.route": "Маршрут", "wizard.cargo": "Груз", "wizard.truck": "Машина", "wizard.price": "Цена", "wizard.publish": "Отправить",
       "wizard.routeTitle": "Откуда куда?", "wizard.sameCity": "Выберите разные города отправления и назначения.",
       "wizard.cargoTitle": "О вашем грузе", "wizard.truckTitle": "Машина и дата", "wizard.priceTitle": "Цена и контакты",
@@ -5862,6 +5968,7 @@
       "wizard.publishTitle": "Проверьте данные", "wizard.reviewRoute": "Маршрут", "wizard.reviewPrice": "Цена", "wizard.reviewContact": "Контакт",
       "wizard.reviewIncomplete": "Заполните предыдущие шаги.", "wizard.sending": "Отправляется…",
       "wizard.sendBtn": "Отправить водителям", "wizard.back": "Назад", "wizard.next": "Далее",
+      "wizard.approx": "прибл.", "wizard.hoursShort": "ч",
       "install.ios1": "Нажмите кнопку <b>Поделиться</b> внизу (квадрат со стрелкой вверх).",
       "install.ios2": "Прокрутите список вниз и выберите <b>«На экран «Домой»»</b>.",
       "install.ios3": "Нажмите <b>Добавить</b> справа вверху — значок YO'LDA появится на экране.",
@@ -6346,6 +6453,7 @@
       "order.how4": "If something goes wrong (driver didn't show, couldn't agree on price) — let us know in the <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Contact</button> section.",
       "order.trackTitle": "Track your order", "order.trackNote": "Check the status with your order code and phone number.",
       "order.trackCodeLabel": "Order code", "order.trackPhoneLabel": "Phone", "order.trackBtn": "Check status",
+      "order.trackHead": "See where your cargo is", "order.trackSafe": "Your data is protected",
       "wizard.route": "Route", "wizard.cargo": "Cargo", "wizard.truck": "Truck", "wizard.price": "Price", "wizard.publish": "Publish",
       "wizard.routeTitle": "From where to where?", "wizard.sameCity": "Choose different departure and destination cities.",
       "wizard.cargoTitle": "About your cargo", "wizard.truckTitle": "Truck and date", "wizard.priceTitle": "Price and contact",
@@ -6353,6 +6461,7 @@
       "wizard.publishTitle": "Review before sending", "wizard.reviewRoute": "Route", "wizard.reviewPrice": "Price", "wizard.reviewContact": "Contact",
       "wizard.reviewIncomplete": "Fill in the earlier steps first.", "wizard.sending": "Sending…",
       "wizard.sendBtn": "Send to drivers", "wizard.back": "Back", "wizard.next": "Continue",
+      "wizard.approx": "approx.", "wizard.hoursShort": "h",
       "install.ios1": "Tap the <b>Share</b> button at the bottom (the square with an arrow pointing up).",
       "install.ios2": "Scroll down the list and choose <b>Add to Home Screen</b>.",
       "install.ios3": "Tap <b>Add</b> at the top right — the YO'LDA icon appears on your home screen.",
@@ -14681,7 +14790,7 @@
      same validation, and the same submitOrder() as before; a step is just
      which fields formView() currently shows. ---------- */
   function wizardStepsHtml(){
-    return '<div class="wizard-steps wiz-glass">' + WIZARD_STEPS.map(function(s, i){
+    return '<div class="wizard-steps">' + WIZARD_STEPS.map(function(s, i){
       var n = i + 1;
       var cls = n < state.step ? "done" : (n === state.step ? "active" : "");
       var dot = n < state.step ? icon("iconCheckLine") : String(n);
@@ -14690,23 +14799,66 @@
     }).join("") + '</div>';
   }
 
+  /* Yurishning taxminiy davomiyligi. Alohida ma'lumot manbai yo'q,
+     shuning uchun masofadan hisoblanadi: O'zbekiston yo'llarida yuk
+     mashinasining o'rtacha tezligi ~55 km/soat (to'xtash, post va
+     shahar ichidagi sekinlik bilan birga) va har 4,5 soatda yarim
+     soat dam. Shuning uchun yozuvda ham "taxm." turadi — bu va'da
+     emas, mo'ljal. */
+  var TRUCK_AVG_KMH = 55;
+
+  function travelHours(distanceKm){
+    if(!distanceKm || distanceKm <= 0) return 0;
+    var driving = distanceKm / TRUCK_AVG_KMH;
+    return Math.round(driving + Math.floor(driving / 4.5) * 0.5);
+  }
+
   function stepRouteHtml(){
     var distance = distanceBetween(state.from, state.to);
     var sameCity = state.from === state.to;
-    return '<div class="wizard-panel wiz-glass">'
-      + '<h3 class="card-title">'+icon("iconRoute")+' <span data-i18n="wizard.routeTitle">Qayerdan qayerga?</span></h3>'
-      + '<div class="row2">'
-      +   '<div class="field"><label for="fFrom" data-i18n="loads.from">Qayerdan</label><select id="fFrom">'+cityOptions(state.from)+'</select></div>'
-      +   '<div class="field"><label for="fTo" data-i18n="loads.to">Qayerga</label><select id="fTo">'+cityOptions(state.to)+'</select></div>'
+    var hours = travelHours(distance);
+    return '<div class="wizard-panel ord-step">'
+      + '<div class="ord-route">'
+      +   ordPointHtml("from")
+      +   '<div class="ord-link" aria-hidden="true"></div>'
+      +   ordPointHtml("to")
       + '</div>'
       + (sameCity
-          ? '<p class="note" data-i18n="wizard.sameCity">Qayerdan va qayerga turli shaharlarni tanlang.</p>'
-          : '<p class="note">'+icon("iconRoute")+' '+formatNum(distance)+' km</p>')
+          ? '<p class="ord-meta ord-meta--warn" data-i18n="wizard.sameCity">Qayerdan va qayerga turli shaharlarni tanlang.</p>'
+          : '<p class="ord-meta">'+icon("iconRoute")
+            + '<span>'+formatNum(distance)+' km</span>'
+            + '<span class="ord-dotsep">\u2022</span>'
+            + '<span>'+(t("wizard.approx") || "taxm.")+' '+hours+' '+(t("wizard.hoursShort") || "soat")+'</span>'
+            + '</p>')
       /* Aniq nuqtalar — ixtiyoriy. Shahar nomi haydovchiga yetarli
          emas: u shaharning qayeriga borishni bilmaydi va telefon
          qilishga majbur bo'ladi. */
       + pointFieldHtml("from")
       + pointFieldHtml("to")
+      + '</div>';
+  }
+
+  /* Shahar tanlash — quti emas: chapda doira belgi, tepasida kichik
+     yozuv, ostida ingichka chiziq. <select> ning o'zi saqlanadi
+     (klaviatura, ekran o'quvchi va mavjud hodisalar shu bilan
+     ishlaydi), faqat ko'rinishi olib tashlanadi. */
+  function ordPointHtml(which){
+    var isFrom = which === "from";
+    var id = isFrom ? "fFrom" : "fTo";
+    var value = isFrom ? state.from : state.to;
+    var labelKey = isFrom ? "loads.from" : "loads.to";
+    var labelText = isFrom ? "Qayerdan" : "Qayerga";
+    return '<div class="ord-point">'
+      + '<span class="ord-badge ord-badge--'+which+'" aria-hidden="true">'
+      +   icon(isFrom ? "iconTarget" : "iconPin")
+      + '</span>'
+      + '<div class="ord-field">'
+      +   '<label for="'+id+'" data-i18n="'+labelKey+'">'+escapeHtml(labelText)+'</label>'
+      +   '<div class="ord-pick">'
+      +     '<select id="'+id+'">'+cityOptions(value)+'</select>'
+      +     icon("iconChevronDown", "ord-chev")
+      +   '</div>'
+      + '</div>'
       + '</div>';
   }
 
@@ -14716,16 +14868,19 @@
     var labelText = which === "from"
       ? "Olib ketish manzili (ixtiyoriy)"
       : "Yetkazish manzili (ixtiyoriy)";
-    return '<div class="field">'
+    return '<div class="ord-addr">'
       + '<label for="fAddr'+which+'" data-i18n="'+labelKey+'">'+escapeHtml(labelText)+'</label>'
-      + '<input type="text" id="fAddr'+which+'" maxlength="200" '
-      +   'placeholder="Ko\'cha, uy, mo\'ljal" data-i18n-placeholder="order.addressPlaceholder" '
-      +   'value="'+escapeHtml(addr)+'">'
+      + '<div class="ord-addr-row">'
+      +   icon("iconPin", "ord-addr-ico")
+      +   '<input type="text" id="fAddr'+which+'" maxlength="200" '
+      +     'placeholder="Ko\'cha, uy, mo\'ljal" data-i18n-placeholder="order.addressPlaceholder" '
+      +     'value="'+escapeHtml(addr)+'">'
+      + '</div>'
       + '</div>';
   }
 
   function stepCargoHtml(){
-    return '<div class="wizard-panel wiz-glass">'
+    return '<div class="wizard-panel ord-step">'
       + '<h3 class="card-title">'+icon("iconClipboard")+' <span data-i18n="wizard.cargoTitle">Yukingiz haqida</span></h3>'
       + '<div class="field"><label for="fWeight" data-i18n="order.weightLabel">Yuk og\'irligi (kg)</label>'
       +   '<input type="text" id="fWeight" inputmode="numeric" data-grouped="1" value="'+groupNum(state.weight)+'"></div>'
@@ -14765,7 +14920,7 @@
   }
 
   function stepTruckHtml(){
-    return '<div class="wizard-panel wiz-glass">'
+    return '<div class="wizard-panel ord-step">'
       + '<h3 class="card-title">'+icon("iconTruck")+' <span data-i18n="wizard.truckTitle">Mashina va sana</span></h3>'
       + '<div class="field"><label for="fTruckType" data-i18n="order.truckTypeLabel">Mashina turi (ixtiyoriy)</label>'
       +   '<select id="fTruckType"><option value="" data-i18n="order.anyTruck">Farqi yo\'q</option>'
@@ -14782,7 +14937,7 @@
     var distance = distanceBetween(state.from, state.to);
     var cargo = cargoById(state.cargo);
     var price = calcPrice(distance, state.weight, cargo.mult);
-    return '<div class="wizard-panel wiz-glass">'
+    return '<div class="wizard-panel ord-step">'
       + '<h3 class="card-title">'+icon("iconInfo")+' <span data-i18n="wizard.priceTitle">Narx va aloqa</span></h3>'
       + '<div class="stub-route">'
       +   '<span class="stub-city">'+escapeHtml(state.from)+'</span>'
@@ -14819,7 +14974,7 @@
     var ready = state.from !== state.to && state.weight > 0
       && state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn() && cargoReady;
 
-    return '<div class="wizard-panel wiz-glass">'
+    return '<div class="wizard-panel ord-step">'
       + '<h3 class="card-title">'+icon("iconCheck")+' <span data-i18n="wizard.publishTitle">Tekshirib chiqing</span></h3>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewRoute">Yo\'nalish</span><span class="wr-v">'+escapeHtml(state.from)+' → '+escapeHtml(state.to)+'</span></div>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.weightLabel">Og\'irlik</span><span class="wr-v">'+formatNum(state.weight)+' kg</span></div>'
@@ -14841,9 +14996,22 @@
     var builders = [stepRouteHtml, stepCargoHtml, stepTruckHtml, stepPriceHtml, stepPublishHtml];
     var stepContent = builders[state.step - 1]();
     var isLast = state.step === WIZARD_STEPS.length;
+    /* Asosiy tugma keyingi qadam nomini ham ko'rsatadi — odam nimaga
+       o'tayotganini oldindan biladi. Nom o'ylab topilmaydi, aynan
+       WIZARD_STEPS dan olinadi, shuning uchun tarjimasi ham joyida. */
+    var nextStep = WIZARD_STEPS[state.step];
+    var nextName = nextStep ? (t(nextStep.labelKey) || nextStep.label) : "";
     var navHtml = '<div class="wizard-actions">'
-      + (state.step > 1 ? '<button type="button" class="btn ghost" id="btnWizardBack" data-i18n="wizard.back">Orqaga</button>' : '')
-      + (!isLast ? '<button type="button" class="btn" id="btnWizardNext" data-i18n="wizard.next">Davom etish</button>' : '')
+      + (state.step > 1 ? '<button type="button" class="btn ghost ord-back" id="btnWizardBack" data-i18n="wizard.back">Orqaga</button>' : '')
+      + (!isLast
+          ? '<button type="button" class="btn ord-next" id="btnWizardNext">'
+            + '<span data-i18n="wizard.next">Davom etish</span>'
+            + '<span class="ord-next-hint">'
+            +   '<span>'+escapeHtml(nextName)+'</span>'
+            +   icon("iconArrowRight")
+            + '</span>'
+            + '</button>'
+          : '')
       + '</div>';
     // Hamma narsani o'rab turgan tashqi to'rtburchak olib tashlandi:
     // qadamlar yo'lagi va qadamning o'zi fon ustida alohida "guruh"
