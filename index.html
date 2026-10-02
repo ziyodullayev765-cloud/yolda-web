@@ -2534,13 +2534,15 @@
   }
 
   .chat-filters{display:flex;gap:8px;margin:0 0 var(--s3);flex-wrap:wrap;}
+  /* Ikkala chip ham yashil: tanlanmagani — och yashil yuza va yashil
+     yozuv, tanlangani — to'q yashil yuza va oq yozuv. */
   .chat-chip{
     border:none;border-radius:999px;padding:8px 16px;cursor:pointer;
-    background:var(--paper-dark);color:var(--ink-soft);
+    background:var(--tint);color:var(--route);
     font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
     transition:background 0.18s var(--ease), color 0.18s var(--ease);
   }
-  .chat-chip.active{background:var(--ink);color:var(--paper);}
+  .chat-chip.active{background:var(--route);color:#fff;}
   .chat-chip[hidden]{display:none;}
 
   /* O'qilmagan xabarlar soni — o'ng tomonda, qizil doira. */
@@ -11419,8 +11421,8 @@
       +   '<input type="text" id="fChatSearch" data-i18n-placeholder="chat.searchPh" placeholder="Qidirish">'
       + '</div>'
       + '<div class="chat-filters" id="chatFilters">'
-      +   '<button type="button" class="chat-chip active" data-chat-filter="all" data-i18n="chat.filterAll">Barchasi</button>'
       +   '<button type="button" class="chat-chip" data-chat-filter="unread" id="chipChatUnread" hidden></button>'
+      +   '<button type="button" class="chat-chip active" data-chat-filter="all" data-i18n="chat.filterAll">Barchasi</button>'
       + '</div>'
       + '<div id="chatSearchResults"></div>'
       + '<div id="chatInboxWrap">'
