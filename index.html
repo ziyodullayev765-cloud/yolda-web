@@ -2835,22 +2835,9 @@
     padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
     margin:0;border-top:1px solid var(--border);background:var(--paper);
   }
-  /* Maydon <input> emas, contenteditable — ko'rinishi esa aynan
-     avvalgidek qoladi. 16px: kichikroq bo'lsa telefon sahifani
-     kattalashtirib yuboradi. */
-  .chat-input-row #fChatMessage{
+  .chat-input-row input{
     flex:1;min-width:0;border-radius:999px;background:var(--card);
-    border:1px solid var(--border);padding:11px 16px;
-    font-family:'Inter',sans-serif;font-size:16px;line-height:1.4;color:var(--ink);
-    max-height:120px;overflow-y:auto;overflow-wrap:break-word;word-break:break-word;
-    -webkit-user-select:text;user-select:text;outline:none;
-  }
-  .chat-input-row #fChatMessage:focus{border-color:var(--route);}
-  /* O'rnidagi yozuv: `:empty` ishonchsiz (brauzer ichkariga <br>
-     qo'yib yuboradi), shuning uchun bo'shligi data-empty bilan
-     belgilanadi. */
-  .chat-input-row #fChatMessage[data-empty="1"]::before{
-    content:attr(data-placeholder);color:var(--muted);pointer-events:none;
+    border:1px solid var(--border);padding:11px 16px;height:auto;
   }
   .chat-input-row .btn.chat-send{
     width:44px;height:44px;min-height:44px;flex:none;
@@ -10705,7 +10692,7 @@
       setTimeout(function(){
         openChatThread(null, tk.sellerUsername);
         setTimeout(function(){
-          var input = makeChatEditor();
+          var input = document.getElementById("fChatMessage");
           if(input && !input.value){
             input.value = (t("trucks.chatPrefill") || "Salom,") + " " + tk.brand + " " + (t("trucks.chatPrefillTail") || "hali sotuvdami?");
             input.focus();
@@ -11697,14 +11684,7 @@
       + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
       + '<div class="chat-input-row">'
-      // Oddiy <input> emas, contenteditable: shunda klaviatura buni
-      // "forma maydoni" deb bilmaydi va o'zining maydonlar orasida
-      // yuradigan yo'lagini (^ ⌄ ✓) chiqarmaydi. Barcha eski kod
-      // `input.value` bilan ishlashda davom etadi — pastdagi
-      // makeChatEditor() shu xossani qo'shib qo'yadi.
-      +   '<div id="fChatMessage" contenteditable="true" role="textbox" aria-multiline="false"'
-      +     ' data-empty="1" data-placeholder="Xabar yozing..." enterkeyhint="send"'
-      +     ' autocomplete="off" autocorrect="off" aria-label="Xabar yozing"></div>'
+      +   '<input type="text" id="fChatMessage" maxlength="1000" placeholder="Xabar yozing...">'
       +   '<button class="btn chat-send" id="btnChatSend" aria-label="Yuborish">'+icon("iconArrowRight")+'</button>'
       + '</div>'
       + '<p class="note" id="chatSendNote"></p>';
@@ -11719,109 +11699,16 @@
     var whoBtn = document.getElementById("btnChatWho");
     if(whoBtn) whoBtn.addEventListener("click", function(){ openPublicProfile(username); });
 
-    var input = makeChatEditor();
+    var input = document.getElementById("fChatMessage");
     // Yozilgan, lekin yuborilmagan xabar joyida turadi.
     input.value = readChatDraft(username);
-    input.addEventListener("input", function(){
-      syncChatEditor(input);
-      saveChatDraft(username, input.value);
-    });
+    input.addEventListener("input", function(){ saveChatDraft(username, input.value); });
     input.addEventListener("keydown", function(e){
-      if(e.key === "Enter" && !e.shiftKey){
-        // contenteditable Enter bosilganda qator tashlaydi — kerak emas.
-        e.preventDefault();
-        sendChatMessage();
-      }
-    });
-    // Nusxa ko'chirib qo'yilganda faqat matn olinadi, HTML emas.
-    input.addEventListener("paste", function(e){
-      e.preventDefault();
-      var text = "";
-      try{ text = (e.clipboardData || window.clipboardData).getData("text/plain"); }catch(err){}
-      insertChatText(input, text);
+      if(e.key === "Enter") sendChatMessage();
     });
 
     loadChatThread(true);
     chatPollTimer = setInterval(function(){ loadChatThread(false); }, 4000);
-  }
-
-  /* ------------------------------------------------------------
-     Xabar maydoni — contenteditable.
-
-     Sababi: telefon klaviaturasi oddiy <input> ustida o'zining
-     "maydonlar orasida yurish" yo'lagini ochadi (^ ⌄ ✓). U yo'lak
-     sahifadan tashqarida turadi va veb-kod uni o'chira olmaydi;
-     birdan-bir yo'l — klaviatura uchun forma maydoni qoldirmaslik.
-
-     Qolgan kodning hammasi `input.value` bilan ishlaydi, shuning
-     uchun o'sha xossa shu yerda qo'shib qo'yiladi — bir joyda, bir
-     marta. Hech bir chaqiruv joyini o'zgartirish shart emas.
-     ------------------------------------------------------------ */
-  var CHAT_MAX_LEN = 1000;
-
-  function syncChatEditor(el){
-    if(!el) return;
-    var text = el.textContent || "";
-    if(text.length > CHAT_MAX_LEN){
-      el.textContent = text.slice(0, CHAT_MAX_LEN);
-      placeCaretAtEnd(el);
-      text = el.textContent || "";
-    }
-    el.setAttribute("data-empty", text.trim() ? "0" : "1");
-  }
-
-  function placeCaretAtEnd(el){
-    try{
-      var range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }catch(e){}
-  }
-
-  function insertChatText(el, text){
-    if(!text) return;
-    // Bir qatorli maydon — yangi qator oddiy bo'shliqqa aylanadi.
-    var clean = String(text).replace(/\s*\n+\s*/g, " ");
-    try{
-      var sel = window.getSelection();
-      if(sel && sel.rangeCount){
-        var range = sel.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(clean));
-        range.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } else {
-        el.textContent = (el.textContent || "") + clean;
-        placeCaretAtEnd(el);
-      }
-    }catch(e){
-      el.textContent = (el.textContent || "") + clean;
-    }
-    // Brauzer qo'shib yuborgan bo'lak tugunlarni bitta matnga yig'amiz.
-    el.normalize();
-    syncChatEditor(el);
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-  }
-
-  /** `value` xossasini qo'shadi — eski kod o'zgarishsiz ishlayveradi. */
-  function makeChatEditor(){
-    var el = document.getElementById("fChatMessage");
-    if(!el || el.__chatEditor) return el;
-    el.__chatEditor = true;
-    Object.defineProperty(el, "value", {
-      configurable: true,
-      get: function(){ return el.textContent || ""; },
-      set: function(v){
-        var s = String(v === null || v === undefined ? "" : v).slice(0, CHAT_MAX_LEN);
-        if((el.textContent || "") !== s) el.textContent = s;
-        el.setAttribute("data-empty", s.trim() ? "0" : "1");
-      }
-    });
-    return el;
   }
 
   /**
@@ -12196,21 +12083,15 @@
 
   function beginChatEdit(id, text){
     chatEditingId = id;
-    var input = makeChatEditor();
+    var input = document.getElementById("fChatMessage");
     var note = document.getElementById("chatEditingNote");
-    if(input){
-      input.value = text;
-      input.focus();
-      // contenteditable fokusda kursorni boshiga qo'yadi — matn
-      // tahrirlanayotgani uchun oxiriga ko'chiramiz.
-      placeCaretAtEnd(input);
-    }
+    if(input){ input.value = text; input.focus(); }
     if(note) note.hidden = false;
   }
 
   function cancelChatEdit(){
     chatEditingId = null;
-    var input = makeChatEditor();
+    var input = document.getElementById("fChatMessage");
     var note = document.getElementById("chatEditingNote");
     if(input) input.value = "";
     if(note) note.hidden = true;
@@ -12238,7 +12119,7 @@
   }
 
   function sendChatMessage(){
-    var input = makeChatEditor();
+    var input = document.getElementById("fChatMessage");
     var note = document.getElementById("chatSendNote");
     if(!input || !chatWithUsername) return;
     var text = input.value.trim();
@@ -14389,7 +14270,7 @@
     switchTab("chat");
     openChatThread(null, username);
     if(prefill){
-      var input = makeChatEditor();
+      var input = document.getElementById("fChatMessage");
       if(input) input.value = prefill;
     }
   }
