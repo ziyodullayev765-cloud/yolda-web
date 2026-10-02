@@ -730,9 +730,13 @@
   .bn-item.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
 
   .bn-item,.bn-ghost{
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    /* Balandlik qat'iy: shunda barcha bo'limlar — "Yuk joylash" ham —
+       bir xil o'lchamda bo'ladi va panel ularning eng balandiga
+       qarab semirib ketmaydi. Panel past va cho'ziq bo'lib qoladi. */
+    flex:1;height:52px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     background:none;border:none;cursor:pointer;
-    padding:9px 4px 10px;position:relative;z-index:1;
+    padding:0 4px;position:relative;z-index:1;
     font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.01em;
     color:var(--muted);
     /* Rang ham linza bilan birga oqib o'tsin, birdan yonib qolmasin. */
@@ -758,13 +762,13 @@
   .bn-item--primary{color:var(--route);}
   .bn-item--primary .bn-fab{
     display:flex;align-items:center;justify-content:center;
-    width:38px;height:38px;border-radius:50%;margin-top:0;
+    width:30px;height:30px;border-radius:50%;margin-top:0;flex:0 0 auto;
     background:var(--route);
     box-shadow:0 2px 8px rgba(10,159,91,0.32);
     transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s var(--ease);
   }
   :root[data-theme="dark"] .bn-item--primary .bn-fab{box-shadow:0 2px 8px rgba(10,159,91,0.45);}
-  .bn-item--primary .bn-fab .ic-svg{font-size:21px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
+  .bn-item--primary .bn-fab .ic-svg{font-size:18px;color:#fff;stroke-width:2.6;transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1);}
   .bn-item--primary:hover .bn-fab{transform:translateY(-2px);}
   .bn-item--primary.active .bn-fab{transform:scale(1.06);}
   .bn-item--primary:active .bn-fab{transform:scale(0.94);}
@@ -780,7 +784,7 @@
      ko'rinib turadi — tabletka ularning ORTIDA, ustida emas. */
   .bn-blob{
     --ld:64px;                       /* tabletka eni (JS shuni o'qiydi) */
-    height:50px;margin-top:-25px;
+    height:44px;margin-top:-22px;
     border-radius:999px;
     z-index:0;                       /* belgilar ostida */
   }
