@@ -1371,7 +1371,26 @@
       radial-gradient(circle at 50% 0%, rgba(10,159,91,0.05), transparent 55%),
       var(--paper-dark);
   }
-  .app-shell{max-width:660px;margin:0 auto;padding:var(--s9) var(--s5) var(--s9);}
+  /* Tepadagi 64px bo'shliq saytning kirish sahifasidan qolgan edi —
+     ilova ichidagi bo'lim uchun ko'p. Qolgan bo'limlar bilan bir xil. */
+  .app-shell{max-width:660px;margin:0 auto;padding:var(--s6) var(--s4) var(--s9);}
+
+  /* Shisha ortida sinadigan narsa bo'lishi kerak — tekis qora fonda
+     shisha oddiy kulrang qutiga aylanadi. Shuning uchun bo'lim fonida
+     ikkita yumshoq yorug'lik dog'i turadi: biri yashil (brend rangi),
+     ikkinchisi sovuqroq. Ular qimirlamaydi va hech narsani to'smaydi. */
+  #tab-order{position:relative;isolation:isolate;}
+  #tab-order::before{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(60% 38% at 16% 4%, rgba(10,159,91,0.16), transparent 70%),
+      radial-gradient(52% 32% at 92% 24%, rgba(56,132,255,0.10), transparent 72%);
+  }
+  :root[data-theme="dark"] #tab-order::before{
+    background:
+      radial-gradient(60% 38% at 16% 4%, rgba(45,212,128,0.17), transparent 70%),
+      radial-gradient(52% 32% at 92% 24%, rgba(70,140,255,0.11), transparent 72%);
+  }
 
   .tabs{
     display:flex;gap:var(--s1);margin:var(--s5) 0 var(--s5);
@@ -1628,7 +1647,8 @@
   .price-hint .ph-sub{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
 
   /* ---------- Yuk joylash: 5-step wizard ---------- */
-  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:var(--s6);}
+  /* Qadamlar yo'lagi — alohida, past shisha yo'lak. */
+  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:0;padding:14px var(--s5) 12px;}
   .wizard-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:30px;}
   .wizard-step .ws-dot{
     width:30px;height:30px;border-radius:50%;background:var(--paper-dark);color:var(--muted);
@@ -1641,9 +1661,56 @@
   .wizard-step.active .ws-label{color:var(--route);}
   .wizard-line{flex:1;height:2px;background:var(--border);margin-top:15px;transition:background 0.25s var(--ease);}
   .wizard-line.done{background:var(--accepted);}
+  /* ---------- "Yuk joylash" — guruhlangan ko'rinish ----------
+     Ilgari butun sehrgar bitta katta to'rtburchak kartochka ichida
+     turardi, maydonlar esa uning ichida yana quti bo'lib — quti
+     ichida quti. Endi tashqi quti yo'q: qadamlar yo'lagi ham,
+     qadamning o'zi ham fon ustida alohida shisha "guruh".
+
+     Shishaning o'zi iOS 27 ga moslandi: shaffofligi kamaytirilgan,
+     chekkasi quyuqroq — ya'ni ustidagi yozuv aniq o'qiladi. */
+  .wiz{display:flex;flex-direction:column;gap:var(--s4);}
+
+  .wiz-glass{
+    background:var(--glass);
+    -webkit-backdrop-filter:saturate(180%) blur(22px);
+    backdrop-filter:saturate(180%) blur(22px);
+    border:1px solid var(--glass-brd);
+    border-radius:26px;
+    box-shadow:0 1px 0 rgba(255,255,255,0.18) inset,
+               0 10px 30px rgba(15,23,42,0.10);
+  }
+  :root[data-theme="dark"] .wiz-glass{
+    box-shadow:0 1px 0 rgba(255,255,255,0.07) inset,
+               0 12px 34px rgba(0,0,0,0.55);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .wiz-glass{background:var(--card);}
+  }
+
   .wizard-panel{animation:wizardIn 0.28s var(--ease);}
+  .wizard-panel.wiz-glass,
+  .wiz-card{padding:var(--s5);}
+  .wiz-card > .card-title{
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 var(--s3);gap:7px;
+  }
+  .wiz-card > .card-title .ic-svg{font-size:14px;color:var(--route);}
+  /* Guruh sarlavhasi — iOS dagidek kichik va bosiq, katta qalin
+     sarlavha emas: asosiy e'tibor maydonlarda bo'lishi kerak. */
+  .wizard-panel.wiz-glass > .card-title{
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 var(--s4);gap:7px;
+  }
+  .wizard-panel.wiz-glass > .card-title .ic-svg{font-size:14px;color:var(--route);}
+  /* Guruh ichidagi oxirgi maydon ostida ortiqcha bo'shliq qolmasin. */
+  .wizard-panel.wiz-glass > .field:last-child,
+  .wizard-panel.wiz-glass > .row2:last-child{margin-bottom:0;}
+
   @keyframes wizardIn{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:none;}}
-  .wizard-actions{display:flex;gap:var(--s3);margin-top:var(--s6);}
+  .wizard-actions{display:flex;gap:var(--s3);margin-top:0;}
   .wizard-actions > *{flex:1;}
   .wizard-review-row{
     display:flex;justify-content:space-between;gap:var(--s3);padding:10px 0;
@@ -3071,7 +3138,7 @@
   @media(max-width:640px){
     .hero-wrap{padding:var(--s7) var(--s4) var(--s5);}
     .section{padding:var(--s8) var(--s4);}
-    .app-shell{padding:var(--s8) var(--s4);}
+    .app-shell{padding:var(--s6) var(--s4) var(--s9);}
     .foot{padding:var(--s7) var(--s4) var(--s6);}
     .card{padding:var(--s4);}
     .tear{margin-left:calc(var(--s4) * -1);margin-right:calc(var(--s4) * -1);}
@@ -4589,7 +4656,9 @@
     </div>
     <div id="content" aria-live="polite"></div>
 
-    <div class="card reveal" style="margin-top:var(--s4);">
+    <!-- Sehrgar bilan bir xil shisha guruh — pastda yolg'iz eski
+         uslubdagi to'rtburchak qolib ketmasin. -->
+    <div class="wiz-glass wiz-card reveal" style="margin-top:var(--s5);">
       <h3 class="card-title"><svg class="ic-svg" aria-hidden="true"><use href="#iconRoute"/></svg> <span data-i18n="order.trackTitle">Buyurtmani kuzatish</span></h3>
       <p class="note" style="margin-top:0;margin-bottom:var(--s4);" data-i18n="order.trackNote">Buyurtma kodi va telefon raqamingiz bilan holatni tekshiring.</p>
       <div class="row2">
@@ -14612,7 +14681,7 @@
      same validation, and the same submitOrder() as before; a step is just
      which fields formView() currently shows. ---------- */
   function wizardStepsHtml(){
-    return '<div class="wizard-steps">' + WIZARD_STEPS.map(function(s, i){
+    return '<div class="wizard-steps wiz-glass">' + WIZARD_STEPS.map(function(s, i){
       var n = i + 1;
       var cls = n < state.step ? "done" : (n === state.step ? "active" : "");
       var dot = n < state.step ? icon("iconCheckLine") : String(n);
@@ -14624,7 +14693,7 @@
   function stepRouteHtml(){
     var distance = distanceBetween(state.from, state.to);
     var sameCity = state.from === state.to;
-    return '<div class="wizard-panel">'
+    return '<div class="wizard-panel wiz-glass">'
       + '<h3 class="card-title">'+icon("iconRoute")+' <span data-i18n="wizard.routeTitle">Qayerdan qayerga?</span></h3>'
       + '<div class="row2">'
       +   '<div class="field"><label for="fFrom" data-i18n="loads.from">Qayerdan</label><select id="fFrom">'+cityOptions(state.from)+'</select></div>'
@@ -14656,7 +14725,7 @@
   }
 
   function stepCargoHtml(){
-    return '<div class="wizard-panel">'
+    return '<div class="wizard-panel wiz-glass">'
       + '<h3 class="card-title">'+icon("iconClipboard")+' <span data-i18n="wizard.cargoTitle">Yukingiz haqida</span></h3>'
       + '<div class="field"><label for="fWeight" data-i18n="order.weightLabel">Yuk og\'irligi (kg)</label>'
       +   '<input type="text" id="fWeight" inputmode="numeric" data-grouped="1" value="'+groupNum(state.weight)+'"></div>'
@@ -14696,7 +14765,7 @@
   }
 
   function stepTruckHtml(){
-    return '<div class="wizard-panel">'
+    return '<div class="wizard-panel wiz-glass">'
       + '<h3 class="card-title">'+icon("iconTruck")+' <span data-i18n="wizard.truckTitle">Mashina va sana</span></h3>'
       + '<div class="field"><label for="fTruckType" data-i18n="order.truckTypeLabel">Mashina turi (ixtiyoriy)</label>'
       +   '<select id="fTruckType"><option value="" data-i18n="order.anyTruck">Farqi yo\'q</option>'
@@ -14713,7 +14782,7 @@
     var distance = distanceBetween(state.from, state.to);
     var cargo = cargoById(state.cargo);
     var price = calcPrice(distance, state.weight, cargo.mult);
-    return '<div class="wizard-panel">'
+    return '<div class="wizard-panel wiz-glass">'
       + '<h3 class="card-title">'+icon("iconInfo")+' <span data-i18n="wizard.priceTitle">Narx va aloqa</span></h3>'
       + '<div class="stub-route">'
       +   '<span class="stub-city">'+escapeHtml(state.from)+'</span>'
@@ -14750,7 +14819,7 @@
     var ready = state.from !== state.to && state.weight > 0
       && state.name.trim().length >= 2 && isValidPhone(state.phone) && isSignedIn() && cargoReady;
 
-    return '<div class="wizard-panel">'
+    return '<div class="wizard-panel wiz-glass">'
       + '<h3 class="card-title">'+icon("iconCheck")+' <span data-i18n="wizard.publishTitle">Tekshirib chiqing</span></h3>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="wizard.reviewRoute">Yo\'nalish</span><span class="wr-v">'+escapeHtml(state.from)+' → '+escapeHtml(state.to)+'</span></div>'
       + '<div class="wizard-review-row"><span class="wr-k" data-i18n="order.weightLabel">Og\'irlik</span><span class="wr-v">'+formatNum(state.weight)+' kg</span></div>'
@@ -14776,7 +14845,10 @@
       + (state.step > 1 ? '<button type="button" class="btn ghost" id="btnWizardBack" data-i18n="wizard.back">Orqaga</button>' : '')
       + (!isLast ? '<button type="button" class="btn" id="btnWizardNext" data-i18n="wizard.next">Davom etish</button>' : '')
       + '</div>';
-    return '<div class="card">' + wizardStepsHtml() + stepContent + navHtml + '</div>';
+    // Hamma narsani o'rab turgan tashqi to'rtburchak olib tashlandi:
+    // qadamlar yo'lagi va qadamning o'zi fon ustida alohida "guruh"
+    // bo'lib turadi (iOS uslubi), quti ichida quti emas.
+    return '<div class="wiz">' + wizardStepsHtml() + stepContent + navHtml + '</div>';
   }
 
   function canAdvanceFromStep(step){
