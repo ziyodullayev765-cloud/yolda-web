@@ -31,29 +31,61 @@
      Bayroq CSS dan oldin, birinchi chizishdan avval qo'yiladi: keyinroq
      qo'yilsa matn bir lahza tanlanadigan bo'lib turardi. */
   (function(){
+    var locked = false;
+
+    /* Kattalashtirishni butunlay o'chiradi. Bir martagina ishlaydi —
+       Telegram SDK yuklangach ikkinchi marta chaqirilsa, ortiqcha
+       tinglovchi qo'shilmaydi. */
+    function lockZoom(){
+      if(locked) return;
+      locked = true;
+      document.documentElement.setAttribute("data-standalone", "1");
+      var mv = document.getElementById("metaViewport");
+      // maximum-scale + user-scalable=no: iOS buni faqat ilova
+      // rejimida (standalone / Telegram webview) hurmat qiladi,
+      // Android/Chrome esa hamma joyda.
+      if(mv) mv.setAttribute("content",
+        "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+
+      /* iOS ba'zan meta'ga qaramay ikki barmoq bilan kattalashtirishga
+         yo'l qo'yadi — o'ziga xos "gesture" hodisalari to'xtatiladi. */
+      ["gesturestart", "gesturechange", "gestureend"].forEach(function(type){
+        document.addEventListener(type, function(e){ e.preventDefault(); }, { passive: false });
+      });
+      /* Ikki barmoqli "chimdish" ham to'xtatiladi: yangi WebKit
+         versiyalarida yuqoridagi hodisalar yuborilmaydi. */
+      document.addEventListener("touchmove", function(e){
+        if(e.touches && e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+      /* Ikki marta bosib kattalashtirish CSS orqali o'chadi
+         (`touch-action`). Buni JS bilan — bosishni bekor qilib —
+         qilib bo'lmaydi: shunda tez ketma-ket bosilgan ikki tugmaning
+         ikkinchisi ham ishlamay qolardi. */
+      document.documentElement.setAttribute("data-nozoom", "1");
+    }
+
+    // Boshqa joydan ham chaqirish uchun (Telegram SDK kech yuklanadi).
+    window.__yoldaLockZoom = lockZoom;
+
     var standalone = false;
     try{
       standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
                 || window.navigator.standalone === true;
     }catch(e){}
-    if(!standalone) return;
-    document.documentElement.setAttribute("data-standalone", "1");
-    var mv = document.getElementById("metaViewport");
-    // maximum-scale + user-scalable=no: iOS buni faqat standalone
-    // rejimda hurmat qiladi, Android/Chrome esa hamma joyda.
-    if(mv) mv.setAttribute("content",
-      "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
 
-    /* iOS ba'zan meta'ga qaramay ikki barmoq bilan kattalashtirishga
-       yo'l qo'yadi — o'ziga xos "gesture" hodisalari to'xtatiladi.
-       Xaritaning ustida to'xtatilmaydi: u yerda ikki barmoq bilan
-       kattalashtirish kerakli narsa. */
-    ["gesturestart", "gesturechange", "gestureend"].forEach(function(type){
-      document.addEventListener(type, function(e){
-        var t = e.target;
-        e.preventDefault();
-      }, { passive: false });
-    });
+    /* Telegram ichida ham kattalashtirish kerak emas. SDK hali
+       yuklanmagan bo'lishi mumkin, shuning uchun uning o'zi emas,
+       Telegram webview'i qoldiradigan izlar tekshiriladi: ko'prik
+       obyekti yoki manzildagi tgWebApp parametrlari. */
+    var inTelegram = false;
+    try{
+      inTelegram = Boolean(window.TelegramWebviewProxy)
+        || (window.Telegram && window.Telegram.WebApp && Boolean(window.Telegram.WebApp.initData))
+        || String(location.hash || "").indexOf("tgWebApp") >= 0
+        || String(location.search || "").indexOf("tgWebApp") >= 0;
+    }catch(e){}
+
+    if(standalone || inTelegram) lockZoom();
   })();
 </script>
 <title>YO'LDA — Yuk tashish bozori</title>
@@ -282,6 +314,11 @@
      kattalashtirish o'chadi; oddiy surish ishlayveradi. */
   :root[data-standalone="1"],
   :root[data-standalone="1"] body{touch-action:manipulation;}
+  /* `manipulation` ikki marta bosishni to'xtatadi, lekin ikki barmoq
+     bilan kattalashtirishni emas. `pan-x pan-y` — surishni qoldirib,
+     chimdib kattalashtirishni butunlay o'chiradi. */
+  :root[data-nozoom="1"],
+  :root[data-nozoom="1"] body{touch-action:pan-x pan-y;}
   /* Matnni bosib turganda tanlanish va iOS ning "Nusxalash" oynachasi
      chiqmaydi — barmoq tegishi tugma bosish deb qabul qilinadi. */
   :root[data-standalone="1"] body{
@@ -2651,6 +2688,9 @@
     background:var(--paper);
     border:none;border-radius:0;box-shadow:none;
     padding:0;margin:0;max-width:none;
+    /* `.reveal` dan qolgan siljish va animatsiya to'liq ekranga
+       keraksiz — ular suhbatni bir necha piksel surib qo'yardi. */
+    transform:none;animation:none;opacity:1;will-change:auto;
   }
   /* Suhbat ochiq turganda ilovaning o'z yo'laklari chalg'itmasin. */
   :root[data-chat-open="1"] .nav,
@@ -8562,6 +8602,9 @@
 
     isTelegramWebApp = true;
     document.documentElement.setAttribute("data-tg", "1");
+    // SDK sahifadan keyin yuklanadi — kattalashtirish qulfi sahifa
+    // boshidagi tekshiruvda ishlamagan bo'lsa, shu yerda qo'yiladi.
+    try{ if(window.__yoldaLockZoom) window.__yoldaLockZoom(); }catch(e){}
     try{ tg.ready(); }catch(e){}
     try{ tg.expand(); }catch(e){}
     // Pastga surish ilovani yopib yuborardi — ro'yxatni aylantirganda
@@ -11623,6 +11666,7 @@
     // panel ham yashiriladi (CSS: [data-chat-open]).
     chatCard.classList.remove("chat-list-view");
     chatCard.classList.add("chat-fullscreen");
+    detachChatCard();
     document.documentElement.setAttribute("data-chat-open", "1");
     syncTelegramBackButton();
 
@@ -11997,12 +12041,42 @@
     }).catch(function(){});
   }
 
+  /* ------------------------------------------------------------
+     Suhbat ochilganda kartochka <body> ga ko'chiriladi.
+
+     Sababi: `position:fixed` faqat hech bir ota-ona elementda
+     `transform`/`filter`/`will-change` bo'lmagandagina ekranga
+     nisbatan hisoblanadi. Bo'lim almashuvi animatsiyasi aynan
+     `transform` ishlatadi — o'sha paytda suhbat "to'liq ekran"
+     bo'lmay, bo'limning ichida qolib ketardi va `overflow:hidden`
+     uni kesib tashlardi: yozish qatori ko'rinmay qolardi (ayniqsa
+     Telegram ichida, animatsiya sekinroq tugaydigan joyda).
+
+     Chiqishda kartochka aynan o'z joyiga qaytariladi.
+     ------------------------------------------------------------ */
+  var chatCardHome = null;
+
+  function detachChatCard(){
+    var chatCard = document.getElementById("chatCard");
+    if(!chatCard || chatCard.parentNode === document.body) return;
+    chatCardHome = { parent: chatCard.parentNode, next: chatCard.nextSibling };
+    document.body.appendChild(chatCard);
+  }
+
+  function reattachChatCard(){
+    var chatCard = document.getElementById("chatCard");
+    if(!chatCard || !chatCardHome || !chatCardHome.parent) return;
+    chatCardHome.parent.insertBefore(chatCard, chatCardHome.next);
+    chatCardHome = null;
+  }
+
   /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
   function closeChatFullscreen(){
     closeChatMenu();
     try{ sessionStorage.removeItem(CHAT_OPEN_KEY); }catch(e){}
     var chatCard = document.getElementById("chatCard");
     if(chatCard) chatCard.classList.remove("chat-fullscreen");
+    reattachChatCard();
     document.documentElement.removeAttribute("data-chat-open");
     syncTelegramBackButton();
   }
