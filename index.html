@@ -2885,6 +2885,46 @@
     -webkit-user-select:none;user-select:none;
     will-change:transform;
   }
+  /* ============================================================
+     Surilayotgan suhbat ortidagi qatlam
+     ------------------------------------------------------------
+     Suhbat chetga surilganda orqada xabarlar ro'yxati ko'rinadi.
+     Ro'yxat va suhbat bitta elementda (#chatCard) chiziladi, ya'ni
+     suhbat ochiq turganda ro'yxat DOM'da umuman yo'q — shu qatlamga
+     uning suhbat ochilgan paytdagi nusxasi qo'yiladi.
+
+     Nusxa tirik emas: bosib bo'lmaydi va `id` lari olib tashlangan
+     (aks holda DOM'da ikkita bir xil `id` paydo bo'lardi).
+     ============================================================ */
+  .chat-under{
+    position:fixed;inset:0;z-index:1399;
+    overflow:hidden;pointer-events:none;
+    background:var(--paper);
+  }
+  .chat-under[hidden]{display:none;}
+  /* O'lchamlari haqiqiy ro'yxat bilan bir xil: #tab-chat .section
+     (520px, tepasi --s6) va .section ning yon bo'shliqlari. */
+  .chat-under-inner{
+    max-width:520px;margin:0 auto;
+    padding:var(--s6) var(--s5) var(--s8);
+    will-change:transform;
+  }
+  /* Ro'yxatning o'z qoidalari #chatCard ga bog'langan — nusxa boshqa
+     element ichida turgani uchun ular bu yerda takrorlanadi. */
+  .chat-under .chat-search input{
+    flex:1;min-width:0;
+    border:none;border-radius:0;background:none;box-shadow:none;outline:none;
+    padding:12px 0;height:auto;font-size:16px;color:var(--ink);
+  }
+  .chat-under .chat-row{
+    position:relative;padding:9px 0;border-bottom:none;border-radius:12px;
+  }
+  .chat-under .chat-row::after{
+    content:"";position:absolute;left:58px;right:0;bottom:0;
+    height:1px;background:var(--border);
+  }
+  .chat-under .chat-row:last-child::after{display:none;}
+
   /* Suhbat ochiq turganda ilovaning o'z yo'laklari chalg'itmasin. */
   :root[data-chat-open="1"] .nav,
   :root[data-chat-open="1"] .bottom-nav{display:none !important;}
@@ -3264,6 +3304,9 @@
   @media(max-width:640px){
     .hero-wrap{padding:var(--s7) var(--s4) var(--s5);}
     .section{padding:var(--s8) var(--s4);}
+    /* Surilayotgan suhbat ortidagi ro'yxat nusxasi haqiqiy ro'yxat
+       bilan bir xil joyda turishi kerak — yon bo'shliq ham shunday. */
+    .chat-under-inner{padding:var(--s6) var(--s4) var(--s8);}
     .app-shell{padding:var(--s6) var(--s4) var(--s9);}
     .foot{padding:var(--s7) var(--s4) var(--s6);}
     .card{padding:var(--s4);}
@@ -11995,6 +12038,11 @@
     });
 
     loadChatInbox();
+    /* Haqiqiy ro'yxat chizilib bo'ldi — surish paytida orqada turgan
+       nusxa endi keraksiz. Shu yerda olinadi (surish kodida emas):
+       surib chiqish ham, "orqaga" tugmasi ham shu funksiyaga keladi,
+       ya'ni qatlam qaysi yo'l bilan yopilsa ham ortda qolmaydi. */
+    hideChatUnder();
   }
 
   function runChatSearch(q){
@@ -12160,6 +12208,10 @@
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
     stopChatPoll();
+    /* Ro'yxatning nusxasi AYNAN shu yerda olinadi: bir necha satrdan
+       keyin kartochkaning ichi suhbatga almashadi va ro'yxat DOM'da
+       qolmaydi. Nusxa surib chiqishda orqada ko'rinadi. */
+    snapChatList(chatCard);
 
     // Suhbat butun ekranni egallaydi: sayt sarlavhasi ham, pastki
     // panel ham yashiriladi (CSS: [data-chat-open]).
@@ -12589,6 +12641,68 @@
   }
 
   /* ------------------------------------------------------------
+     Surilayotgan suhbat ortida ko'rinadigan ro'yxat.
+
+     Ro'yxat va suhbat bitta elementda chiziladi (#chatCard), ya'ni
+     suhbat ochilishi bilan ro'yxat DOM'da qolmaydi va surilganda
+     orqada bo'sh fon ko'rinardi. Shuning uchun suhbat ochilayotgan
+     paytda ro'yxatning nusxasi olib qo'yiladi — ekranda qanday
+     turgan bo'lsa shundayligicha.
+
+     Nusxa bilan birga ikki o'lchov ham saqlanadi: yuqoridagi
+     yo'lak balandligi (suhbat ochiqda u yashiriladi, keyin esa
+     qaytadi) va o'sha paytdagi aylantirish holati. Bo'lmasa orqadagi
+     ro'yxat haqiqiy ro'yxatdan boshqa joyda turib, surish tugaganda
+     sakrab ketardi.
+     ------------------------------------------------------------ */
+  var chatListSnap = null;
+  /* Orqa qatlam ustidagisidan sekinroq siljiydi — ikki qatlam
+     orasida chuqurlik seziladi (telefon ilovalarida odatiy). */
+  var CHAT_UNDER_SHIFT = 0.3;
+
+  function snapChatList(card){
+    if(!card || !card.classList.contains("chat-list-view")){ chatListSnap = null; return; }
+    var nav = document.querySelector(".nav");
+    chatListSnap = {
+      html: card.innerHTML,
+      top: (nav ? Math.round(nav.getBoundingClientRect().height) : 0) - (window.scrollY || 0)
+    };
+  }
+
+  /** Qatlamni ko'rsatadi. Nusxa bo'lmasa — null (avvalgidek bo'sh fon). */
+  function showChatUnder(){
+    if(!chatListSnap || !chatListSnap.html) return null;
+    var under = document.getElementById("chatUnder");
+    if(!under){
+      under = document.createElement("div");
+      under.id = "chatUnder";
+      under.className = "chat-under";
+      under.setAttribute("aria-hidden", "true");
+      under.innerHTML = '<div class="chat-under-inner"></div>';
+      document.body.appendChild(under);
+    }
+    var inner = under.firstChild;
+    inner.innerHTML = chatListSnap.html;
+    inner.querySelectorAll("[id]").forEach(function(el){ el.removeAttribute("id"); });
+    inner.style.marginTop = chatListSnap.top + "px";
+    // Oldingi surishdan qolgan animatsiya yangi surishni ushlab
+    // qolmasin — barmoqqa ergashish darhol boshlanishi kerak.
+    inner.style.transition = "";
+    inner.style.transform =
+      "translate3d(" + (-(window.innerWidth || 0) * CHAT_UNDER_SHIFT) + "px,0,0)";
+    under.hidden = false;
+    return under;
+  }
+
+  function hideChatUnder(){
+    var under = document.getElementById("chatUnder");
+    if(!under) return;
+    under.hidden = true;
+    under.firstChild.innerHTML = "";
+    under.firstChild.style.transform = "";
+  }
+
+  /* ------------------------------------------------------------
      Chapdan o'ngga surib suhbatdan chiqish.
 
      Ekran barmoqqa ergashadi: qancha surilsa, shuncha siljiydi.
@@ -12620,6 +12734,7 @@
     var startX = 0, startY = 0, pointerId = null;
     var axis = null;             // null = hali noma'lum, "x" yoki "y"
     var width = 1;
+    var under = null;            // orqada ko'rinayotgan ro'yxat qatlami
     // Tezlikni o'lchash uchun oxirgi holat.
     var lastX = 0, lastY = 0, lastT = 0, speed = 0, speedY = 0;
 
@@ -12627,6 +12742,12 @@
       card.style.transform = dx > 0 ? "translate3d(" + dx + "px,0,0)" : "";
       // Chetga surilgan sari orqa fon ko'rinadi — chuqurlik hissi.
       card.style.boxShadow = dx > 0 ? "-12px 0 32px rgba(0,0,0,0.35)" : "";
+      if(!under) return;
+      /* Orqadagi ro'yxat chapdan chiqib keladi: suhbat to'liq
+         surilganda joyiga yetadi, boshida esa chetga siljigan turadi. */
+      var k = Math.min(1, Math.max(0, dx / width));
+      under.firstChild.style.transform =
+        "translate3d(" + (-(1 - k) * width * CHAT_UNDER_SHIFT) + "px,0,0)";
     }
 
     function release(){
@@ -12634,6 +12755,10 @@
       card.style.transform = "";
       card.style.boxShadow = "";
       card.classList.remove("chat-swiping");
+      if(under){
+        under.firstChild.style.transition = "";
+        under = null;
+      }
     }
 
     card.addEventListener("pointerdown", function(e){
@@ -12666,6 +12791,9 @@
         if(axis === "x"){
           card.classList.add("chat-swiping");
           card.style.transition = "none";
+          // Ro'yxat qatlami faqat shu yerda — yo'nalish aniqlangandan
+          // keyin qo'yiladi: tikka aylantirishda bekorga chizilmasin.
+          under = showChatUnder();
           try{ card.setPointerCapture(pointerId); }catch(err){}
         }
       }
@@ -12697,21 +12825,26 @@
       if(!wasX){ release(); return; }
 
       card.style.transition = "transform 0.22s var(--ease), box-shadow 0.22s var(--ease)";
+      if(under) under.firstChild.style.transition = "transform 0.22s var(--ease)";
       // Telegram: x >= eni/3  YOKI  (velX >= 3500 && |velX| > |velY|)
       var flicked = speed >= CHAT_SWIPE_FLICK && Math.abs(speed) > Math.abs(speedY);
       if(dx >= width * CHAT_SWIPE_CLOSE || flicked){
         // Chegaradan oshdi — oxirigacha surilib, keyin yopiladi.
+        // Orqa qatlam ham shu paytda joyiga yetib boradi.
+        paint(width);
         card.style.transform = "translate3d(" + width + "px,0,0)";
         setTimeout(function(){
           release();
           closeChatFullscreen();
+          // Haqiqiy ro'yxat chizilgandan keyin qatlam olinadi
+          // (renderChatShell oxirida) — orasida bo'sh fon ko'rinmaydi.
           renderChatShell();
         }, 200);
         return;
       }
       // Yetmadi — joyiga qaytadi.
       paint(0);
-      setTimeout(release, 240);
+      setTimeout(function(){ release(); hideChatUnder(); }, 240);
     }
 
     card.addEventListener("pointerup", finish);
@@ -12720,8 +12853,9 @@
       pointerId = null;
       axis = null;
       card.style.transition = "transform 0.22s var(--ease)";
+      if(under) under.firstChild.style.transition = "transform 0.22s var(--ease)";
       paint(0);
-      setTimeout(release, 240);
+      setTimeout(function(){ release(); hideChatUnder(); }, 240);
     });
   }
 
