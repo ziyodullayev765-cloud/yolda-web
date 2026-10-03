@@ -183,6 +183,94 @@ await it('buzilgan token 401 qaytaradi', async () => {
   assert.equal(r.res.code, 401);
 });
 
+console.log('\n== "Yuklar" ro\'yxati: kesh ==');
+const order = (await import('../api/order.js')).default;
+
+const seedOrders = (n) => {
+  store.clear(); sets.clear(); lists.clear();
+  const codes = [];
+  for (let i = 1; i <= n; i += 1) {
+    const code = 'YL-' + i;
+    codes.push(code);
+    store.set(`order:${code}`, JSON.stringify({
+      code, status: 'NEW', fromCity: i % 2 ? 'Toshkent' : 'Samarqand', toCity: 'Buxoro',
+      cargoType: 'OTHER', weightKg: 1000 + i, amount: 500000, distanceKm: 300,
+      createdAt: i, ownerIdentity: 'ph:99890000000' + (i % 3),
+    }));
+  }
+  lists.set('order_codes', codes);
+  for (let k = 0; k < 3; k += 1) {
+    store.set(`profile:ph:99890000000${k}`, JSON.stringify({ displayName: 'Egasi ' + k, ratingCount: 2, ratingSum: 9 }));
+  }
+};
+
+const callOrder = async (query) => {
+  calls.length = 0;
+  const res = fakeRes();
+  await order({ method: 'GET', query, body: {} }, res);
+  return { res, used: calls.length };
+};
+
+seedOrders(300);
+const cold = await callOrder({ action: 'list' });
+console.log(`       birinchi ochilish (kesh yo'q): ${cold.used} buyruq`);
+await it('ro\'yxat qaytdi', () => {
+  assert.equal(cold.res.code, 200);
+  assert.equal((cold.res.body.loads || []).length, 60);
+});
+await it('kesh yo\'q paytda 300 dan ortiq buyruq ketadi', () => {
+  assert.ok(cold.used > 300, 'buyruqlar: ' + cold.used);
+});
+
+const warm = await callOrder({ action: 'list' });
+console.log(`       keyingi ochilish (kesh bor): ${warm.used} buyruq`);
+await it('keshdan o\'qilganda bitta buyruqqa tushadi', () => {
+  assert.equal(warm.used, 1, 'buyruqlar: ' + warm.used);
+});
+await it('kesh bilan ham ro\'yxat bir xil', () => {
+  assert.deepEqual(warm.res.body.loads, cold.res.body.loads);
+});
+await it('tejamkorlik 100 barobardan ko\'p', () => {
+  assert.ok(cold.used / warm.used > 100, `${cold.used} -> ${warm.used}`);
+});
+
+await it('filtr keshdan ham to\'g\'ri ishlaydi', async () => {
+  const f = await callOrder({ action: 'list', fromCity: 'Samarqand' });
+  assert.equal(f.used, 1, 'buyruqlar: ' + f.used);
+  assert.ok(f.res.body.loads.length > 0);
+  assert.ok(f.res.body.loads.every((l) => l.fromCity === 'Samarqand'));
+});
+
+await it('olingan yuk ro\'yxatda qolmaydi (kesh tashlangach)', async () => {
+  const taken = JSON.parse(store.get('order:YL-2'));
+  taken.status = 'DRIVER_FOUND';
+  store.set('order:YL-2', JSON.stringify(taken));
+  store.delete('loads_cache');                      // holat o'zgarishi shuni qiladi
+  const after = await callOrder({ action: 'list' });
+  assert.ok(!after.res.body.loads.some((l) => l.code === 'YL-2'));
+});
+
+await it('kesh eskirsa o\'zi qayta quriladi', async () => {
+  const cached = JSON.parse(store.get('loads_cache'));
+  cached.at = Date.now() - 60000;                   // 60 soniya oldin
+  store.set('loads_cache', JSON.stringify(cached));
+  const rebuilt = await callOrder({ action: 'list' });
+  assert.ok(rebuilt.used > 100, 'qayta qurilmadi, buyruqlar: ' + rebuilt.used);
+});
+
+await it('buzuq kesh javobni buzmaydi', async () => {
+  store.set('loads_cache', 'bu JSON emas');
+  const r = await callOrder({ action: 'list' });
+  assert.equal(r.res.code, 200);
+  assert.ok((r.res.body.loads || []).length > 0);
+});
+
+await it('kesh maxfiy maydonlarni saqlamaydi', () => {
+  const cached = JSON.parse(store.get('loads_cache'));
+  const txt = JSON.stringify(cached);
+  assert.ok(!/phone|email|comment/i.test(txt), 'keshda maxfiy maydon bor');
+});
+
 console.log('\n== admin: kvota chegaralari ==');
 const adminSrc = await (await import('node:fs/promises'))
   .readFile(new URL('../api/admin-data.js', import.meta.url), 'utf8');

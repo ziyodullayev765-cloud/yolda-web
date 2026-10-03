@@ -16,6 +16,7 @@
  * need to know which driver owns the order.
  */
 import { kvGet, kvSet } from '../lib/kv.js';
+import { invalidateLoadsCache } from '../lib/loadsCache.js';
 import {
   buildOrderMessage, escapeMd, STATUS_LABELS, nextStatus, NEXT_STATUS_BUTTON,
 } from '../lib/orderMessage.js';
@@ -181,6 +182,7 @@ const handleTake = async (query, code, phone) => {
     order.updatedAt = Date.now();
     if (!order.phone) order.phone = phone;
     await kvSet(`order:${code}`, JSON.stringify(order));
+    await invalidateLoadsCache();
 
     await notifyOwner(order,
       `<b>Haydovchi topildi</b>\n\n`
@@ -260,6 +262,7 @@ const handleDepart = async (query, code) => {
   order.status = 'ON_THE_WAY';
   order.updatedAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
+  await invalidateLoadsCache();
 
   await notifyOwner(order,
     `<b>Haydovchi yo'lga chiqdi</b>\n\n`
@@ -285,6 +288,7 @@ const handleDeliver = async (query, code) => {
   order.deliveredAt = Date.now();
   order.updatedAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
+  await invalidateLoadsCache();
 
   // Haydovchi profilidagi "yetkazilgan yuklar" hisoblagichi. Faqat
   // taklif orqali biriktirilgan haydovchida identity bo'ladi; eski
@@ -394,6 +398,7 @@ const handleGiveUp = async (query, code) => {
   order.driver = null;
   order.updatedAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
+  await invalidateLoadsCache();
 
   await telegram('editMessageText', {
     chat_id: query.message.chat.id,
@@ -436,6 +441,7 @@ const handleAdvance = async (query, code) => {
   order.updatedAt = Date.now();
   if (next === 'DELIVERED') order.deliveredAt = Date.now();
   await kvSet(`order:${code}`, JSON.stringify(order));
+  await invalidateLoadsCache();
 
   if (next === 'DELIVERED' && order.driver && order.driver.identity) {
     try {

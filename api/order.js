@@ -29,6 +29,7 @@ import {
   offerKey, orderOffersKey, driverOffersKey, publicOfferShape,
 } from '../lib/offers.js';
 import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
+import { LOADS_CACHE_KEY, LOADS_CACHE_MS, invalidateLoadsCache } from '../lib/loadsCache.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
@@ -332,6 +333,8 @@ const createOrder = async (req, res) => {
       groupMessageId: posted && posted.message_id ? posted.message_id : null,
     })).catch(() => {});
     kvPush('order_codes', code).catch(() => {});
+    // Yangi yuk ro'yxatda darhol ko'rinsin, 30 soniya kutmasin.
+    await invalidateLoadsCache();
 
     await notifyMatches({ ...order, createdAt: Date.now() });
 
@@ -626,23 +629,32 @@ const getPriceStats = async (req, res) => {
  * same "only the driver who claims it sees the contact info" rule the FAQ
  * already promises applies here too.
  */
-const listLoads = async (req, res) => {
-  const q = req.query;
-  const fromCity = String(q.fromCity || '');
-  const toCity = String(q.toCity || '');
-  const cargoType = String(q.cargoType || '');
-  const truckType = String(q.truckType || '');
-  const minWeight = q.minWeight ? Number(q.minWeight) : null;
-  const maxWeight = q.maxWeight ? Number(q.maxWeight) : null;
-  const when = String(q.when || '');
+/* ------------------------------------------------------------------
+   Ochiq yuklar ro'yxati — kesh bilan.
 
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const tomorrowIso = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+   Ilgari har bir ochilishda 300 ta buyurtma BITTALAB o'qilardi
+   (1 LRANGE + 300 GET), ustiga har bir yuk beruvchining profili —
+   ya'ni bitta sahifa ochish 300 dan ortiq Redis buyrug'i edi. "Yuklar"
+   esa eng ko'p ochiladigan bo'lim.
 
+   Yechim ataylab denormalizatsiya EMAS: buyurtma 12 xil joyda
+   yoziladi (api/order.js, api/telegram.js, lib/deleteAccount.js) va
+   indeksni hamma joyda qo'lda yangilash — bittasini unutib qo'yish
+   degani, ya'ni ro'yxatda yo'q yuk ko'rinib turishi mumkin. Buning
+   o'rniga oddiy kesh: u haqiqat manbaidan o'zi qayta quriladi,
+   shuning uchun hech qachon chalg'imaydi, faqat eskiradi.
+
+   Eskirish muddati 30 soniya. Yangi yuk joylanganda kesh darhol
+   tashlanadi (invalidateLoadsCache), shuning uchun amalda yangi
+   e'lon kechikmaydi; 30 soniya esa qolgan barcha yo'llar uchun
+   zahira.
+   ------------------------------------------------------------------ */
+/** Ochiq yuklarni manbadan o'qib, kartochka ko'rinishiga keltiradi. */
+const buildOpenLoads = async () => {
   const codes = await kvRange('order_codes', 0, 299);
   const raw = await Promise.all(codes.map((code) => kvGet(`order:${code}`)));
 
-  const loads = raw
+  const open = raw
     .map((s) => {
       if (!s) return null;
       try {
@@ -651,38 +663,22 @@ const listLoads = async (req, res) => {
         return null;
       }
     })
-    .filter((o) => o && (o.status || 'NEW') === 'NEW')
-    .filter((o) => !fromCity || o.fromCity === fromCity)
-    .filter((o) => !toCity || o.toCity === toCity)
-    .filter((o) => !cargoType || o.cargoType === cargoType)
-    .filter((o) => !truckType || o.truckType === truckType)
-    .filter((o) => minWeight == null || o.weightKg >= minWeight)
-    .filter((o) => maxWeight == null || o.weightKg <= maxWeight)
-    .filter((o) => {
-      if (when === 'today') return !o.pickupDate || o.pickupDate === todayIso;
-      if (when === 'tomorrow') return o.pickupDate === tomorrowIso;
-      return true;
-    })
-    .slice(0, 60);
+    .filter((o) => o && (o.status || 'NEW') === 'NEW');
 
-  // Yuk kartochkasida yuk beruvchining ismi va reytingi ko'rsatiladi:
-  // haydovchi taklif yuborishdan oldin kim e'lon qilganini bilishi
-  // kerak. Bu yangi ma'lumot ochish emas — ism ?action=detail javobida
-  // ham, Telegram guruhidagi e'londa ham allaqachon ochiq, reyting esa
-  // har kimning ommaviy profilida ko'rinadi. Telefon, pochta va izoh
-  // avvalgidek yopiq: ularni faqat yukni olgan haydovchi ko'radi.
-  //
-  // Avatar ataylab yuborilmaydi: u profilda data: URL ko'rinishida
-  // turadi (alohida fayl ombori yo'q), oltmishta kartochkaga qo'shilsa
-  // javob bir necha megabaytga chiqib ketardi. Frontend ism harfidan
-  // doiracha yasaydi.
-  const ownerKeys = [...new Set(loads.map((o) => o.ownerIdentity || o.googleEmail).filter(Boolean))];
+  /* Yuk beruvchining ismi va reytingi. Bu yangi ma'lumot ochish emas —
+     ism ?action=detail javobida ham, Telegram guruhidagi e'londa ham
+     allaqachon ochiq, reyting esa har kimning ommaviy profilida
+     ko'rinadi. Telefon, pochta va izoh avvalgidek yopiq.
+
+     Avatar ataylab yuborilmaydi: kartochkalar soni ko'p, javob
+     og'irlashib ketardi. Frontend ism harfidan doiracha yasaydi. */
+  const ownerKeys = [...new Set(open.map((o) => o.ownerIdentity || o.googleEmail).filter(Boolean))];
   const owners = new Map();
   await Promise.all(ownerKeys.map(async (key) => {
-    const raw = await kvGet(`profile:${key}`);
-    if (!raw) return;
+    const rawProfile = await kvGet(`profile:${key}`);
+    if (!rawProfile) return;
     try {
-      const p = JSON.parse(raw);
+      const p = JSON.parse(rawProfile);
       const name = p.displayName || p.username || '';
       if (!name) return;
       owners.set(key, {
@@ -696,7 +692,7 @@ const listLoads = async (req, res) => {
     }
   }));
 
-  const shaped = loads.map((o) => ({
+  return open.map((o) => ({
     code: o.code,
     fromCity: o.fromCity,
     toCity: o.toCity,
@@ -716,6 +712,53 @@ const listLoads = async (req, res) => {
     createdAt: o.createdAt,
     owner: owners.get(o.ownerIdentity || o.googleEmail) || null,
   }));
+};
+
+/** Keshdan o'qiydi; eskirgan yoki yo'q bo'lsa qaytadan quradi. */
+const openLoads = async () => {
+  try {
+    const cached = JSON.parse((await kvGet(LOADS_CACHE_KEY)) || 'null');
+    if (cached && Array.isArray(cached.items) && Date.now() - Number(cached.at || 0) < LOADS_CACHE_MS) {
+      return cached.items;
+    }
+  } catch {
+    /* buzuq kesh — pastda qaytadan quriladi */
+  }
+  const items = await buildOpenLoads();
+  // Saqlanmasa ham javob to'g'ri bo'ladi, shunchaki keyingi so'rov
+  // yana sekin ketadi — shuning uchun xatosi jim o'tadi.
+  await kvSet(LOADS_CACHE_KEY, JSON.stringify({ at: Date.now(), items })).catch(() => {});
+  return items;
+};
+
+const listLoads = async (req, res) => {
+  const q = req.query;
+  const fromCity = String(q.fromCity || '');
+  const toCity = String(q.toCity || '');
+  const cargoType = String(q.cargoType || '');
+  const truckType = String(q.truckType || '');
+  const minWeight = q.minWeight ? Number(q.minWeight) : null;
+  const maxWeight = q.maxWeight ? Number(q.maxWeight) : null;
+  const when = String(q.when || '');
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const tomorrowIso = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+
+  // Filtrlash avvalgidek shu yerda — kesh filtrlanmagan ro'yxatni
+  // saqlaydi, shuning uchun har xil filtr uchun alohida kesh kerak emas.
+  const shaped = (await openLoads())
+    .filter((o) => !fromCity || o.fromCity === fromCity)
+    .filter((o) => !toCity || o.toCity === toCity)
+    .filter((o) => !cargoType || o.cargoType === cargoType)
+    .filter((o) => !truckType || o.truckType === truckType)
+    .filter((o) => minWeight == null || o.weightKg >= minWeight)
+    .filter((o) => maxWeight == null || o.weightKg <= maxWeight)
+    .filter((o) => {
+      if (when === 'today') return !o.pickupDate || o.pickupDate === todayIso;
+      if (when === 'tomorrow') return o.pickupDate === tomorrowIso;
+      return true;
+    })
+    .slice(0, 60);
 
   return res.status(200).json({ loads: shaped });
 };
@@ -941,6 +984,7 @@ const rateOrder = async (req, res) => {
   if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
     return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
   }
+  await invalidateLoadsCache();
 
   // Profilga ko'chirish — buyurtmadagi baho allaqachon saqlangani
   // uchun bu qadam muvaffaqiyatsiz bo'lsa ham javob 200 qoladi.
@@ -1274,6 +1318,8 @@ const advanceOrder = async (req, res) => {
   if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
     return res.status(500).json({ error: 'Saqlanmadi' });
   }
+  // Yuk endi ochiq emas — ro'yxatdan darhol tushsin.
+  await invalidateLoadsCache();
 
   if (next === 'DELIVERED') {
     try {
@@ -1372,6 +1418,8 @@ const decideOfferCore = async (identity, offerId, accept) => {
   if (!(await kvSet(`order:${offer.orderCode}`, JSON.stringify(order)))) {
     return { status: 500, body: { error: 'Buyurtma saqlanmadi' } };
   }
+  // Taklif qabul qilindi — yuk ochiq yuklar ro'yxatidan tushadi.
+  await invalidateLoadsCache();
 
   // Qolgan kutilayotgan takliflar avtomatik rad etiladi — yuk band.
   const others = (await readOrderOffers(offer.orderCode))
@@ -1551,6 +1599,8 @@ const cancelOrder = async (req, res) => {
   order.updatedAt = Date.now();
 
   const saved = await kvSet(`order:${code}`, JSON.stringify(order));
+  // Holat o'zgardi — ochiq yuklar ro'yxati endi to'g'ri emas.
+  await invalidateLoadsCache();
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
   await editGroupMessage(order, []);
@@ -1589,6 +1639,8 @@ const releaseDriver = async (req, res) => {
   order.updatedAt = Date.now();
 
   const saved = await kvSet(`order:${code}`, JSON.stringify(order));
+  // Holat o'zgardi — ochiq yuklar ro'yxati endi to'g'ri emas.
+  await invalidateLoadsCache();
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
   await editGroupMessage(order, claimKeyboard(order));
