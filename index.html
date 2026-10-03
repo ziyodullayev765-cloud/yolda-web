@@ -972,9 +972,19 @@
     padding:0 14px;height:48px;
   }
   .loads-quick-input .ic-svg{color:var(--muted);flex-shrink:0;font-size:19px;}
-  .loads-quick-input input{
-    flex:1;min-width:0;border:none;background:none;outline:none;
-    font-family:'Inter',sans-serif;font-size:15px;color:var(--ink);height:100%;
+  /* Maydon qidiruv qutisining ICHIDA yana bitta quti bo'lib
+     ko'rinmasin: umumiy `input` qoidalari bergan fon, ramka, burchak
+     va soyaning hammasi olib tashlanadi. Tanlovchi ataylab kuchliroq
+     (#tab-loads) — aks holda keyinroq turgan qoidalar yutadi.
+     O'lcham 16px: kichikroq bo'lsa telefon sahifani kattalashtiradi. */
+  #tab-loads .loads-quick-input input,
+  #tab-loads .loads-quick-input input:focus,
+  .sheet-root .loads-quick-input input,
+  .sheet-root .loads-quick-input input:focus{
+    flex:1;min-width:0;height:100%;
+    border:none;border-radius:0;background:none;box-shadow:none;outline:none;
+    padding:0;
+    font-family:'Inter',sans-serif;font-size:16px;color:var(--ink);
   }
   .loads-quick-input input::placeholder{color:var(--muted);}
   .loads-quick-filter-btn{
@@ -2855,6 +2865,14 @@
     /* `.reveal` dan qolgan siljish va animatsiya to'liq ekranga
        keraksiz — ular suhbatni bir necha piksel surib qo'yardi. */
     transform:none;animation:none;opacity:1;will-change:auto;
+    /* Tikka surish brauzerning o'zida qoladi (yozishma aylanadi),
+       gorizontal harakat esa bizga keladi — "surib chiqish" uchun. */
+    touch-action:pan-y;
+  }
+  /* Surilayotgan paytda matn tanlanib ketmasin va orqa fon ko'rinsin. */
+  .chat-fullscreen.chat-swiping{
+    -webkit-user-select:none;user-select:none;
+    will-change:transform;
   }
   /* Suhbat ochiq turganda ilovaning o'z yo'laklari chalg'itmasin. */
   :root[data-chat-open="1"] .nav,
@@ -9591,9 +9609,9 @@
     { id: "activity", icon: "iconChart",    tint: "#8B5CF6", titleKey: "pf.activity", title: "Faoliyat",
       subKey: "pf.activitySub", sub: "Statistika va ko'rsatkichlar", roles: "*" },
     { id: "verified", icon: "iconShield",   tint: "#0D9488", titleKey: "pf.verified", title: "Tasdiqlangan ma'lumotlar",
-      subKey: "pf.verifiedSub", sub: "Hujjatlar va tasdiqlashlar", roles: "*" },
-    { id: "settings", icon: "iconSettings", tint: "#64748B", titleKey: "pf.settings", title: "Sozlamalar",
-      subKey: "pf.settingsSub", sub: "Bildirishnomalar, til va boshqalar", roles: "*" }
+      subKey: "pf.verifiedSub", sub: "Hujjatlar va tasdiqlashlar", roles: "*" }
+    /* "Sozlamalar" ro'yxatdan olib tashlandi — u sarlavhadagi menyu
+       belgisi orqali ochiladi, ya'ni ikki joyda turgan edi. */
   ];
 
   function sectionVisible(section, role){
@@ -12121,6 +12139,7 @@
       closeChatFullscreen();
       renderChatShell();
     });
+    initChatSwipeBack(chatCard);
     document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
 
@@ -12348,7 +12367,11 @@
       if(ev.touches.length !== 1) return;
       var dx = ev.touches[0].clientX - swipeX;
       var dy = ev.touches[0].clientY - swipeY;
-      if(!swiping && Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.6){
+      /* Faqat CHAPGA surilganda soatlar chiqadi. O'ngga surish —
+         suhbatdan chiqish harakati (initChatSwipeBack), ikkalasi bir
+         vaqtda ishlasa, ekran surilib ketayotganda soatlar ham
+         chiqib, chalkash bo'lardi. */
+      if(!swiping && dx < -24 && Math.abs(dx) > Math.abs(dy) * 1.6){
         swiping = true;
         body.classList.add("times-on");
         cancelHold();
@@ -12366,7 +12389,7 @@
     // Sichqonchali qurilmada: ro'yxat ustida turib yon tomonga
     // aylantirish ham soatlarni ko'rsatadi.
     body.addEventListener("wheel", function(ev){
-      if(Math.abs(ev.deltaX) < 12 || Math.abs(ev.deltaX) < Math.abs(ev.deltaY)) return;
+      if(ev.deltaX < 12 || Math.abs(ev.deltaX) < Math.abs(ev.deltaY)) return;
       body.classList.add("times-on");
       clearTimeout(body.__timesTimer);
       body.__timesTimer = setTimeout(function(){ body.classList.remove("times-on"); }, 1400);
@@ -12502,6 +12525,110 @@
     if(!chatCard || !chatCardHome || !chatCardHome.parent) return;
     chatCardHome.parent.insertBefore(chatCard, chatCardHome.next);
     chatCardHome = null;
+  }
+
+  /* ------------------------------------------------------------
+     Chapdan o'ngga surib suhbatdan chiqish.
+
+     Ekran barmoqqa ergashadi: qancha surilsa, shuncha siljiydi.
+     Yarmidan oshsa (57%) qo'yib yuborilganda chiqib ketadi, undan
+     kam bo'lsa joyiga qaytadi. Telefon ilovalaridagi odatiy xatti
+     harakat.
+
+     Faqat gorizontal harakat hisobga olinadi: tikka surish —
+     yozishmani aylantirish, unga tegilmaydi. Shuning uchun birinchi
+     bir necha piksel kuzatiladi va yo'nalish aniqlangandan keyingina
+     biri yoki ikkinchisi ishlaydi.
+     ------------------------------------------------------------ */
+  var CHAT_SWIPE_CLOSE = 0.57;   // shu ulushdan oshsa — chiqadi
+  var CHAT_SWIPE_START = 10;     // yo'nalish shu masofadan keyin aniqlanadi
+
+  function initChatSwipeBack(card){
+    if(!card || !window.PointerEvent) return;
+
+    var startX = 0, startY = 0, pointerId = null;
+    var axis = null;             // null = hali noma'lum, "x" yoki "y"
+    var width = 1;
+
+    function paint(dx){
+      card.style.transform = dx > 0 ? "translate3d(" + dx + "px,0,0)" : "";
+      // Chetga surilgan sari orqa fon ko'rinadi — chuqurlik hissi.
+      card.style.boxShadow = dx > 0 ? "-12px 0 32px rgba(0,0,0,0.35)" : "";
+    }
+
+    function release(){
+      card.style.transition = "";
+      card.style.transform = "";
+      card.style.boxShadow = "";
+      card.classList.remove("chat-swiping");
+    }
+
+    card.addEventListener("pointerdown", function(e){
+      if(pointerId !== null) return;
+      // Yozish qatori va tugmalarda surish kerak emas.
+      if(e.target.closest(".chat-input-row, .chat-back, button, a, input, textarea, [contenteditable]")) return;
+      pointerId = e.pointerId;
+      startX = e.clientX;
+      startY = e.clientY;
+      axis = null;
+      width = card.getBoundingClientRect().width || window.innerWidth || 1;
+    });
+
+    card.addEventListener("pointermove", function(e){
+      if(e.pointerId !== pointerId) return;
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+
+      if(axis === null){
+        if(Math.abs(dx) < CHAT_SWIPE_START && Math.abs(dy) < CHAT_SWIPE_START) return;
+        // Qaysi yo'nalish kuchliroq — o'sha g'olib. Chapga surish ham
+        // "x" hisoblanadi, lekin ekran chapga siljimaydi.
+        axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+        if(axis === "x"){
+          card.classList.add("chat-swiping");
+          card.style.transition = "none";
+          try{ card.setPointerCapture(pointerId); }catch(err){}
+        }
+      }
+      if(axis !== "x") return;
+      e.preventDefault();
+      paint(Math.max(0, dx));
+    });
+
+    function finish(e){
+      if(e.pointerId !== pointerId) return;
+      var dx = e.clientX - startX;
+      var wasX = axis === "x";
+      pointerId = null;
+      axis = null;
+      try{ card.releasePointerCapture(e.pointerId); }catch(err){}
+      if(!wasX){ release(); return; }
+
+      card.style.transition = "transform 0.22s var(--ease), box-shadow 0.22s var(--ease)";
+      if(dx > width * CHAT_SWIPE_CLOSE){
+        // Chegaradan oshdi — oxirigacha surilib, keyin yopiladi.
+        card.style.transform = "translate3d(" + width + "px,0,0)";
+        setTimeout(function(){
+          release();
+          closeChatFullscreen();
+          renderChatShell();
+        }, 200);
+        return;
+      }
+      // Yetmadi — joyiga qaytadi.
+      paint(0);
+      setTimeout(release, 240);
+    }
+
+    card.addEventListener("pointerup", finish);
+    card.addEventListener("pointercancel", function(e){
+      if(e.pointerId !== pointerId) return;
+      pointerId = null;
+      axis = null;
+      card.style.transition = "transform 0.22s var(--ease)";
+      paint(0);
+      setTimeout(release, 240);
+    });
   }
 
   /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
@@ -16374,7 +16501,8 @@
     "#btnOpenTrucks",                 // Mashinalar
     "#btnLoadsMoreFilters",           // Yuklar: filtr
     "#btnWizardNext",                 // Yuk joylash: Davom etish
-    "[data-pf-section='settings']",   // Profil: Sozlamalar
+    /* Sozlamalar profil ro'yxatidan olib tashlandi — endi u faqat
+       sarlavhadagi belgi orqali ochiladi, vibratsiya ham o'sha yerda. */
     "#btnOpenAccountMenu"             // Profil: sozlamalar belgisi
   ].join(",");
 
