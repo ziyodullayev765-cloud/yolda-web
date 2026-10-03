@@ -164,5 +164,33 @@ console.log('\n== sozlanmagan holat ==');
   Object.assign(process.env, clean);
 }
 
+
+console.log('\n== R2 xatosi sababni aytadi ==');
+{
+  // R2 xato sababini XML <Code> bo'lagida aytadi — admin panelda
+  // aynan shu ko'rinishi kerak, aks holda nima qilish noma'lum.
+  const withBody = (status, body) => {
+    globalThis.fetch = async () => ({ ok: false, status, text: async () => body, json: async () => ({}) });
+  };
+
+  withBody(401, '<?xml version="1.0"?><Error><Code>InvalidAccessKeyId</Code>'
+    + '<Message>The Access Key Id you provided does not exist</Message></Error>');
+  let r = await storage.putObject('icon/a.png', Buffer.from('x'), 'image/png');
+  check('401 javobida holat raqami ko\'rsatiladi', /401/.test(r.error), r.error);
+  check('401 javobida R2 ning xato kodi ko\'rsatiladi', /InvalidAccessKeyId/.test(r.error), r.error);
+
+  withBody(403, '<Error><Code>SignatureDoesNotMatch</Code></Error>');
+  r = await storage.putObject('icon/a.png', Buffer.from('x'), 'image/png');
+  check('imzo xatosi ajratib ko\'rsatiladi', /SignatureDoesNotMatch/.test(r.error), r.error);
+
+  withBody(500, 'oddiy matn, XML emas');
+  r = await storage.putObject('icon/a.png', Buffer.from('x'), 'image/png');
+  check('kod topilmasa ham holat raqami qoladi', /500/.test(r.error), r.error);
+
+  withBody(403, '<Error><Code>' + 'x'.repeat(200) + '</Code></Error>');
+  r = await storage.putObject('icon/a.png', Buffer.from('x'), 'image/png');
+  check('uzun kod javobga tushmaydi', r.error.length < 120, r.error.length);
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);
