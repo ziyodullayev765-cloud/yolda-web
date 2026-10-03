@@ -2978,10 +2978,17 @@
           return stateBox("warn", "Ro'yxat o'qilmadi", esc(iconSprite.error || ""));
         }
 
+        // Sozlanmagan bo'lsa — aynan qaysi o'zgaruvchi yetishmayotganini
+        // aytamiz. "Sozlanmagan" degan quruq gap bilan nima qilish
+        // kerakligini bilib bo'lmaydi.
+        var missing = (Store.raw.icons && Store.raw.icons.missing) || [];
         var warn = storageOn ? "" :
           '<div class="note-box warn" style="margin-bottom:16px;">'
           + "<b>Fayl saqlash sozlanmagan.</b> Ikonka almashtirish uchun Cloudflare R2 "
-          + "kalitlari kerak (README’da yozilgan). Hozircha faqat ko‘rish mumkin."
+          + "kalitlari kerak. Hozircha faqat ko‘rish mumkin."
+          + (missing.length
+              ? "<br>Vercel sozlamalarida yetishmayapti: <b>" + esc(missing.join(", ")) + "</b>"
+              : "")
           + "</div>";
         if(iconError){
           warn += '<div class="note-box warn" style="margin-bottom:16px;">'

@@ -34,7 +34,7 @@ import { requireAdmin } from '../lib/adminAuth.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
 import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/life.js';
-import { uploadImage, keyFromUrl, deleteObject, storageConfigured } from '../lib/storage.js';
+import { uploadImage, keyFromUrl, deleteObject, storageConfigured, storageMissing } from '../lib/storage.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -764,12 +764,21 @@ const readIcons = async () => {
 };
 
 const getIcons = async (res) =>
-  res.status(200).json({ ok: true, icons: await readIcons(), storage: storageConfigured() });
+  res.status(200).json({
+    ok: true,
+    icons: await readIcons(),
+    storage: storageConfigured(),
+    // Sozlanmagan bo'lsa — aynan qaysi o'zgaruvchi yetishmayotgani.
+    // Faqat nomlari; qiymatlar hech qachon chiqarilmaydi.
+    missing: storageMissing(),
+  });
 
 const saveIcon = async (req, res) => {
   if (!storageConfigured()) {
+    const missing = storageMissing();
     return res.status(503).json({
-      error: 'Avval fayl saqlash sozlansin (R2). Sozlamalar README’da yozilgan.',
+      error: `Fayl saqlash sozlanmagan. Yetishmayapti: ${missing.join(', ')}`,
+      missing,
     });
   }
 
