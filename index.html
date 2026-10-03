@@ -10370,6 +10370,10 @@
     telegramUser = null;
     phoneToken = null;
     phoneProfile = null;
+    /* Bo'limlar keshi hisobga bog'liq: tozalanmasa, keyin kirgan odam
+       bir lahzaga oldingisining yozishmalarini ko'rib qolardi. */
+    chatInbox = [];
+    resetTabFreshness();
     clearStoredAuth();
     if(!expired){
       try{ localStorage.removeItem(AUTH_HINT_KEY); }catch(e){}
@@ -12097,16 +12101,44 @@
     });
   }
 
-  function loadChatInbox(){
+  /* Yozishmalar ro'yxati suhbatdan chiqqanda ham, bo'limga qayta
+     kirganda ham qaytadan chiziladi. Avval u har safar o'chib,
+     skelet chiqib, serverdan kelishini kutardi — ya'ni bir-ikki
+     soniya bo'sh ekran.
+
+     Endi ro'yxat avval keshdan chiziladi (darhol), so'rov esa fonda
+     ketadi va javob kelganda joyidagini almashtiradi. Skelet faqat
+     ko'rsatadigan hech narsa bo'lmaganda — birinchi kirishda —
+     ko'rinadi.
+
+     @param force  tepadan pastga tortib yangilash: muddatga qaramay
+                   so'rov yuboriladi.
+     @param done   so'rov tugaganda chaqiriladi (xato bo'lsa ham). */
+  var CHAT_FRESH_MS = 20000;
+
+  function loadChatInbox(force, done){
     var list = document.getElementById("chatInboxList");
     if(!list) return;
-    list.innerHTML = '<div class="skeleton sk-line" style="width:80%;"></div>';
+    if(chatInbox.length) renderChatInbox();
+    else list.innerHTML = '<div class="skeleton sk-line" style="width:80%;"></div>';
+
+    if(!force && chatInbox.length && tabFresh("chat", CHAT_FRESH_MS)){
+      if(done) done();
+      return;
+    }
     fetch("/api/chat?action=inbox&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
       .then(function(r){ return r.json(); })
       .then(function(data){
         chatInbox = data.conversations || [];
+        markTabLoaded("chat");
         renderChatInbox();
-      }).catch(function(){ list.innerHTML = ""; });
+        if(done) done();
+      }).catch(function(){
+        // Keshdagi ro'yxat turgan bo'lsa o'chirilmaydi — tarmoq
+        // uzilgani odamning yozishmalarini yo'q qilib ko'rsatmasin.
+        if(!chatInbox.length) list.innerHTML = "";
+        if(done) done();
+      });
   }
 
   function openChatThread(email, username, name){
@@ -12118,6 +12150,13 @@
     chatEditingId = null;
     chatLastSeenId = null;
     chatVer = null;
+    /* Suhbat ochilishi — server uni o'qilgan deb belgilaydi. Keshdagi
+       sanoqni ham shu zahoti tushiramiz: aks holda suhbatdan chiqqan
+       odam ro'yxatda hali ham "o'qilmagan" belgisini ko'rardi (ro'yxat
+       keshdan chiziladi, serverdan qayta so'ramaydi). */
+    chatInbox.forEach(function(c){
+      if(c.username === username || (email && c.email === email)) c.unread = 0;
+    });
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
     stopChatPoll();
@@ -16311,6 +16350,35 @@
     });
   }
 
+  /* ---------- Bo'limga qayta kirganda qayta yuklamaslik ----------
+     Bo'limlar DOM'dan o'chirilmaydi — faqat `hidden` bo'ladi. Ya'ni
+     odam bo'limdan chiqib qaytganda ro'yxat allaqachon ekranda turadi.
+     Shunga qaramay har kirishda so'rov ketib, ro'yxat o'chib, skelet
+     chiqib, hammasi qaytadan kelardi: ikki bo'lim orasida bir necha
+     marta o'tish — bir necha marta "yuklanmoqda".
+
+     Endi so'rov faqat ma'lumot eskirganda ketadi. Eskirmagan bo'lsa
+     ekranda nima bo'lsa shu qoladi. Majburan yangilash yo'llari
+     joyida: filtr almashishi, tepadan pastga tortish va ma'lumotni
+     o'zgartiradigan amallar (ular render funksiyasini o'zi chaqiradi). */
+  var TAB_FRESH_MS = 60000;
+  var tabLoadedAt = {};
+
+  /** Shu bo'lim ma'lumoti hali yangimi. */
+  function tabFresh(name, ms){
+    return (Date.now() - (tabLoadedAt[name] || 0)) < (ms || TAB_FRESH_MS);
+  }
+  function markTabLoaded(name){ tabLoadedAt[name] = Date.now(); }
+  /** Hisobdan chiqilganda: keshlangan ma'lumot boshqa odamga ko'rinmasin. */
+  function resetTabFreshness(){ tabLoadedAt = {}; }
+
+  /** Eskirgan bo'lsa yuklaydi, yangi bo'lsa ekrandagisini qoldiradi. */
+  function loadTabIfStale(name, fn){
+    if(tabFresh(name)) return;
+    markTabLoaded(name);
+    fn();
+  }
+
   function switchTab(name){
     if(TABS.indexOf(name) === -1) return;
 
@@ -16367,11 +16435,15 @@
       // reveal it immediately instead of waiting on a scroll that won't come.
       active.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
     }
-    if(name === "profile") renderProfile();
-    if(name === "loads") renderLoadsTab();
+    if(name === "profile") loadTabIfStale("profile", renderProfile);
+    if(name === "loads") loadTabIfStale("loads", renderLoadsTab);
+    // Xabarlar o'zini boshqacha tutadi: ro'yxat har safar chiziladi,
+    // lekin keshdan — ya'ni darhol. So'rov esa fonda ketadi
+    // (loadChatInbox), ekranni o'chirmaydi.
     if(name === "chat") renderChatTab();
-    if(name === "trucks") renderTrucksTab();
-    if(name === "home") renderHomeMatch();
+    if(name === "trucks") loadTabIfStale("trucks", renderTrucksTab);
+    if(name === "home") loadTabIfStale("home", renderHomeMatch);
+    // Life ro'yxatni o'zi keshlaydi (lifeItems) — qayta so'rov yubormaydi.
     if(name === "life") renderLife();
     if(name === "contact") renderHelpCenter();
     if(name !== "chat") stopChatPoll();
@@ -16794,6 +16866,10 @@
     window.addEventListener("touchstart", function(e){
       if(refreshing || pulling || sheetOpen() || e.touches.length !== 1) return;
       if(window.scrollY > 0) return;
+      // Xabarlar ro'yxatining o'z yangilashi bor — u yerda butun
+      // sahifani qayta yuklash ortiqcha, ikkitasi birga ishlasa esa
+      // ikki marta yangilangan bo'lardi.
+      if(chatListPullable()) return;
       if(startsInsideDraggableWidget(e.target)) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
@@ -16831,6 +16907,119 @@
     window.addEventListener("touchend", finish, { passive: true });
     window.addEventListener("touchcancel", function(){
       if(!pulling || refreshing) return;
+      pulling = false;
+      reset();
+    }, { passive: true });
+  }
+
+  /** Xabarlar ro'yxati ko'rinib turibdimi — tortish shunga tegishli. */
+  function chatListPullable(){
+    if(visibleTabName() !== "chat") return false;
+    var card = document.getElementById("chatCard");
+    return !!(card && card.classList.contains("chat-list-view")
+              && !card.classList.contains("chat-fullscreen"));
+  }
+
+  /* ============================================================
+     Xabarlar ro'yxatini tortib yangilash
+     ------------------------------------------------------------
+     Ro'yxat endi bo'limga kirgan sari qayta yuklanmaydi — demak
+     odamga "hoziroq yangila" degan yo'l kerak. Shu yo'l tanish
+     harakat: tepadan pastga tortish.
+
+     Sahifaning umumiy tortib yangilashidan ikki farqi bor:
+       - butun sahifani qayta yuklamaydi, faqat ro'yxatni oladi;
+       - Telegram ichida ham ishlaydi, chunki u yerda pastga surish
+         allaqachon o'chirilgan (tg.disableVerticalSwipes) — ya'ni
+         bu harakat endi bo'sh turgan harakat.
+
+     Faqat ro'yxat ochiq turganda ishlaydi: suhbat ichida pastga
+     tortish — eski xabarlarni ko'rish, unga tegilmaydi.
+
+     Oddiy brauzerda qo'shilmaydi: u yerda bu harakat brauzerning
+     o'zida bor va sahifani butunlay yangilaydi, ya'ni xabarlar ham
+     yangilanadi — ikkitasi urishib ketmasin.
+     ============================================================ */
+  /* Qo'shilgan muhitmi. Init paytida emas, tegilgan paytda
+     tekshiriladi: initTelegramWebApp() shu initdan keyinroq ishga
+     tushadi, ya'ni hozir isTelegramWebApp hali false bo'lib turadi
+     (canOfferInstall ham shu sababdan shunday yozilgan). */
+  function chatPtrEnabled(){
+    return installAlreadyDone() || isTelegramWebApp;
+  }
+
+  function initChatPullRefresh(){
+    var ind = document.createElement("div");
+    ind.className = "ptr";
+    ind.setAttribute("aria-hidden", "true");
+    ind.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
+      + 'stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/>'
+      + '<polyline points="20.5 3.5 20.5 10 14 10"/></svg>';
+    document.body.appendChild(ind);
+
+    var THRESHOLD = 68;   // shuncha tortilsa yangilanadi
+    var MAX = 108;        // undan nariga cho'zilmaydi
+    var startX = 0, startY = 0, pulling = false, busy = false, armed = false;
+
+    function draw(dist){
+      var eased = Math.min(dist, MAX);
+      ind.style.transform = "translateY(" + (eased - 52) + "px) rotate(" + Math.round(eased * 3) + "deg)";
+      ind.style.opacity = String(Math.min(1, eased / THRESHOLD));
+    }
+
+    function reset(){
+      ind.classList.remove("ptr-spin");
+      ind.style.transition = "transform .25s ease, opacity .25s ease";
+      ind.style.transform = "translateY(-52px)";
+      ind.style.opacity = "0";
+      setTimeout(function(){ ind.style.transition = ""; }, 280);
+    }
+
+    window.addEventListener("touchstart", function(ev){
+      if(busy || pulling || ev.touches.length !== 1) return;
+      if(!chatPtrEnabled() || !chatListPullable() || window.scrollY > 0) return;
+      /* Brauzerning o'z overscroll harakati bir marta — birinchi
+         tortishda — o'chiriladi. Initda o'chirib qo'yilsa, bu
+         sozlama tortib yangilash umuman qo'shilmaydigan oddiy
+         brauzerda ham ishlab ketardi. */
+      if(!armed){ armed = true; document.documentElement.classList.add("ptr-on"); }
+      startX = ev.touches[0].clientX;
+      startY = ev.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+
+    window.addEventListener("touchmove", function(ev){
+      if(!pulling || busy) return;
+      var dy = ev.touches[0].clientY - startY;
+      var dx = Math.abs(ev.touches[0].clientX - startX);
+      // Yuqoriga surish, yonlamasiga surish yoki ro'yxat pastga
+      // tushib ketgan bo'lsa — bu bizning harakatimiz emas.
+      if(dy <= 0 || dx > dy || window.scrollY > 0){ pulling = false; reset(); return; }
+      if(dy > 8 && ev.cancelable) ev.preventDefault();
+      draw(dy);
+    }, { passive: false });
+
+    window.addEventListener("touchend", function(ev){
+      if(!pulling || busy) return;
+      pulling = false;
+      var touch = ev.changedTouches && ev.changedTouches[0];
+      if(!touch || touch.clientY - startY < THRESHOLD){ reset(); return; }
+
+      busy = true;
+      ind.style.transition = "transform .2s ease";
+      ind.style.transform = "translateY(22px)";
+      ind.style.opacity = "1";
+      ind.classList.add("ptr-spin");
+      // Javob juda tez kelsa aylanish ko'rinmay qolardi — eng kamida
+      // shuncha turadi, shunda harakat tugaganini odam sezadi.
+      var started = Date.now();
+      loadChatInbox(true, function(){
+        setTimeout(function(){ busy = false; reset(); }, Math.max(0, 420 - (Date.now() - started)));
+      });
+    }, { passive: true });
+
+    window.addEventListener("touchcancel", function(){
+      if(!pulling || busy) return;
       pulling = false;
       reset();
     }, { passive: true });
@@ -16904,6 +17093,7 @@
   // Shu yerda ham Telegram aniqlangan bo'lishi kerak — Telegram ichida
   // pastga tortish uning o'z harakati bilan urishib ketadi.
   initPullToRefresh();
+  initChatPullRefresh();
 
   /* ============================================================
      Scroll: nav state, progress bar, background parallax
