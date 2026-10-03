@@ -53,6 +53,11 @@ export const kvLrem = async (k, v) => {
   return true;
 };
 export const kvKeys = async () => [...store.keys()].filter(k => k.startsWith('profile:'));
+// Kvota o'lchovi: admin paneldagi "Baza yuklanishi" sahifasi uchun.
+export const kvDbSize = async () => store.size;
+export const kvUsedMemory = async () => 12345678;
+export const kvMonthCommands = async () => 4321;
+export const usageKey = () => 'usage:cmd:2026-10';
 `);
 
 /**

@@ -36,6 +36,20 @@ const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 const pairKey = (a, b) => `convo:${[a, b].sort().join('|')}`;
 
+/* Yozishmaning "versiyasi" — har bir o'zgarishda bittaga oshadi.
+   Mijoz pollda o'zidagi versiyani yuboradi; mos kelsa, server
+   xabarlarni umuman o'qimaydi va bo'sh javob qaytaradi.
+
+   Sababi: poll har 1,5 soniyada ketadi, lekin xabar har safar
+   o'zgarmaydi. Ilgari o'zgarmaganini bilish uchun ham butun yozishma
+   (100 tagacha alohida GET) o'qilardi. Endi o'zgarmagan poll bitta
+   buyruqqa tushadi. */
+const verKey = (a, b) => `convoVer:${[a, b].sort().join('|')}`;
+
+/** Yozishma o'zgardi — versiyani oshiramiz. Xatosi jim o'tadi:
+    hisoblagich yo'qolsa, eng yomoni ortiqcha bir marta o'qiladi. */
+const bumpVer = async (a, b) => { await kvIncr(verKey(a, b)).catch(() => {}); };
+
 /**
  * O'qilmagan xabarlar hisoblagichi: `chatUnread:<kimga>:<kimdan>`.
  *
@@ -160,7 +174,18 @@ const getThread = async (req, res) => {
   }
   if (!withEmail) return res.status(400).json({ error: 'Bunday foydalanuvchi topilmadi' });
 
-  // Suhbat ochildi — bu yozishma o'qilgan hisoblanadi.
+  /* Hech narsa o'zgarmaganmi? Mijoz o'zidagi versiyani yuboradi.
+     Mos kelsa — xabarlarni umuman o'qimaymiz. Poll har 1,5 soniyada
+     ketadi, lekin xabar har safar o'zgarmaydi, shuning uchun
+     pollarning aksariyati shu yerda tugaydi: 100 dan ortiq buyruq
+     o'rniga bittasi. */
+  const ver = String((await kvGet(verKey(myEmail, withEmail))) || '0');
+  const clientVer = String(req.query.ver || '');
+  if (clientVer && clientVer === ver) {
+    return res.status(200).json({ unchanged: true, ver, withEmail });
+  }
+
+  // Suhbat ochildi yoki yangilik bor — bu yozishma o'qilgan hisoblanadi.
   await kvDel(unreadKey(myEmail, withEmail)).catch(() => {});
 
   const ids = await kvRange(pairKey(myEmail, withEmail), 0, 99);
@@ -183,6 +208,7 @@ const getThread = async (req, res) => {
   const profile = parseProfile(await kvGet(`profile:${withEmail}`));
   return res.status(200).json({
     messages,
+    ver,
     withEmail,
     withUsername: profile.username || withUsername,
     withName: profile.displayName || profile.name || '',
@@ -256,6 +282,7 @@ const sendMessage = async (req, res) => {
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
   await kvPush(pairKey(myEmail, toEmail), id);
+  await bumpVer(myEmail, toEmail);
   await kvIncr(unreadKey(toEmail, myEmail)).catch(() => {});
   await kvSadd(`inbox:${myEmail}`, toEmail);
   await kvSadd(`inbox:${toEmail}`, myEmail);
@@ -307,6 +334,7 @@ const editMessage = async (req, res) => {
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
+  await bumpVer(message.from, message.to);
   return res.status(200).json({ ok: true });
 };
 
@@ -320,6 +348,7 @@ const deleteMessage = async (req, res) => {
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'O‘chirilmadi, qayta urinib ko‘ring' });
 
+  await bumpVer(message.from, message.to);
   return res.status(200).json({ ok: true });
 };
 
@@ -342,6 +371,7 @@ const reactToMessage = async (req, res) => {
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
+  await bumpVer(message.from, message.to);
   return res.status(200).json({ ok: true });
 };
 

@@ -11766,6 +11766,8 @@
   var chatSearchDebounce = null;
   var chatEditingId = null;
   var chatLastSeenId = null;
+  // Yozishmaning server bergan versiyasi — o'zgarganini bilish uchun.
+  var chatVer = null;
   /* Reaksiya qiymati KV'da emoji satr sifatida saqlanadi — o'zgartirmaymiz,
      shunda eski reaksiyalar ham joyida qoladi. Ekranda esa emoji emas,
      shu ikonkalar chiziladi. */
@@ -12115,6 +12117,7 @@
     try{ sessionStorage.setItem(CHAT_OPEN_KEY, JSON.stringify({ email: email || "", username: username, name: chatWithName })); }catch(e){}
     chatEditingId = null;
     chatLastSeenId = null;
+    chatVer = null;
     var chatCard = document.getElementById("chatCard");
     if(!chatCard) return;
     stopChatPoll();
@@ -12472,11 +12475,19 @@
     if(!chatWithUsername) return;
     var body = document.getElementById("chatThreadBody");
     if(!body) return;
+    /* Server yozishmaning "versiyasini" qaytaradi. Keyingi so'rovda
+       uni qaytarib yuboramiz: o'zgarmagan bo'lsa, server xabarlarni
+       umuman o'qimaydi va bo'sh javob beradi. Poll har 1,5 soniyada
+       ketgani uchun bu eng katta tejamkorlik. */
     var url = "/api/chat?action=thread&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||"")
-      + (chatWithEmail ? "&withEmail=" + encodeURIComponent(chatWithEmail) : "&withUsername=" + encodeURIComponent(chatWithUsername));
+      + (chatWithEmail ? "&withEmail=" + encodeURIComponent(chatWithEmail) : "&withUsername=" + encodeURIComponent(chatWithUsername))
+      + (chatVer && !scrollDown ? "&ver=" + encodeURIComponent(chatVer) : "");
     fetch(url).then(function(r){ return r.json(); }).then(function(data){
       if(!chatWithUsername) return; // user navigated away while this was in flight
       if(data.withEmail) chatWithEmail = data.withEmail;
+      if(data.ver !== undefined && data.ver !== null) chatVer = String(data.ver);
+      // Hech narsa o'zgarmagan — chizadigan narsa yo'q.
+      if(data.unchanged) return;
       // Server ismni bilsa — sarlavhada o'sha turadi.
       if(data.withName && data.withName !== chatWithName){
         chatWithName = data.withName;

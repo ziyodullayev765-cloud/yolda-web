@@ -505,6 +505,23 @@
     .card-pad{padding:14px;}
     .row2{grid-template-columns:1fr;}
   }
+
+  /* ---------- Baza yuklanishi ----------
+     Kvotaning qancha to'lgani. Rang chegaraga yaqinlashganda
+     o'zgaradi: 70% dan sariq, 90% dan qizil. */
+  .usage-card{display:flex;flex-direction:column;gap:22px;}
+  .usage-row{display:flex;flex-direction:column;gap:7px;}
+  .usage-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .usage-top span{font-size:14px;font-weight:600;}
+  .usage-top b{font-size:20px;font-weight:700;letter-spacing:-0.02em;}
+  .usage-track{height:9px;border-radius:999px;overflow:hidden;background:rgba(127,127,127,0.18);}
+  .usage-fill{display:block;height:100%;border-radius:999px;background:#16A34A;transition:width 0.3s ease;}
+  .usage-fill.warn{background:#D97706;}
+  .usage-fill.danger{background:#DC2626;}
+  .usage-sub{font-size:12.5px;opacity:0.72;}
+  .usage-sub i{font-style:normal;opacity:0.8;}
+  .usage-keys{margin:0;font-size:13.5px;}
+  .usage-note{margin:0;font-size:12px;line-height:1.6;opacity:0.62;}
 </style>
 </head>
 <body>
@@ -881,7 +898,9 @@
     life:     { query:"resource=life",     perm:"life:read",     key:"life" },
     // Javobi ro'yxat emas, {id: havola} jadvali — Store.list emas,
     // Store.data.icons o'qiladi.
-    icons:    { query:"resource=icons",    perm:"icons:read",    key:"icons" }
+    icons:    { query:"resource=icons",    perm:"icons:read",    key:"icons" },
+    // Bu ham ro'yxat emas — Store.raw.usage o'qiladi.
+    usage:    { query:"resource=usage",    perm:"settings:read", key:"usage" }
   };
   var Store = {
     data: {},
@@ -1284,6 +1303,7 @@
     { name:"analytics",     label:"Tahlil",           icon:"chart",     group:"Tizim",      perm:"analytics:read", view:viewAnalytics },
     { name:"life",          label:"YO'LDA LIFE",      icon:"play",      group:"Mazmun",     perm:"life:read",      view:viewLife },
     { name:"icons",         label:"Ikonkalar",        icon:"edit",      group:"Mazmun",     perm:"icons:read",     view:viewIcons },
+    { name:"usage",         label:"Baza yuklanishi",  icon:"chart",     group:"Tizim",      perm:"settings:read",  view:viewUsage },
     { name:"settings",      label:"Sozlamalar",       icon:"gear",      group:"Tizim",      perm:"settings:read",  view:viewSettings }
   ];
   function routeByName(name){
@@ -2889,6 +2909,56 @@
   function iconOverrides(){
     var data = Store.data.icons;
     return (data && typeof data === "object") ? data : {};
+  }
+
+  /* Baza qancha to'lgani.
+
+     Joy va kalitlar soni Redis'ning o'zidan olinadi — aniq.
+     Buyruqlar sonini Upstash bermaydi, shuning uchun uni server
+     o'zi sanaydi va u TAXMINIY; sahifada ham shunday yozilgan,
+     aniq deb ko'rsatib qo'ymaslik uchun. */
+  function usageBar(label, used, limit, text, note){
+    var pct = (used === null || used === undefined) ? null
+      : Math.min(100, Math.round((used / limit) * 1000) / 10);
+    var tone = pct === null ? "" : (pct >= 90 ? " danger" : (pct >= 70 ? " warn" : ""));
+    return '<div class="usage-row">'
+      + '<div class="usage-top"><span>' + esc(label) + '</span>'
+      +   '<b>' + (pct === null ? "—" : pct + "%") + '</b></div>'
+      + '<div class="usage-track"><span class="usage-fill' + tone + '" style="width:'
+      +   (pct === null ? 0 : pct) + '%;"></span></div>'
+      + '<div class="usage-sub">' + esc(text) + (note ? ' <i>' + esc(note) + '</i>' : "") + '</div>'
+      + '</div>';
+  }
+
+  function fmtBytes(n){
+    if(n === null || n === undefined) return "—";
+    if(n < 1024) return n + " B";
+    if(n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1048576).toFixed(1) + " MB";
+  }
+
+  function viewUsage(){
+    return pageHead("Baza yuklanishi", "Upstash bepul tarifidagi chegaralar", refreshBtn("usage"))
+      + withData(["usage"], function(){
+        var u = Store.raw.usage || {};
+        var st = u.storage || {};
+        var cm = u.commands || {};
+        return '<div class="card usage-card">'
+          + usageBar("Egallangan joy", st.bytes, st.limit || 1,
+              fmtBytes(st.bytes) + " / " + fmtBytes(st.limit))
+          + usageBar("Buyruqlar (" + esc(u.month || "") + ")", cm.count, cm.limit || 1,
+              (cm.count === null || cm.count === undefined ? "—" : Number(cm.count).toLocaleString("en-US"))
+                + " / " + Number(cm.limit || 0).toLocaleString("en-US"),
+              "taxminiy")
+          + '<p class="usage-keys">Bazadagi kalitlar: <b>'
+          +   (u.keys === null || u.keys === undefined ? "—" : Number(u.keys).toLocaleString("en-US"))
+          + '</b></p>'
+          + '<p class="usage-note">Joy va kalitlar soni Redis\'ning o\'zidan olinadi. '
+          + 'Buyruqlar sonini Upstash bermaydi — uni server o\'zi sanaydi, shuning uchun '
+          + 'u taxminiy: har 25 buyruqda bir marta yoziladi va jarayon to\'xtaganda '
+          + 'bir nechtasi sanalmay qolishi mumkin. Oy boshida noldan boshlanadi.</p>'
+          + '</div>';
+      });
   }
 
   function viewIcons(){

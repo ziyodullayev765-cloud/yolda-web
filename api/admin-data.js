@@ -28,7 +28,8 @@
  * one is gated on the caller's role — see READ_PERMISSIONS /
  * WRITE_PERMISSIONS below and the permission table in lib/adminAuth.js.
  */
-import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLrem } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLrem,
+  kvDbSize, kvUsedMemory, kvMonthCommands } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
@@ -820,7 +821,38 @@ const deleteIcon = async (req, res) => {
 };
 
 /** Read permission required per GET resource. */
+/* Upstash bepul tarifidagi chegaralar. Agar tarif o'zgarsa, shu
+   ikki qiymatni o'zgartirish kifoya. */
+const QUOTA_BYTES = 256 * 1024 * 1024;     // 256 MB
+const QUOTA_COMMANDS = 500000;             // oyiga
+
+/**
+ * GET ?resource=usage — baza qancha to'lgani.
+ *
+ * Joy va kalitlar soni Redis'ning o'zidan olinadi, shuning uchun
+ * aniq. Buyruqlar sonini Upstash bermaydi — uni lib/kv.js o'zi
+ * sanaydi va har 25 tasida bir marta yozadi, shuning uchun u
+ * TAXMINIY (lambda to'xtaganda bir nechtasi yo'qoladi). Admin
+ * panelda ham shunday yozib qo'yilgan.
+ */
+const getUsage = async (res) => {
+  const [bytes, keys, commands] = await Promise.all([
+    kvUsedMemory().catch(() => null),
+    kvDbSize().catch(() => null),
+    kvMonthCommands().catch(() => null),
+  ]);
+  const pct = (used, limit) =>
+    (used === null || used === undefined) ? null : Math.round((used / limit) * 1000) / 10;
+  return res.status(200).json({
+    storage: { bytes, limit: QUOTA_BYTES, percent: pct(bytes, QUOTA_BYTES) },
+    commands: { count: commands, limit: QUOTA_COMMANDS, percent: pct(commands, QUOTA_COMMANDS), approximate: true },
+    keys,
+    month: new Date().toISOString().slice(0, 7),
+  });
+};
+
 const READ_PERMISSIONS = {
+  usage: 'settings:read',
   orders: 'orders:read',
   users: 'users:read',
   messages: 'messages:read',
@@ -861,6 +893,7 @@ export default async function handler(req, res) {
     }
     if (!requireAdmin(req, res, permission)) return;
 
+    if (resource === 'usage') return getUsage(res);
     if (resource === 'orders') return getOrders(res);
     if (resource === 'users') return getUsers(res);
     if (resource === 'messages') return getMessages(res);
