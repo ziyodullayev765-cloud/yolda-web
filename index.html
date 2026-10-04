@@ -2612,6 +2612,8 @@
   }
   .htc-photo img{width:100%;height:100%;object-fit:cover;display:block;}
   .htc-photo .ic-svg{font-size:34px;}
+  /* Bosh sahifadagi kartochka kichikroq — marka belgisi ham shunga mos. */
+  .htc-photo .tc-mark span{font-size:15px;letter-spacing:0.05em;}
   .htc-body{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px;}
   .htc-name{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.25;}
   .htc-meta{font-size:10.5px;color:var(--muted);}
@@ -3671,18 +3673,56 @@
   :root[data-reduce-motion="1"] .lg-tap{transition:none;}
   :root[data-reduce-motion="1"] .lg-tap:active{transform:none;}
 
-  /* Pastki panelda o'z bandi yo'q bo'limlar uchun qaytish tugmasi.
-     Hozircha bu — Mashinalar: u panelda YO'LDA LIFE bilan o'rin
-     almashdi, ya'ni kirilgach "qayerdaman" degan savol tug'ilardi. */
-  .tab-back{
-    display:inline-flex;align-items:center;gap:7px;
-    margin-bottom:var(--s4);padding:8px 15px 8px 11px;border-radius:999px;
-    color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
-    cursor:pointer;-webkit-tap-highlight-color:transparent;
+  /* Mashinalar bo'limining tepa qatori: qaytish belgisi va qidiruv
+     qatori yonma-yon. Avval tepada yozuvi bilan alohida "Orqaga"
+     tugmasi turardi — bozor ro'yxatida u o'rinni bekorga egallardi.
+     Bu bo'lim pastki panelda o'z bandiga ega emas (o'rnini YO'LDA
+     LIFE egallagan), shuning uchun tugmaning o'zi qoldi. */
+  .trucks-topbar{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s4);}
+  /* Bozor ro'yxatida qidiruv qatori bosh sahifadagidek katta bo'lmaydi:
+     u yerda — sahifaning asosiy harakati, bu yerda esa e'lonlar
+     ustidagi bitta ingichka qator. */
+  .trucks-topbar .home-search-bar{
+    flex:1;min-width:0;margin:0;
+    padding:9px var(--s4);border-radius:var(--r-pill);
+    background:var(--paper-dark);border-color:transparent;box-shadow:none;
   }
-  .tab-back:hover{color:var(--ink);}
+  .trucks-topbar .home-search-bar:hover{transform:none;box-shadow:none;border-color:transparent;}
+  .trucks-topbar .home-search-bar .hsb-icon{
+    width:22px;height:22px;background:none;color:var(--muted);font-size:18px;
+  }
+  .trucks-topbar .home-search-bar .hsb-value{
+    font-family:'Inter',sans-serif;font-weight:500;font-size:13.5px;color:var(--ink-soft);
+    letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
+  }
+  .trucks-back{
+    flex:none;width:38px;height:38px;padding:0;border:none;background:none;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    color:var(--ink-soft);-webkit-tap-highlight-color:transparent;
+  }
+  .trucks-back:hover{color:var(--ink);}
   /* Belgi o'ngga qaragan — chapga aylantiramiz. */
-  .tab-back .ic-svg{font-size:16px;transform:rotate(180deg);}
+  .trucks-back .ic-svg{font-size:19px;transform:rotate(180deg);}
+  /* Uchta chip telefon ekraniga sig'maydi va ikkinchi qatorga tushib
+     ketardi — "Sotish" tugmasi yonida bu buzilgandek ko'rinardi.
+     Endi ular yonlamasiga suriladi, qator esa bitta bo'lib qoladi. */
+  #tab-trucks .home-quick-row .chip-row{
+    flex-wrap:nowrap;overflow-x:auto;margin:0;padding-bottom:2px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    /* O'ng cheti so'nib boradi — qatorning davomi borligi ko'rinib
+       tursin, "Sotish" tugmasi ostida kesilgandek bo'lmasin. */
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent);
+            mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent);
+  }
+  #tab-trucks .home-quick-row .chip-row::-webkit-scrollbar{display:none;}
+  #tab-trucks .home-quick-row .chip{flex:0 0 auto;}
+  /* Tugma qatorga mos bo'lsin — asl ko'rinishi 52px balandlikda va
+     katta soya bilan, bu yerda esa u chiplar yonida turadi. */
+  #tab-trucks #btnSellTruck{
+    flex:none;min-height:38px;height:38px;margin-top:0;
+    font-size:13px;box-shadow:none;
+  }
+  #tab-trucks .trucks-sort-select{padding:6px 28px 6px 11px;font-size:12px;}
 
   /* ---------- BO'LIM ALMASHUVI ---------- */
   /* Bo'limlar `hidden` orqali almashadi — oraliq holat bo'lmagani uchun
@@ -4043,20 +4083,28 @@
   }
   .avatar-edit-btn .ic-svg{font-size:14px;}
 
-  /* ---------- Trucks marketplace: OLX-style photo grid ---------- */
+  /* ---------- Trucks marketplace: OLX uslubidagi e'lonlar to'ri ----------
+     Bozor kartochkasida uch narsa bor, xolos: rasm, narx va e'lon
+     nomi, pastida esa shahar va sana. Avvalgi kartochkada yoqilg'i
+     turi, yil va "necha soat oldin" alohida qatorlarda turardi —
+     to'rtta mayda qator narxni bosib ketardi. Yil nom bilan birga
+     o'qiladi ("DAF XF 480, 2018"), yoqilg'i esa e'lon ichida bor.
+
+     Ramka yo'q: to'rda yonma-yon turgan kartochkalar ramkalari bilan
+     emas, oq yuzasi va rasmi bilan ajralib turadi. */
   .truck-grid{
     display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s3);
   }
   @media(min-width:640px){ .truck-grid{grid-template-columns:repeat(3,1fr);} }
   @media(min-width:960px){ .truck-grid{grid-template-columns:repeat(4,1fr);} }
   .truck-card{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
-    overflow:hidden;cursor:pointer;box-shadow:var(--sh-1);
-    transition:transform 0.2s var(--ease), box-shadow 0.2s var(--ease), border-color 0.2s var(--ease);
+    background:var(--card);border:none;border-radius:14px;
+    overflow:hidden;cursor:pointer;box-shadow:0 1px 3px rgba(15,23,42,0.07);
+    transition:transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
     display:flex;flex-direction:column;
   }
-  .truck-card:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(10,159,91,0.25);}
-  .truck-card:active{transform:translateY(-1px);}
+  .truck-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(15,23,42,0.12);}
+  .truck-card:active{transform:translateY(0);}
   .truck-card .tc-photo{
     width:100%;aspect-ratio:4/3;background:var(--paper-dark);
     display:flex;align-items:center;justify-content:center;color:var(--muted);
@@ -4064,14 +4112,60 @@
   }
   .truck-card .tc-photo img{width:100%;height:100%;object-fit:cover;display:block;}
   .truck-card .tc-photo .ic-svg{font-size:30px;}
-  .truck-card .tc-body{padding:var(--s3) var(--s3) var(--s4);}
-  .truck-card .tc-price{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--route);
-    letter-spacing:-0.01em;
+  .truck-card .tc-body{
+    padding:9px 10px 10px;display:flex;flex-direction:column;gap:3px;flex:1;
   }
-  .truck-card .tc-price span{font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
-  .truck-card .tc-title{font-size:13px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1.3;}
-  .truck-card .tc-meta{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px;}
+  /* Narx — kartochkadagi eng asosiy raqam, shuning uchun eng yirigi va
+     to'q rangda. Ilgari u yashil edi va yonidagi "so'm" bilan birga
+     ikkinchi darajali ko'rinardi. */
+  .truck-card .tc-price{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16.5px;
+    color:var(--ink);letter-spacing:-0.015em;line-height:1.15;
+  }
+  .truck-card .tc-price span{font-size:11px;font-weight:600;color:var(--muted);margin-left:3px;}
+  /* Nom ikki qatorga sig'adi — uchinchisi kesiladi, shunda to'rdagi
+     kartochkalar bo'yi bir xil qoladi. */
+  .truck-card .tc-title{
+    font-size:12.5px;font-weight:500;color:var(--ink-soft);line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  /* Shahar chapda, sana o'ngda — bitta qatorda, eng pastda. */
+  .truck-card .tc-foot{
+    display:flex;align-items:baseline;justify-content:space-between;gap:6px;
+    margin-top:auto;padding-top:4px;font-size:10.5px;color:var(--muted);
+  }
+  .truck-card .tc-foot .tcf-city{
+    font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+  }
+  .truck-card .tc-foot .tcf-when{flex:none;}
+
+  /* Rasmi yo'q e'lon: mashina ikonkasi o'rniga markaning o'z nomi
+     belgi bo'lib turadi. Rangi nom bo'yicha tanlanadi, ya'ni bir
+     marka hamma joyda bir xil rangda ko'rinadi va to'rda e'lonlar
+     bir-biridan ajralib turadi.
+
+     Fon ochiq, yozuv esa to'q: to'rtta to'q rangli to'rtburchak
+     yonma-yon turganda ro'yxat bozor emas, rang namunalari jadvaliga
+     o'xshab qolardi. */
+  .tc-mark{
+    width:100%;height:100%;padding:0 10px;
+    display:flex;align-items:center;justify-content:center;
+    background-color:var(--mark-soft);
+  }
+  .tc-mark span{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:var(--mark-size,19px);
+    letter-spacing:0.07em;color:var(--mark);text-align:center;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+  }
+  /* Tungi rejimda teskarisi: deyarli qora fon ustida ochiq yuza ham,
+     marka rangidagi yozuv ham ko'rinmay qolardi. */
+  :root[data-theme="dark"] .tc-mark{background-color:var(--mark);}
+  :root[data-theme="dark"] .tc-mark span{color:#fff;}
+  .truck-gallery .tc-mark{flex:0 0 100%;}
+  /* E'lon ichidagi katta maydon — u yerda nom to'liq sig'adi. */
+  .truck-gallery .tc-mark span{font-size:30px;}
+  /* E'lon ichidagi mayda qatorlar: "Kelishiladi", ko'rilgan soni. */
+  .tc-meta{font-size:11.5px;color:var(--muted);}
 
   /* Detail sheet gallery — plain CSS scroll-snap, no JS carousel needed. */
   .truck-gallery{
@@ -4107,18 +4201,27 @@
 
   /* ---------- Trucks marketplace: categories, badges, sort, seller card ---------- */
   .truck-category-row{
-    display:flex;gap:var(--s2);overflow-x:auto;padding-bottom:2px;
+    display:flex;gap:var(--s3);overflow-x:auto;padding-bottom:2px;
     -webkit-overflow-scrolling:touch;scrollbar-width:none;
   }
   .truck-category-row::-webkit-scrollbar{display:none;}
+  /* Turkum — qutichada emas, doira ichidagi ikonka va ostida nomi.
+     Avval har biri ramkali oq quticha edi: sakkiztasi yonma-yon
+     turganda qator ro'yxatdan ko'ra jadvalga o'xshab qolardi. */
   .truck-category-item{
-    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;
-    width:72px;padding:var(--s3) var(--s2);border-radius:var(--r-md);border:1px solid var(--border);
-    background:var(--card);cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-soft);
-    text-align:center;transition:border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
+    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;
+    width:68px;padding:0;border:none;background:none;cursor:pointer;
+    font-size:10.5px;font-weight:600;color:var(--ink-soft);
+    text-align:center;line-height:1.25;
   }
-  .truck-category-item .tci-emoji{font-size:22px;line-height:0;color:var(--route);}
-  .truck-category-item.active{border-color:var(--route);color:var(--route);background:rgba(10,159,91,0.07);}
+  .truck-category-item .tci-emoji{
+    width:54px;height:54px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--paper-dark);color:var(--ink-soft);font-size:24px;line-height:1;
+    transition:background 0.15s var(--ease), color 0.15s var(--ease);
+  }
+  .truck-category-item.active{color:var(--route);}
+  .truck-category-item.active .tci-emoji{background:var(--route);color:#fff;}
   .trucks-sort-select{
     width:auto;padding:7px 30px 7px 12px;font-size:12.5px;border-radius:var(--r-pill);
     border:1px solid var(--border);background-color:var(--card);color:var(--ink-soft);
@@ -4971,25 +5074,27 @@
 </section>
 
 <section class="tabview" id="tab-trucks" data-tab="trucks" hidden>
-  <div class="section" style="padding-top:var(--s7);padding-bottom:var(--s8);max-width:960px;">
-    <button type="button" class="tab-back lg lg-tap" data-tab-link="home">
-      <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
-      <span data-i18n="common.back">Orqaga</span>
-    </button>
-    <div class="section-head reveal">
-      <div class="section-eyebrow" data-i18n="trucks.eyebrow">Mashinalar</div>
-      <h2 class="section-title"><span data-i18n="trucks.titleA">Yuk mashinasi</span> <span class="accent" data-i18n="trucks.titleB">soting yoki oling</span></h2>
-      <p class="section-sub" data-i18n="trucks.sub">Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.</p>
+  <div class="section" style="padding-top:var(--s4);padding-bottom:var(--s8);max-width:960px;">
+    <!-- Sarlavha, tavsif va "Kategoriyalar" yozuvi ataylab yo'q.
+         Bu bo'lim — bozor ro'yxati: birinchi ko'rinishda e'lonlar
+         turishi kerak, ular haqidagi gap emas.
+
+         Qaytish tugmasi esa qoldi, lekin yozuvsiz va qidiruv qatori
+         bilan bitta qatorda: bu bo'lim pastki panelda o'z bandiga ega
+         emas (o'rnini YO'LDA LIFE egallagan), ya'ni tugmaning o'zi
+         kerak — "Orqaga" so'zi esa kerak emas. -->
+    <div class="trucks-topbar reveal">
+      <button type="button" class="trucks-back lg lg-tap" data-tab-link="home" aria-label="Orqaga">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+      </button>
+      <button type="button" class="home-search-bar" id="trucksSearchBar">
+        <span class="hsb-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"></use></svg></span>
+        <span style="flex:1;text-align:left;">
+          <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka, model yoki kalit so'z...</span></span>
+        </span>
+      </button>
     </div>
 
-    <button type="button" class="home-search-bar reveal" id="trucksSearchBar" style="margin-bottom:var(--s4);">
-      <span class="hsb-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"></use></svg></span>
-      <span style="flex:1;text-align:left;">
-        <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka, model yoki kalit so'z...</span></span>
-      </span>
-    </button>
-
-    <div class="section-eyebrow reveal" style="margin-bottom:var(--s2);" data-i18n="trucks.categoriesLabel">Kategoriyalar</div>
     <div class="truck-category-row reveal" id="trucksCategoryRow"></div>
 
     <div class="home-quick-row reveal" style="margin-top:var(--s4);">
@@ -5339,6 +5444,7 @@
       "trucks.sortPriciest": "Qimmatidan", "trucks.sortYear": "Yili bo'yicha", "trucks.sortMileage": "Probeg bo'yicha",
       "trucks.badgeNew": "Yangi", "trucks.badgeVerified": "Tekshirilgan", "trucks.badgeTop": "TOP",
       "trucks.justNow": "hozirgina", "trucks.minsAgo": "daqiqa oldin", "trucks.hoursAgo": "soat oldin", "trucks.daysAgo": "kun oldin",
+      "trucks.today": "Bugun",
       "trucks.negotiable": "Kelishiladi", "trucks.priceFixed": "Qat'iy", "trucks.views": "ko'rildi",
       "trucks.specsHeading": "Xususiyatlari", "trucks.sellerHeading": "Sotuvchi",
       "trucks.engineVolume": "Dvigatel hajmi", "trucks.enginePower": "Ot kuchi",
@@ -5848,6 +5954,7 @@
       "trucks.sortPriciest": "Сначала дороже", "trucks.sortYear": "По году", "trucks.sortMileage": "По пробегу",
       "trucks.badgeNew": "Новое", "trucks.badgeVerified": "Проверено", "trucks.badgeTop": "TOP",
       "trucks.justNow": "только что", "trucks.minsAgo": "минут назад", "trucks.hoursAgo": "часов назад", "trucks.daysAgo": "дней назад",
+      "trucks.today": "Сегодня",
       "trucks.negotiable": "Торг уместен", "trucks.priceFixed": "Фиксированная", "trucks.views": "просмотров",
       "trucks.specsHeading": "Характеристики", "trucks.sellerHeading": "Продавец",
       "trucks.engineVolume": "Объём двигателя", "trucks.enginePower": "Мощность",
@@ -6353,6 +6460,7 @@
       "trucks.sortPriciest": "Priciest first", "trucks.sortYear": "By year", "trucks.sortMileage": "By mileage",
       "trucks.badgeNew": "New", "trucks.badgeVerified": "Verified", "trucks.badgeTop": "TOP",
       "trucks.justNow": "just now", "trucks.minsAgo": "min ago", "trucks.hoursAgo": "hours ago", "trucks.daysAgo": "days ago",
+      "trucks.today": "Today",
       "trucks.negotiable": "Negotiable", "trucks.priceFixed": "Fixed", "trucks.views": "views",
       "trucks.specsHeading": "Specifications", "trucks.sellerHeading": "Seller",
       "trucks.engineVolume": "Engine volume", "trucks.enginePower": "Horsepower",
@@ -10593,10 +10701,65 @@
   }
 
   /* ---------- Card ---------- */
+  /**
+   * Rasmi yo'q e'lon uchun marka belgisi — mashina ikonkasi o'rniga.
+   *
+   * Ishlab chiqaruvchilarning haqiqiy logotiplari ataylab chizilmaydi:
+   * ular savdo belgisi, ya'ni ularni qayta chizib ishlatishga ruxsat
+   * yo'q, qo'lda chizilgani esa aslidan farq qilib, soxta ko'rinadi.
+   * O'rniga markaning o'z nomi belgi bo'lib turadi.
+   *
+   * Rangi nomdan hisoblanadi (chatAvatarColor — suhbatlardagi
+   * avatarlar bilan bitta funksiya): bitta marka hamma joyda bitta
+   * rangda ko'rinadi va to'rdagi e'lonlar bir-biridan ajraladi.
+   */
+  function truckBrandMarkHtml(brand){
+    /* Faqat ishlab chiqaruvchi kerak: "DAF XF 480" -> "DAF".
+       Uzunligi cheklanadi, chunki "marka" erkin matn maydoni: kimdir
+       bir qatorga butun e'lonni yozib qo'yishi mumkin. Chegara
+       "MERCEDES-BENZ" kabi uzun nomlar to'liq sig'adigan qilib
+       olingan, ortig'ini esa CSS uch nuqta bilan kesadi. */
+    var maker = (String(brand || "").trim().split(/[\s,\/]+/)[0] || "").slice(0, 16);
+    if(!maker) return icon("iconTruck");
+    var c = chatAvatarColor(maker);
+    /* Yuzasi uchun o'sha rangning ochiq ko'rinishi kerak. CSS'ning
+       `color-mix` i eski webview'larda yo'q, shuning uchun rang shu
+       yerda rgba ga aylantiriladi. */
+    var soft = "rgba(" + parseInt(c.slice(1, 3), 16) + "," + parseInt(c.slice(3, 5), 16)
+      + "," + parseInt(c.slice(5, 7), 16) + ",0.13)";
+    /* Uzun nom kichikroq yoziladi: kartochka tor, "MERCEDES-BENZ"
+       esa kattaroq o'lchamda sig'may, uch nuqta bilan kesilardi. */
+    var size = maker.length > 11 ? 14 : maker.length > 8 ? 16 : 19;
+    return '<div class="tc-mark" style="--mark:'+c+';--mark-soft:'+soft+';--mark-size:'+size+'px;">'
+      + '<span>'+escapeHtml(maker.toUpperCase())+'</span></div>';
+  }
+
+  /** Qisqa sana — kartochkaning oxirgi qatorida: "Bugun 14:20", "3-oktabr". */
+  function truckShortDate(ts){
+    if(!ts) return "";
+    var d = new Date(ts);
+    if(isNaN(d.getTime())) return "";
+    if(d.toDateString() === new Date().toDateString()){
+      return (t("trucks.today") || "Bugun") + " "
+        + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+    /* Oy nomlari allaqachon mavjud (MONTHS_UZ/MONTHS_EN) — qayta
+       yozilmaydi. Ruscha uchun raqamli ko'rinish: "3-октябрь"
+       kelishigi noto'g'ri, to'g'risi esa alohida shakllarni talab
+       qiladi. */
+    if(currentLang === "ru"){
+      return String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0");
+    }
+    if(currentLang === "en") return MONTHS_EN[d.getMonth()].slice(0, 3) + " " + d.getDate();
+    return d.getDate() + "-" + MONTHS_UZ[d.getMonth()];
+  }
+
   function truckCardHtml(tk){
     var photo = tk.photos && tk.photos[0];
     var isFresh = tk.createdAt && (Date.now() - tk.createdAt) < 24 * 3600 * 1000;
     var fav = isTruckFav(tk.id);
+    // Yil nom bilan birga o'qiladi — alohida qator kerak emas.
+    var title = escapeHtml(tk.brand) + (tk.year ? ", " + escapeHtml(String(tk.year)) : "");
     return '<div class="truck-card" data-truck-id="'+escapeHtml(tk.id)+'">'
       + '<div class="tc-badges">'
       +   (tk.promoted ? '<span class="tc-badge promoted" data-i18n="trucks.badgeTop">TOP</span>' : '')
@@ -10604,18 +10767,20 @@
       +   (isFresh ? '<span class="tc-badge fresh" data-i18n="trucks.badgeNew">Yangi</span>' : '')
       + '</div>'
       + '<button type="button" class="tc-fav" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
-      + '<div class="tc-photo">'+(photo ? '<img src="'+photo+'" alt="" loading="lazy">' : icon("iconTruck"))+'</div>'
+      + '<div class="tc-photo">'
+      +   (photo ? '<img src="'+photo+'" alt="" loading="lazy">' : truckBrandMarkHtml(tk.brand))
+      + '</div>'
       + '<div class="tc-body">'
       +   '<div class="tc-price">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
-      +   '<div class="tc-title">'+escapeHtml(tk.brand)+'</div>'
-      +   '<div class="tc-meta">'+escapeHtml(String(tk.year))
-      +     (tk.fuel ? ' · '+escapeHtml(TRUCK_FUEL_LABELS[tk.fuel] || tk.fuel) : '')
-      +     ' · '+escapeHtml(tk.city)+'</div>'
-      +   '<div class="tc-meta">'+escapeHtml(truckRelativeTime(tk.createdAt))+'</div>'
+      +   '<div class="tc-title">'+title+'</div>'
       +   (trucksState.view === "mine"
             ? '<span class="tc-status '+escapeHtml(tk.status || "ACTIVE")+'">'
               + escapeHtml(TRUCK_STATUS_LABELS[tk.status] || tk.status || "") + '</span>'
             : '')
+      +   '<div class="tc-foot">'
+      +     '<span class="tcf-city">'+escapeHtml(tk.city)+'</span>'
+      +     '<span class="tcf-when">'+escapeHtml(truckShortDate(tk.createdAt))+'</span>'
+      +   '</div>'
       + '</div>'
       + '</div>';
   }
@@ -10624,9 +10789,9 @@
     var card = '<div class="truck-card" style="cursor:default;">'
       + '<div class="tc-photo skeleton" style="aspect-ratio:4/3;"></div>'
       + '<div class="tc-body">'
-      +   '<div class="skeleton sk-line" style="width:70%;"></div>'
-      +   '<div class="skeleton sk-line" style="width:90%;margin-top:8px;"></div>'
-      +   '<div class="skeleton sk-line" style="width:50%;margin-top:8px;"></div>'
+      +   '<div class="skeleton sk-line" style="width:60%;"></div>'
+      +   '<div class="skeleton sk-line" style="width:90%;margin-top:6px;"></div>'
+      +   '<div class="skeleton sk-line" style="width:45%;margin-top:6px;"></div>'
       + '</div></div>';
     return Array(n).fill(card).join("");
   }
@@ -11043,7 +11208,7 @@
     body.innerHTML = ''
       + (photos.length
           ? '<div class="truck-gallery">'+photos.map(function(p){ return '<img src="'+p+'" alt="">'; }).join("")+'</div>'
-          : '<div class="truck-gallery empty">'+icon("iconTruck")+'</div>')
+          : '<div class="truck-gallery empty">'+truckBrandMarkHtml(tk.brand)+'</div>')
       + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);">'
       +   '<div style="flex:1;min-width:0;">'
       +     '<div class="lc-price" style="margin:0;">'+formatNum(tk.price)+' <span data-i18n="loads.sum">so\'m</span></div>'
@@ -14839,7 +15004,9 @@
     // data-truck-id: mashina sahifasini ochadigan delegatsiya ham,
     // yurakcha ham (data-truck-fav) allaqachon mavjud — qayta yozilmadi.
     return '<article class="home-truck-card" data-truck-id="'+escapeHtml(tk.id)+'">'
-      + '<div class="htc-photo">'+(photo ? '<img src="'+photo+'" alt="" loading="lazy">' : icon("iconTruck"))+'</div>'
+      + '<div class="htc-photo">'
+      +   (photo ? '<img src="'+photo+'" alt="" loading="lazy">' : truckBrandMarkHtml(tk.brand))
+      + '</div>'
       + '<div class="htc-body">'
       +   '<span class="htc-name">'+escapeHtml(tk.brand)+'</span>'
       +   '<span class="htc-meta">'+escapeHtml(meta.join(" · "))+'</span>'
