@@ -12896,10 +12896,6 @@
      sakrab ketardi.
      ------------------------------------------------------------ */
   var chatListSnap = null;
-  /* Orqa qatlam ustidagisidan sekinroq siljiydi — ikki qatlam
-     orasida chuqurlik seziladi (telefon ilovalarida odatiy). */
-  var CHAT_UNDER_SHIFT = 0.3;
-
   function snapChatList(card){
     if(!card || !card.classList.contains("chat-list-view")){ chatListSnap = null; return; }
     var nav = document.querySelector(".nav");
@@ -12925,11 +12921,6 @@
     inner.innerHTML = chatListSnap.html;
     inner.querySelectorAll("[id]").forEach(function(el){ el.removeAttribute("id"); });
     inner.style.marginTop = chatListSnap.top + "px";
-    // Oldingi surishdan qolgan animatsiya yangi surishni ushlab
-    // qolmasin — barmoqqa ergashish darhol boshlanishi kerak.
-    inner.style.transition = "";
-    inner.style.transform =
-      "translate3d(" + (-(window.innerWidth || 0) * CHAT_UNDER_SHIFT) + "px,0,0)";
     under.hidden = false;
     return under;
   }
@@ -12939,7 +12930,6 @@
     if(!under) return;
     under.hidden = true;
     under.firstChild.innerHTML = "";
-    under.firstChild.style.transform = "";
   }
 
   /* ------------------------------------------------------------
@@ -12994,20 +12984,19 @@
     var startX = 0, startY = 0, pointerId = null;
     var axis = null;             // null = hali noma'lum, "x" yoki "y"
     var width = 1;
-    var under = null;            // orqada ko'rinayotgan qatlam
     // Tezlikni o'lchash uchun oxirgi holat.
     var lastX = 0, lastY = 0, lastT = 0, speed = 0, speedY = 0;
 
+    /* Faqat ustidagi qatlam suriladi, orqadagisi qimirlamaydi.
+       Avval orqa qatlam ham chapga siljitilardi (chuqurlik hissi
+       uchun), lekin ochilgan tor tasmada uning o'rtasi ko'rinib,
+       so'zlar ikki yonidan kesilardi — panel buzilgandek chiqardi.
+       Endi u qanday bo'lsa shunday turadi: surish tugaganda ham
+       joyidan qimirlamaydi. */
     function paint(dx){
       el.style.transform = dx > 0 ? "translate3d(" + dx + "px,0,0)" : "";
-      // Chetga surilgan sari orqa fon ko'rinadi — chuqurlik hissi.
+      // Chetga surilgan sari chegara ko'rinib tursin.
       el.style.boxShadow = dx > 0 ? "-12px 0 32px rgba(0,0,0,0.35)" : "";
-      if(!under) return;
-      /* Orqadagi qatlam chapdan chiqib keladi: ustidagisi to'liq
-         surilganda joyiga yetadi, boshida esa chetga siljigan turadi. */
-      var k = Math.min(1, Math.max(0, dx / width));
-      under.style.transform =
-        "translate3d(" + (-(1 - k) * width * CHAT_UNDER_SHIFT) + "px,0,0)";
     }
 
     function release(){
@@ -13015,10 +13004,6 @@
       el.style.transform = "";
       el.style.boxShadow = "";
       el.classList.remove(swipingClass);
-      if(under){
-        under.style.transition = "";
-        under = null;
-      }
     }
 
     el.addEventListener("pointerdown", function(e){
@@ -13052,7 +13037,7 @@
           el.style.transition = "none";
           // Orqa qatlam faqat shu yerda — yo'nalish aniqlangandan
           // keyin qo'yiladi: tikka aylantirishda bekorga chizilmasin.
-          under = o.under ? o.under() : null;
+          if(o.under) o.under();
           try{ el.setPointerCapture(pointerId); }catch(err){}
         }
       }
@@ -13092,7 +13077,6 @@
       if(!wasX){ release(); return; }
 
       el.style.transition = "transform 0.22s var(--ease), box-shadow 0.22s var(--ease)";
-      if(under) under.style.transition = "transform 0.22s var(--ease)";
       // Telegram: x >= eni/3  YOKI  (velX >= 3500 && |velX| > |velY|)
       var flicked = speed >= CHAT_SWIPE_FLICK && Math.abs(speed) > Math.abs(speedY);
       if(dx >= width * CHAT_SWIPE_CLOSE || flicked){
@@ -13113,7 +13097,6 @@
       pointerId = null;
       axis = null;
       el.style.transition = "transform 0.22s var(--ease)";
-      if(under) under.style.transition = "transform 0.22s var(--ease)";
       back();
     });
   }
@@ -13171,9 +13154,6 @@
     var top = nav && !nav.hidden ? Math.round(nav.getBoundingClientRect().bottom) : 0;
     el.classList.add("tab-under");
     el.style.top = Math.max(0, top) + "px";
-    el.style.transition = "";
-    el.style.transform =
-      "translate3d(" + (-(window.innerWidth || 0) * CHAT_UNDER_SHIFT) + "px,0,0)";
     return el;
   }
 
@@ -13181,8 +13161,6 @@
     document.querySelectorAll(".tabview.tab-under").forEach(function(el){
       el.classList.remove("tab-under");
       el.style.top = "";
-      el.style.transform = "";
-      el.style.transition = "";
     });
   }
 
