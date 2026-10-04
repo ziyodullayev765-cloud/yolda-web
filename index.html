@@ -3703,6 +3703,36 @@
   .trucks-back:hover{color:var(--ink);}
   /* Belgi o'ngga qaragan — chapga aylantiramiz. */
   .trucks-back .ic-svg{font-size:19px;transform:rotate(180deg);}
+
+  /* ---------- Bo'limni chetga surib orqaga chiqish ----------
+     Suriladigan bo'lim orqadagisini to'liq berkitib turishi kerak,
+     shuning uchun o'z foni va eng kam balandligi beriladi. */
+  .tabview.tab-sliding{
+    position:relative;z-index:45;background:var(--paper);
+    min-height:100vh;will-change:transform;
+    -webkit-user-select:none;user-select:none;
+  }
+  /* Orqada ko'rinadigan bo'lim. `hidden` atributiga tegilmaydi —
+     switchTab qaysi bo'lim ochiqligini o'sha atribut bo'yicha
+     hisoblaydi — shuning uchun `display` ni shu sinf qaytaradi.
+     z-index tepadagi yo'lakdan (50) past: yo'lak ikkala bo'limda ham
+     bir xil, u surilmaydi. */
+  .tabview.tab-under{
+    display:block;position:fixed;inset:0;z-index:40;
+    overflow:hidden;pointer-events:none;background:var(--paper);
+    will-change:transform;
+  }
+  /* `touch-action` MEROS BO'LIB O'TMAYDI: faqat bo'limning o'ziga
+     qo'yilsa, barmoq ostidagi haqiqiy element `auto` bo'lib qolardi va
+     brauzer gorizontal harakatni o'ziga olib, birinchi siljishdayoq
+     `pointercancel` yuborardi (suhbatda ham aynan shu bo'lgan).
+     `pinch-zoom` ataylab qoldiriladi — ikki barmoq bilan
+     kattalashtirish ko'zi ojiz odamlar uchun kerak. */
+  #tab-trucks, #tab-trucks *{touch-action:pan-y pinch-zoom;}
+  /* Yonlamasiga suriladigan qatorlar bundan mustasno, aks holda
+     turkumlar va chiplar qatori surilmay qolardi. */
+  #tab-trucks .truck-category-row, #tab-trucks .truck-category-row *,
+  #tab-trucks .chip-row, #tab-trucks .chip-row *{touch-action:pan-x;}
   /* Filtr — qidiruv qatorining o'ng yonidagi yashil belgi. Avval u
      chiplar orasida "Filtrlar" yozuvi bilan turardi va qolgan ikkitasidan
      farq qilmasdi, holbuki qidiruv bilan birga ishlatiladigani shu. */
@@ -12911,7 +12941,12 @@
   }
 
   /* ------------------------------------------------------------
-     Chapdan o'ngga surib suhbatdan chiqish.
+     Chapdan o'ngga surib orqaga chiqish.
+
+     Ikki joyda ishlatiladi: suhbatdan yozishmalar ro'yxatiga va
+     Mashinalar bo'limidan bosh sahifaga. Harakat bir xil bo'lishi
+     kerak, shuning uchun kod ham bitta — farqlari `opts` orqali
+     beriladi.
 
      Ekran barmoqqa ergashadi: qancha surilsa, shuncha siljiydi.
      Yarmidan oshsa (57%) qo'yib yuborilganda chiqib ketadi, undan
@@ -12936,43 +12971,57 @@
   var CHAT_SWIPE_START = 15;     // ~0.4 sm
   var CHAT_SWIPE_RATIO = 3;      // |dx| shuncha marta dy dan katta bo'lsin
 
-  function initChatSwipeBack(card){
-    if(!card || !window.PointerEvent) return;
+  /**
+   * @param el            suriladigan element
+   * @param opts.ignore   shu tanlovchiga tushgan joydan surish boshlanmaydi
+   * @param opts.swiping  surish paytida elementga qo'yiladigan sinf
+   * @param opts.under    yo'nalish aniqlangach chaqiriladi; orqada
+   *                      ko'rinadigan qatlamning SURILADIGAN elementini
+   *                      qaytaradi (yoki null — orqada hech narsa yo'q)
+   * @param opts.close    chegaradan oshganda. Argument sifatida `release`
+   *                      beriladi: chaqirgan tomon uni qachon ishlatishni
+   *                      o'zi hal qiladi (bo'lim almashishi darhol
+   *                      bo'lmasligi mumkin).
+   * @param opts.settle   surish bekor bo'lib, hammasi joyiga qaytganda
+   */
+  function initSwipeBack(el, opts){
+    if(!el || !window.PointerEvent) return;
+    var o = opts || {};
+    var swipingClass = o.swiping || "swiping";
 
     var startX = 0, startY = 0, pointerId = null;
     var axis = null;             // null = hali noma'lum, "x" yoki "y"
     var width = 1;
-    var under = null;            // orqada ko'rinayotgan ro'yxat qatlami
+    var under = null;            // orqada ko'rinayotgan qatlam
     // Tezlikni o'lchash uchun oxirgi holat.
     var lastX = 0, lastY = 0, lastT = 0, speed = 0, speedY = 0;
 
     function paint(dx){
-      card.style.transform = dx > 0 ? "translate3d(" + dx + "px,0,0)" : "";
+      el.style.transform = dx > 0 ? "translate3d(" + dx + "px,0,0)" : "";
       // Chetga surilgan sari orqa fon ko'rinadi — chuqurlik hissi.
-      card.style.boxShadow = dx > 0 ? "-12px 0 32px rgba(0,0,0,0.35)" : "";
+      el.style.boxShadow = dx > 0 ? "-12px 0 32px rgba(0,0,0,0.35)" : "";
       if(!under) return;
-      /* Orqadagi ro'yxat chapdan chiqib keladi: suhbat to'liq
+      /* Orqadagi qatlam chapdan chiqib keladi: ustidagisi to'liq
          surilganda joyiga yetadi, boshida esa chetga siljigan turadi. */
       var k = Math.min(1, Math.max(0, dx / width));
-      under.firstChild.style.transform =
+      under.style.transform =
         "translate3d(" + (-(1 - k) * width * CHAT_UNDER_SHIFT) + "px,0,0)";
     }
 
     function release(){
-      card.style.transition = "";
-      card.style.transform = "";
-      card.style.boxShadow = "";
-      card.classList.remove("chat-swiping");
+      el.style.transition = "";
+      el.style.transform = "";
+      el.style.boxShadow = "";
+      el.classList.remove(swipingClass);
       if(under){
-        under.firstChild.style.transition = "";
+        under.style.transition = "";
         under = null;
       }
     }
 
-    card.addEventListener("pointerdown", function(e){
+    el.addEventListener("pointerdown", function(e){
       if(pointerId !== null) return;
-      // Yozish qatori va tugmalarda surish kerak emas.
-      if(e.target.closest(".chat-input-row, .chat-back, button, a, input, textarea, [contenteditable]")) return;
+      if(o.ignore && e.target.closest(o.ignore)) return;
       pointerId = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
@@ -12982,10 +13031,10 @@
       lastX = e.clientX;
       lastY = e.clientY;
       lastT = e.timeStamp || Date.now();
-      width = card.getBoundingClientRect().width || window.innerWidth || 1;
+      width = el.getBoundingClientRect().width || window.innerWidth || 1;
     });
 
-    card.addEventListener("pointermove", function(e){
+    el.addEventListener("pointermove", function(e){
       if(e.pointerId !== pointerId) return;
       var dx = e.clientX - startX;
       var dy = e.clientY - startY;
@@ -12994,15 +13043,15 @@
         if(Math.abs(dx) < CHAT_SWIPE_START && Math.abs(dy) < CHAT_SWIPE_START) return;
         /* Telegram'dagi shart: gorizontal harakat tikkasidan uch
            barobar kuchli bo'lsagina surish deb hisoblanadi. Shunda
-           yozishmani aylantirayotganda ekran bejiz qimirlamaydi. */
+           ro'yxatni aylantirayotganda ekran bejiz qimirlamaydi. */
         axis = (Math.abs(dx) >= CHAT_SWIPE_START && Math.abs(dx) > CHAT_SWIPE_RATIO * Math.abs(dy)) ? "x" : "y";
         if(axis === "x"){
-          card.classList.add("chat-swiping");
-          card.style.transition = "none";
-          // Ro'yxat qatlami faqat shu yerda — yo'nalish aniqlangandan
+          el.classList.add(swipingClass);
+          el.style.transition = "none";
+          // Orqa qatlam faqat shu yerda — yo'nalish aniqlangandan
           // keyin qo'yiladi: tikka aylantirishda bekorga chizilmasin.
-          under = showChatUnder();
-          try{ card.setPointerCapture(pointerId); }catch(err){}
+          under = o.under ? o.under() : null;
+          try{ el.setPointerCapture(pointerId); }catch(err){}
         }
       }
       if(axis !== "x") return;
@@ -13023,47 +13072,133 @@
       paint(Math.max(0, dx));
     });
 
+    function back(){
+      paint(0);
+      setTimeout(function(){
+        release();
+        if(o.settle) o.settle();
+      }, 240);
+    }
+
     function finish(e){
       if(e.pointerId !== pointerId) return;
       var dx = e.clientX - startX;
       var wasX = axis === "x";
       pointerId = null;
       axis = null;
-      try{ card.releasePointerCapture(e.pointerId); }catch(err){}
+      try{ el.releasePointerCapture(e.pointerId); }catch(err){}
       if(!wasX){ release(); return; }
 
-      card.style.transition = "transform 0.22s var(--ease), box-shadow 0.22s var(--ease)";
-      if(under) under.firstChild.style.transition = "transform 0.22s var(--ease)";
+      el.style.transition = "transform 0.22s var(--ease), box-shadow 0.22s var(--ease)";
+      if(under) under.style.transition = "transform 0.22s var(--ease)";
       // Telegram: x >= eni/3  YOKI  (velX >= 3500 && |velX| > |velY|)
       var flicked = speed >= CHAT_SWIPE_FLICK && Math.abs(speed) > Math.abs(speedY);
       if(dx >= width * CHAT_SWIPE_CLOSE || flicked){
-        // Chegaradan oshdi — oxirigacha surilib, keyin yopiladi.
+        // Chegaradan oshdi — oxirigacha surilib, keyin chiqadi.
         // Orqa qatlam ham shu paytda joyiga yetib boradi.
         paint(width);
-        card.style.transform = "translate3d(" + width + "px,0,0)";
-        setTimeout(function(){
-          release();
-          closeChatFullscreen();
-          // Haqiqiy ro'yxat chizilgandan keyin qatlam olinadi
-          // (renderChatShell oxirida) — orasida bo'sh fon ko'rinmaydi.
-          renderChatShell();
-        }, 200);
+        el.style.transform = "translate3d(" + width + "px,0,0)";
+        setTimeout(function(){ o.close(release); }, 200);
         return;
       }
       // Yetmadi — joyiga qaytadi.
-      paint(0);
-      setTimeout(function(){ release(); hideChatUnder(); }, 240);
+      back();
     }
 
-    card.addEventListener("pointerup", finish);
-    card.addEventListener("pointercancel", function(e){
+    el.addEventListener("pointerup", finish);
+    el.addEventListener("pointercancel", function(e){
       if(e.pointerId !== pointerId) return;
       pointerId = null;
       axis = null;
-      card.style.transition = "transform 0.22s var(--ease)";
-      if(under) under.firstChild.style.transition = "transform 0.22s var(--ease)";
-      paint(0);
-      setTimeout(function(){ release(); hideChatUnder(); }, 240);
+      el.style.transition = "transform 0.22s var(--ease)";
+      if(under) under.style.transition = "transform 0.22s var(--ease)";
+      back();
+    });
+  }
+
+  /** Suhbatdan yozishmalar ro'yxatiga. */
+  function initChatSwipeBack(card){
+    initSwipeBack(card, {
+      // Yozish qatori va tugmalarda surish kerak emas.
+      ignore: ".chat-input-row, .chat-back, button, a, input, textarea, [contenteditable]",
+      swiping: "chat-swiping",
+      under: function(){
+        var u = showChatUnder();
+        return u ? u.firstChild : null;
+      },
+      close: function(release){
+        release();
+        closeChatFullscreen();
+        // Haqiqiy ro'yxat chizilgandan keyin qatlam olinadi
+        // (renderChatShell oxirida) — orasida bo'sh fon ko'rinmaydi.
+        renderChatShell();
+      },
+      settle: hideChatUnder
+    });
+  }
+
+  /* ------------------------------------------------------------
+     Mashinalar bo'limidan bosh sahifaga surish.
+
+     Bu bo'lim pastki panelda o'z bandiga ega emas — unga bosh
+     sahifadan kiriladi, qaytish ham o'sha yoqqa. Harakat suhbatdagi
+     bilan aynan bir xil (initSwipeBack), farqi faqat orqada nima
+     ko'rinishida.
+
+     Suhbatda orqaga ro'yxatning NUSXASI qo'yilardi: u suhbat bilan
+     bitta elementda chiziladi, ya'ni suhbat ochiqda ro'yxat DOM'da
+     qolmaydi. Bu yerda unday emas — bo'limlar DOM'dan o'chirilmaydi,
+     faqat `hidden` bo'ladi. Demak orqaga bosh sahifaning o'zini
+     qo'yish mumkin, nusxa kerak emas.
+
+     `hidden` atributiga tegilmaydi: uni o'zgartirsak switchTab qaysi
+     bo'lim ochiqligini noto'g'ri hisoblardi. O'rniga `tab-under`
+     sinfining o'zi `display` ni qaytaradi.
+     ------------------------------------------------------------ */
+  function showTabUnder(name){
+    var el = document.getElementById("tab-" + name);
+    if(!el) return null;
+    el.classList.add("tab-under");
+    el.style.transition = "";
+    el.style.transform =
+      "translate3d(" + (-(window.innerWidth || 0) * CHAT_UNDER_SHIFT) + "px,0,0)";
+    return el;
+  }
+
+  function hideTabUnder(){
+    document.querySelectorAll(".tabview.tab-under").forEach(function(el){
+      el.classList.remove("tab-under");
+      el.style.transform = "";
+      el.style.transition = "";
+    });
+  }
+
+  function initTrucksSwipeBack(){
+    var tab = document.getElementById("tab-trucks");
+    if(!tab) return;
+    initSwipeBack(tab, {
+      /* Yonlamasiga suriladigan qatorlar (turkumlar, chiplar) va
+         bosiladigan narsalar o'z ishini qilsin. */
+      ignore: ".truck-category-row, .chip-row, button, a, input, select, textarea",
+      swiping: "tab-sliding",
+      under: function(){ return showTabUnder("home"); },
+      close: function(release){
+        /* switchTab("home") tarix orqali qaytadi (history.back), ya'ni
+           bo'lim darhol almashmaydi. Surilgan holat shu paytgacha
+           saqlanadi — aks holda mashinalar bo'limi bir lahzaga joyiga
+           qaytib ko'rinib qolardi. */
+        switchTab("home");
+        var done = function(){ release(); hideTabUnder(); };
+        if(visibleTabName() === "home"){ done(); return; }
+        var tries = 0;
+        var timer = setInterval(function(){
+          if(visibleTabName() === "home" || ++tries > 30){
+            clearInterval(timer);
+            done();
+          }
+        }, 20);
+      },
+      settle: hideTabUnder
     });
   }
 
@@ -17438,6 +17573,7 @@
   // pastga tortish uning o'z harakati bilan urishib ketadi.
   initPullToRefresh();
   initChatPullRefresh();
+  initTrucksSwipeBack();
 
   /* ============================================================
      Scroll: nav state, progress bar, background parallax
