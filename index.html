@@ -9358,7 +9358,8 @@
       return;
     }
 
-    card.innerHTML = '<div class="skeleton sk-line" style="width:70%;"></div><div class="skeleton sk-line" style="width:45%;"></div>';
+    showSkeleton(card, '<div class="skeleton sk-line" style="width:70%;"></div>'
+      + '<div class="skeleton sk-line" style="width:45%;"></div>');
 
     fetch("/api/profile", {
       method: "POST",
@@ -10946,9 +10947,10 @@
     renderTrucksMineTabs();
     updateTrucksChips();
 
-    list.innerHTML = skeletonTruckCards(4);
     var countEl = document.getElementById("trucksCount");
-    if(countEl) countEl.textContent = "";
+    // Sanoq ham faqat skelet bilan birga tozalanadi — aks holda
+    // "6 ta e'lon" bir lahzaga yo'qolib, qaytib kelardi.
+    if(showSkeleton(list, skeletonTruckCards(4)) && countEl) countEl.textContent = "";
 
     if((trucksState.view === "mine" || trucksState.view === "favs") && !isSignedIn()){
       promptSignIn();
@@ -13158,7 +13160,17 @@
   function showTabUnder(name){
     var el = document.getElementById("tab-" + name);
     if(!el) return null;
+    /* Tepadagi yo'lak surilmaydi: u ikkala bo'limda bir xil va
+       `position:sticky` bilan joyida turadi. Demak orqa qatlam ham
+       shuning OSTIDAN boshlanishi kerak. Aks holda u ekranning eng
+       tepasidan boshlanib, yo'lakning shaffof shishasi orqali va
+       uning yonidan ko'rinib qolardi — surilayotgan bo'lim esa
+       yo'lakdan pastda turadi, ya'ni tepada ikki bo'lim bir vaqtda
+       ko'rinib, chok paydo bo'lardi. */
+    var nav = document.querySelector(".nav");
+    var top = nav && !nav.hidden ? Math.round(nav.getBoundingClientRect().bottom) : 0;
     el.classList.add("tab-under");
+    el.style.top = Math.max(0, top) + "px";
     el.style.transition = "";
     el.style.transform =
       "translate3d(" + (-(window.innerWidth || 0) * CHAT_UNDER_SHIFT) + "px,0,0)";
@@ -13168,6 +13180,7 @@
   function hideTabUnder(){
     document.querySelectorAll(".tabview.tab-under").forEach(function(el){
       el.classList.remove("tab-under");
+      el.style.top = "";
       el.style.transform = "";
       el.style.transition = "";
     });
@@ -13610,8 +13623,7 @@
     var countEl = document.getElementById("loadsCount");
     if(!list) return;
 
-    list.innerHTML = skeletonLoadCards(4);
-    if(countEl) countEl.textContent = "";
+    if(showSkeleton(list, skeletonLoadCards(4)) && countEl) countEl.textContent = "";
 
     var params = [];
     if(loadsState.fromCity) params.push("fromCity=" + encodeURIComponent(loadsState.fromCity));
@@ -15135,7 +15147,7 @@
     if(!isSignedIn()){ wrap.hidden = true; return; }
 
     wrap.hidden = false;
-    list.innerHTML = homeMatchSkeleton();
+    showSkeleton(list, homeMatchSkeleton());
 
     loadDriverMatchProfile(function(){
       if(!driverMatchProfile){ wrap.hidden = true; return; }
@@ -16842,6 +16854,21 @@
      o'zgartiradigan amallar (ular render funksiyasini o'zi chaqiradi). */
   var TAB_FRESH_MS = 60000;
   var tabLoadedAt = {};
+
+  /**
+   * Skelet FAQAT ko'rsatadigan hech narsa bo'lmaganda chiqadi.
+   *
+   * Bo'lim eskirib, fonda qayta yuklanayotganda ekrandagi ro'yxat
+   * o'chirilmaydi: javob kelganda joyidagi almashadi, xolos. Aks
+   * holda bo'limga har qaytganda tayyor ro'yxat o'rniga bir lahza
+   * "yuklanmoqda" ko'rinib, yangilanish ko'zga tashlanardi — xuddi
+   * xabarlar ro'yxatida bo'lgani kabi.
+   */
+  function showSkeleton(el, html){
+    if(!el || el.children.length) return false;
+    el.innerHTML = html;
+    return true;
+  }
 
   /** Shu bo'lim ma'lumoti hali yangimi. */
   function tabFresh(name, ms){
