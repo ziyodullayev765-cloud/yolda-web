@@ -3703,9 +3703,29 @@
   .trucks-back:hover{color:var(--ink);}
   /* Belgi o'ngga qaragan — chapga aylantiramiz. */
   .trucks-back .ic-svg{font-size:19px;transform:rotate(180deg);}
-  /* Uchta chip telefon ekraniga sig'maydi va ikkinchi qatorga tushib
-     ketardi — "Sotish" tugmasi yonida bu buzilgandek ko'rinardi.
-     Endi ular yonlamasiga suriladi, qator esa bitta bo'lib qoladi. */
+  /* Filtr — qidiruv qatorining o'ng yonidagi yashil belgi. Avval u
+     chiplar orasida "Filtrlar" yozuvi bilan turardi va qolgan ikkitasidan
+     farq qilmasdi, holbuki qidiruv bilan birga ishlatiladigani shu. */
+  .trucks-filter-btn{
+    position:relative;flex:none;width:40px;height:40px;padding:0;border:none;
+    border-radius:50%;background:var(--route);color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform 0.15s var(--ease);
+  }
+  .trucks-filter-btn:active{transform:scale(0.94);}
+  .trucks-filter-btn .ic-svg{font-size:19px;}
+  /* Yashil tugmada "yoqilgan" holatni rang bilan ko'rsatib bo'lmaydi —
+     nechta filtr tanlanganini raqamning o'zi aytadi. */
+  .trucks-filter-btn .tfb-count{
+    position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;
+    border-radius:999px;background:var(--ink);color:var(--card);
+    font-family:'Inter',sans-serif;font-size:10.5px;font-weight:700;line-height:14px;
+    text-align:center;border:2px solid var(--paper);
+  }
+  .trucks-filter-btn .tfb-count[hidden]{display:none;}
+  /* Qolgan ikki chip yonlamasiga suriladi: tarjimasi uzunroq tilda
+     ham ikkinchi qatorga tushib ketmasin. */
   #tab-trucks .home-quick-row .chip-row{
     flex-wrap:nowrap;overflow-x:auto;margin:0;padding-bottom:2px;
     -webkit-overflow-scrolling:touch;scrollbar-width:none;
@@ -3715,14 +3735,15 @@
             mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent);
   }
   #tab-trucks .home-quick-row .chip-row::-webkit-scrollbar{display:none;}
-  #tab-trucks .home-quick-row .chip{flex:0 0 auto;}
+  /* Chiplar ham, saralash ro'yxati ham maydaroq: ular yordamchi
+     boshqaruv, sahifaning o'zi esa — e'lonlar. */
+  #tab-trucks .home-quick-row .chip{flex:0 0 auto;padding:6px 13px;font-size:11.5px;}
   /* Tugma qatorga mos bo'lsin — asl ko'rinishi 52px balandlikda va
      katta soya bilan, bu yerda esa u chiplar yonida turadi. */
   #tab-trucks #btnSellTruck{
-    flex:none;min-height:38px;height:38px;margin-top:0;
-    font-size:13px;box-shadow:none;
+    flex:none;min-height:34px;height:34px;margin-top:0;
+    font-size:12.5px;box-shadow:none;
   }
-  #tab-trucks .trucks-sort-select{padding:6px 28px 6px 11px;font-size:12px;}
 
   /* ---------- BO'LIM ALMASHUVI ---------- */
   /* Bo'limlar `hidden` orqali almashadi — oraliq holat bo'lmagani uchun
@@ -4222,8 +4243,13 @@
   }
   .truck-category-item.active{color:var(--route);}
   .truck-category-item.active .tci-emoji{background:var(--route);color:#fff;}
+  /* Saralash ro'yxati yordamchi boshqaruv — e'lonlar ustida baland
+     quti bo'lib turmasligi kerak. Umumiy `select` qoidasidagi 48px
+     eng kam balandlik shu yerda bekor qilinadi, aks holda ichidagi
+     yozuv mayda bo'lsa ham qutisi o'zgarmasdi. */
   .trucks-sort-select{
-    width:auto;padding:7px 30px 7px 12px;font-size:12.5px;border-radius:var(--r-pill);
+    width:auto;min-height:0;padding:5px 26px 5px 11px;font-size:11.5px;
+    border-radius:var(--r-pill);box-shadow:none;
     border:1px solid var(--border);background-color:var(--card);color:var(--ink-soft);
   }
   .truck-card{position:relative;}
@@ -5093,13 +5119,20 @@
           <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka, model yoki kalit so'z...</span></span>
         </span>
       </button>
+      <!-- Filtr — qidiruv qatorining o'ng yonida, yashil belgi bo'lib.
+           Avval u chiplar orasida "Filtrlar" yozuvi bilan turardi va
+           boshqa ikkita chipdan hech farq qilmasdi, holbuki qidiruv
+           bilan birga ishlatiladigan tugma shu. -->
+      <button type="button" class="trucks-filter-btn" id="btnTrucksFilters" aria-label="Filtrlar">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconSliders"/></svg>
+        <span class="tfb-count" hidden></span>
+      </button>
     </div>
 
     <div class="truck-category-row reveal" id="trucksCategoryRow"></div>
 
     <div class="home-quick-row reveal" style="margin-top:var(--s4);">
       <div class="chip-row">
-        <button type="button" class="chip" id="btnTrucksFilters"><span data-i18n="trucks.filtersBtn">Filtrlar</span></button>
         <button type="button" class="chip" id="btnTrucksMine" data-i18n="trucks.mine">Mening e'lonlarim</button>
         <button type="button" class="chip" id="btnTrucksFavs" data-i18n="trucks.favorites">Saqlanganlar</button>
       </div>
@@ -10932,7 +10965,17 @@
     var favBtn = document.getElementById("btnTrucksFavs");
     if(favBtn) favBtn.classList.toggle("active", trucksState.view === "favs");
     var filterBtn = document.getElementById("btnTrucksFilters");
-    if(filterBtn) filterBtn.classList.toggle("active", activeTruckFilterCount() > 0);
+    if(filterBtn){
+      var n = activeTruckFilterCount();
+      filterBtn.classList.toggle("active", n > 0);
+      /* Tugma har doim yashil — "yoqilgan" holatni rang bilan
+         ko'rsatib bo'lmaydi. Nechta filtr tanlanganini raqam aytadi. */
+      var badge = filterBtn.querySelector(".tfb-count");
+      if(badge){
+        badge.textContent = n ? String(n) : "";
+        badge.hidden = !n;
+      }
+    }
     var searchVal = document.getElementById("trucksSearchValue");
     if(searchVal){
       searchVal.textContent = trucksState.q || (t("trucks.searchPlaceholder") || "Marka, model yoki kalit so'z...");
