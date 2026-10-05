@@ -432,6 +432,81 @@
   :root[data-reduce-motion="1"] .reveal{opacity:1;transform:none;filter:none;}
   :root[data-reduce-motion="1"] .hero-seq{opacity:1;transform:none;filter:none;animation:none;}
 
+  /* ============================================================
+     Ochilish ekrani (splash)
+     ------------------------------------------------------------
+     Ilova ochilganda bir necha yuz millisekund bo'sh oq (yoki qora)
+     ekran turardi: sahifa hali chizilmagan, hisob hali tiklanmagan.
+     Shu bo'shliq endi belgining o'zi bilan to'ldiriladi.
+
+     Hech qanday tashqi fayl yo'q: belgi sahifadagi logotipning aynan
+     o'zi, animatsiya esa CSS. Ya'ni splash birinchi baytdayoq
+     chiziladi — rasm yoki kutubxona yuklanishini kutmaydi. Aks holda
+     "kutish ekrani"ning o'zi kutishga sabab bo'lardi.
+
+     Eng muhimi: u JAVASCRIPTSIZ ham yo'qoladi. Chiqib ketishi CSS
+     animatsiyasi bilan (`forwards`), ya'ni skript xato bersa ham
+     odam ekran ortida qolib ketmaydi. JS faqat qoldig'ini tozalaydi.
+     `data-reduce-motion` da animatsiya 0.001ms ga tushadi — splash
+     darhol yo'qoladi, bu ham to'g'ri xatti-harakat.
+     ============================================================ */
+  .splash{
+    position:fixed;inset:0;z-index:99999;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 42%, #16304B 0%, #0A1526 58%, #060B13 100%);
+    /* So'nish hamma bo'lak chizilib bo'lgandan keyin boshlanadi
+       (0.84s) va ustiga bir lahza turib qoladi. Avvalroq boshlansa
+       belgi chizilib ulgurmasdan so'na boshlardi. */
+    animation:splashOut 0.32s var(--ease, ease) 0.95s forwards;
+  }
+  .splash-inner{display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .splash-mark{
+    width:96px;height:96px;display:block;
+    animation:splashMark 0.36s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  /* Yashil halqa belgini aylanib chiziladi. r=47 doirasining uzunligi
+     2πr ≈ 295; 300 olinadi, ya'ni oxirida ozgina ustma-ust tushadi.
+     Aniq o'lchamga teng qilinsa, yaxlitlash sababli tepada ingichka
+     tirqish qolib ketishi mumkin. */
+  .splash-mark .sm-ring{
+    stroke-dasharray:300;stroke-dashoffset:300;
+    animation:splashDraw 0.54s ease-out 0.12s forwards;
+  }
+  /* Uch yo'l markazdan chetga qarab chiziladi — belgining o'zi
+     yo'l ayrilishi, ya'ni harakat ma'noga mos. */
+  .splash-mark .sm-road{
+    stroke:#fff;stroke-width:9;stroke-linecap:round;fill:none;
+    animation:splashDraw 0.42s ease-out forwards;
+  }
+  .splash-mark .sm-road-1{stroke-dasharray:32;stroke-dashoffset:32;animation-delay:0.30s;}
+  .splash-mark .sm-road-2{stroke-dasharray:39;stroke-dashoffset:39;animation-delay:0.40s;}
+  .splash-mark .sm-road-3{stroke-dasharray:39;stroke-dashoffset:39;animation-delay:0.40s;}
+  .splash-word{
+    font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:21px;
+    letter-spacing:0.16em;color:#fff;
+    animation:splashWord 0.34s ease-out 0.50s both;
+  }
+  .splash-word span{color:#0A9F5B;}
+  @keyframes splashMark{from{opacity:0;transform:scale(0.86);}to{opacity:1;transform:scale(1);}}
+  @keyframes splashDraw{to{stroke-dashoffset:0;}}
+  @keyframes splashWord{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none;}}
+  /* Harakatni kamaytirish so'ralgan bo'lsa belgi chizilmaydi: darhol
+     to'liq holida turadi va splash qisqa lahzadan keyin ketadi.
+     Yuqoridagi umumiy qoida bu yerda yetarli emas — u faqat
+     davomiylikni nolga tushiradi, kechikishga tegmaydi, ya'ni splash
+     baribir bir soniya turib qolardi. */
+  @media (prefers-reduced-motion: reduce){
+    .splash{animation-delay:0.35s !important;}
+    .splash-mark,.splash-word{animation:none !important;}
+    .splash-mark .sm-ring,.splash-mark .sm-road{animation:none !important;stroke-dashoffset:0 !important;}
+  }
+  :root[data-reduce-motion="1"] .splash{animation-delay:0.35s !important;}
+  :root[data-reduce-motion="1"] .splash-mark,
+  :root[data-reduce-motion="1"] .splash-word{animation:none !important;}
+  :root[data-reduce-motion="1"] .splash-mark .sm-ring,
+  :root[data-reduce-motion="1"] .splash-mark .sm-road{animation:none !important;stroke-dashoffset:0 !important;}
+
   /* ---------- NAV ---------- */
   /* Sarlavha hech qachon o'zgarmaydi: sahifa surilganda ham xuddi
      shu ko'rinishda qoladi. Ilgari `.nav.scrolled` fonni
@@ -4348,6 +4423,53 @@
 </style>
 </head>
 <body>
+
+<!-- Ochilish ekrani. Eng birinchi element: sahifaning qolgani
+     o'qilgunicha ekranda shu turadi. SVG logotipdagi #logoMark ning
+     aynan o'zi — faqat bo'laklari alohida yozilgan, chunki har biri
+     o'z vaqtida chiziladi. -->
+<div id="splash" class="splash" aria-hidden="true">
+  <div class="splash-inner">
+    <svg class="splash-mark" viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="47" fill="#14263D"/>
+      <circle class="sm-ring" cx="50" cy="50" r="47" fill="none" stroke="#0A9F5B" stroke-width="4"/>
+      <path class="sm-road sm-road-1" d="M50 18 L50 50"/>
+      <path class="sm-road sm-road-2" d="M50 50 L28 82"/>
+      <path class="sm-road sm-road-3" d="M50 50 L72 82"/>
+    </svg>
+    <div class="splash-word">YO'LDA<span>.</span></div>
+  </div>
+</div>
+<script>
+  /* Splash CSS bilan o'zi so'nadi — bu yerdagi skript uni faqat
+     DOM'dan olib tashlaydi. Shuning uchun skript ishlamay qolsa ham
+     ekran ochilaveradi.
+
+     Bosilsa darhol yopiladi: ilovaga tez-tez kiradigan odam har
+     safar oxirigacha kutib o'tirmasin. */
+  (function(){
+    var el = document.getElementById("splash");
+    if(!el) return;
+    var gone = false;
+    function drop(){
+      if(gone) return;
+      gone = true;
+      if(el.parentNode) el.parentNode.removeChild(el);
+    }
+    el.addEventListener("click", function(){
+      el.style.transition = "opacity .18s ease";
+      el.style.opacity = "0";
+      el.style.pointerEvents = "none";
+      setTimeout(drop, 190);
+    });
+    // Animatsiya tugagach olib tashlanadi; `setTimeout` — zaxira
+    // yo'l (hodisa kelmay qolgan holat uchun).
+    el.addEventListener("animationend", function(e){
+      if(e.animationName === "splashOut") drop();
+    });
+    setTimeout(drop, 2500);
+  })();
+</script>
 
 <!-- Shown only when an admin turns on "Texnik ishlar" in /admin →
      Sozlamalar. Rendered from /api/config, so it needs no redeploy. -->
