@@ -435,34 +435,44 @@
   /* ============================================================
      Ochilish ekrani (splash)
      ------------------------------------------------------------
-     Ilova ochilganda bir necha yuz millisekund bo'sh oq (yoki qora)
-     ekran turardi: sahifa hali chizilmagan, hisob hali tiklanmagan.
-     Shu bo'shliq endi belgining o'zi bilan to'ldiriladi.
+     Ilova ochilganda bir necha yuz millisekund bo'sh ekran turardi:
+     sahifa hali chizilmagan, hisob hali tiklanmagan. Endi shu
+     bo'shliqni belgining o'zi to'ldiradi.
 
-     Hech qanday tashqi fayl yo'q: belgi sahifadagi logotipning aynan
-     o'zi, animatsiya esa CSS. Ya'ni splash birinchi baytdayoq
-     chiziladi — rasm yoki kutubxona yuklanishini kutmaydi. Aks holda
+     Harakat belgining ma'nosidan kelib chiqadi. Belgi — yo'l
+     ayrilishi: markazdan uch tomonga yo'l ketadi. Shuning uchun:
+       1. halqa aylanib chiziladi — yo'nalish qidirilayotgandek;
+       2. uch yo'l markazdan chetga qarab ochiladi;
+       3. markazdan bir marta signal tarqaladi — platformaning o'zi
+          shu: yuk qayerdaligi doim ma'lum;
+       4. nom chiqadi va ekran ilovaga o'tadi.
+
+     Hech qanday tashqi fayl yo'q: belgi sahifadagi #logoMark ning
+     aynan o'zi, animatsiya esa CSS. Ya'ni ekran birinchi baytdayoq
+     chiziladi, rasm yoki kutubxona yuklanishini kutmaydi — aks holda
      "kutish ekrani"ning o'zi kutishga sabab bo'lardi.
 
      Eng muhimi: u JAVASCRIPTSIZ ham yo'qoladi. Chiqib ketishi CSS
-     animatsiyasi bilan (`forwards`), ya'ni skript xato bersa ham
-     odam ekran ortida qolib ketmaydi. JS faqat qoldig'ini tozalaydi.
-     `data-reduce-motion` da animatsiya 0.001ms ga tushadi — splash
-     darhol yo'qoladi, bu ham to'g'ri xatti-harakat.
+     animatsiyasi bilan (`forwards`), ya'ni skript xato bersa ham odam
+     ekran ortida qolib ketmaydi. JS faqat qoldig'ini tozalaydi.
      ============================================================ */
   .splash{
     position:fixed;inset:0;z-index:99999;
     display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(circle at 50% 42%, #16304B 0%, #0A1526 58%, #060B13 100%);
-    /* So'nish hamma bo'lak chizilib bo'lgandan keyin boshlanadi
-       (0.84s) va ustiga bir lahza turib qoladi. Avvalroq boshlansa
-       belgi chizilib ulgurmasdan so'na boshlardi. */
-    animation:splashOut 0.32s var(--ease, ease) 0.95s forwards;
+    background:radial-gradient(circle at 50% 44%, #16304B 0%, #0A1526 58%, #060B13 100%);
+    animation:splashOut 0.34s var(--ease, ease) 1.46s forwards;
   }
-  .splash-inner{display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .splash-inner{display:flex;flex-direction:column;align-items:center;gap:20px;}
   .splash-mark{
-    width:96px;height:96px;display:block;
-    animation:splashMark 0.36s cubic-bezier(0.22,1,0.36,1) both;
+    width:104px;height:104px;display:block;overflow:visible;
+    animation:splashMark 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  /* Markazdan tarqaladigan signal: bir marta kengayib so'nadi.
+     Yo'llar chizilib bo'lgach boshlanadi. */
+  .splash-mark .sm-ping{
+    fill:none;stroke:#0A9F5B;stroke-width:3;opacity:0;
+    transform-origin:50px 50px;
+    animation:splashPing 0.62s ease-out 0.92s forwards;
   }
   /* Yashil halqa belgini aylanib chiziladi. r=47 doirasining uzunligi
      2πr ≈ 295; 300 olinadi, ya'ni oxirida ozgina ustma-ust tushadi.
@@ -470,40 +480,46 @@
      tirqish qolib ketishi mumkin. */
   .splash-mark .sm-ring{
     stroke-dasharray:300;stroke-dashoffset:300;
-    animation:splashDraw 0.54s ease-out 0.12s forwards;
+    animation:splashDraw 0.68s ease-out 0.12s forwards;
   }
-  /* Uch yo'l markazdan chetga qarab chiziladi — belgining o'zi
-     yo'l ayrilishi, ya'ni harakat ma'noga mos. */
+  /* Uch yo'l markazdan chetga qarab chiziladi. Avval o'rta yo'l,
+     keyin ikki tarmoq — ayrilish shunday o'qiladi. */
   .splash-mark .sm-road{
     stroke:#fff;stroke-width:9;stroke-linecap:round;fill:none;
-    animation:splashDraw 0.42s ease-out forwards;
+    animation:splashDraw 0.44s ease-out forwards;
   }
-  .splash-mark .sm-road-1{stroke-dasharray:32;stroke-dashoffset:32;animation-delay:0.30s;}
-  .splash-mark .sm-road-2{stroke-dasharray:39;stroke-dashoffset:39;animation-delay:0.40s;}
-  .splash-mark .sm-road-3{stroke-dasharray:39;stroke-dashoffset:39;animation-delay:0.40s;}
+  .splash-mark .sm-road-1{stroke-dasharray:32;stroke-dashoffset:32;animation-delay:0.36s;}
+  .splash-mark .sm-road-2{stroke-dasharray:39;stroke-dashoffset:39;animation-delay:0.52s;}
+  .splash-mark .sm-road-3{stroke-dasharray:39;stroke-dashoffset:39;animation-delay:0.52s;}
   .splash-word{
-    font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:21px;
-    letter-spacing:0.16em;color:#fff;
-    animation:splashWord 0.34s ease-out 0.50s both;
+    font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:22px;
+    letter-spacing:0.17em;color:#fff;
+    animation:splashWord 0.42s ease-out 0.72s both;
   }
   .splash-word span{color:#0A9F5B;}
-  @keyframes splashMark{from{opacity:0;transform:scale(0.86);}to{opacity:1;transform:scale(1);}}
+  @keyframes splashMark{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:scale(1);}}
   @keyframes splashDraw{to{stroke-dashoffset:0;}}
-  @keyframes splashWord{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  @keyframes splashPing{
+    0%{opacity:0.55;transform:scale(1);}
+    100%{opacity:0;transform:scale(1.5);}
+  }
+  @keyframes splashWord{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
   @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none;}}
   /* Harakatni kamaytirish so'ralgan bo'lsa belgi chizilmaydi: darhol
      to'liq holida turadi va splash qisqa lahzadan keyin ketadi.
      Yuqoridagi umumiy qoida bu yerda yetarli emas — u faqat
-     davomiylikni nolga tushiradi, kechikishga tegmaydi, ya'ni splash
-     baribir bir soniya turib qolardi. */
+     animatsiya davomiyligini nolga tushiradi, kechikishga tegmaydi,
+     ya'ni splash baribir bir soniya turib qolardi. */
   @media (prefers-reduced-motion: reduce){
-    .splash{animation-delay:0.35s !important;}
+    .splash{animation-delay:0.4s !important;}
     .splash-mark,.splash-word{animation:none !important;}
+    .splash-mark .sm-ping{animation:none !important;opacity:0 !important;}
     .splash-mark .sm-ring,.splash-mark .sm-road{animation:none !important;stroke-dashoffset:0 !important;}
   }
-  :root[data-reduce-motion="1"] .splash{animation-delay:0.35s !important;}
+  :root[data-reduce-motion="1"] .splash{animation-delay:0.4s !important;}
   :root[data-reduce-motion="1"] .splash-mark,
   :root[data-reduce-motion="1"] .splash-word{animation:none !important;}
+  :root[data-reduce-motion="1"] .splash-mark .sm-ping{animation:none !important;opacity:0 !important;}
   :root[data-reduce-motion="1"] .splash-mark .sm-ring,
   :root[data-reduce-motion="1"] .splash-mark .sm-road{animation:none !important;stroke-dashoffset:0 !important;}
 
@@ -4425,12 +4441,13 @@
 <body>
 
 <!-- Ochilish ekrani. Eng birinchi element: sahifaning qolgani
-     o'qilgunicha ekranda shu turadi. SVG logotipdagi #logoMark ning
-     aynan o'zi — faqat bo'laklari alohida yozilgan, chunki har biri
-     o'z vaqtida chiziladi. -->
+     o'qilgunicha ekranda shu turadi. Mashina sahifadagi #truckIcon
+     bilan bir xil o'lchamda chizilgan — faqat tirkamasida nom bor
+     va bo'laklari alohida, chunki har biri o'z rangida. -->
 <div id="splash" class="splash" aria-hidden="true">
   <div class="splash-inner">
     <svg class="splash-mark" viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="sm-ping" cx="50" cy="50" r="47"/>
       <circle cx="50" cy="50" r="47" fill="#14263D"/>
       <circle class="sm-ring" cx="50" cy="50" r="47" fill="none" stroke="#0A9F5B" stroke-width="4"/>
       <path class="sm-road sm-road-1" d="M50 18 L50 50"/>
