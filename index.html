@@ -2447,9 +2447,14 @@
   .au-error[hidden]{display:none;}
 
   /* ---------- Tasdiqlash kodi ---------- */
-  .au-otp{display:flex;align-items:flex-start;gap:12px;margin:6px 0 18px;}
+  /* Oltita katak tor ekranga ham sig'ishi kerak. `min-height` ataylab
+     yo'q: `aspect-ratio` bilan birga u kataklarni siqilishiga yo'l
+     qo'ymasdi — balandlik 50px da qotib, kenglik ham 50px bo'lib
+     qolardi va qator ekrandan chiqib ketardi. Endi kenglikni flex
+     hal qiladi, balandlik esa undan kelib chiqadi. */
+  .au-otp{display:flex;align-items:flex-start;gap:6px;margin:6px 0 18px;}
   .welcome .au-otp-box{
-    flex:1 1 0;max-width:70px;aspect-ratio:1;min-height:62px;
+    flex:1 1 0;min-width:0;max-width:54px;aspect-ratio:1;
     text-align:center;box-sizing:border-box;
     border:1.5px solid var(--au-line);border-radius:15px;
     background:#fff;color:var(--au-ink);
@@ -4926,10 +4931,12 @@
       <p class="au-sub" id="auOtpSub"></p>
 
       <div class="au-otp" id="auOtpBoxes">
-        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="1">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="1" autocomplete="one-time-code">
         <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="2">
         <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="3">
         <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="4">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="5">
+        <input class="au-otp-box" type="tel" inputmode="numeric" maxlength="1" aria-label="6">
       </div>
 
       <p class="au-resend">
@@ -8777,6 +8784,12 @@
     return Array.prototype.slice.call(document.querySelectorAll("#auOtpBoxes .au-otp-box"));
   }
 
+  /* Kod uzunligi kataklarning o'zidan olinadi — raqam ikki joyda
+     yozilmaydi, ya'ni markup bilan mantiq bir-biridan uzoqlashib
+     ketolmaydi. Server tomonida ham xuddi shunday doimiy bor
+     (lib/phoneAuth.js: OTP_LENGTH). */
+  var OTP_LENGTH = auOtpInputs().length || 6;
+
   function auOtpClear(){
     auOtpInputs().forEach(function(box){ box.value = ""; box.classList.remove("filled"); });
   }
@@ -8839,7 +8852,7 @@
     var button = document.getElementById("auOtpSubmit");
     var code = auOtpValue();
     auError(screen, "");
-    if(code.length !== 4) return auError(screen, t("au.errCode") || "Kodni to'liq kiriting");
+    if(code.length !== OTP_LENGTH) return auError(screen, t("au.errCode") || "Kodni to'liq kiriting");
 
     auBusy(button, true);
     auPost("verify", { phone: auState.phone, code: code })
@@ -8994,7 +9007,7 @@
         }
       });
       box.addEventListener("paste", function(ev){
-        var text = (ev.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 4);
+        var text = (ev.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
         if(!text) return;
         ev.preventDefault();
         boxes.forEach(function(b, j){

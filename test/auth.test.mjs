@@ -57,6 +57,9 @@ const copy = (relPath, name, extra = {}) => {
 };
 
 copy('lib/phoneAuth.js', 'phoneauth');
+/* Kod uzunligi shu yerda yozib qo'yilmaydi — moduldan olinadi, ya'ni
+   uzunlik o'zgarsa test o'zi moslashadi va eskirib qolmaydi. */
+const { OTP_LENGTH } = await import(join(work, 'phoneauth.mjs'));
 const handler = (await import(copy('api/auth-phone.js', 'authphone'))).default;
 const { resolveIdentity } = await import(copy('lib/identity.js', 'identity'));
 
@@ -89,14 +92,15 @@ const code = () => store.get(`otpOut:${PHONE}`);
 const clearThrottle = () => { store.delete(`otp:${PHONE}`); store.delete(`otpRate:${PHONE}`); };
 /** Bot biladigan raqamda kod darhol yuboriladi va KV'dan o'chadi —
  *  shuning uchun uni yuborilgan xabardan olamiz. */
-const sentCode = () => (/\b(\d{4})\b/.exec(sent.length ? sent[sent.length - 1].body.text : '') || [])[1];
+const sentCode = () => (new RegExp('\\b(\\d{' + OTP_LENGTH + '})\\b')
+  .exec(sent.length ? sent[sent.length - 1].body.text : '') || [])[1];
 
 /* ---------------------------------------------------------- */
 console.log('\n== ro\'yxatdan o\'tish ==');
 let r = await call({ action: 'register-start', phone: '90 123 45 67', firstName: 'Ali', lastName: 'Valiyev', terms: true });
 check('raqam har qanday ko\'rinishda qabul qilinadi', r.status === 200 && r.payload.phone === PHONE, r.payload);
 check('bot hali bu raqamni bilmaydi', r.payload.delivery === 'bot', r.payload);
-check('kod to\'rt xonali', /^\d{4}$/.test(code() || ''), code());
+check('kod olti xonali', new RegExp('^\\d{' + OTP_LENGTH + '}$').test(code() || ''), code());
 check('kod brauzerga qaytarilmaydi', !JSON.stringify(r.payload).includes(code()));
 check('shartlarsiz ro\'yxat yo\'q',
   (await call({ action: 'register-start', phone: '901112233', firstName: 'A', lastName: 'B', terms: false })).status === 400);
@@ -104,7 +108,7 @@ check('noto\'g\'ri raqam rad etiladi',
   (await call({ action: 'register-start', phone: '123', firstName: 'Ali', lastName: 'Valiyev', terms: true })).status === 400);
 
 console.log('\n== kodni tekshirish ==');
-const wrong = String((Number(code()) + 1) % 10000).padStart(4, '0');
+const wrong = String((Number(code()) + 1) % 10 ** OTP_LENGTH).padStart(OTP_LENGTH, '0');
 check('noto\'g\'ri kod rad etiladi', (await call({ action: 'verify', phone: PHONE, code: wrong })).status === 400);
 const good = code();
 r = await call({ action: 'verify', phone: PHONE, code: good });
@@ -171,7 +175,7 @@ check('60 soniya ichida qayta yuborilmaydi', (await call({ action: 'resend', pho
 clearThrottle();
 await call({ action: 'login-start', phone: PHONE });
 const real = code();
-const bad = String((Number(real) + 7) % 10000).padStart(4, '0');
+const bad = String((Number(real) + 7) % 10 ** OTP_LENGTH).padStart(OTP_LENGTH, '0');
 for (let i = 0; i < 5; i += 1) await call({ action: 'verify', phone: PHONE, code: bad });
 check('besh marta xato kiritilsa kod bekor bo\'ladi',
   (await call({ action: 'verify', phone: PHONE, code: real })).status === 400);
