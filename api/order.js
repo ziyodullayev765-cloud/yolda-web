@@ -20,7 +20,7 @@
 import { kvPush, kvGet, kvSet, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import {
-  CARGO, buildOrderMessage, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
+  CARGO, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { ANY_CITY, cityIndexKey, searchesKey, matchesSearch } from '../lib/savedSearch.js';
@@ -30,11 +30,6 @@ import {
 } from '../lib/offers.js';
 import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
 import { LOADS_CACHE_KEY, LOADS_CACHE_MS, invalidateLoadsCache } from '../lib/loadsCache.js';
-
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
-// Group id is not a secret, so it ships with the code as a fallback.
-const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '-1003778958582';
 
 const PRICE_PER_KM = Number(process.env.PRICE_PER_KM || 2500);
 const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
@@ -241,22 +236,10 @@ const quote = ({ fromCity, toCity, weightKg, cargoType }) => {
   return { distanceKm, amount: Math.max(PRICE_MINIMUM, rounded) };
 };
 
-const telegram = async (method, payload) => {
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.description || 'Telegram API error');
-  return json.result;
-};
-
 const createOrder = async (req, res) => {
-  if (!BOT_TOKEN || !GROUP_ID) {
-    return res.status(500).json({ error: 'Server sozlanmagan' });
-  }
-
+  /* Ilgari bu yerda Telegram sozlamalari tekshirilardi va ular bo'lmasa
+     yuk joylash umuman ishlamasdi. Endi yuk platformaning o'zida
+     yashaydi, ya'ni Telegram bo'lmasa ham hammasi ishlaydi. */
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
   const identityResult = await resolveIdentity({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
@@ -299,50 +282,23 @@ const createOrder = async (req, res) => {
     status: 'NEW', driver: null, rating: null,
   };
 
-  try {
-    const posted = await telegram('sendMessage', {
-      chat_id: GROUP_ID,
-      text: buildOrderMessage(order),
-      parse_mode: 'MarkdownV2',
-      // Guruhdagi tugma endi yukni darrov bermaydi — ilovadagi taklif
-      // oynasini ochadi. Telegram kashfiyot kanali bo'lib qoladi,
-      // kelishuv esa YO'LDA ichida bo'ladi: yuk beruvchi narx va
-      // haydovchini tanlay olsin.
-      reply_markup: {
-        inline_keyboard: [[
-          BOT_USERNAME
-            ? { text: '📩 Taklif yuborish', url: `https://t.me/${BOT_USERNAME}?startapp=load_${code}` }
-            // Bot username sozlanmagan bo'lsa, eski tezkor oqim ishlayveradi,
-            // aks holda guruhda umuman tugma bo'lmasdi.
-            : { text: '✅ Men olaman', callback_data: `take:${code}:${value.phone}` },
-        ]],
-      },
-    });
+  /* Yuk endi faqat shu yerda — bazada — yashaydi. Ilgari u Telegram
+     guruhiga yuborilardi va KV yozuvi "qo'shimcha nusxa" edi, shuning
+     uchun uning xatosi jimgina o'tkazib yuborilardi.
 
-    // Persisted as its own key (not just appended to a list) so /api/telegram
-    // can update its status later, and so the owner can track it by code.
-    // Best-effort — the order already went to Telegram either way, so a
-    // logging hiccup never blocks the customer.
-    // groupMessageId — buyurtma bekor qilinganda yoki haydovchi voz
-    // kechganda guruhdagi xabarni tahrirlash uchun kerak. Bundan oldin
-    // joylangan buyurtmalarda u yo'q: ular baribir bekor qilinadi, faqat
-    // guruhdagi eski xabar o'zgarmay qoladi.
-    kvSet(`order:${code}`, JSON.stringify({
-      ...order,
-      createdAt: Date.now(),
-      groupMessageId: posted && posted.message_id ? posted.message_id : null,
-    })).catch(() => {});
-    kvPush('order_codes', code).catch(() => {});
-    // Yangi yuk ro'yxatda darhol ko'rinsin, 30 soniya kutmasin.
-    await invalidateLoadsCache();
-
-    await notifyMatches({ ...order, createdAt: Date.now() });
-
-    return res.status(200).json({ ok: true, code, amount, distanceKm });
-  } catch (err) {
-    console.error('Telegram send failed:', err.message);
-    return res.status(502).json({ error: 'Hozircha yuborib bo‘lmadi, birozdan keyin urinib ko‘ring' });
+     Endi yozuv yagona nusxa: saqlanmasa, yuk umuman yo'q. Shuning
+     uchun xato endi jim o'tmaydi — aks holda odam "yuk joylandi"
+     degan javobni olib, ro'yxatda hech narsa ko'rmasdi. */
+  const record = { ...order, createdAt: Date.now() };
+  if (!(await kvSet(`order:${code}`, JSON.stringify(record)))) {
+    return res.status(500).json({ error: 'Yukni saqlab bo‘lmadi, qayta urinib ko‘ring' });
   }
+  await kvPush('order_codes', code).catch(() => {});
+  // Yangi yuk ro'yxatda darhol ko'rinsin, 30 soniya kutmasin.
+  await invalidateLoadsCache();
+  await notifyMatches(record);
+
+  return res.status(200).json({ ok: true, code, amount, distanceKm });
 };
 
 /**
@@ -1333,7 +1289,6 @@ const advanceOrder = async (req, res) => {
     }
   }
 
-  await editGroupMessage(order, []);
 
   await notifyUser(order.ownerIdentity || order.googleEmail, {
     category: 'orders',
@@ -1452,7 +1407,6 @@ const decideOfferCore = async (identity, offerId, accept) => {
     },
   });
 
-  await editGroupMessage(order, []);
   return { status: 200, body: { ok: true, offer: publicOfferShape(accepted), status: order.status } };
 };
 
@@ -1510,28 +1464,6 @@ const withdrawOffer = async (req, res) => {
    ============================================================ */
 const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
 const RELEASABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
-
-/** Guruhdagi xabarni yangilaydi. Xabar id'si yo'q bo'lsa — jim o'tadi. */
-const editGroupMessage = async (order, keyboard) => {
-  if (!order.groupMessageId || !GROUP_ID || !BOT_TOKEN) return;
-  try {
-    await telegram('editMessageText', {
-      chat_id: GROUP_ID,
-      message_id: order.groupMessageId,
-      text: buildOrderMessage(order),
-      parse_mode: 'MarkdownV2',
-      reply_markup: { inline_keyboard: keyboard },
-    });
-  } catch (err) {
-    // Guruh xabari yangilanmasa ham buyurtma holati to'g'ri saqlangan.
-    console.error('group message edit failed:', err.message);
-  }
-};
-
-/** Yukni yana guruhga chiqaradigan "Men olaman" tugmasi. */
-const claimKeyboard = (order) => [[
-  { text: '✅ Men olaman', callback_data: `take:${order.code}:${order.phone}` },
-]];
 
 /**
  * Buyurtmani faqat egasi o'zgartira oladi. Telefon raqami yetarli emas:
@@ -1603,7 +1535,6 @@ const cancelOrder = async (req, res) => {
   await invalidateLoadsCache();
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
-  await editGroupMessage(order, []);
   if (hadDriver && hadDriver.telegramId) {
     await notifyUser(`tg:${hadDriver.telegramId}`, {
       category: 'orders',
@@ -1643,7 +1574,6 @@ const releaseDriver = async (req, res) => {
   await invalidateLoadsCache();
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
-  await editGroupMessage(order, claimKeyboard(order));
   if (previousDriver && previousDriver.telegramId) {
     await notifyUser(`tg:${previousDriver.telegramId}`, {
       category: 'orders',
