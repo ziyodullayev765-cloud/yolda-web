@@ -1693,9 +1693,8 @@
   .offer-status.REJECTED{background:rgba(220,38,38,0.12);color:#B91C1C;}
   .offer-status.WITHDRAWN{background:var(--paper-dark);color:var(--muted);}
 
-  /* Haydovchi bosqichni suradigan panel. Telegram guruhidan yuk olgan
-     haydovchida bu tugma guruh xabarida turadi; taklif orqali
-     biriktirilgan haydovchi esa yukni shu yerdan yuritadi. */
+  /* Haydovchi bosqichni suradigan panel: biriktirilgan haydovchi
+     yukni boshidan oxirigacha shu yerdan yuritadi. */
   .drive-panel{
     border:1px solid var(--route);border-radius:var(--r-md);padding:var(--s4);
     margin-bottom:var(--s3);background:var(--card);
@@ -3801,6 +3800,70 @@
   /* Belgi o'ngga qaragan — chapga aylantiramiz. */
   .trucks-back .ic-svg{font-size:19px;transform:rotate(180deg);}
 
+  /* ---------- "Mening yukim" ----------
+     Bitta yuk, bitta ekran. Har bir blok o'zi uchun gapiradi, shuning
+     uchun bo'lim ichida "Yuk ma'lumotlari", "Holat" kabi sarlavhalar
+     yo'q: yozuv qancha kam bo'lsa, yo'lda shuncha tez o'qiladi. */
+  .ml-head{
+    font-family:'Sora',sans-serif;font-weight:700;font-size:19px;
+    letter-spacing:-0.01em;margin:0;color:var(--ink);
+  }
+  .ml-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s4);margin-bottom:var(--s3);
+  }
+  /* Yo'nalish — ekranda eng yirik narsa. */
+  .ml-route{
+    font-family:'Sora',sans-serif;font-weight:700;font-size:22px;line-height:1.2;
+    letter-spacing:-0.02em;color:var(--ink);display:flex;align-items:center;
+    gap:8px;flex-wrap:wrap;
+  }
+  .ml-route .arrow{color:var(--route);font-weight:600;}
+  .ml-sum{
+    display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px;
+  }
+  .ml-price{
+    font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:var(--route);
+  }
+  .ml-km{font-size:13px;color:var(--muted);}
+  /* Yuk haqidagi faktlar — yozuvsiz belgilar qatori. */
+  .ml-facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s3);}
+  .ml-fact{
+    display:inline-flex;align-items:center;gap:5px;padding:5px 10px;
+    background:var(--tint);border-radius:999px;font-size:12.5px;
+    font-weight:600;color:var(--ink-soft);white-space:nowrap;
+  }
+  .ml-fact .ic-svg{font-size:14px;color:var(--route);}
+  /* Yuk beruvchi qatori: ism chapda, aloqa tugmalari ostida. */
+  .ml-who{display:flex;align-items:center;gap:10px;}
+  .ml-who-name{
+    font-weight:700;font-size:15px;color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .ml-who .ml-ava{
+    flex:none;width:40px;height:40px;border-radius:50%;color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:15px;
+  }
+  .ml-contact{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:var(--s3);}
+  /* Yolg'iz tugma yarim kenglikda turmasin. */
+  .ml-contact.one{grid-template-columns:1fr;}
+  .ml-contact .btn{margin:0;text-decoration:none;}
+  /* Voz kechish — xavfli qadam, shuning uchun alohida va pastda.
+     `.btn.ghost` rangni o'zi beradi, shuning uchun aniqlik oshirildi. */
+  .btn.ghost.ml-danger{
+    width:100%;color:#DC2626;border-color:rgba(220,38,38,0.3);
+  }
+  .btn.ghost.ml-danger .ic-svg{color:inherit;}
+  .ml-empty{text-align:center;padding:var(--s8) var(--s4);}
+  .ml-empty .ic-svg{font-size:40px;color:var(--muted);opacity:0.5;}
+  .ml-empty p{margin:var(--s3) 0 var(--s4);color:var(--muted);font-size:14px;}
+  .ml-skel{
+    height:132px;border-radius:var(--r-lg);background:var(--tint);
+    margin-bottom:var(--s3);
+  }
+  .ml-skel:nth-child(2){height:96px;}
+
   /* ---------- Bo'limni chetga surib orqaga chiqish ----------
      Suriladigan bo'lim orqadagisini to'liq berkitib turishi kerak,
      shuning uchun o'z foni va eng kam balandligi beriladi. */
@@ -3825,7 +3888,11 @@
      `pointercancel` yuborardi (suhbatda ham aynan shu bo'lgan).
      `pinch-zoom` ataylab qoldiriladi — ikki barmoq bilan
      kattalashtirish ko'zi ojiz odamlar uchun kerak. */
-  #tab-trucks, #tab-trucks *{touch-action:pan-y pinch-zoom;}
+  /* `touch-action` meros bo'lib o'tmaydi — har bir ichkari elementga
+     alohida yozilishi kerak, aks holda ularning ustida surish
+     brauzerning o'ziga ketib qolardi. */
+  #tab-trucks, #tab-trucks *,
+  #tab-myload, #tab-myload *{touch-action:pan-y pinch-zoom;}
   /* Yonlamasiga suriladigan qatorlar bundan mustasno, aks holda
      turkumlar va chiplar qatori surilmay qolardi. */
   #tab-trucks .truck-category-row, #tab-trucks .truck-category-row *,
@@ -5034,9 +5101,8 @@
   </div>
 </div>
 
-<!-- Logotip chapda, qo'ng'iroq va avatar o'ngda. Haydovchilar guruhiga
-     havola bu yerdan Aloqa bo'limiga ko'chdi — sarlavha tor joy, unda
-     faqat ikkita eng kerakli narsa turadi. -->
+<!-- Logotip chapda, qo'ng'iroq va avatar o'ngda. Sarlavha tor joy —
+     unda faqat ikkita eng kerakli narsa turadi. -->
 <nav class="nav" aria-label="Asosiy navigatsiya">
   <a class="nav-logo" href="#" data-tab-link="home" style="text-decoration:none;"><svg class="mark" aria-hidden="true"><use href="#logoMarkFlat"/></svg><span class="word">YO'LDA</span></a>
   <div class="nav-actions">
@@ -5311,6 +5377,30 @@
   </div>
 </section>
 
+<!-- "Mening yukim". Haydovchi bir vaqtda bitta yukni olib ketadi,
+     shuning uchun bu bo'lim ro'yxat emas: unda har doim aynan bitta
+     yuk turadi. Sarlavha ostida tavsif, maslahat va bo'sh joy yo'q —
+     yo'lda telefonni bir qo'lda ushlab turgan odamga faqat kerakli
+     narsa ko'rinadi: qayerdan qayerga, nima, qancha, keyingi qadam
+     va yuk beruvchining aloqasi. -->
+<section class="tabview" id="tab-myload" data-tab="myload" hidden>
+  <!-- Pastki panel ekranga yopishib turadi (taxminan 82 px), shuning
+       uchun oxirgi tugma uning ostida qolib ketmasligi uchun pastdan
+       ko'proq bo'shliq qoldiriladi. -->
+  <div class="section" style="padding-top:var(--s4);padding-bottom:var(--s9);max-width:720px;">
+    <div class="trucks-topbar">
+      <!-- Mashinalar bo'limidagi bilan bitta tugma: belgi 180 daraja
+           aylantirilgani uchun aynan shu ikonka kerak. -->
+      <button type="button" class="trucks-back lg lg-tap" data-tab-link="loads"
+              aria-label="Orqaga" data-i18n-aria="myload.back">
+        <svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg>
+      </button>
+      <h1 class="ml-head" data-i18n="myload.title">Mening yukim</h1>
+    </div>
+    <div id="myLoadBody"></div>
+  </div>
+</section>
+
 <section class="tabview" id="tab-trucks" data-tab="trucks" hidden>
   <div class="section" style="padding-top:var(--s4);padding-bottom:var(--s8);max-width:960px;">
     <!-- Sarlavha, tavsif va "Kategoriyalar" yozuvi ataylab yo'q.
@@ -5574,27 +5664,23 @@
        o'zgaradi, shuning uchun uni CSS'da qotirib qo'yib bo'lmaydi. -->
   <span class="bn-blob" id="bnBlob" aria-hidden="true"><span class="bn-blob-fill"></span><span class="bn-blob-mag" id="bnBlobMag"></span><span class="bn-blob-gloss"></span><span class="bn-blob-rim"></span></span>
   <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
-  <button type="button" class="bn-item" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
+  <!-- Bu katak ham ikki bo'limni ushlab turadi: bosilsa Yuklar,
+       bosib turilsa "Mening yukim" ham tanlanadi. -->
+  <button type="button" class="bn-item" data-tab-link="loads" data-nav-pick="loads,myload" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
   <!-- Bu katak ikki bo'limni ushlab turadi: shunchaki bosilsa Life
        ochiladi, bosib turilsa esa tanlov chiqadi (Xabarlar / Life). -->
-  <button type="button" class="bn-item" data-tab-link="life" data-nav-pick="1" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
+  <button type="button" class="bn-item" data-tab-link="life" data-nav-pick="chat,life" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
   <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
 </nav>
 
 <!-- Life katagini bosib turganda chiqadigan tanlov. Panelning ichida
      emas — panel `overflow` va `border-radius` bilan chegaralangan,
      ichida turgan narsa kesilib qolardi. -->
-<div class="nav-pick" id="navPick" role="menu" aria-label="Bo'limni tanlang" hidden>
-  <button type="button" class="nav-pick-item" data-pick-tab="chat" role="menuitem">
-    <svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg>
-    <span data-i18n="nav.chat">Xabarlar</span>
-  </button>
-  <button type="button" class="nav-pick-item" data-pick-tab="life" role="menuitem">
-    <svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg>
-    <span data-i18n="nav.life">Life</span>
-  </button>
-</div>
+<!-- Tanlov ro'yxati JS'da to'ldiriladi: bosib turiladigan kataklar
+     bir nechta va har biri o'z ikkita bo'limini ko'rsatadi (qaysi
+     bo'limlar — katakdagi `data-nav-pick` da yozilgan). -->
+<div class="nav-pick" id="navPick" role="menu" aria-label="Bo'limni tanlang" hidden></div>
 
 <!-- Shared dialog shell for every Settings sub-page (Language, Theme,
      Notifications, Privacy, Terms, About, Feedback) — populated by
@@ -5635,7 +5721,12 @@
   var STRINGS = {
     uz: {
       "nav.home": "Asosiy", "nav.loads": "Yuklar", "nav.order": "Yuk joylash", "nav.chat": "Xabarlar", "nav.profile": "Profil",
-      "nav.telegramGroupAria": "Haydovchilar guruhi (Telegram)", "nav.trucks": "Mashinalar", "nav.life": "Life",
+      "nav.trucks": "Mashinalar", "nav.life": "Life",
+
+      "myload.title": "Mening yukim", "myload.back": "Orqaga",
+      "myload.call": "Qo'ng'iroq", "myload.message": "Xabar",
+      "myload.empty": "Hozir olingan yukingiz yo'q.",
+      "myload.browse": "Yuklarni ko'rish",
 
       "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
       "trucks.sub": "Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.",
@@ -5712,7 +5803,7 @@
       "home.ctaSend": "Yuk joylash", "home.ctaGet": "Yuk topish", "home.liveLabel": "Jonli faoliyat",
 
       "loads.eyebrow": "Yuklar", "loads.titleA": "O'zingizga mos", "loads.titleB": "yukni toping",
-      "loads.sub": "Ochiq buyurtmalarni ko'ring, filtrlang va telegram guruhida oling.",
+      "loads.sub": "Ochiq buyurtmalarni ko'ring, filtrlang va narxingiz bilan taklif yuboring.",
       "loads.from": "Qayerdan", "loads.to": "Qayerga", "loads.anyCity": "Barchasi",
       "loads.qToday": "Bugun", "loads.qTomorrow": "Ertaga", "loads.qFura": "Fura", "loads.qHeavy": "10+ tonna",
       "loads.moreFilters": "Ko'proq filtr", "loads.quickPlaceholder": "Shahar yoki yuk turi…", "loads.cargoType": "Yuk turi", "loads.truckType": "Mashina turi",
@@ -5758,6 +5849,10 @@
       "drive.now": "Hozirgi bosqich", "drive.updated": "Holat yangilandi",
       "drive.hint": "Har bosqichda tugmani bosing — yuk beruvchi buyurtma qayerdaligini shu orqali ko'radi.",
       "drive.done": "Bu yuk yopilgan. Yuk beruvchi sizga baho qoldirishi mumkin.",
+      "drive.giveUp": "Yukdan voz kechaman", "drive.giveUpTitle": "Yukdan voz kechaman",
+      "drive.giveUpBody": "Yuk yana ochiq ro'yxatga qaytadi va boshqa haydovchi taklif yuborishi mumkin. Yuk beruvchiga darhol xabar boradi.",
+      "drive.giveUpReason": "Sabab (ixtiyoriy)", "drive.giveUpConfirm": "Voz kechaman",
+      "drive.gaveUp": "Yukdan voz kechdingiz",
       "offer.accept": "Qabul qilish", "offer.reject": "Rad etish",
       "offer.withdraw": "Taklifni qaytarib olish",
       "offer.emptyOwner": "Hozircha taklif kelmagan. Haydovchilar yukingizni ko'rgach taklif yuboradi.",
@@ -5893,7 +5988,7 @@
       "order.eyebrow": "Buyurtma", "order.titleA": "Hisoblang va", "order.titleB": "yuboring",
       "order.sub": "Buyurtmangiz haydovchilarga chiqadi. Ular narx bilan taklif yuboradi, siz esa taqqoslab tanlaysiz.",
       "order.howTitle": "Qanday ishlaydi?",
-      "order.how1": "Formani to'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.",
+      "order.how1": "Formani to'ldirib yuborasiz — buyurtma darhol «Yuklar» ro'yxatiga tushadi va mos haydovchilarga xabar boradi.",
       "order.how2": "Haydovchilar sizga <strong>taklif</strong> yuboradi — narx va yetib borish vaqti bilan.",
       "order.how3": "Siz takliflarni taqqoslab, <strong>haydovchini o'zingiz tanlaysiz</strong> — undan keyin raqamlaringiz ochiladi.",
       "order.how4": "Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Aloqa</button> bo'limidan yozing.",
@@ -5956,7 +6051,7 @@
       "profile.roleLabel": "Kimsiz?", "profile.roleUnset": "Tanlanmagan",
       "profile.editMainGroup": "Asosiy ma'lumotlar", "profile.editContactGroup": "Aloqa",
       "profile.editVehicleGroup": "Transport", "profile.editAboutGroup": "Qo'shimcha",
-      "profile.telegramHint": "Guruhda yukni olganda \"Tasdiqlangan\" belgingiz ko'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.",
+      "profile.telegramHint": "Bildirishnomalar Telegram orqali shu hisobga kelishi uchun kerak. Ixtiyoriy — kiritmasangiz ham ilova to'liq ishlaydi.",
       "profile.bioLabel": "Qisqa bio (ixtiyoriy)",
       "profile.usernameHint": "Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo'ladi.",
       "profile.saveBtn": "Saqlash", "profile.signOutTitle": "Chiqishni tasdiqlang",
@@ -5969,7 +6064,7 @@
       "profile.avatarTooLarge": "Rasm hajmi katta, boshqasini tanlang",
 
       "drivers.eyebrow": "Haydovchilar", "drivers.titleA": "Yuk", "drivers.titleB": "toping",
-      "drivers.sub": "Telegram guruhga qo'shiling — yangi yuklar shu yerga tushadi, tugmani bosib o'zingizga olasiz.",
+      "drivers.sub": "«Yuklar» bo'limidan o'zingizga mos yukni toping va narxingiz bilan taklif yuboring.",
 
       "contact.sub": "Savol yoki yordam kerakmi? Biz bilan bog'laning.",
       "help.title": "Yordam markazi",
@@ -5984,7 +6079,7 @@
       "help.free.q": "Xizmat pullikmi?",
       "help.free.a": "Yo'q. Hozircha butunlay bepul — ro'yxatdan o'tish ham, yuk joylash ham, taklif yuborish ham komissiyasiz. O'zgarish bo'lsa, oldindan xabar beriladi.",
       "help.howpost.q": "Yukni qanday joylayman?",
-      "help.howpost.a": "Pastdagi «Yuk joylash» tugmasini bosing va formani to'ldiring: qayerdan qayerga, nima, necha kilo. Yuk saytdagi «Yuklar» ro'yxatida va haydovchilar Telegram guruhida paydo bo'ladi.",
+      "help.howpost.a": "Pastdagi «Yuk joylash» tugmasini bosing va formani to'ldiring: qayerdan qayerga, nima, necha kilo. Yuk darhol «Yuklar» ro'yxatida paydo bo'ladi, saqlangan qidiruvi mos kelgan haydovchilarga esa xabar boradi.",
       "help.account.q": "Ro'yxatdan o'tish shartmi?",
       "help.account.a": "Yuklarni ko'rish uchun shart emas. Yuk joylash, taklif yuborish va xabar yozish uchun Google yoki Telegram orqali kirasiz — alohida parol o'ylab topish kerak emas.",
       "help.offers.q": "Haydovchi qanday tanlanadi?",
@@ -5994,13 +6089,13 @@
       "help.cancel.q": "Buyurtmani bekor qila olamanmi?",
       "help.cancel.a": "Ha, yetkazilgunga qadar. Kuzatish bo'limida ikkita tugma bor: <b>Bekor qilish</b> — yuk endi kerak emas; <b>Haydovchini bo'shatish</b> — yuk kerak, lekin bu haydovchi javob bermayapti, shunda yuk yana boshqa haydovchilarga ko'rinadi.",
       "help.findload.q": "Yuklarni qayerdan topaman?",
-      "help.findload.a": "«Yuklar» bo'limida — yo'nalish, og'irlik va mashina turi bo'yicha filtr bilan. Qidiruvni saqlab qo'ysangiz, unga mos yangi yuk chiqqanda sizga xabar keladi. Yuklar Telegram guruhiga ham tushadi.",
+      "help.findload.a": "«Yuklar» bo'limida — yo'nalish, og'irlik va mashina turi bo'yicha filtr bilan. Qidiruvni saqlab qo'ysangiz, unga mos yangi yuk chiqqanda sizga xabar keladi.",
       "help.sendoff.q": "Taklif qanday yuboriladi?",
       "help.sendoff.a": "Yuk sahifasidagi «Taklif yuborish» tugmasini bosing, narxingizni va qachon yetib borishingizni yozing. Yuk beruvchi tanlasa, sizga xabar keladi va uning raqami ochiladi.",
       "help.status.q": "Holatni qanday yangilayman?",
-      "help.status.a": "Ikki joydan: Telegram guruhidagi xabar ostidagi tugmadan yoki saytdagi yuk sahifasidan. Tugma har safar keyingi bosqichning nomini o'zi yozib turadi — tanlab o'tirish shart emas.",
+      "help.status.a": "Yuk sahifasidan: tugma har safar keyingi bosqichning nomini o'zi yozib turadi — tanlab o'tirish shart emas. Yuk beruvchi o'zgarishni darhol ko'radi.",
       "help.giveup.q": "Olgan yukimdan voz kecha olamanmi?",
-      "help.giveup.a": "Ha. Guruhdagi xabar ostida «Voz kechaman» tugmasi bor. Yuk yo'qolmaydi — u yana boshqa haydovchilarga ko'rinadi, yuk beruvchiga esa darrov xabar boradi.",
+      "help.giveup.a": "Ha. Yuk sahifasida «Yukdan voz kechaman» tugmasi bor. Yuk yo'qolmaydi — u yana ochiq ro'yxatga qaytadi, yuk beruvchiga esa darrov xabar boradi.",
       "help.price.q": "Narx qanday hisoblanadi?",
       "help.price.a": "Yukni joylaganda ko'rsatiladigan raqam — masofa va og'irlik bo'yicha taxminiy hisob. Yakuniy narx — siz qabul qilgan taklifdagi raqam.",
       "help.hint.q": "«Bu yo'nalishda odatda...» degan maslahat qayerdan olinadi?",
@@ -6091,7 +6186,7 @@
       "about.title": "Yolda haqida",
       "about.body":
         "<h4>YO'LDA nima?</h4><p>YO'LDA — O'zbekiston bo'ylab yuk jo'natuvchi va haydovchilarni bir-biri bilan to'g'ridan-to'g'ri bog'laydigan bozor. Vositachisiz, ortiqcha to'lovlarsiz.</p>"
-        + "<h4>Qanday ishlaydi?</h4><p>Yuk beruvchi buyurtma joylashtiradi — u saytdagi yuklar ro'yxatida va haydovchilar guruhida ko'rinadi. Haydovchilar narx va yetib borish vaqti bilan taklif yuboradi; yuk beruvchi ularni taqqoslab, o'zi tanlaydi. Tanlangandan keyin tomonlar bir-birining raqamini ko'radi.</p>"
+        + "<h4>Qanday ishlaydi?</h4><p>Yuk beruvchi buyurtma joylashtiradi — u «Yuklar» ro'yxatida ko'rinadi va mos haydovchilarga xabar boradi. Haydovchilar narx va yetib borish vaqti bilan taklif yuboradi; yuk beruvchi ularni taqqoslab, o'zi tanlaydi. Tanlangandan keyin tomonlar bir-birining raqamini ko'radi.</p>"
         + "<h4>Nega bepul?</h4><p>Hozircha ro'yxatdan o'tish ham, e'lon joylashtirish ham to'liq bepul — hech qanday komissiya yo'q.</p>"
         + "<h4>Qamrov</h4><p>Toshkent, Samarqand, Buxoro va O'zbekistonning boshqa 10 ta yirik shahri o'rtasida.</p>"
         + "<h4>Aloqa</h4><p>+998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>",
@@ -6111,7 +6206,7 @@
       "privacy.body":
         "<h4>1. Umumiy qoidalar</h4><p>Ushbu maxfiylik siyosati YO'LDA platformasidan (\"Xizmat\") foydalanganda shaxsingizga doir ma'lumotlar qanday yig'ilishi, ishlatilishi, kimga ko'rinishi va qanday himoya qilinishini tushuntiradi. Xizmatdan foydalanish orqali siz shu tartibga rozilik bildirasiz. Rozi bo'lmasangiz, Xizmatdan foydalanmang.</p>"
         + "<h4>2. Qanday ma'lumot yig'amiz</h4>"
-        + "<p><b>Kirganda.</b> Google orqali: ism, elektron pochta manzili va profil surati. Telegram orqali: Telegram raqami (ID), @username, ism va surat. Parol yo'q — biz parol so'ramaymiz va saqlamaymiz.</p>"
+        + "<p><b>Kirganda.</b> Google orqali: ism, elektron pochta manzili va profil surati. Telegram orqali: Telegram raqami (ID), @username, ism va surat. Telefon orqali: telefon raqamingiz — tasdiqlash kodi Telegram boti orqali yuboriladi. Parol yo'q — biz parol so'ramaymiz va saqlamaymiz. Tasdiqlash kodining o'zi bazada ochiq saqlanmaydi: faqat uning qaytarib bo'lmaydigan hash'i turadi va u 5 daqiqadan keyin, yoki bir marta ishlatilgach, o'chadi.</p>"
         + "<p><b>Profilda.</b> Username, telefon raqam, shahar, rol (haydovchi yoki yuk beruvchi), mashina turi, tajriba, yo'nalishlar, yuk turlari, o'zingiz haqingizdagi qisqa matn va avatar. Bularning barchasi ixtiyoriy.</p>"
         + "<p><b>Yuk joylashtirganda.</b> Yo'nalish va manzillar, og'irlik, hajm, joy soni, yuk turi, mashina turi, sana, narx, izoh, ism va telefon raqam.</p>"
         + "<p><b>Mashina e'lonida.</b> Marka, yil, probeg, narx, shahar, texnik ma'lumotlar, rasmlar, sotuvchi ismi va telefon raqami.</p>"
@@ -6126,11 +6221,12 @@
         + "<p><b>Hech qachon ochiq emas:</b> elektron pochta manzilingiz, tasdiqlash hujjatlaringiz va yozishmalaringiz. Xabarlar faqat siz va suhbatdoshingizga ko'rinadi.</p>"
         + "<p><b>Yuklar ro'yxatida</b> telefon raqam, ism, izoh va pochta manzili ko'rsatilmaydi — faqat yo'nalish, yuk va narx.</p>"
         + "<p><b>Mashina e'lonida telefon raqamingiz ataylab ochiq</b> — e'lonning maqsadi shu, xaridor sizga qo'ng'iroq qila olishi kerak. Raqamingiz ochiq bo'lishini istamasangiz, e'lon bermang.</p>"
-        + "<p><b>Telegram guruhi.</b> Yuk joylashtirganingizda e'lon YO'LDA haydovchilar guruhiga chiqadi: yo'nalish, yuk ma'lumotlari, narx, ismingiz, izohingiz va Telegram orqali kirgan bo'lsangiz @username'ingiz. Pochta manzilingiz chiqmaydi. <b>Yukni haydovchi olgandan keyin telefon raqamingiz o'sha guruh xabarida ko'rinadi</b> — ya'ni uni guruhdagi boshqa haydovchilar ham ko'rishi mumkin. Buni bilib turing.</p>"
+        + "<p><b>Telegram bildirishnomalari.</b> Telegram hisobingiz ulangan bo'lsa, bot sizga buyurtma holati va mos yangi yuklar haqida xabar yuboradi; bu xabar matni Telegram serverlaridan o'tadi. <b>Yuklaringiz hech qanday ochiq Telegram guruhiga yoki kanalga joylashtirilmaydi</b> — platformadagi barcha ish ilovaning o'zida bo'ladi. Bildirishnomalarni Sozlamalardan o'chirib qo'yishingiz mumkin.</p>"
+        + "<p><b>Telefon raqam.</b> Yuk e'loningizda raqamingiz boshqalarga ko'rsatilmaydi. U faqat siz haydovchini tanlaganingizdan keyin va faqat shu ikki tomonga ochiladi.</p>"
         + "<p><b>Administratorlar</b> shikoyat va nizolarni hal qilish, tasdiqlash hujjatlarini ko'rib chiqish va suiiste'molni to'xtatish uchun buyurtma va profil ma'lumotlariga kirishi mumkin.</p>"
         + "<h4>5. Tasdiqlash hujjatlari</h4><p>Hujjat rasmini faqat o'zingiz yuborasiz va faqat tasdiqlash uchun ishlatiladi. U boshqa foydalanuvchilarga hech qachon ko'rsatilmaydi va uchinchi tomonga berilmaydi. <b>Moderator qaror chiqargandan keyin — tasdiqlangan bo'ladimi yoki rad etiladimi — hujjat rasmi darhol o'chiriladi.</b> Profilingizda faqat natija qoladi: tasdiqlangan yoki yo'q.</p>"
         + "<h4>6. Qurilmangizda saqlanadigan ma'lumot</h4><p>Brauzeringizning xotirasida (localStorage) faqat quyidagilar saqlanadi: kirish belgisi, til va mavzu tanlovi, bildirishnoma sozlamalari, saqlangan e'lonlar, oxirgi qidiruvlar va \"ilovani o'rnatish\" taklifini yopganingiz. Bularning hech biri serverga yuborilmaydi va reklama uchun ishlatilmaydi. Reklama cookie'lari yo'q.</p>"
-        + "<h4>7. Uchinchi tomon xizmatlari</h4><p>Xizmat quyidagilarga tayanadi: Google (kirish va shriftlar), Telegram (kirish, bot va bildirishnomalar), Vercel (sayt joylashuvi), Upstash (ma'lumotlar bazasi), OpenStreetMap va unpkg (xarita). Sahifani ochganingizda IP manzilingiz shu xizmatlarga ko'rinadi. Telegram orqali yuborilgan bildirishnoma matni Telegram serverlaridan o'tadi. Ularning har biri o'z maxfiylik siyosatiga ega.</p>"
+        + "<h4>7. Uchinchi tomon xizmatlari</h4><p>Xizmat quyidagilarga tayanadi: Google (kirish va shriftlar), Telegram (kirish, tasdiqlash kodi va bildirishnomalar), Vercel (sayt joylashuvi), Upstash (ma'lumotlar bazasi), OpenStreetMap va unpkg (xarita). Sahifani ochganingizda IP manzilingiz shu xizmatlarga ko'rinadi. Telegram orqali yuborilgan bildirishnoma matni Telegram serverlaridan o'tadi. Ularning har biri o'z maxfiylik siyosatiga ega.</p>"
         + "<h4>8. Ma'lumot qayerda saqlanadi</h4><p>Ma'lumotlar Vercel va Upstash infratuzilmasida, O'zbekiston hududidan tashqarida joylashgan serverlarda saqlanadi. O'zbekiston Respublikasining \"Shaxsga doir ma'lumotlar to'g'risida\"gi qonuni fuqarolarning shaxsiy ma'lumotlarini mamlakat hududidagi bazalarda saqlashni talab qiladi; biz bu talabga to'liq moslashish ustida ishlayapmiz va holat o'zgarganda shu bandni yangilaymiz.</p>"
         + "<h4>9. Qancha vaqt saqlanadi</h4><p>Profilingiz va e'lonlaringiz siz o'chirmaguningizcha yoki hisobingizni o'chirishni so'ramaguningizcha saqlanadi. Buyurtmalar tarixi nizo va statistika uchun saqlanadi. Tasdiqlash hujjatlari ko'rib chiqilgach darhol o'chiriladi. Mashina e'lonini va xabaringizni istalgan vaqtda o'zingiz o'chirishingiz mumkin.</p>"
         + "<h4>10. Xavfsizlik</h4><p>Sayt faqat HTTPS orqali ishlaydi. Har bir so'rov serverda qaytadan tekshiriladi — kim ekaningiz brauzerdagi so'zga qarab emas, Google yoki Telegram bergan imzoga qarab aniqlanadi. Siz faqat o'zingizning ma'lumotingizni o'zgartira olasiz. Administrator paneli alohida parol va huquqlar bilan himoyalangan. Parol saqlamaymiz, chunki parol umuman yo'q. Shunga qaramay, internetdagi hech bir xizmat mutlaq xavfsiz emas.</p>"
@@ -6141,7 +6237,12 @@
     },
     ru: {
       "nav.home": "Главная", "nav.loads": "Грузы", "nav.order": "Разместить груз", "nav.chat": "Сообщения", "nav.profile": "Профиль",
-      "nav.telegramGroupAria": "Группа водителей (Telegram)", "nav.trucks": "Машины", "nav.life": "Life",
+      "nav.trucks": "Машины", "nav.life": "Life",
+
+      "myload.title": "Мой груз", "myload.back": "Назад",
+      "myload.call": "Позвонить", "myload.message": "Сообщение",
+      "myload.empty": "Сейчас у вас нет взятого груза.",
+      "myload.browse": "Смотреть грузы",
 
       "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовик", "trucks.titleB": "продайте или купите",
       "trucks.sub": "Только грузовой транспорт: грузовики, фургоны, прицепы и спецтехника.",
@@ -6218,7 +6319,7 @@
       "home.ctaSend": "Разместить груз", "home.ctaGet": "Найти груз", "home.liveLabel": "Live-активность",
 
       "loads.eyebrow": "Грузы", "loads.titleA": "Найдите подходящий", "loads.titleB": "для вас груз",
-      "loads.sub": "Смотрите открытые заказы, фильтруйте и берите в группе Telegram.",
+      "loads.sub": "Смотрите открытые заказы, фильтруйте и присылайте предложение со своей ценой.",
       "loads.from": "Откуда", "loads.to": "Куда", "loads.anyCity": "Любой",
       "loads.qToday": "Сегодня", "loads.qTomorrow": "Завтра", "loads.qFura": "Фура", "loads.qHeavy": "10+ тонн",
       "loads.moreFilters": "Больше фильтров", "loads.quickPlaceholder": "Город или тип груза…", "loads.cargoType": "Тип груза", "loads.truckType": "Тип машины",
@@ -6264,6 +6365,10 @@
       "drive.now": "Текущий этап", "drive.updated": "Статус обновлён",
       "drive.hint": "Нажимайте кнопку на каждом этапе — так отправитель видит, где находится груз.",
       "drive.done": "Этот груз закрыт. Отправитель может оставить вам оценку.",
+      "drive.giveUp": "Отказаться от груза", "drive.giveUpTitle": "Отказаться от груза",
+      "drive.giveUpBody": "Груз снова вернётся в открытый список, и другой водитель сможет прислать предложение. Отправителю сразу придёт уведомление.",
+      "drive.giveUpReason": "Причина (необязательно)", "drive.giveUpConfirm": "Отказываюсь",
+      "drive.gaveUp": "Вы отказались от груза",
       "offer.accept": "Принять", "offer.reject": "Отклонить",
       "offer.withdraw": "Отозвать предложение",
       "offer.emptyOwner": "Предложений пока нет. Водители отправят их, увидев ваш груз.",
@@ -6399,7 +6504,7 @@
       "order.eyebrow": "Заказ", "order.titleA": "Рассчитайте и", "order.titleB": "отправьте",
       "order.sub": "Ваш заказ видят водители. Они присылают предложения с ценой, а вы сравниваете и выбираете.",
       "order.howTitle": "Как это работает?",
-      "order.how1": "Вы заполняете форму — заказ сразу появляется в группе водителей.",
+      "order.how1": "Вы заполняете форму — заказ сразу появляется в разделе «Грузы», а подходящие водители получают уведомление.",
       "order.how2": "Водители присылают вам <strong>предложения</strong> — с ценой и временем прибытия.",
       "order.how3": "Вы сравниваете предложения и <strong>сами выбираете водителя</strong> — после этого открываются номера.",
       "order.how4": "Если возникла проблема (водитель не приехал, не сошлись в цене) — напишите нам в разделе <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Контакты</button>.",
@@ -6462,7 +6567,7 @@
       "profile.roleLabel": "Кто вы?", "profile.roleUnset": "Не выбрано",
       "profile.editMainGroup": "Основные данные", "profile.editContactGroup": "Контакты",
       "profile.editVehicleGroup": "Транспорт", "profile.editAboutGroup": "Дополнительно",
-      "profile.telegramHint": "Нужно, чтобы в группе появлялся значок «Подтверждён» при взятии груза, а оценка после доставки попадала в этот профиль.",
+      "profile.telegramHint": "Нужно, чтобы уведомления приходили в Telegram на этот аккаунт. Необязательно — без него приложение работает полностью.",
       "profile.bioLabel": "Короткое био (необязательно)",
       "profile.usernameHint": "Username 3–20 символов, только латинские буквы/цифры/подчёркивание (_) — принадлежит только одному человеку.",
       "profile.saveBtn": "Сохранить", "profile.signOutTitle": "Подтвердите выход",
@@ -6475,7 +6580,7 @@
       "profile.avatarTooLarge": "Изображение слишком большое, выберите другое",
 
       "drivers.eyebrow": "Водители", "drivers.titleA": "Найдите", "drivers.titleB": "груз",
-      "drivers.sub": "Присоединяйтесь к группе в Telegram — новые грузы появляются там, нажмите кнопку, чтобы взять заказ.",
+      "drivers.sub": "Найдите подходящий груз в разделе «Грузы» и пришлите предложение со своей ценой.",
 
       "contact.sub": "Есть вопрос или нужна помощь? Свяжитесь с нами.",
       "help.title": "Центр помощи",
@@ -6490,7 +6595,7 @@
       "help.free.q": "Сервис платный?",
       "help.free.a": "Нет. Пока полностью бесплатно — регистрация, размещение груза и отправка предложений без комиссии. Если что-то изменится, мы предупредим заранее.",
       "help.howpost.q": "Как разместить груз?",
-      "help.howpost.a": "Нажмите «Разместить груз» внизу и заполните форму: откуда куда, что и сколько килограммов. Груз появится в разделе «Грузы» и в Telegram-группе водителей.",
+      "help.howpost.a": "Нажмите «Разместить груз» внизу и заполните форму: откуда куда, что и сколько килограммов. Груз сразу появится в разделе «Грузы», а водители с подходящим сохранённым поиском получат уведомление.",
       "help.account.q": "Нужна ли регистрация?",
       "help.account.a": "Чтобы смотреть грузы — нет. Чтобы разместить груз, отправить предложение или написать сообщение, вы входите через Google или Telegram — придумывать отдельный пароль не нужно.",
       "help.offers.q": "Как выбирается водитель?",
@@ -6500,13 +6605,13 @@
       "help.cancel.q": "Могу ли я отменить заказ?",
       "help.cancel.a": "Да, пока груз не доставлен. В отслеживании две кнопки: <b>Отменить заказ</b> — груз больше не нужен; <b>Освободить водителя</b> — груз нужен, но этот водитель не отвечает, и тогда груз снова видят другие.",
       "help.findload.q": "Где искать грузы?",
-      "help.findload.a": "В разделе «Грузы» — с фильтрами по направлению, весу и типу машины. Сохранённый поиск пришлёт уведомление, когда появится подходящий груз. Грузы также приходят в Telegram-группу.",
+      "help.findload.a": "В разделе «Грузы» — с фильтрами по направлению, весу и типу машины. Сохранённый поиск пришлёт уведомление, когда появится подходящий груз.",
       "help.sendoff.q": "Как отправить предложение?",
       "help.sendoff.a": "На странице груза нажмите «Отправить предложение», укажите свою цену и время прибытия. Если отправитель выберет вас, придёт уведомление и откроется его номер.",
       "help.status.q": "Как обновлять статус?",
-      "help.status.a": "Двумя способами: кнопкой под сообщением в Telegram-группе или на странице груза на сайте. Кнопка каждый раз сама называет следующий этап — выбирать ничего не нужно.",
+      "help.status.a": "На странице груза: кнопка каждый раз сама называет следующий этап — выбирать ничего не нужно. Отправитель видит изменение сразу.",
       "help.giveup.q": "Могу ли я отказаться от взятого груза?",
-      "help.giveup.a": "Да. Под сообщением в группе есть кнопка «Отказываюсь». Груз не пропадает — его снова видят другие водители, а отправителю сразу приходит уведомление.",
+      "help.giveup.a": "Да. На странице груза есть кнопка «Отказаться от груза». Груз не пропадает — он снова возвращается в открытый список, а отправителю сразу приходит уведомление.",
       "help.price.q": "Как считается цена?",
       "help.price.a": "Число, которое показывается при размещении, — примерный расчёт по расстоянию и весу. Итоговая цена — та, что указана в принятом вами предложении.",
       "help.hint.q": "Откуда берётся подсказка «на этом направлении обычно...»?",
@@ -6597,7 +6702,7 @@
       "about.title": "О Yolda",
       "about.body":
         "<h4>Что такое YO'LDA?</h4><p>YO'LDA — рынок, который напрямую соединяет грузоотправителей и водителей по всему Узбекистану. Без посредников и лишних платежей.</p>"
-        + "<h4>Как это работает?</h4><p>Отправитель размещает заказ — он появляется в списке грузов и в группе водителей. Водители присылают предложения с ценой и временем прибытия; отправитель сравнивает их и выбирает сам. После выбора стороны видят номера друг друга.</p>"
+        + "<h4>Как это работает?</h4><p>Отправитель размещает заказ — он появляется в списке грузов, а подходящие водители получают уведомление. Водители присылают предложения с ценой и временем прибытия; отправитель сравнивает их и выбирает сам. После выбора стороны видят номера друг друга.</p>"
         + "<h4>Почему бесплатно?</h4><p>Пока и регистрация, и размещение заказов полностью бесплатны — без комиссии.</p>"
         + "<h4>География</h4><p>Ташкент, Самарканд, Бухара и ещё 10 крупных городов Узбекистана.</p>"
         + "<h4>Контакты</h4><p>+998 94 440 20 90 или @ziyodullayv (Telegram).</p>",
@@ -6613,7 +6718,7 @@
       "privacy.body":
         "<h4>1. Общие положения</h4><p>Данная политика конфиденциальности объясняет, какие персональные данные собирает платформа YO'LDA («Сервис»), как они используются, кому видны и как защищаются. Пользуясь Сервисом, вы соглашаетесь с этим порядком. Если вы не согласны — не пользуйтесь Сервисом.</p>"
         + "<h4>2. Какие данные мы собираем</h4>"
-        + "<p><b>При входе.</b> Через Google: имя, адрес электронной почты и фото профиля. Через Telegram: Telegram ID, @username, имя и фото. Пароля нет — мы не запрашиваем и не храним пароли.</p>"
+        + "<p><b>При входе.</b> Через Google: имя, адрес электронной почты и фото профиля. Через Telegram: Telegram ID, @username, имя и фото. По номеру телефона: сам номер — код подтверждения приходит через Telegram-бота. Пароля нет — мы не запрашиваем и не храним пароли. Сам код подтверждения не хранится в базе в открытом виде: там лежит только его необратимый хеш, который удаляется через 5 минут или сразу после первого использования.</p>"
         + "<p><b>В профиле.</b> Username, номер телефона, город, роль (водитель или грузоотправитель), тип машины, опыт, маршруты, типы грузов, короткий текст о себе и аватар. Всё это по желанию.</p>"
         + "<p><b>При размещении груза.</b> Маршрут и адреса, вес, объём, количество мест, тип груза, тип машины, дата, цена, комментарий, имя и номер телефона.</p>"
         + "<p><b>В объявлении о машине.</b> Марка, год, пробег, цена, город, технические данные, фотографии, имя и телефон продавца.</p>"
@@ -6628,11 +6733,12 @@
         + "<p><b>Никогда не публикуется:</b> ваш адрес электронной почты, документы верификации и переписка. Сообщения видны только вам и собеседнику.</p>"
         + "<p><b>В списке грузов</b> не показываются телефон, имя, комментарий и почта — только маршрут, груз и цена.</p>"
         + "<p><b>В объявлении о машине ваш номер телефона открыт намеренно</b> — в этом смысл объявления, покупатель должен вам позвонить. Если не хотите, чтобы номер был открыт, не размещайте объявление.</p>"
-        + "<p><b>Telegram-группа.</b> Размещённый груз публикуется в группе водителей YO'LDA: маршрут, данные груза, цена, ваше имя, комментарий и @username, если вы вошли через Telegram. Почта не публикуется. <b>После того как водитель возьмёт груз, ваш номер телефона появляется в том же сообщении группы</b> — то есть его могут увидеть и другие водители в группе. Учитывайте это.</p>"
+        + "<p><b>Уведомления в Telegram.</b> Если ваш Telegram-аккаунт привязан, бот присылает вам статус заказа и подходящие новые грузы; текст такого уведомления проходит через серверы Telegram. <b>Ваши грузы не публикуются ни в какой открытой группе или канале Telegram</b> — вся работа платформы происходит внутри приложения. Уведомления можно отключить в Настройках.</p>"
+        + "<p><b>Номер телефона.</b> В объявлении о грузе ваш номер не показывается другим. Он открывается только после того, как вы выбрали водителя, и только этим двум сторонам.</p>"
         + "<p><b>Администраторы</b> могут просматривать данные заказов и профиля для рассмотрения жалоб и споров, проверки документов и пресечения злоупотреблений.</p>"
         + "<h4>5. Документы верификации</h4><p>Фото документа отправляете только вы сами, и оно используется исключительно для проверки. Оно никогда не показывается другим пользователям и не передаётся третьим лицам. <b>После решения модератора — независимо от того, одобрено оно или отклонено, — фото документа немедленно удаляется.</b> В профиле остаётся только результат: проверено или нет.</p>"
         + "<h4>6. Что хранится на вашем устройстве</h4><p>В памяти браузера (localStorage) хранится только: признак входа, выбор языка и темы, настройки уведомлений, сохранённые объявления, последние поиски и отметка о закрытии предложения «установить приложение». Ничего из этого не отправляется на сервер и не используется для рекламы. Рекламных cookie нет.</p>"
-        + "<h4>7. Сторонние сервисы</h4><p>Сервис использует: Google (вход и шрифты), Telegram (вход, бот и уведомления), Vercel (хостинг), Upstash (база данных), OpenStreetMap и unpkg (карта). При открытии страницы ваш IP-адрес виден этим сервисам. Текст уведомления, отправленного через Telegram, проходит через серверы Telegram. У каждого из них своя политика конфиденциальности.</p>"
+        + "<h4>7. Сторонние сервисы</h4><p>Сервис использует: Google (вход и шрифты), Telegram (вход, код подтверждения и уведомления), Vercel (хостинг), Upstash (база данных), OpenStreetMap и unpkg (карта). При открытии страницы ваш IP-адрес виден этим сервисам. Текст уведомления, отправленного через Telegram, проходит через серверы Telegram. У каждого из них своя политика конфиденциальности.</p>"
         + "<h4>8. Где хранятся данные</h4><p>Данные хранятся в инфраструктуре Vercel и Upstash, на серверах за пределами Узбекистана. Закон Республики Узбекистан «О персональных данных» требует хранить персональные данные граждан в базах на территории страны; мы работаем над полным приведением в соответствие и обновим этот пункт, когда ситуация изменится.</p>"
         + "<h4>9. Сроки хранения</h4><p>Профиль и объявления хранятся, пока вы их не удалите или не запросите удаление аккаунта. История заказов сохраняется для разбора споров и статистики. Документы верификации удаляются сразу после проверки. Объявление о машине и своё сообщение вы можете удалить сами в любой момент.</p>"
         + "<h4>10. Безопасность</h4><p>Сайт работает только по HTTPS. Каждый запрос заново проверяется на сервере: кто вы — определяется не словом браузера, а подписью Google или Telegram. Вы можете менять только свои данные. Панель администратора защищена отдельным паролем и правами. Пароли мы не храним, потому что их нет вовсе. Тем не менее ни один сервис в интернете не является абсолютно безопасным.</p>"
@@ -6643,7 +6749,12 @@
     },
     en: {
       "nav.home": "Home", "nav.loads": "Loads", "nav.order": "Post a load", "nav.chat": "Messages", "nav.profile": "Profile",
-      "nav.telegramGroupAria": "Drivers group (Telegram)", "nav.trucks": "Vehicles", "nav.life": "Life",
+      "nav.trucks": "Vehicles", "nav.life": "Life",
+
+      "myload.title": "My load", "myload.back": "Back",
+      "myload.call": "Call", "myload.message": "Message",
+      "myload.empty": "You have no load in hand right now.",
+      "myload.browse": "Browse loads",
 
       "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a freight vehicle",
       "trucks.sub": "Freight transport only: trucks, vans, trailers and special equipment.",
@@ -6720,7 +6831,7 @@
       "home.ctaSend": "Post a load", "home.ctaGet": "Find a load", "home.liveLabel": "Live activity",
 
       "loads.eyebrow": "Loads", "loads.titleA": "Find the load", "loads.titleB": "that fits you",
-      "loads.sub": "Browse open orders, filter them, and take one in the Telegram group.",
+      "loads.sub": "Browse open orders, filter them, and send an offer with your price.",
       "loads.from": "From", "loads.to": "To", "loads.anyCity": "Any",
       "loads.qToday": "Today", "loads.qTomorrow": "Tomorrow", "loads.qFura": "Semi-trailer", "loads.qHeavy": "10+ tons",
       "loads.moreFilters": "More filters", "loads.quickPlaceholder": "City or cargo type…", "loads.cargoType": "Cargo type", "loads.truckType": "Truck type",
@@ -6766,6 +6877,10 @@
       "drive.now": "Current stage", "drive.updated": "Status updated",
       "drive.hint": "Tap the button at each stage — that is how the shipper sees where the load is.",
       "drive.done": "This load is closed. The shipper can leave you a rating.",
+      "drive.giveUp": "Give up this load", "drive.giveUpTitle": "Give up this load",
+      "drive.giveUpBody": "The load goes back to the open list and another driver can send an offer. The shipper is notified straight away.",
+      "drive.giveUpReason": "Reason (optional)", "drive.giveUpConfirm": "Give it up",
+      "drive.gaveUp": "You gave up the load",
       "offer.accept": "Accept", "offer.reject": "Decline",
       "offer.withdraw": "Withdraw offer",
       "offer.emptyOwner": "No offers yet. Drivers will send one once they see your load.",
@@ -6901,7 +7016,7 @@
       "order.eyebrow": "Order", "order.titleA": "Calculate and", "order.titleB": "send it",
       "order.sub": "Drivers see your load and send offers with a price. You compare them and choose.",
       "order.howTitle": "How it works",
-      "order.how1": "You fill out the form — the order appears in the drivers' group immediately.",
+      "order.how1": "You fill out the form — the order appears in the Loads list straight away and matching drivers are notified.",
       "order.how2": "Drivers send you <strong>offers</strong> — a price and when they can be there.",
       "order.how3": "You compare the offers and <strong>choose the driver yourself</strong> — then your numbers are shared.",
       "order.how4": "If something goes wrong (driver didn't show, couldn't agree on price) — let us know in the <button type=\"button\" class=\"link-btn\" data-tab-link=\"contact\">Contact</button> section.",
@@ -6964,7 +7079,7 @@
       "profile.roleLabel": "Who are you?", "profile.roleUnset": "Not set",
       "profile.editMainGroup": "Basic information", "profile.editContactGroup": "Contact",
       "profile.editVehicleGroup": "Vehicle", "profile.editAboutGroup": "Additional",
-      "profile.telegramHint": "Needed so the \"Verified\" badge shows in the group when you claim a load, and so a rating left after delivery lands on this profile.",
+      "profile.telegramHint": "Needed so notifications reach this account on Telegram. Optional — the app works fully without it.",
       "profile.bioLabel": "Short bio (optional)",
       "profile.usernameHint": "Username: 3-20 characters, Latin letters/digits/underscore (_) only — belongs to one person at a time.",
       "profile.saveBtn": "Save", "profile.signOutTitle": "Confirm sign out",
@@ -6977,7 +7092,7 @@
       "profile.avatarTooLarge": "Image is too large, pick a smaller one",
 
       "drivers.eyebrow": "Drivers", "drivers.titleA": "Find", "drivers.titleB": "cargo",
-      "drivers.sub": "Join the Telegram group — new loads appear there, tap the button to take one.",
+      "drivers.sub": "Find a load that suits you in the Loads tab and send an offer with your price.",
 
       "contact.sub": "Have a question or need help? Get in touch.",
       "help.title": "Help Center",
@@ -6992,7 +7107,7 @@
       "help.free.q": "Does it cost anything?",
       "help.free.a": "No. It is entirely free for now — signing up, posting a load and sending offers all carry no commission. If that changes, we will say so in advance.",
       "help.howpost.q": "How do I post a load?",
-      "help.howpost.a": "Tap «Post a load» at the bottom and fill in the form: where from, where to, what, and how many kilograms. The load appears in the Loads list and in the drivers' Telegram group.",
+      "help.howpost.a": "Tap «Post a load» at the bottom and fill in the form: where from, where to, what, and how many kilograms. The load appears in the Loads list straight away, and drivers whose saved search matches are notified.",
       "help.account.q": "Do I need an account?",
       "help.account.a": "Not to browse loads. To post a load, send an offer or write a message you sign in with Google or Telegram — there is no separate password to invent.",
       "help.offers.q": "How is a driver chosen?",
@@ -7002,13 +7117,13 @@
       "help.cancel.q": "Can I cancel an order?",
       "help.cancel.a": "Yes, any time before delivery. Tracking has two buttons: <b>Cancel the order</b> if you no longer need it, and <b>Release the driver</b> if you still need the load moved but this driver has gone quiet — the load then goes back out to other drivers.",
       "help.findload.q": "Where do I find loads?",
-      "help.findload.a": "In the Loads tab, filtered by route, weight and vehicle type. Save a search and you will be notified when a matching load appears. Loads also go to the Telegram group.",
+      "help.findload.a": "In the Loads tab, filtered by route, weight and vehicle type. Save a search and you will be notified when a matching load appears.",
       "help.sendoff.q": "How do I send an offer?",
       "help.sendoff.a": "On the load's page tap «Send an offer» and give your price and when you can be there. If the shipper picks you, you are notified and their number is revealed.",
       "help.status.q": "How do I update the status?",
-      "help.status.a": "Two ways: the button under the message in the Telegram group, or the load's page on the site. The button names the next stage itself each time — there is nothing to choose between.",
+      "help.status.a": "On the load's page: the button names the next stage itself each time — there is nothing to choose between. The shipper sees the change straight away.",
       "help.giveup.q": "Can I give up a load I took?",
-      "help.giveup.a": "Yes. There is a «Give up» button under the group message. The load is not lost â other drivers see it again, and the shipper is told straight away.",
+      "help.giveup.a": "Yes. There is a «Give up this load» button on the load's page. The load is not lost — it goes back to the open list, and the shipper is told straight away.",
       "help.price.q": "How is the price worked out?",
       "help.price.a": "The figure shown when you post is an estimate from distance and weight. The final price is whatever is in the offer you accept.",
       "help.hint.q": "Where does the «this route usually costs...» hint come from?",
@@ -7099,7 +7214,7 @@
       "about.title": "About Yolda",
       "about.body":
         "<h4>What is YO'LDA?</h4><p>YO'LDA is a marketplace that connects cargo owners and truck drivers directly, across Uzbekistan — no middleman, no extra fees.</p>"
-        + "<h4>How it works</h4><p>A shipper posts a load — it appears in the loads list and in the drivers' group. Drivers send offers with a price and an arrival time; the shipper compares them and chooses. Once chosen, the two sides can see each other's numbers.</p>"
+        + "<h4>How it works</h4><p>A shipper posts a load — it appears in the loads list and matching drivers are notified. Drivers send offers with a price and an arrival time; the shipper compares them and chooses. Once chosen, the two sides can see each other's numbers.</p>"
         + "<h4>Why free?</h4><p>Right now, both signing up and posting orders are completely free — no commission.</p>"
         + "<h4>Coverage</h4><p>Tashkent, Samarkand, Bukhara, and 10 other major cities across Uzbekistan.</p>"
         + "<h4>Contact</h4><p>+998 94 440 20 90 or @ziyodullayv (Telegram).</p>",
@@ -7115,7 +7230,7 @@
       "privacy.body":
         "<h4>1. General</h4><p>This privacy policy explains what personal data the YO'LDA platform (the \"Service\") collects, how it is used, who can see it, and how it is protected. By using the Service you agree to these terms. If you do not agree, do not use the Service.</p>"
         + "<h4>2. What data we collect</h4>"
-        + "<p><b>When you sign in.</b> With Google: name, email address and profile photo. With Telegram: Telegram ID, @username, name and photo. There is no password — we never ask for one and never store one.</p>"
+        + "<p><b>When you sign in.</b> With Google: name, email address and profile photo. With Telegram: Telegram ID, @username, name and photo. With a phone number: the number itself — the verification code is delivered by the Telegram bot. There is no password — we never ask for one and never store one. The verification code itself is never stored in plain form: only an irreversible hash of it is kept, and that is deleted after 5 minutes or as soon as it has been used once.</p>"
         + "<p><b>In your profile.</b> Username, phone number, city, role (driver or cargo owner), vehicle type, experience, routes, cargo types, a short bio and an avatar. All of it is optional.</p>"
         + "<p><b>When you post a load.</b> Route and addresses, weight, volume, number of items, cargo type, vehicle type, date, price, note, name and phone number.</p>"
         + "<p><b>In a vehicle listing.</b> Make, year, mileage, price, city, technical details, photos, seller name and phone number.</p>"
@@ -7130,11 +7245,12 @@
         + "<p><b>Never published:</b> your email address, your verification documents, and your conversations. Messages are visible only to you and the person you are talking to.</p>"
         + "<p><b>The load list</b> does not show phone number, name, note or email — only route, cargo and price.</p>"
         + "<p><b>In a vehicle listing your phone number is public on purpose</b> — that is the point of an ad, a buyer has to be able to call you. If you do not want your number public, do not post a listing.</p>"
-        + "<p><b>Telegram group.</b> A posted load is published to the YO'LDA drivers' group: route, cargo details, price, your name, your note, and your @username if you signed in with Telegram. Your email is not published. <b>Once a driver takes the load, your phone number appears in that same group message</b> — meaning other drivers in the group can see it too. Please be aware of this.</p>"
+        + "<p><b>Telegram notifications.</b> If your Telegram account is linked, the bot sends you order updates and matching new loads; the text of such a notification passes through Telegram's servers. <b>Your loads are not posted to any public Telegram group or channel</b> — all platform activity happens inside the app. Notifications can be turned off in Settings.</p>"
+        + "<p><b>Your phone number.</b> It is not shown to others on a load listing. It is revealed only after you have chosen a driver, and only to those two parties.</p>"
         + "<p><b>Administrators</b> may access order and profile data to handle reports and disputes, review verification documents, and stop abuse.</p>"
         + "<h4>5. Verification documents</h4><p>A document photo is submitted only by you and is used solely for verification. It is never shown to other users and never shared with third parties. <b>Once a moderator makes a decision — approved or rejected — the document photo is deleted immediately.</b> Only the outcome remains on your profile: verified or not.</p>"
         + "<h4>6. What is stored on your device</h4><p>Your browser's storage (localStorage) holds only: your sign-in token, language and theme choice, notification settings, saved listings, recent searches, and whether you dismissed the \"install the app\" prompt. None of it is sent to our server or used for advertising. There are no advertising cookies.</p>"
-        + "<h4>7. Third-party services</h4><p>The Service relies on: Google (sign-in and fonts), Telegram (sign-in, bot and notifications), Vercel (hosting), Upstash (database), OpenStreetMap and unpkg (map). When you open the page, your IP address is visible to these services. The text of a notification sent through Telegram passes through Telegram's servers. Each of them has its own privacy policy.</p>"
+        + "<h4>7. Third-party services</h4><p>The Service relies on: Google (sign-in and fonts), Telegram (sign-in, verification code and notifications), Vercel (hosting), Upstash (database), OpenStreetMap and unpkg (map). When you open the page, your IP address is visible to these services. The text of a notification sent through Telegram passes through Telegram's servers. Each of them has its own privacy policy.</p>"
         + "<h4>8. Where data is stored</h4><p>Data is stored on Vercel and Upstash infrastructure, on servers outside Uzbekistan. The Law of the Republic of Uzbekistan \"On Personal Data\" requires citizens' personal data to be stored in databases located within the country; we are working towards full compliance and will update this section when that changes.</p>"
         + "<h4>9. How long we keep it</h4><p>Your profile and listings are kept until you delete them or ask us to delete your account. Order history is retained for dispute resolution and statistics. Verification documents are deleted as soon as they are reviewed. You can delete a vehicle listing or your own message yourself at any time.</p>"
         + "<h4>10. Security</h4><p>The site is served over HTTPS only. Every request is re-verified on the server: who you are is decided by the signature issued by Google or Telegram, not by anything the browser claims. You can only change your own data. The admin panel is protected by a separate password and permissions. We store no passwords, because there are none. Even so, no service on the internet is absolutely secure.</p>"
@@ -8302,9 +8418,8 @@
   /* ============================================================
      Config
      ============================================================ */
-  // Serverless endpoint that forwards the order to Telegram.
+  // Yuk joylash va yuk bilan bog'liq barcha amallar shu endpointda.
   var API_ORDER = "/api/order";
-  // Public invite link to the drivers' group. Replace with your own.
 
   var CITIES = ["Toshkent","Samarqand","Buxoro","Andijon","Namangan","Nukus","Qarshi","Urganch","Farg'ona","Jizzax","Navoiy","Guliston","Termiz"];
 
@@ -10588,7 +10703,7 @@
       +   '<input type="text" id="fTelegramUsername" maxlength="32" placeholder="@username" value="'
       +     escapeHtml(p.telegramUsername ? "@"+p.telegramUsername : (telegramUser && telegramUser.username ? "@"+telegramUser.username : ""))
       +   '"></div>'
-      + '<p class="note" style="margin-top:-6px;" data-i18n="profile.telegramHint">Guruhda yukni olganda "Tasdiqlangan" belgingiz ko\'rinishi va yetkazgandan keyin bahoingiz shu profilga tushishi uchun kerak.</p>'
+      + '<p class="note" style="margin-top:-6px;" data-i18n="profile.telegramHint">Bildirishnomalar Telegram orqali shu hisobga kelishi uchun kerak. Ixtiyoriy — kiritmasangiz ham ilova to\'liq ishlaydi.</p>'
 
       + '<div class="edit-section-heading" data-i18n="profile.editVehicleGroup">Transport</div>'
       + '<div class="field"><label for="fVehicleType" data-i18n="order.truckTypeLabel">Mashina turi</label>'
@@ -13329,26 +13444,31 @@
     });
   }
 
-  function initTrucksSwipeBack(){
-    var tab = document.getElementById("tab-trucks");
+  /**
+   * Bo'limni chetga surib orqadagi bo'limga chiqish.
+   *
+   * @param tabId  suriladigan bo'limning id'si
+   * @param to     orqada turadigan va surilgach ochiladigan bo'lim
+   * @param ignore surish boshlanmaydigan joylar (CSS selektor)
+   */
+  function initTabSwipeBack(tabId, to, ignore){
+    var tab = document.getElementById(tabId);
     if(!tab) return;
     initSwipeBack(tab, {
-      /* Yonlamasiga suriladigan qatorlar (turkumlar, chiplar) va
-         bosiladigan narsalar o'z ishini qilsin. */
-      ignore: ".truck-category-row, .chip-row, button, a, input, select, textarea",
+      ignore: ignore,
       swiping: "tab-sliding",
-      under: function(){ return showTabUnder("home"); },
+      under: function(){ return showTabUnder(to); },
       close: function(release){
-        /* switchTab("home") tarix orqali qaytadi (history.back), ya'ni
+        /* switchTab ba'zan tarix orqali qaytadi (history.back), ya'ni
            bo'lim darhol almashmaydi. Surilgan holat shu paytgacha
-           saqlanadi — aks holda mashinalar bo'limi bir lahzaga joyiga
+           saqlanadi — aks holda suriladigan bo'lim bir lahzaga joyiga
            qaytib ko'rinib qolardi. */
-        switchTab("home");
+        switchTab(to);
         var done = function(){ release(); hideTabUnder(); };
-        if(visibleTabName() === "home"){ done(); return; }
+        if(visibleTabName() === to){ done(); return; }
         var tries = 0;
         var timer = setInterval(function(){
-          if(visibleTabName() === "home" || ++tries > 30){
+          if(visibleTabName() === to || ++tries > 30){
             clearInterval(timer);
             done();
           }
@@ -13356,6 +13476,15 @@
       },
       settle: hideTabUnder
     });
+  }
+
+  function initTrucksSwipeBack(){
+    /* Yonlamasiga suriladigan qatorlar (turkumlar, chiplar) va
+       bosiladigan narsalar o'z ishini qilsin. */
+    initTabSwipeBack("tab-trucks", "home",
+      ".truck-category-row, .chip-row, button, a, input, select, textarea");
+    // "Mening yukim" — "Yuklar" ustida turadi, orqaga ham shu yerga.
+    initTabSwipeBack("tab-myload", "loads", "button, a, input, select, textarea");
   }
 
   /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
@@ -14777,6 +14906,11 @@
       +   escapeHtml(info.nextLabel)+'</button>'
       + '<p class="drive-hint" data-i18n="drive.hint">Har bosqichda tugmani bosing — yuk beruvchi '
       +   'buyurtma qayerdaligini shu orqali ko\'radi.</p>'
+      /* Mashina buzilsa yoki reja o'zgarsa, haydovchi yukdan chiqa
+         olishi kerak — aks holda buyurtma unda qotib qoladi va yuk
+         beruvchi boshqa haydovchi topa olmaydi. */
+      + '<button type="button" class="btn ghost" id="btnGiveUp" style="margin-top:var(--s3);">'
+      +   icon("iconClose") + ' <span data-i18n="drive.giveUp">Yukdan voz kechaman</span></button>'
       + '</div>';
   }
 
@@ -14880,6 +15014,11 @@
     var btn = document.getElementById("btnAdvance");
     if(btn) btn.addEventListener("click", function(){ advanceOrder(d, btn); });
 
+    var giveUp = document.getElementById("btnGiveUp");
+    if(giveUp) giveUp.addEventListener("click", function(){
+      askGiveUp(d.code, function(){ openLoadDetail(d.code); });
+    });
+
     bindRatingPicker("rateOwner", function(review, rateBtn){
       submitRating({
         code: d.code, side: "OWNER",
@@ -14898,6 +15037,48 @@
         openLoadDetail(d.code);
       })
       .catch(function(err){ btn.disabled = false; toast(err.message, "", "info"); });
+  }
+
+  /* Yukdan voz kechish — ortga qaytmaydigan qadam, shuning uchun
+     tasdiq so'raladi. Sababi ixtiyoriy va yuk beruvchiga boradi:
+     "haydovchi yo'q bo'lib qoldi" degan savol tug'ilmasligi uchun. */
+  function askGiveUp(code, onDone){
+    Sheet.open({
+      title: t("drive.giveUpTitle") || "Yukdan voz kechaman",
+      html: '<p class="note" style="margin-top:0;" data-i18n="drive.giveUpBody">'
+        +   escapeHtml(t("drive.giveUpBody")
+            || "Yuk yana ochiq ro'yxatga qaytadi va boshqa haydovchi taklif yuborishi mumkin. "
+               + "Yuk beruvchiga darhol xabar boradi.")
+        + '</p>'
+        + '<div class="field"><label for="fGiveUpReason" data-i18n="drive.giveUpReason">Sabab (ixtiyoriy)</label>'
+        + '<input type="text" id="fGiveUpReason" maxlength="200"></div>'
+        + '<p class="note" id="giveUpNote"></p>',
+      footerHtml: '<button class="btn" id="btnGiveUpConfirm" data-i18n="drive.giveUpConfirm">Voz kechaman</button>',
+      onOpen: function(container){
+        var ok = (container && container.querySelector("#btnGiveUpConfirm"))
+          || document.getElementById("btnGiveUpConfirm");
+        if(!ok) return;
+        applyLang();
+        ok.addEventListener("click", function(){
+          var reasonEl = document.getElementById("fGiveUpReason");
+          var noteEl = document.getElementById("giveUpNote");
+          ok.disabled = true;
+          offerRequest("giveup", {
+            code: code,
+            reason: reasonEl ? reasonEl.value.trim() : ""
+          })
+            .then(function(){
+              Sheet.close();
+              toast(t("drive.gaveUp") || "Yukdan voz kechdingiz", "", "success");
+              if(onDone) onDone();
+            })
+            .catch(function(err){
+              ok.disabled = false;
+              if(noteEl){ noteEl.textContent = err.message; noteEl.style.color = "#DC2626"; }
+            });
+        });
+      }
+    });
   }
 
   function renderOffers(d, isOwner, offers, info){
@@ -15566,6 +15747,183 @@
     }
   }
 
+  /* ============================================================
+     "Mening yukim"
+     ------------------------------------------------------------
+     Haydovchi bir vaqtda bitta yukni olib ketadi — buni server
+     ham shunday ushlab turadi (?action=my-load bitta yuk beradi,
+     taklif qabul qilinayotganda esa band haydovchi rad etiladi).
+     Shuning uchun bu bo'lim ro'yxat emas: bitta yuk va u bilan
+     qilinadigan ishlar.
+
+     Yuk bitta bo'lgani uchun hammasi bitta so'rovda keladi va
+     oxirgi javob eslab qolinadi: bo'limga qayta kirganda ekran
+     darhol chiziladi, so'rov esa fonda ketadi. Yo'lda internet
+     yo'qolib tursa ham oldingi ma'lumot ko'rinib turadi.
+     ============================================================ */
+  var myLoad = null;
+  var MYLOAD_FRESH_MS = 15000;
+  var myLoadAt = 0;
+  var myLoadBusy = false;
+
+  /** Bosqichlar yo'lagi — kuzatish sahifasidagi bilan bitta ko'rinish. */
+  function myLoadStagesHtml(status){
+    var idx = TRACK_STATUS_ORDER.indexOf(status);
+    var parts = [];
+    TRACK_STATUS_ORDER.forEach(function(s, i){
+      var cls = i < idx ? "done" : (i === idx ? "current" : "todo");
+      parts.push('<div class="track-step track-step--'+cls+'"><span class="track-dot"></span>'
+        + '<span data-i18n="stage.'+s+'">'+escapeHtml(TRACK_STATUS_LABELS[s] || s)+'</span></div>');
+      if(i < TRACK_STATUS_ORDER.length - 1){
+        parts.push('<div class="track-line'+(i < idx ? ' track-line--done' : '')+'"></div>');
+      }
+    });
+    return '<div class="track-steps">'+parts.join("")+'</div>';
+  }
+
+  /** Yuk haqidagi faktlar: bo'sh maydon umuman chiqmaydi. */
+  function myLoadFactsHtml(L){
+    var cargo = cargoById(L.cargoType);
+    var cargoLabel = (L.cargoType === "OTHER" && L.customCargoLabel)
+      ? L.customCargoLabel
+      : (cargo ? cargo.label : L.cargoType);
+    var facts = [];
+    if(cargoLabel) facts.push([cargo && cargo.icon ? cargo.icon : "iconBox", cargoLabel]);
+    if(L.weightKg) facts.push(["iconWeight", formatNum(L.weightKg) + " kg"]);
+    if(L.volumeM3) facts.push(["iconBox", L.volumeM3 + " m³"]);
+    if(L.quantity) facts.push(["iconList", L.quantity + (L.quantityUnit ? " " + L.quantityUnit : "")]);
+    if(L.truckType) facts.push(["iconTruck", L.truckType]);
+    if(L.pickupDate) facts.push(["iconClock", formatLoadDate(L.pickupDate)]);
+    if(!facts.length) return "";
+    return '<div class="ml-facts">'
+      + facts.map(function(f){
+          return '<span class="ml-fact">'+icon(f[0])+' '+escapeHtml(String(f[1]))+'</span>';
+        }).join("")
+      + '</div>';
+  }
+
+  function myLoadHtml(L){
+    var who = L.owner || {};
+    var name = who.name || "—";
+    var contact = "";
+    if(who.phone || who.username){
+      contact = '<div class="ml-contact'+((who.phone && who.username) ? "" : " one")+'">'
+        + (who.phone
+            ? '<a class="btn" href="tel:'+escapeHtml(String(who.phone).replace(/[^\d+]/g, ""))+'">'
+              + icon("iconPhone")+' <span data-i18n="myload.call">Qo\'ng\'iroq</span></a>'
+            : "")
+        + (who.username
+            ? '<button type="button" class="btn ghost" id="btnMyLoadChat">'
+              + icon("iconChat")+' <span data-i18n="myload.message">Xabar</span></button>'
+            : "")
+        + '</div>';
+    }
+
+    return '<div class="ml-card">'
+      +   '<div class="ml-route">'+escapeHtml(L.fromCity)
+      +     ' <span class="arrow">→</span> '+escapeHtml(L.toCity)+'</div>'
+      +   '<div class="ml-sum">'
+      +     '<span class="ml-price">'+formatNum(L.amount)+' so\'m</span>'
+      +     (L.distanceKm ? '<span class="ml-km">'+formatNum(L.distanceKm)+' km</span>' : "")
+      +   '</div>'
+      +   myLoadFactsHtml(L)
+      +   addressLineHtml("iconArrowRight", L.fromAddress, L.fromPoint, "loads.from", "Qayerdan")
+      +   addressLineHtml("iconArrowRight", L.toAddress, L.toPoint, "loads.to", "Qayerga")
+      + '</div>'
+
+      + '<div class="ml-card">'
+      +   myLoadStagesHtml(L.status)
+      +   (L.nextStatus
+            ? '<button type="button" class="btn" id="btnMyLoadNext" style="width:100%;margin-top:var(--s3);" '
+              + 'data-i18n="next.'+L.status+'">'+escapeHtml(L.nextLabel)+'</button>'
+            : "")
+      + '</div>'
+
+      + '<div class="ml-card">'
+      +   '<div class="ml-who">'
+      +     '<span class="ml-ava" style="background:'+chatAvatarColor(name)+';">'
+      +       escapeHtml(chatInitials(name))+'</span>'
+      +     '<span class="ml-who-name">'+escapeHtml(name)
+      +       (who.verified ? ' '+icon("iconVerifiedBadge") : "")+'</span>'
+      +   '</div>'
+      +   contact
+      + '</div>'
+
+      + '<button type="button" class="btn ghost ml-danger" id="btnMyLoadGiveUp">'
+      +   icon("iconClose")+' <span data-i18n="drive.giveUp">Yukdan voz kechaman</span></button>';
+  }
+
+  function myLoadEmptyHtml(){
+    return '<div class="ml-card ml-empty">'
+      + '<svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg>'
+      + '<p data-i18n="myload.empty">Hozir olingan yukingiz yo\'q.</p>'
+      + '<button type="button" class="btn" data-tab-link="loads" data-i18n="myload.browse">'
+      +   'Yuklarni ko\'rish</button>'
+      + '</div>';
+  }
+
+  function bindMyLoad(){
+    var L = myLoad;
+    if(!L) return;
+
+    var next = document.getElementById("btnMyLoadNext");
+    if(next) next.addEventListener("click", function(){
+      next.disabled = true;
+      offerRequest("advance", { code: L.code })
+        .then(function(body){
+          toast(t("drive.updated") || "Holat yangilandi",
+                t("stage." + body.status) || body.statusLabel || "", "success");
+          loadMyLoad(true);
+        })
+        .catch(function(err){ next.disabled = false; toast(err.message, "", "info"); });
+    });
+
+    var chat = document.getElementById("btnMyLoadChat");
+    if(chat) chat.addEventListener("click", function(){
+      goToChatWith(L.owner && L.owner.username, "");
+    });
+
+    var up = document.getElementById("btnMyLoadGiveUp");
+    if(up) up.addEventListener("click", function(){
+      askGiveUp(L.code, function(){ loadMyLoad(true); });
+    });
+  }
+
+  /** Ekranga chizish: `myLoad` nima bo'lsa — shu. */
+  function paintMyLoad(){
+    var box = document.getElementById("myLoadBody");
+    if(!box) return;
+    box.innerHTML = myLoad ? myLoadHtml(myLoad) : myLoadEmptyHtml();
+    bindMyLoad();
+    applyLang();
+  }
+
+  function loadMyLoad(force){
+    if(myLoadBusy) return;
+    if(!force && myLoad !== null && (Date.now() - myLoadAt) < MYLOAD_FRESH_MS) return;
+    myLoadBusy = true;
+    fetch("/api/order?action=my-load&googleIdToken=" + encodeURIComponent(googleIdToken || "")
+          + "&telegramInitData=" + encodeURIComponent(telegramInitData || ""))
+      .then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        myLoadBusy = false;
+        if(!res.ok) return;                 // tarmoq xatosi oldingi ko'rinishni o'chirmaydi
+        myLoad = res.body.load || null;
+        myLoadAt = Date.now();
+        paintMyLoad();
+      })
+      .catch(function(){ myLoadBusy = false; });
+  }
+
+  function renderMyLoad(){
+    var box = document.getElementById("myLoadBody");
+    if(!box) return;
+    if(myLoad !== null) paintMyLoad();
+    // Birinchi kirish: bo'sh ekran o'rniga shakl ko'rinadi.
+    else showSkeleton(box, '<div class="ml-skel"></div><div class="ml-skel"></div>');
+    loadMyLoad(false);
+  }
+
   function submitReport(){
     var note = document.getElementById("reportNote");
     var btn = document.getElementById("btnSendReport");
@@ -16180,9 +16538,9 @@
   function trackAction(action, code) {
     var titles = {
       cancel: { title: "Buyurtmani bekor qilish", btn: "Bekor qilish",
-                body: "Buyurtma bekor qilinadi va guruhdan olib tashlanadi. Buni ortga qaytarib bo'lmaydi." },
+                body: "Buyurtma bekor qilinadi va ochiq yuklar ro'yxatidan olib tashlanadi. Buni ortga qaytarib bo'lmaydi." },
       release: { title: "Haydovchini bo'shatish", btn: "Bo'shatish",
-                 body: "Yuk yana guruhga chiqadi va boshqa haydovchi olishi mumkin. Buyurtmangiz saqlanadi." }
+                 body: "Yuk yana ochiq ro'yxatga chiqadi va boshqa haydovchi taklif yuborishi mumkin. Buyurtmangiz saqlanadi." }
     }[action];
 
     Sheet.open({
@@ -16214,7 +16572,7 @@
               if(!res.ok) throw new Error(res.body.error || "Xato yuz berdi");
               Sheet.close();
               toast(action === "cancel" ? "Buyurtma bekor qilindi" : "Haydovchi bo'shatildi",
-                action === "cancel" ? "" : "Yuk yana guruhga chiqdi", "success");
+                action === "cancel" ? "" : "Yuk yana ochiq ro'yxatda", "success");
               submitTrack();
             })
             .catch(function(err){
@@ -16529,7 +16887,7 @@
      Tab navigation — the whole app is 5 screens (bottom nav),
      switched here instead of scrolling through one long page.
      ============================================================ */
-  var TABS = ["home", "order", "loads", "trucks", "life", "chat", "profile", "contact"];
+  var TABS = ["home", "order", "loads", "myload", "trucks", "life", "chat", "profile", "contact"];
   /**
    * Tanlangan bo'lim ostidagi "tomchi"ni o'z joyiga sirg'atadi.
    * O'lcham CSS'da emas, shu yerda hisoblanadi: tugmalar eni tilga
@@ -16648,22 +17006,52 @@
      ham qamrab olinadi. setPointerCapture bo'lmasa, barmoq panel
      chetidan chiqib ketganda harakat yo'qolardi. */
   /* ============================================================
-     "Life" katagini bosib turganda chiqadigan bo'lim tanlovi.
-     Katak ikki bo'limni ushlab turadi: Xabarlar va Life. Oddiy
-     bosishda Life ochiladi (ilgari ham shunday edi), bosib turilsa
-     esa ikkisidan birini tanlash mumkin.
+     Katakni bosib turganda chiqadigan bo'lim tanlovi.
+     ------------------------------------------------------------
+     Pastdagi panelda joy kam, bo'lim esa undan ko'p. Shuning uchun
+     ba'zi kataklar ikkitasini ushlab turadi: oddiy bosishda asosiy
+     bo'lim ochiladi, yarim soniya ushlab turilsa — ikkisidan birini
+     tanlash mumkin.
+
+       Life   → Xabarlar / Life
+       Yuklar → Yuklar / Mening yukim
+
+     Qaysi bo'limlar ekani katakning `data-nav-pick` sifatida
+     yozilgan; ro'yxatning o'zi shu yerda chiziladi, ya'ni yangi
+     juftlik qo'shish uchun faqat shu atributni yozish kifoya.
      ============================================================ */
+  var NAV_PICK_ITEMS = {
+    chat:   { icon: "iconChat",       i18n: "nav.chat",     label: "Xabarlar" },
+    life:   { icon: "iconHeadphones", i18n: "nav.life",     label: "Life" },
+    loads:  { icon: "iconSearch",     i18n: "nav.loads",    label: "Yuklar" },
+    myload: { icon: "iconTruck",      i18n: "myload.title", label: "Mening yukim" }
+  };
+
   function closeNavPick(){
     var pick = document.getElementById("navPick");
     if(!pick || pick.hidden) return;
     pick.hidden = true;
-    var owner = document.querySelector(".bn-item[data-nav-pick]");
-    if(owner) owner.setAttribute("aria-expanded", "false");
+    document.querySelectorAll(".bn-item[data-nav-pick]").forEach(function(b){
+      b.setAttribute("aria-expanded", "false");
+    });
   }
 
   function openNavPick(item){
     var pick = document.getElementById("navPick");
     if(!pick || !item) return;
+
+    var tabs = String(item.getAttribute("data-nav-pick") || "")
+      .split(",").map(function(s){ return s.trim(); })
+      .filter(function(s){ return NAV_PICK_ITEMS[s]; });
+    if(tabs.length < 2) return;
+    pick.innerHTML = tabs.map(function(name){
+      var d = NAV_PICK_ITEMS[name];
+      return '<button type="button" class="nav-pick-item" data-pick-tab="'+name+'" role="menuitem">'
+        + '<svg class="ic-svg" aria-hidden="true"><use href="#'+d.icon+'"/></svg>'
+        + '<span data-i18n="'+d.i18n+'">'+escapeHtml(t(d.i18n) || d.label)+'</span>'
+        + '</button>';
+    }).join("");
+
     pick.hidden = false;
     item.setAttribute("aria-expanded", "true");
     // Katakning tepasida, ekran chetidan chiqib ketmaydigan qilib.
@@ -17031,7 +17419,8 @@
     /* Mehmon yuk joylay olmaydi, profil va xabarlar ham hisobga bog'liq —
        bu bo'limlar o'rniga kirish oynasi ochiladi va kirgach o'sha
        bo'limga o'tiladi. */
-    if(!isSignedIn() && (name === "order" || name === "profile" || name === "chat")){
+    if(!isSignedIn() && (name === "order" || name === "profile" || name === "chat"
+                         || name === "myload")){
       promptSignIn(name);
       return;
     }
@@ -17067,8 +17456,13 @@
       animateTabIn(document.getElementById("tab-" + name),
                    TABS.indexOf(name) > TABS.indexOf(prev) ? 1 : -1);
     }
+    /* "Mening yukim" pastdagi panelda alohida katak emas — u "Yuklar"
+       katagini bosib turganda ochiladi. Shuning uchun u ochiq turganda
+       ham "Yuklar" yorqin qoladi: aks holda tomchi hech qayerda
+       turmasdi va odam qayerda ekanini bilmasdi. */
+    var navName = name === "myload" ? "loads" : name;
     document.querySelectorAll(".bn-item").forEach(function(b){
-      b.classList.toggle("active", b.getAttribute("data-tab-link") === name);
+      b.classList.toggle("active", b.getAttribute("data-tab-link") === navName);
     });
     // Boshqa bo'limga o'tilsa suhbat to'liq ekranda qolib ketmasin.
     if(name !== "chat") closeChatFullscreen();
@@ -17083,6 +17477,9 @@
     }
     if(name === "profile") loadTabIfStale("profile", renderProfile);
     if(name === "loads") loadTabIfStale("loads", renderLoadsTab);
+    // "Mening yukim" o'zini keshlaydi (myLoad) — qayta kirishda darhol
+    // chiziladi, yangilanish fonda ketadi.
+    if(name === "myload") renderMyLoad();
     // Xabarlar o'zini boshqacha tutadi: ro'yxat har safar chiziladi,
     // lekin keshdan — ya'ni darhol. So'rov esa fonda ketadi
     // (loadChatInbox), ekranni o'chirmaydi.
@@ -17147,7 +17544,7 @@
     Sheet.open({
       title: t("order.howTitle") || "Qanday ishlaydi?",
       html: '<ol class="how-steps">'
-        + '<li data-i18n="order.how1">Formani to\'ldirib yuborasiz — buyurtma darhol haydovchilar guruhiga tushadi.</li>'
+        + '<li data-i18n="order.how1">Formani to\'ldirib yuborasiz — buyurtma darhol «Yuklar» ro\'yxatiga tushadi va mos haydovchilarga xabar boradi.</li>'
         + '<li data-i18n="order.how2">Haydovchilar sizga <strong>taklif</strong> yuboradi — narx va yetib borish vaqti bilan.</li>'
         + '<li data-i18n="order.how3">Siz takliflarni taqqoslab, <strong>haydovchini o\'zingiz tanlaysiz</strong> — undan keyin raqamlaringiz ochiladi.</li>'
         + '<li data-i18n="order.how4">Muammo chiqsa (haydovchi kelmadi, narx kelishilmadi) — <button type="button" class="link-btn" data-tab-link="contact">Aloqa</button> bo\'limidan yozing.</li>'

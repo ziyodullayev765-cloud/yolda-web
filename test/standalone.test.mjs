@@ -198,5 +198,174 @@ console.log('\n== tekshiruv hali ham ishlaydi ==');
   check('kirmagan odam yuk joylay olmaydi', anon.statusCode === 401, anon.statusCode);
 }
 
+/* ============================================================
+   Haydovchi yukdan voz kechishi ilovaning o'zida ishlaydi.
+
+   Ilgari bu faqat Telegram guruhidagi xabar ostidagi tugma
+   edi. Guruh olib tashlangach imkoniyat yo'qolmasligi kerak:
+   quyidagi tekshiruvlar aynan shuni isbotlaydi. */
+console.log('\n== haydovchi yukdan voz kechadi (ilovada) ==');
+{
+  const made = await postOrder(newLoad({ toCity: 'Navoiy', phone: '+998901114455' }));
+  const code = made.payload.code;
+
+  /* Haydovchini qo'lda biriktiramiz: taklif/qabul zanjiri bu
+     to'plamning mavzusi emas, bizga faqat "yuk haydovchida"
+     holati kerak. */
+  const attach = (status) => {
+    const o = JSON.parse(store.get(`order:${code}`));
+    o.status = status;
+    o.driver = { identity: 'driver@example.com', name: 'Bekzod', telegramId: null };
+    store.set(`order:${code}`, JSON.stringify(o));
+  };
+  const giveUp = async (body) => {
+    const res = makeRes();
+    await order({ method: 'POST', query: { action: 'giveup' }, body }, res);
+    return res;
+  };
+
+  attach('ON_THE_WAY');
+
+  const stranger = await giveUp({ googleIdToken: 'nobody@example.com', code });
+  check('begona odam voz kecha olmaydi', stranger.statusCode === 403,
+    { status: stranger.statusCode, body: stranger.payload });
+
+  const anon = await giveUp({ code });
+  check('kirmagan odam voz kecha olmaydi', anon.statusCode === 401, anon.statusCode);
+
+  /* Egasining o'zi ham bu yo'ldan yurmaydi — unda `release` bor. */
+  const owner = await giveUp({ googleIdToken: 'shipper@example.com', code });
+  check('yuk egasi haydovchi yo\'lidan yurmaydi', owner.statusCode === 403, owner.statusCode);
+
+  outgoing = [];
+  const res = await giveUp({
+    googleIdToken: 'driver@example.com', code, reason: 'Mashina buzildi',
+  });
+  check('haydovchi voz kechdi', res.statusCode === 200,
+    { status: res.statusCode, body: res.payload });
+
+  const after = JSON.parse(store.get(`order:${code}`));
+  check('yuk yana ochiq (NEW)', after.status === 'NEW', after.status);
+  check('haydovchi ajratildi', after.driver === null, after.driver);
+  check('jurnalda haydovchi voz kechgani yozildi',
+    after.releases && after.releases.length === 1 && after.releases[0].by === 'DRIVER',
+    after.releases);
+  check('sabab saqlandi', after.releases[0].reason === 'Mashina buzildi', after.releases[0]);
+  check('voz kechishda ham Telegramga so\'rov ketmadi',
+    outgoing.filter((o) => o.url.includes('api.telegram.org')).length === 0,
+    outgoing.map((o) => o.url));
+
+  /* Ikkinchi marta bosilsa — endi haydovchi yo'q, 403. */
+  const twice = await giveUp({ googleIdToken: 'driver@example.com', code });
+  check('ikkinchi marta voz kechib bo\'lmaydi', twice.statusCode === 403, twice.statusCode);
+
+  /* Yetkazilgandan keyin ortga yo'l yo'q. */
+  attach('DELIVERED');
+  const late = await giveUp({ googleIdToken: 'driver@example.com', code });
+  check('yetkazilgan yukdan voz kechilmaydi', late.statusCode === 409,
+    { status: late.statusCode, body: late.payload });
+}
+
+/* ============================================================
+   Bir haydovchi — bir yuk.
+
+   "Mening yukim" bo'limi aynan shu qoidaga tayanadi: bo'limda
+   bitta yuk turadi, chunki haydovchida ham bitta yuk bo'ladi.
+   Quyidagilar shu qoidani va bo'limni to'ldiradigan so'rovni
+   tekshiradi. */
+console.log('\n== bir haydovchi bir yuk olib ketadi ==');
+{
+  const DRIVER = 'driver2@example.com';
+  store.set(`profile:${DRIVER}`, JSON.stringify({
+    displayName: 'Sardor', phone: '+998901234000', username: 'sardor',
+  }));
+  store.set('profile:shipper@example.com', JSON.stringify({
+    displayName: 'Alisher Qodirov', username: 'alisher', verified: true,
+  }));
+
+  const call = async (action, body, method = 'POST') => {
+    const res = makeRes();
+    const req = method === 'GET'
+      ? { method: 'GET', query: { action, ...body }, body: {} }
+      : { method: 'POST', query: { action }, body };
+    await order(req, res);
+    return res;
+  };
+
+  // Ikkita yuk, bitta yuk beruvchidan.
+  const a = await postOrder(newLoad({ toCity: 'Qarshi', phone: '+998901230001' }));
+  const b = await postOrder(newLoad({ toCity: 'Termiz', phone: '+998901230002' }));
+  check('ikkita yuk joylandi', a.statusCode === 200 && b.statusCode === 200,
+    { a: a.statusCode, b: b.statusCode });
+  const codeA = a.payload.code, codeB = b.payload.code;
+
+  // Haydovchi ikkalasiga ham taklif yuboradi — bu ruxsat etilgan.
+  const offA = await call('offer', { googleIdToken: DRIVER, code: codeA, price: 900000 });
+  const offB = await call('offer', { googleIdToken: DRIVER, code: codeB, price: 950000 });
+  check('ikkala yukka ham taklif yuborildi',
+    offA.statusCode === 200 && offB.statusCode === 200,
+    { a: offA.statusCode, b: offB.statusCode });
+
+  // Birinchisi qabul qilinadi.
+  const ok = await call('accept-offer', {
+    googleIdToken: 'shipper@example.com', id: offA.payload.offer.id,
+  });
+  check('birinchi taklif qabul qilindi', ok.statusCode === 200,
+    { status: ok.statusCode, body: ok.payload });
+
+  // ASOSIY TASDIQ: ikkinchisi endi qabul qilinmaydi.
+  const busy = await call('accept-offer', {
+    googleIdToken: 'shipper@example.com', id: offB.payload.offer.id,
+  });
+  check('band haydovchining ikkinchi taklifi qabul qilinmadi', busy.statusCode === 409,
+    { status: busy.statusCode, body: busy.payload });
+  check('sabab tushunarli aytildi',
+    Boolean(busy.payload && /boshqa yukni/.test(busy.payload.error)), busy.payload);
+  check('ikkinchi yuk hali ham ochiq',
+    JSON.parse(store.get(`order:${codeB}`)).status === 'NEW',
+    JSON.parse(store.get(`order:${codeB}`)).status);
+
+  /* ---- "Mening yukim" bitta yukni to'liq beradi ---- */
+  const mine = await call('my-load', { googleIdToken: DRIVER }, 'GET');
+  check('my-load javob berdi', mine.statusCode === 200, mine.statusCode);
+  const L = mine.payload && mine.payload.load;
+  check('aynan qabul qilingan yuk qaytdi', Boolean(L) && L.code === codeA,
+    L && L.code);
+  check('yo\'nalish bor', Boolean(L) && L.fromCity === 'Toshkent' && L.toCity === 'Qarshi', L);
+  check('kelishilgan narx qaytdi', Boolean(L) && L.amount === 900000 && L.agreed === true,
+    L && { amount: L.amount, agreed: L.agreed });
+  check('hozirgi bosqich va keyingi qadam bor',
+    Boolean(L) && L.status === 'DRIVER_FOUND' && L.nextStatus === 'PICKING_UP',
+    L && { status: L.status, next: L.nextStatus });
+  check('yuk beruvchining telefoni biriktirilgan haydovchiga ochiq',
+    Boolean(L && L.owner) && L.owner.phone === '+998901230001', L && L.owner);
+  check('yuk beruvchining ismi profildan olindi',
+    Boolean(L && L.owner) && L.owner.name === 'Alisher Qodirov', L && L.owner);
+
+  /* Begonaga hech narsa ko'rinmaydi. */
+  const stranger = await call('my-load', { googleIdToken: 'nobody@example.com' }, 'GET');
+  check('begona odamda yuk yo\'q', stranger.statusCode === 200 && stranger.payload.load === null,
+    stranger.payload);
+  const anon = await call('my-load', {}, 'GET');
+  check('kirmagan odamga berilmaydi', anon.statusCode === 401, anon.statusCode);
+
+  /* ---- Haydovchi bo'shagach ikkinchi yukni olishi mumkin ---- */
+  const up = await call('giveup', { googleIdToken: DRIVER, code: codeA });
+  check('haydovchi birinchi yukdan voz kechdi', up.statusCode === 200, up.statusCode);
+
+  const empty = await call('my-load', { googleIdToken: DRIVER }, 'GET');
+  check('"Mening yukim" bo\'shadi', empty.payload.load === null, empty.payload);
+
+  const second = await call('accept-offer', {
+    googleIdToken: 'shipper@example.com', id: offB.payload.offer.id,
+  });
+  check('bo\'shagach ikkinchi taklif qabul qilindi', second.statusCode === 200,
+    { status: second.statusCode, body: second.payload });
+  const now = await call('my-load', { googleIdToken: DRIVER }, 'GET');
+  check('endi "Mening yukim" ikkinchi yukni ko\'rsatadi',
+    Boolean(now.payload.load) && now.payload.load.code === codeB,
+    now.payload.load && now.payload.load.code);
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

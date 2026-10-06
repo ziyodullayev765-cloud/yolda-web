@@ -17,7 +17,7 @@
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush, kvGet, kvSet, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
+import { kvPush, kvGet, kvSet, kvDel, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import {
   CARGO, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
@@ -1179,6 +1179,125 @@ const listMyOffers = async (req, res) => {
   return res.status(200).json({ ok: true, offers: items });
 };
 
+/* ============================================================
+   "Mening yukim" — haydovchining bitta faol yuki
+   ------------------------------------------------------------
+   Haydovchi bir vaqtda faqat BITTA yukni olib ketadi. Shuning
+   uchun uning faol yuki alohida kalitda turadi: shu kalit ham
+   "Mening yukim" bo'limini bir o'qishda to'ldiradi, ham ikkinchi
+   yukni olishga yo'l qo'ymaydi.
+
+   Kalit yo'q bo'lsa (taklif bu o'zgarishdan oldin qabul qilingan
+   bo'lsa) haydovchining takliflari bo'yicha qidiriladi va kalit
+   o'sha joyda tiklanadi — ya'ni eski yozuvlar uchun alohida
+   ko'chirish ishi kerak emas.
+   ============================================================ */
+const ACTIVE_DRIVER_STATUSES = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
+const activeLoadKey = (identity) => `driverLoad:${identity}`;
+
+/** Yuk haqiqatda shu haydovchida va hali yo'ldami? */
+const stillDriving = (order, identity) => Boolean(
+  order && order.driver && order.driver.identity === identity
+  && ACTIVE_DRIVER_STATUSES.includes(order.status || 'NEW'),
+);
+
+/**
+ * Haydovchining faol yuki: `{ code, order }` yoki `null`.
+ * Eskirgan kalitni o'zi tozalaydi, yo'qolganini o'zi tiklaydi.
+ */
+const findActiveLoad = async (identity) => {
+  const pointed = await kvGet(activeLoadKey(identity));
+  if (pointed) {
+    const order = await readJson(`order:${pointed}`, null);
+    if (stillDriving(order, identity)) return { code: pointed, order };
+    // Yuk yakunlangan yoki boshqasiga o'tgan — kalit eskirgan.
+    await kvDel(activeLoadKey(identity)).catch(() => {});
+  }
+
+  // Zaxira yo'l: haydovchining o'z takliflari bo'yicha qidirish.
+  const ids = await kvRange(driverOffersKey(identity), 0, 49);
+  const offers = (await Promise.all(ids.map((id) => readOffer(id))))
+    .filter((o) => o && o.driverIdentity === identity && o.status === 'ACCEPTED');
+  for (const offer of offers) {
+    const order = await readJson(`order:${offer.orderCode}`, null);
+    if (stillDriving(order, identity)) {
+      await kvSet(activeLoadKey(identity), offer.orderCode).catch(() => {});
+      return { code: offer.orderCode, order };
+    }
+  }
+  return null;
+};
+
+/**
+ * GET ?action=my-load — "Mening yukim" bo'limining yagona manbasi.
+ *
+ * Bir so'rovda hammasi qaytadi: yo'nalish, yuk, kelishilgan narx,
+ * hozirgi bosqich, keyingi tugmaning nomi va yuk beruvchining
+ * aloqasi. Shuning uchun bo'lim ochilganda ikkinchi so'rov kerak
+ * emas va ekranda "yuklanmoqda" uzoq turmaydi.
+ *
+ * Yuk beruvchining telefon raqami faqat SHU yerda va faqat
+ * biriktirilgan haydovchiga beriladi — `?action=detail` uni umuman
+ * qaytarmaydi, ya'ni yukni ko'rgan boshqa odam raqamni ko'rmaydi.
+ */
+const getMyLoad = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const found = await findActiveLoad(identity);
+  if (!found) return res.status(200).json({ ok: true, load: null });
+
+  const { code, order } = found;
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  let owner = { name: order.name || '', phone: order.phone || '', username: null, verified: false };
+  if (ownerKey) {
+    const profile = await readJson(`profile:${ownerKey}`, null);
+    if (profile) {
+      owner = {
+        name: profile.displayName || order.name || '',
+        phone: order.phone || profile.phone || '',
+        username: profile.username || null,
+        verified: Boolean(profile.verified),
+      };
+    }
+  }
+
+  const next = nextStatus(order.status);
+  return res.status(200).json({
+    ok: true,
+    load: {
+      code,
+      fromCity: order.fromCity,
+      toCity: order.toCity,
+      fromAddress: order.fromAddress || '',
+      toAddress: order.toAddress || '',
+      fromPoint: order.fromPoint || null,
+      toPoint: order.toPoint || null,
+      cargoType: order.cargoType,
+      customCargoLabel: order.customCargoLabel || '',
+      weightKg: order.weightKg,
+      volumeM3: order.volumeM3 || null,
+      quantity: order.quantity || null,
+      quantityUnit: order.quantityUnit || '',
+      truckType: order.truckType || '',
+      pickupDate: order.pickupDate || '',
+      distanceKm: order.distanceKm,
+      // Kelishilgan narx bor bo'lsa — aynan u; yo'q bo'lsa e'londagi narx.
+      amount: order.agreedAmount || order.amount,
+      agreed: Boolean(order.agreedAmount),
+      comment: order.comment || '',
+      status: order.status || 'NEW',
+      statusLabel: STATUS_LABELS[order.status || 'NEW'] || '',
+      nextStatus: next,
+      nextLabel: next ? NEXT_STATUS_BUTTON[order.status] || '' : '',
+      owner,
+    },
+  });
+};
+
 /**
  * GET ?action=my-loads — yuk beruvchining o'zi joylagan buyurtmalari.
  *
@@ -1278,6 +1397,8 @@ const advanceOrder = async (req, res) => {
   await invalidateLoadsCache();
 
   if (next === 'DELIVERED') {
+    // Yuk yetkazildi — haydovchi bo'shadi, "Mening yukim" bo'shaydi.
+    await kvDel(activeLoadKey(identity)).catch(() => {});
     try {
       const key = `profile:${identity}`;
       const profile = JSON.parse((await kvGet(key)) || '{}');
@@ -1352,6 +1473,19 @@ const decideOfferCore = async (identity, offerId, accept) => {
     return { status: 409, body: { error: 'Bu buyurtmada allaqachon haydovchi bor' } };
   }
 
+  /* Bir haydovchi — bir yuk. Haydovchi hozir boshqa yukni olib
+     ketayotgan bo'lsa, taklifi qabul qilinmaydi: aks holda u ikkita
+     yukni bir vaqtda "olib ketayotgan" bo'lib qolardi va ikkinchi
+     yuk beruvchi buni bilmasdan kutib o'tirardi. Taklif PENDING
+     holida qoladi — haydovchi bo'shagach egasi yana urinib ko'radi. */
+  const busy = await findActiveLoad(offer.driverIdentity);
+  if (busy && busy.code !== offer.orderCode) {
+    return {
+      status: 409,
+      body: { error: 'Bu haydovchi hozir boshqa yukni olib ketyapti. Bo‘shagach taklifini qabul qilishingiz mumkin.' },
+    };
+  }
+
   const accepted = { ...offer, status: 'ACCEPTED', updatedAt: Date.now() };
   if (!(await kvSet(offerKey(offer.id), JSON.stringify(accepted)))) {
     return { status: 500, body: { error: 'Saqlanmadi' } };
@@ -1375,6 +1509,8 @@ const decideOfferCore = async (identity, offerId, accept) => {
   }
   // Taklif qabul qilindi — yuk ochiq yuklar ro'yxatidan tushadi.
   await invalidateLoadsCache();
+  // Haydovchining "Mening yukim" bo'limi shu kalitga qaraydi.
+  await kvSet(activeLoadKey(offer.driverIdentity), offer.orderCode).catch(() => {});
 
   // Qolgan kutilayotgan takliflar avtomatik rad etiladi — yuk band.
   const others = (await readOrderOffers(offer.orderCode))
@@ -1449,21 +1585,26 @@ const withdrawOffer = async (req, res) => {
    "Haydovchi topildi" holatida abadiy qotib qolardi: yuk beruvchi
    hech narsa qila olmasdi va boshqa haydovchi ham ololmasdi.
 
-   Ikkita chiqish yo'li:
+   Uchta chiqish yo'li:
      - bekor qilish  — yuk endi kerak emas (CANCELLED, oxirgi holat);
      - bo'shatish     — yuk kerak, lekin bu haydovchi javob bermayapti
-                        (NEW ga qaytadi va guruhda yana ko'rinadi).
+                        (NEW ga qaytadi va ro'yxatda yana ko'rinadi);
+     - voz kechish    — haydovchining o'zi yukdan chiqadi (xuddi shunday
+                        NEW ga qaytadi).
 
-   Ikkalasini ham yuk egasi qiladi; haydovchi o'zi voz kechishi
-   api/telegram.js dagi tugma orqali.
+   Birinchi ikkitasini yuk egasi qiladi, uchinchisini haydovchi.
    ============================================================ */
 const CANCELLABLE = ['NEW', 'DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
 const RELEASABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
+/* Yo'lda ketayotganda ham voz kechish mumkin: mashina buzilib
+   qolsa, yuk egasi buni bilishi va boshqa haydovchi izlashi kerak.
+   Yetkazilgandan keyin esa ortga yo'l yo'q. */
+const GIVEUPABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
 
 /**
  * Buyurtmani faqat egasi o'zgartira oladi. Telefon raqami yetarli emas:
- * haydovchi guruhda uni ko'rgan bo'ladi, ya'ni u boshqa odamning
- * buyurtmasini bekor qila olardi.
+ * yuk sahifasini ko'rgan har kim uni biladi, ya'ni raqamga tayansak
+ * begona odam boshqa kishining buyurtmasini bekor qila olardi.
  */
 const loadOwnOrder = async (req, res, allowedStatuses) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
@@ -1529,6 +1670,10 @@ const cancelOrder = async (req, res) => {
   // Holat o'zgardi — ochiq yuklar ro'yxati endi to'g'ri emas.
   await invalidateLoadsCache();
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  // Yuk yo'q bo'ldi — haydovchi bo'shadi.
+  if (hadDriver && hadDriver.identity) {
+    await kvDel(activeLoadKey(hadDriver.identity)).catch(() => {});
+  }
 
   if (hadDriver && hadDriver.telegramId) {
     await notifyUser(`tg:${hadDriver.telegramId}`, {
@@ -1568,6 +1713,10 @@ const releaseDriver = async (req, res) => {
   // Holat o'zgardi — ochiq yuklar ro'yxati endi to'g'ri emas.
   await invalidateLoadsCache();
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  // Bo'shatilgan haydovchi endi yangi yuk olishi mumkin.
+  if (previousDriver && previousDriver.identity) {
+    await kvDel(activeLoadKey(previousDriver.identity)).catch(() => {});
+  }
 
   if (previousDriver && previousDriver.telegramId) {
     await notifyUser(`tg:${previousDriver.telegramId}`, {
@@ -1578,6 +1727,74 @@ const releaseDriver = async (req, res) => {
         + (reason ? `\n\nSabab: ${esc(reason)}` : ''),
     });
   }
+
+  return res.status(200).json({ ok: true, status: order.status });
+};
+
+/**
+ * POST ?action=giveup — olgan yukdan haydovchining o'zi voz kechadi.
+ *
+ * Ilgari bu faqat Telegram guruhidagi xabar ostidagi tugma orqali
+ * bo'lardi. Guruh olib tashlangach imkoniyat yo'qolmasligi uchun
+ * bir xil mantiq ilovaning o'ziga ko'chdi: yuk NEW ga qaytadi,
+ * kim voz kechgani `releases` ga yoziladi va yuk egasiga darhol
+ * xabar boradi — ya'ni u boshqa haydovchi izlay boshlashi mumkin.
+ *
+ * Huquq tekshiruvi `advanceOrder` dagi bilan bir xil: buyurtma kodi
+ * yetarli emas, faqat aynan shu yukka biriktirilgan haydovchi.
+ */
+const giveUpOrder = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const code = String(body.code || '').trim().toUpperCase();
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  if (!order.driver || order.driver.identity !== identity) {
+    return res.status(403).json({ error: 'Bu buyurtma sizga tegishli emas' });
+  }
+  if (!GIVEUPABLE.includes(order.status || 'NEW')) {
+    return res.status(409).json({ error: 'Bu amal endi mavjud emas' });
+  }
+
+  const previousDriver = order.driver;
+  const reason = String(body.reason || '').trim().slice(0, 200);
+  // Kim va nechchi marta voz kechgani yozib boriladi — bo'shatish
+  // bilan bitta jurnalda, `by` maydoni ikkisini ajratib turadi.
+  order.releases = Array.isArray(order.releases) ? order.releases : [];
+  order.releases.push({
+    at: Date.now(),
+    by: 'DRIVER',
+    driverName: previousDriver.name || null,
+    driverTelegramId: previousDriver.telegramId || null,
+    reason: reason || null,
+  });
+  order.status = 'NEW';
+  order.driver = null;
+  order.updatedAt = Date.now();
+
+  if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
+    return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  }
+  // Yuk yana ochiq — ro'yxat keshi endi to'g'ri emas.
+  await invalidateLoadsCache();
+  // Haydovchi bo'shadi — endi yangi yuk olishi mumkin.
+  await kvDel(activeLoadKey(identity)).catch(() => {});
+
+  await notifyUser(order.ownerIdentity || order.googleEmail, {
+    category: 'orders',
+    text: `<b>Haydovchi voz kechdi</b>\n\n`
+      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+      + `${esc(previousDriver.name || 'Haydovchi')} yukdan voz kechdi. `
+      + `Yuk yana ochiq — boshqa haydovchi taklif yuborishi mumkin.`
+      + (reason ? `\n\nSabab: ${esc(reason)}` : ''),
+  });
 
   return res.status(200).json({ ok: true, status: order.status });
 };
@@ -1593,6 +1810,7 @@ export default async function handler(req, res) {
     if (action === 'price-stats') return getPriceStats(req, res);
     if (action === 'offers') return listOffers(req, res);
     if (action === 'my-offers') return listMyOffers(req, res);
+    if (action === 'my-load') return getMyLoad(req, res);
     if (action === 'my-loads') return listMyLoads(req, res);
     if (action === 'stats') return getHomeStats(req, res);
     return getOrderStatus(req, res);
@@ -1607,6 +1825,7 @@ export default async function handler(req, res) {
     if (action === 'reject-offer') return decideOffer(req, res, false);
     if (action === 'withdraw-offer') return withdrawOffer(req, res);
     if (action === 'advance') return advanceOrder(req, res);
+    if (action === 'giveup') return giveUpOrder(req, res);
     return createOrder(req, res);
   }
   return res.status(405).json({ error: 'Method not allowed' });
