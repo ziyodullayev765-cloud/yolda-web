@@ -17847,7 +17847,14 @@
      qarang) — /api/ ga tegmaydi, shuning uchun Google bilan kirish va
      boshqa jonli so'rovlar avvalgidek ishlayveradi. Ro'yxatdan o'tkazish
      "load" dan keyin: birinchi ochilish tezligini sekinlashtirmasin. */
-  if("serviceWorker" in navigator && location.protocol === "https:"){
+  /* Mahalliy manzil ham qo'shilgan: brauzer uni https bilan teng
+     ko'radi (xavfsiz kontekst), shuning uchun service worker u yerda
+     ham ro'yxatdan o'tadi. Faqat https qolsa, ilovaning tarmoqsiz
+     ishlashini chiqarishdan oldin tekshirib bo'lmasdi — Play esa
+     aynan shuni talab qiladi. */
+  var swOk = location.protocol === "https:"
+    || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if("serviceWorker" in navigator && swOk){
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("/sw.js").catch(function(){
         /* Ro'yxatdan o'tmasa ham sayt oddiy sayt sifatida ishlayveradi. */
