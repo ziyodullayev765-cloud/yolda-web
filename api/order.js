@@ -30,6 +30,7 @@ import {
 } from '../lib/offers.js';
 import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
 import { LOADS_CACHE_KEY, LOADS_CACHE_MS, invalidateLoadsCache } from '../lib/loadsCache.js';
+import { loadUrl } from '../lib/appUrl.js';
 
 const PRICE_PER_KM = Number(process.env.PRICE_PER_KM || 2500);
 const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
@@ -1084,16 +1085,15 @@ const submitOffer = async (req, res) => {
       + `\n<b>${esc(formatNum(value.price))} so'm</b>`
       + (value.eta ? `\nYetib borish: ${esc(value.eta)}` : '')
       + (value.note ? `\n\n${esc(value.note)}` : '')
-      + `\n\nQuyidagi tugmalardan bevosita javob bering — saytga kirish shart emas.`,
-    // Yuk egasi saytga kirmasdan, shu yerning o'zida hal qilsin: taklif
-    // qabul qilinsa yuk shu haydovchiga biriktiriladi (decideOfferCore,
-    // api/telegram.js dagi `offer_accept:`/`offer_reject:` orqali).
-    replyMarkup: {
-      inline_keyboard: [[
-        { text: '✅ Qabul qilish', callback_data: `offer_accept:${id}` },
-        { text: '❌ Rad etish', callback_data: `offer_reject:${id}` },
-      ]],
-    },
+      + `\n\nTaklifni ilovada ko'rib chiqing.`,
+    /* Ilgari shu yerda "Qabul qilish / Rad etish" tugmalari turardi va
+       xabar "saytga kirish shart emas" deb yozardi. Ya'ni kelishuv
+       Telegramda bo'lardi, holbuki yuk egasi haydovchining reytingini,
+       mashinasini va boshqa takliflarni ko'rib tanlashi kerak — bularning
+       hammasi ilovada. Endi bildirishnoma faqat xabar beradi, ish esa
+       ilovada bajariladi. */
+    buttonText: 'Ilovada ochish',
+    buttonUrl: loadUrl(offer.orderCode),
   });
 
   return res.status(200).json({ ok: true, offer: publicOfferShape(offer) });
@@ -1394,17 +1394,12 @@ const decideOfferCore = async (identity, offerId, accept) => {
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
       + `<b>${esc(formatNum(offer.price))} so'm</b>\n\n`
       + (order.phone ? `Mijoz: ${esc(order.phone)}\n\n` : '')
-      + `Holatni shu yerdan ham, saytdagi yuk sahifasidan ham yangilab boring — `
+      + `Holatni ilovadagi yuk sahifasidan yangilab boring — `
       + `har bosqichda tugma keyingisining nomini yozib turadi.`,
-    // Haydovchi saytga qaytmasa ham yuk «Haydovchi tanlandi»da qotib qolmasin:
-    // zanjir (Yuklashga ketdim → Yukladim → Men yo'ldaman → Bo'shatdim) shu
-    // xabarning o'zidagi tugma bilan yuradi (api/telegram.js, `next:`).
-    replyMarkup: {
-      inline_keyboard: [[{
-        text: `🚚 ${NEXT_STATUS_BUTTON.DRIVER_FOUND}`,
-        callback_data: `next:${offer.orderCode}`,
-      }]],
-    },
+    // Bosqichlar zanjiri (Yuklashga ketdim → Yukladim → Yo'ldaman →
+    // Bo'shatdim) endi faqat ilovada yuradi.
+    buttonText: 'Ilovada ochish',
+    buttonUrl: loadUrl(offer.orderCode),
   });
 
   return { status: 200, body: { ok: true, offer: publicOfferShape(accepted), status: order.status } };

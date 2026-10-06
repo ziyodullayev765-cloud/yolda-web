@@ -17682,7 +17682,21 @@
      yangilanganda odam boshqa joyga sakrab qolmasin. */
   /* Manzildagi ?tab= ni ochadi. Boshlanishida bir marta, keyin esa
      telefondagi "orqaga" tugmasi bosilganda qayta chaqiriladi. */
+  /* Manzildagi ?load=<kod> — to'g'ridan-to'g'ri yuk sahifasiga.
+     Bildirishnomadagi "Ilovada ochish" tugmasi shu havolani ochadi,
+     ya'ni odam ilovaga tushib, keyin yukni qidirib o'tirmaydi.
+
+     Kod formati serverdagi bilan bir xil tekshiriladi: begona qiymat
+     bilan openLoadDetail chaqirilmasin. */
+  function openLoadFromUrl(){
+    var m = /[?&]load=([A-Za-z0-9_-]{1,24})/.exec(location.search);
+    if(!m) return false;
+    openLoadDetail(m[1]);
+    return true;
+  }
+
   function openTabFromUrl(){
+    if(openLoadFromUrl()) return;
     var match = /[?&]tab=([a-z]+)/.exec(location.search);
     var wanted = match ? match[1] : "home";
     if(TABS.indexOf(wanted) === -1) wanted = "home";

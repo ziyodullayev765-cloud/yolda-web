@@ -530,287 +530,28 @@ console.log('\n== offers ==');
 }
 
 /* ---------------------------------------------------------- */
-console.log('\n== a load owner can accept or reject an offer straight from Telegram ==');
+console.log('\n== buyurtma bilan bog\'liq ish Telegramda bajarilmaydi ==');
 {
-  // Yuk egasi saytga kirmasdan, "Yangi taklif" xabaridagi ✅/❌ tugmasini
-  // bosib hal qiladi. Buning uchun uning Telegram ID'si sayt identity'siga
-  // (tgIdToEmail) bog'langan bo'lishi kerak — xuddi haydovchiniki kabi.
+  /* Ilgari yuk egasi "Yangi taklif" xabaridagi ✅/❌ tugmasini bosib
+     taklifni Telegramning o'zida hal qilardi, haydovchi esa keyingi
+     bosqichni o'sha yerdan surardi. Ya'ni platformaning asosiy ishi
+     boshqa ilova ichida bo'lardi.
+
+     Endi bot faqat kod yetkazadi. Bu yerda aynan shuni tekshiramiz:
+     tugma bosilgandek ko'rinadigan har qanday so'rov hech narsani
+     o'zgartirmasligi kerak. */
   store.clear(); sets.clear(); lists.clear(); resetFetch();
-  const telegramMod = await load('api/telegram.js', 'telegram_offer_decision_test');
+  const telegramMod = await load('api/telegram.js', 'telegram_no_actions_test');
   const telegramHandler = telegramMod.default;
 
   store.set('tgIdToEmail:7001', 'owner@example.com');
   store.set('order:OF9', JSON.stringify({
     code: 'OF9', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
-    weightKg: 5000, amount: 900000, status: 'NEW', groupMessageId: 55,
+    weightKg: 5000, amount: 900000, status: 'NEW',
   }));
   store.set('offer:offA', JSON.stringify({
     id: 'offA', orderCode: 'OF9', driverIdentity: 'driver1@example.com',
     driverName: 'Aziz', price: 700000, status: 'PENDING', createdAt: Date.now(),
-  }));
-
-  const tapDm = async (data, fromId, text) => {
-    const res = mkRes();
-    await telegramHandler({
-      method: 'POST', headers: {},
-      body: { callback_query: {
-        id: 'qOffer', from: { id: fromId, first_name: 'Owner' },
-        message: { chat: { id: fromId }, message_id: 61, text: text || 'Yangi taklif\n\nAziz — 700 000 so\'m' },
-        data,
-      } },
-    }, res);
-    return res;
-  };
-
-  await tapDm('offer_accept:offA', 9999);
-  check('a stranger cannot decide someone else\'s offer',
-    JSON.parse(store.get('offer:offA')).status === 'PENDING');
-
-  await tapDm('offer_accept:offA', 7001);
-  check('the owner can accept the offer from their own Telegram DM',
-    JSON.parse(store.get('offer:offA')).status === 'ACCEPTED');
-  check('accepting it assigns the driver on the order',
-    JSON.parse(store.get('order:OF9')).driver.identity === 'driver1@example.com');
-
-  const edited = sentMessages.find((m) => m.url.endsWith('/editMessageText') && m.body.chat_id === 7001);
-  check('the offer message is edited to show the outcome',
-    Boolean(edited) && edited.body.text.includes('Qabul qilindi'));
-  check('and its buttons are removed so it cannot be tapped twice',
-    Boolean(edited) && edited.body.reply_markup.inline_keyboard.length === 0);
-
-  resetFetch();
-  await tapDm('offer_accept:offA', 7001);
-  const secondAnswer = sentMessages.find((m) => m.url.endsWith('/answerCallbackQuery'));
-  check('tapping accept again is answered with an error toast, not applied twice',
-    Boolean(secondAnswer) && /ko‘rib chiqilgan/.test(secondAnswer.body.text));
-
-  // Fresh offer, this time rejected.
-  store.set('order:OF10', JSON.stringify({
-    code: 'OF10', ownerIdentity: 'owner@example.com', fromCity: 'Andijon', toCity: 'Namangan',
-    weightKg: 2000, amount: 300000, status: 'NEW', groupMessageId: 56,
-  }));
-  store.set('offer:offB', JSON.stringify({
-    id: 'offB', orderCode: 'OF10', driverIdentity: 'driver2@example.com',
-    driverName: 'Sardor', price: 250000, status: 'PENDING', createdAt: Date.now(),
-  }));
-  store.set('tgChat:driver2@example.com', '8002');
-  await tapDm('offer_reject:offB', 7001);
-  check('the owner can reject an offer the same way',
-    JSON.parse(store.get('offer:offB')).status === 'REJECTED');
-  check('rejecting it leaves the load open',
-    JSON.parse(store.get('order:OF10')).status === 'NEW');
-  const driverTold = sentMessages.find((m) =>
-    m.url.endsWith('/sendMessage') && m.body.text.includes('Taklifingiz rad etildi'));
-  check('the declined driver is notified too', Boolean(driverTold));
-}
-
-console.log('\n== home statistics ==');
-{
-  store.clear(); sets.clear(); lists.clear();
-  const get = async (query) => {
-    const res = mkRes();
-    await orderHandler({ method: 'GET', query, headers: {} }, res);
-    return res;
-  };
-  const seed = (code, status, from, to) => {
-    if (!lists.has('order_codes')) lists.set('order_codes', []);
-    lists.get('order_codes').push(code);
-    store.set(`order:${code}`, JSON.stringify({ code, status, fromCity: from, toCity: to, weightKg: 1, amount: 1 }));
-  };
-  seed('S1', 'NEW', 'Toshkent', 'Buxoro');
-  seed('S2', 'NEW', 'Toshkent', 'Nukus');
-  seed('S3', 'DELIVERED', 'Buxoro', 'Nukus');
-  seed('S4', 'CANCELLED', 'Toshkent', 'Buxoro');
-  sets.set('profile_emails', new Set(['d1@x.com', 'd2@x.com', 'o1@x.com']));
-  store.set('profile:d1@x.com', JSON.stringify({ role: 'DRIVER' }));
-  store.set('profile:d2@x.com', JSON.stringify({ role: 'BOTH' }));
-  store.set('profile:o1@x.com', JSON.stringify({ role: 'OWNER' }));
-
-  const stats = await get({ action: 'stats' });
-  check('only open loads count as active', stats.body.activeLoads === 2, stats.body.activeLoads);
-  check('delivered loads are counted', stats.body.delivered === 1);
-  check('drivers include BOTH but not OWNER', stats.body.drivers === 2, stats.body.drivers);
-  check('cities are counted distinctly', stats.body.cities === 3, stats.body.cities);
-  check('nothing is invented when a figure is zero',
-    Object.values(stats.body).every((v) => typeof v === 'number'));
-}
-
-/* ---------------------------------------------------------- */
-console.log('\n== seven-stage tracking ==');
-{
-  const { nextStatus, STATUS_FLOW } = await import(join(repo, 'lib/orderMessage.js'));
-  check('the chain has six stages', STATUS_FLOW.length === 6);
-  check('a claimed load heads for pickup next', nextStatus('DRIVER_FOUND') === 'PICKING_UP');
-  check('loading comes before the road', nextStatus('PICKING_UP') === 'LOADED');
-  check('the road comes before delivery', nextStatus('ON_THE_WAY') === 'DELIVERED');
-  check('delivery is the end of the chain', nextStatus('DELIVERED') === null);
-  check('a cancelled order is off the chain', nextStatus('CANCELLED') === null);
-}
-
-console.log('\n== the driver advances the load from the site ==');
-{
-  store.clear(); sets.clear(); lists.clear(); resetFetch();
-
-  const seed = (code, patch) => store.set(`order:${code}`, JSON.stringify({
-    code, ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
-    weightKg: 5000, amount: 900000, status: 'DRIVER_FOUND', groupMessageId: 42,
-    driver: { name: 'Aziz', identity: 'driver1@example.com' }, ...patch,
-  }));
-  const post = async (action, body) => {
-    const res = mkRes();
-    await orderHandler({ method: 'POST', query: { action }, body, headers: {} }, res);
-    return res;
-  };
-  const statusOf = (code) => JSON.parse(store.get(`order:${code}`)).status;
-  const driver = (extra) => ({ googleIdToken: 'driver1@example.com', ...extra });
-
-  seed('AD1');
-  check('advancing needs a signed-in user',
-    (await post('advance', { code: 'AD1' })).statusCode === 401);
-  check("a stranger cannot advance someone else's load",
-    (await post('advance', { googleIdToken: 'nobody@example.com', code: 'AD1' })).statusCode === 403);
-  check('the owner is not the driver either',
-    (await post('advance', { googleIdToken: 'owner@example.com', code: 'AD1' })).statusCode === 403);
-  check('an unknown code is not found',
-    (await post('advance', driver({ code: 'NOPE' }))).statusCode === 404);
-
-  const step1 = await post('advance', driver({ code: 'AD1' }));
-  check('the driver moves one stage forward',
-    step1.statusCode === 200 && step1.body.status === 'PICKING_UP');
-  check('and the order record is what changed', statusOf('AD1') === 'PICKING_UP');
-  check('the response names the stage after this one', step1.body.nextStatus === 'LOADED');
-
-  await post('advance', driver({ code: 'AD1' }));
-  check('loading is its own stage', statusOf('AD1') === 'LOADED');
-  await post('advance', driver({ code: 'AD1' }));
-  check('then the road', statusOf('AD1') === 'ON_THE_WAY');
-
-  store.set('profile:driver1@example.com', JSON.stringify({ username: 'driver1', deliveredCount: 3 }));
-  const last = await post('advance', driver({ code: 'AD1' }));
-  check('and finally delivery', statusOf('AD1') === 'DELIVERED');
-  check('no stage is offered past delivery', last.body.nextStatus === null);
-  check('the delivered counter goes up once',
-    JSON.parse(store.get('profile:driver1@example.com')).deliveredCount === 4);
-  check('a delivered order cannot be advanced again',
-    (await post('advance', driver({ code: 'AD1' }))).statusCode === 409);
-  check('the counter did not move on the refused call',
-    JSON.parse(store.get('profile:driver1@example.com')).deliveredCount === 4);
-
-  const ownerNotes = (lists.get('notifs:owner@example.com') || []).map((s) => JSON.parse(s).title);
-  check('the owner hears about every stage', ownerNotes.length === 4, ownerNotes.length);
-  check('including the last one', ownerNotes[0] === 'Yetkazildi', ownerNotes[0]);
-
-  // Bekor qilingan buyurtma zanjirdan chiqib ketgan — uni surib bo'lmaydi.
-  seed('AD2', { status: 'CANCELLED' });
-  check('a cancelled load has nowhere to advance to',
-    (await post('advance', driver({ code: 'AD2' }))).statusCode === 409);
-}
-
-console.log('\n== a driver can find the load they were given ==');
-{
-  store.clear(); sets.clear(); lists.clear(); resetFetch();
-
-  store.set('order:MY1', JSON.stringify({
-    code: 'MY1', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
-    weightKg: 5000, status: 'LOADED', driver: { name: 'Aziz', identity: 'driver1@example.com' },
-  }));
-  store.set('order:MY2', JSON.stringify({
-    code: 'MY2', ownerIdentity: 'owner@example.com', fromCity: 'Buxoro', toCity: 'Nukus',
-    weightKg: 2000, status: 'NEW',
-  }));
-  store.set('offer:o1', JSON.stringify({
-    id: 'o1', orderCode: 'MY1', driverIdentity: 'driver1@example.com', price: 800000, status: 'ACCEPTED',
-  }));
-  store.set('offer:o2', JSON.stringify({
-    id: 'o2', orderCode: 'MY2', driverIdentity: 'driver1@example.com', price: 500000, status: 'PENDING',
-  }));
-  lists.set('driver_offers:driver1@example.com', ['o2', 'o1']);
-
-  const get = async (query) => {
-    const res = mkRes();
-    await orderHandler({ method: 'GET', query, headers: {} }, res);
-    return res;
-  };
-
-  check('the list needs a signed-in driver', (await get({ action: 'my-offers' })).statusCode === 401);
-
-  const mine = await get({ action: 'my-offers', googleIdToken: 'driver1@example.com' });
-  check('both offers come back', mine.body.offers.length === 2);
-  const byCode = Object.fromEntries(mine.body.offers.map((o) => [o.orderCode, o]));
-  check('the route rides along so the row can be read', byCode.MY1.fromCity === 'Toshkent');
-  check('the assigned load knows it is being driven', byCode.MY1.isDriver === true);
-  check('and carries the stage, not just the offer status', byCode.MY1.orderStatus === 'LOADED');
-  check('with the next step named', byCode.MY1.nextStatus === 'ON_THE_WAY');
-  check('a still-pending offer is not a trip', byCode.MY2.isDriver === false);
-  check('and offers no stage button', byCode.MY2.nextStatus === null);
-  check('no offer leaks a phone or identity',
-    mine.body.offers.every((o) => !('driverIdentity' in o) && !('driverPhone' in o)));
-
-  const other = await get({ action: 'my-offers', googleIdToken: 'driver2@example.com' });
-  check('another driver sees none of it', other.body.offers.length === 0);
-}
-
-console.log('\n== the same chain runs from the Telegram button ==');
-{
-  store.clear(); sets.clear(); lists.clear(); resetFetch();
-  const telegramMod = await load('api/telegram.js', 'telegram_under_test');
-  const telegramHandler = telegramMod.default;
-
-  store.set('order:TG1', JSON.stringify({
-    code: 'TG1', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
-    weightKg: 5000, amount: 900000, cargoType: 'OTHER', phone: '+998901112233',
-    status: 'DRIVER_FOUND', driver: { name: 'Aziz', telegramId: 555 },
-  }));
-
-  const tap = async (data, fromId) => {
-    const res = mkRes();
-    await telegramHandler({
-      method: 'POST', headers: {},
-      body: { callback_query: {
-        id: 'q1', from: { id: fromId, first_name: 'Aziz' },
-        message: { chat: { id: -100 }, message_id: 42, text: '' },
-        data,
-      } },
-    }, res);
-    return res;
-  };
-  const statusOf = (code) => JSON.parse(store.get(`order:${code}`)).status;
-
-  await tap('next:TG1', 999);
-  check('a driver who does not own the load changes nothing', statusOf('TG1') === 'DRIVER_FOUND');
-
-  await tap('next:TG1', 555);
-  check('the assigned driver advances one stage', statusOf('TG1') === 'PICKING_UP');
-  const edits = sentMessages.filter((m) => m.url.endsWith('/editMessageText'));
-  const button = edits[edits.length - 1].body.reply_markup.inline_keyboard[0][0].text;
-  check('and the button now names the stage after that', button.includes('Yukladim'), button);
-
-  await tap('next:TG1', 555);
-  check('loading is a stage here too', statusOf('TG1') === 'LOADED');
-
-  // Ilgari voz kechish faqat DRIVER_FOUND va ON_THE_WAY da ishlardi —
-  // yangi oraliq bosqichlarda haydovchi qamalib qolardi.
-  await tap('giveup:TG1', 555);
-  check('a driver can still give up from a new middle stage', statusOf('TG1') === 'NEW');
-  check('and the load loses its driver', JSON.parse(store.get('order:TG1')).driver === null);
-}
-
-/* ---------------------------------------------------------- */
-console.log('\n== a driver assigned via a site offer can still run the chain in Telegram ==');
-{
-  // Taklif orqali biriktirilgan haydovchida telegramId yo'q, faqat
-  // identity bor — avvalgi kod shu holatda hamma joyda "sizga tegishli
-  // emas" derdi, chunki tekshiruv faqat telegramId ga qarardi.
-  store.clear(); sets.clear(); lists.clear(); resetFetch();
-  const telegramMod = await load('api/telegram.js', 'telegram_offer_test');
-  const telegramHandler = telegramMod.default;
-
-  store.set('tgIdToEmail:555', 'driver1@example.com');
-  store.set('order:OF9', JSON.stringify({
-    code: 'OF9', ownerIdentity: 'owner@example.com', fromCity: 'Toshkent', toCity: 'Buxoro',
-    weightKg: 5000, amount: 900000, cargoType: 'OTHER', phone: '+998901112233',
-    status: 'DRIVER_FOUND', groupMessageId: 77,
-    driver: { name: 'Aziz', identity: 'driver1@example.com', viaOffer: 'off1' },
   }));
 
   const tapDm = async (data, fromId) => {
@@ -818,30 +559,24 @@ console.log('\n== a driver assigned via a site offer can still run the chain in 
     await telegramHandler({
       method: 'POST', headers: {},
       body: { callback_query: {
-        id: 'q1', from: { id: fromId, first_name: 'Aziz' },
-        message: { chat: { id: fromId }, message_id: 42, text: '' },
+        id: 'qOffer', from: { id: fromId, first_name: 'Owner' },
+        message: { chat: { id: fromId }, message_id: 61, text: 'Yangi taklif' },
         data,
       } },
     }, res);
     return res;
   };
-  const statusOf9 = () => JSON.parse(store.get('order:OF9')).status;
 
-  await tapDm('next:OF9', 999);
-  check('a stranger cannot advance an offer-assigned load', statusOf9() === 'DRIVER_FOUND');
+  for (const data of ['offer_accept:offA', 'offer_reject:offA', 'next:OF9',
+                      'take:OF9:+998901234567', 'giveup:OF9', 'deliver:OF9']) {
+    await tapDm(data, 7001);
+  }
 
-  await tapDm('next:OF9', 555);
-  check('the offer-assigned driver can advance it from their own DM', statusOf9() === 'PICKING_UP');
-
-  const dmEdit = sentMessages.find((m) => m.url.endsWith('/editMessageText') && m.body.chat_id === 555);
-  check('their own message is updated', Boolean(dmEdit));
-  check('the DM keyboard has no give-up button (that stays on the site)',
-    !dmEdit.body.reply_markup.inline_keyboard.flat().some((b) => b.callback_data.startsWith('giveup:')));
-
-  const groupEdit = sentMessages.find((m) => m.url.endsWith('/editMessageText') && String(m.body.chat_id) === '-1003778958582');
-  check('the group message is kept in sync too', Boolean(groupEdit));
-  check('but carries no button, since this driver has no telegramId to claim through',
-    Boolean(groupEdit) && groupEdit.body.reply_markup.inline_keyboard.length === 0);
+  check('taklif holati o\'zgarmadi', JSON.parse(store.get('offer:offA')).status === 'PENDING');
+  check('buyurtmaga haydovchi biriktirilmadi', !JSON.parse(store.get('order:OF9')).driver);
+  check('buyurtma holati o\'zgarmadi', JSON.parse(store.get('order:OF9')).status === 'NEW');
+  check('Telegramga javob xabari ham yuborilmadi', sentMessages.length === 0,
+    sentMessages.map((m) => m.url).join(', '));
 }
 
 /* ---------------------------------------------------------- */
