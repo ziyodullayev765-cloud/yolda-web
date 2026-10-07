@@ -3976,58 +3976,38 @@
     font-size:12.5px;box-shadow:none;
   }
 
-  /* ---------- BO'LIM ALMASHUVI ---------- */
-  /* Bo'limlar `hidden` orqali almashadi — oraliq holat bo'lmagani uchun
-     ekran bir zumda sakrab o'zgarardi. Yangi bo'lim qaysi tomondan
-     kelishi pastki panel tartibiga qarab tanlanadi: oldinga o'tilsa
-     o'ngdan, orqaga qaytilsa chapdan suriladi. */
-  @keyframes tabInRight{
-    from{opacity:0;transform:translate3d(30px,0,0);}
-    to{opacity:1;transform:translate3d(0,0,0);}
-  }
-  @keyframes tabInLeft{
-    from{opacity:0;transform:translate3d(-30px,0,0);}
-    to{opacity:1;transform:translate3d(0,0,0);}
-  }
-  .tabview.tab-in-right,.tabview.tab-in-left{will-change:opacity,transform;}
-  .tabview.tab-in-right{animation:tabInRight 0.56s cubic-bezier(0.22,0.86,0.3,1) both;}
-  .tabview.tab-in-left{animation:tabInLeft 0.56s cubic-bezier(0.22,0.86,0.3,1) both;}
+  /* ---------- BO'LIM ALMASHUVI ----------
+     Bo'limlar `hidden` orqali almashadi — oraliq holat bo'lmagani
+     uchun ekran bir zumda sakrab o'zgarardi. Yangi bo'lim qaysi
+     tomondan kelishi pastki paneldagi joylashuviga qarab tanlanadi:
+     o'ngdagi katak bosilsa o'ngdan, chapdagisi bosilsa chapdan.
 
-  /* Bo'lim kelgach ichidagi bloklar birin-ketin ko'tariladi. Hammasi
-     birdan paydo bo'lsa, ekran "chaqnab" ketardi; ketma-ket kelsa,
-     ko'z tabiiy ravishda tepadan pastga yuradi. Kechikish faqat
-     dastlabki bir nechta blokka beriladi — pastdagilari baribir
-     ekrandan tashqarida. */
-  @keyframes secIn{
-    from{opacity:0;transform:translate3d(0,18px,0);}
+     Ilgari bu yerda ikkita animatsiya ustma-ust ishlardi: butun
+     bo'lim 30 px suriladi (0.56s), ayni paytda ichidagi bloklar
+     ham birin-ketin pastdan ko'tarilardi (0.58s, 0.36s gacha
+     kechikish bilan). Ya'ni bitta katakni bosishdan to ekran
+     tinchlanguniga qadar bir soniyaga yaqin vaqt o'tardi va ikki
+     xil harakat bir-biriga qo'shilib, ekran "suzayotgandek"
+     tuyulardi.
+
+     Endi bitta harakat va qisqa: 0.2 soniya, 12 px. Bo'lim
+     almashuvi — sahifa ochilishi emas, tugmaning javobi; u
+     sezilishi kerak, lekin kutishga sabab bo'lmasligi kerak.
+     Ichkaridagi bloklar endi alohida harakatlanmaydi: ular
+     bo'lim bilan birga, bir butun bo'lib keladi. */
+  @keyframes tabInRight{
+    from{opacity:0;transform:translate3d(12px,0,0);}
     to{opacity:1;transform:none;}
   }
-  .tabview.tab-enter #profileCard > *,
-  .tabview.tab-enter > * > .section-head,
-  .tabview.tab-enter > * > .home-sec,
-  .tabview.tab-enter > * > .card,
-  .tabview.tab-enter > .life > .lf-head,
-  .tabview.tab-enter > .life > .lf-sec,
-  .tabview.tab-enter > * > .pf-topbar,
-  .tabview.tab-enter > * > .pf-id,
-  .tabview.tab-enter > * > .pf-id-stats,
-  .tabview.tab-enter > * > .pf-group{
-    animation:secIn 0.58s cubic-bezier(0.22,0.9,0.28,1) both;
+  @keyframes tabInLeft{
+    from{opacity:0;transform:translate3d(-12px,0,0);}
+    to{opacity:1;transform:none;}
   }
-  .tabview.tab-enter > * > *:nth-child(1),
-  .tabview.tab-enter #profileCard > *:nth-child(1){animation-delay:0.04s;}
-  .tabview.tab-enter > * > *:nth-child(2),
-  .tabview.tab-enter #profileCard > *:nth-child(2){animation-delay:0.11s;}
-  .tabview.tab-enter > * > *:nth-child(3),
-  .tabview.tab-enter #profileCard > *:nth-child(3){animation-delay:0.18s;}
-  .tabview.tab-enter > * > *:nth-child(4),
-  .tabview.tab-enter #profileCard > *:nth-child(4){animation-delay:0.25s;}
-  .tabview.tab-enter > * > *:nth-child(5),
-  .tabview.tab-enter #profileCard > *:nth-child(5){animation-delay:0.31s;}
-  .tabview.tab-enter > * > *:nth-child(n+6),
-  .tabview.tab-enter #profileCard > *:nth-child(n+6){animation-delay:0.36s;}
-  :root[data-reduce-motion="1"] .tabview.tab-enter > * > *,
-  :root[data-reduce-motion="1"] .tabview.tab-enter #profileCard > *{animation:none;}
+  .tabview.tab-in-right,.tabview.tab-in-left{will-change:opacity,transform;}
+  /* Tez boshlanib sekin to'xtaydigan egri: harakat darhol javob
+     bergandek, oxiri esa keskin kesilmagandek bo'ladi. */
+  .tabview.tab-in-right{animation:tabInRight 0.2s cubic-bezier(0.17,0.84,0.3,1) both;}
+  .tabview.tab-in-left{animation:tabInLeft 0.2s cubic-bezier(0.17,0.84,0.3,1) both;}
   :root[data-reduce-motion="1"] .tabview.tab-in-right,
   :root[data-reduce-motion="1"] .tabview.tab-in-left{animation:none;opacity:1;transform:none;}
 
@@ -17444,26 +17424,73 @@
     return null;
   }
 
+  /* Bo'limning pastki paneldagi o'rni — almashuv qaysi tomonga
+     ketishini shu hal qiladi.
+
+     Ilgari yo'nalish TABS ro'yxatidagi tartibga qarardi, u esa
+     paneldagi tartib bilan bir xil emas: TABS da "Yuk joylash"
+     "Yuklar"dan oldin turadi, panelda esa undan keyin. Natijada
+     "Yuklar"dan "Yuk joylash"ga o'tilganda ekran o'ngdan emas,
+     chapdan kelardi — ya'ni harakat barmoq ketgan tomonga qarshi
+     bo'lardi.
+
+     Tartib panelning o'zidan o'qiladi: katak qo'shilsa yoki joyi
+     almashsa, bu yerga tegish shart emas. Panelda o'z katagi
+     bo'lmagan bo'limlar qaysi katakka tegishli bo'lsa, o'shaning
+     o'rnini oladi. */
+  var TAB_NAV_SLOT = {
+    myload: "loads",     // "Yuklar" katagini bosib turganda ochiladi
+    trucks: "loads",     // yuklar bilan bir oilada
+    chat: "life",        // "Life" katagini bosib turganda ochiladi
+    contact: "profile"   // profil ichidagi "Aloqa"
+  };
+
+  function tabNavSlot(name){
+    var key = TAB_NAV_SLOT[name] || name;
+    var items = document.querySelectorAll(".bn-item[data-tab-link]");
+    for(var i = 0; i < items.length; i++){
+      if(items[i].getAttribute("data-tab-link") === key) return i;
+    }
+    return -1;
+  }
+
+  /** Yangi bo'lim qaysi tomondan kelsin: 1 — o'ngdan, -1 — chapdan. */
+  function tabDirection(from, to){
+    var a = tabNavSlot(from), b = tabNavSlot(to);
+    // Bir katakka tegishli bo'limlar (masalan Yuklar ↔ Mening yukim)
+    // yoki panelda topilmaganlar — TABS tartibiga qarab.
+    if(a === -1 || b === -1 || a === b){
+      return TABS.indexOf(to) > TABS.indexOf(from) ? 1 : -1;
+    }
+    return b > a ? 1 : -1;
+  }
+
   function animateTabIn(el, dir){
     if(!el) return;
     var cls = dir < 0 ? "tab-in-left" : "tab-in-right";
-    el.classList.remove("tab-in-left", "tab-in-right", "tab-enter");
+    function clean(){
+      clearTimeout(el.__tabAnimTimer);
+      el.__tabAnimTimer = null;
+      el.classList.remove("tab-in-left", "tab-in-right");
+    }
+    clean();
     // Reflow: sinf darhol qayta qo'yilsa brauzer animatsiyani
     // qaytadan boshlamaydi.
     void el.offsetWidth;
-    el.classList.add(cls, "tab-enter");
-    /* Ichkaridagi bloklar ketma-ket kelgani uchun ular tashqi
-       animatsiyadan kechroq tugaydi — sinf o'sha paytgacha turadi.
-       `animationend` ga bog'lasak, ular yarim yo'lda kesilib qolardi. */
-    clearTimeout(el.__tabEnterTimer);
-    el.__tabEnterTimer = setTimeout(function(){ el.classList.remove("tab-enter"); }, 900);
+    el.classList.add(cls);
     // Animatsiya tugagach sinf olib tashlanadi — aks holda `will-change`
     // va tugagan animatsiyaning holati elementda qolib ketardi.
     el.addEventListener("animationend", function handler(e){
       if(e.target !== el) return;
       el.removeEventListener("animationend", handler);
-      el.classList.remove("tab-in-left", "tab-in-right");
+      clean();
     });
+    /* Zaxira yo'l. Bo'lim animatsiya tugamasdan yashirilsa
+       (odam kataklarni tez-tez bossa), `animationend` umuman
+       kelmaydi: yashirin element animatsiyani oxiriga yetkazmaydi.
+       Shunda sinf — u bilan birga `will-change` ham — elementda
+       abadiy qolib ketardi. */
+    el.__tabAnimTimer = setTimeout(clean, 400);
   }
 
   /* ---------- Bo'limga qayta kirganda qayta yuklamaslik ----------
@@ -17550,8 +17577,7 @@
       if(el) el.hidden = (t !== name);
     });
     if(prev && prev !== name){
-      animateTabIn(document.getElementById("tab-" + name),
-                   TABS.indexOf(name) > TABS.indexOf(prev) ? 1 : -1);
+      animateTabIn(document.getElementById("tab-" + name), tabDirection(prev, name));
     }
     /* "Mening yukim" pastdagi panelda alohida katak emas — u "Yuklar"
        katagini bosib turganda ochiladi. Shuning uchun u ochiq turganda
