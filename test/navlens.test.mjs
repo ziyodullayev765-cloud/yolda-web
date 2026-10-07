@@ -85,8 +85,22 @@ if (place) {
 /* ---------- En ham silliq o'zgaradi ---------- */
 const blob = html.match(/\n {2}\.bn-blob\{[\s\S]*?\n {2}\}/g) || [];
 check('.bn-blob qoidasi topildi', blob.length > 0);
-check('en ham animatsiya bilan o\'zgaradi',
-  blob.some((b) => /transition:[^}]*\bwidth\b/.test(b)), { qoidalar: blob.length });
+const blobTrans = blob.filter((b) => /transition:[^}]*\bwidth\b/.test(b));
+check('en ham animatsiya bilan o\'zgaradi', blobTrans.length > 0, { qoidalar: blob.length });
+/* Surilish egri chizig'i maqsaddan OSHIB ketmasligi kerak. Joy
+   uchun oshib-qaytish mayin ko'rinardi, lekin en ham shu egri
+   chiziqda: tabletka kerakligidan kengayib, keyin torayardi.
+   Ikki oshib-qaytish ustma-ust tushib, harakat taka-puka bo'lardi.
+   Shuning uchun ikkinchi boshqaruv nuqtasi 1 dan oshmasin. */
+for (const b of blobTrans) {
+  /* Izohlar olib tashlanadi: ularda eski egri chiziq misol sifatida
+     keltirilgan va u qoidaning o'zi deb hisoblanib ketardi. */
+  const code = b.replace(/\/\*[\s\S]*?\*\//g, '');
+  const curves = [...code.matchAll(/cubic-bezier\(([-\d.]+),\s*([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\)/g)];
+  check('surilish egri chizig\'i oshib ketmaydi',
+    curves.length > 0 && curves.every((c) => +c[2] <= 1 && +c[4] <= 1),
+    curves.map((c) => c[0]));
+}
 
 /* ---------- Yo'ldagi cho'zilish ----------
    Tabletka bir bo'limdan ikkinchisiga o'tganda yo'nalish bo'ylab
@@ -96,8 +110,13 @@ check('en ham animatsiya bilan o\'zgaradi',
 check('navBlobTravel keyframe bor', /@keyframes navBlobTravel\{/.test(html));
 const kf = html.match(/@keyframes navBlobTravel\{[\s\S]*?\n {2}\}/);
 if (kf) {
-  check('cho\'zilish o\'rtada eng kuchli',
-    /32%\s*\{transform:scaleX\(var\(--stretch[^)]*\)\) scaleY\(var\(--squash/.test(kf[0]));
+  check('cho\'zilish eng kuchli nuqtasi bor',
+    /\d+%\s*\{transform:scaleX\(var\(--stretch[^)]*\)\) scaleY\(var\(--squash/.test(kf[0]));
+  /* O'rtada qo'shimcha nuqtalar bo'lishi kerak: ularsiz tabletka
+     eng cho'zilgan joyida bir "sinib" qo'yardi — shakl keskin
+     burilardi. Shuning uchun bosqichlar soni tekshiriladi. */
+  const steps = (kf[0].match(/\n\s+\d+%\s*\{/g) || []).length;
+  check('o\'tish burchaksiz (oraliq nuqtalari bor)', steps >= 5, { bosqichlar: steps });
   /* Boshi ham, oxiri ham 1 — aks holda shakl o'zgargancha qolib
      ketardi va keyingi bosilish allaqachon buzilgan holatdan
      boshlanardi. */
@@ -128,15 +147,54 @@ if (flash) {
 check('moveNavBlob cho\'zilishni ishga tushiradi',
   /flashLensTravel\(x\);[\s\S]{0,80}placeNavLens\(x, navLensWidth\(active\)\)/.test(html));
 
-/* Bosilgan, sudralayotgan va harakat kamaytirilgan holatlarda
-   cho'zilish bo'lmaydi: animatsiya `transform` ni bosib ketardi. */
+/* Sudralayotganda va harakat kamaytirilganda cho'zilish bo'lmaydi.
+   Bosilganda esa ataylab to'xtatilmaydi: to'xtatilsa, yo'lda
+   ketayotgan tabletka bosilgan zahoti shaklini birdan tashlab
+   yuborardi. */
 for (const [name, re] of [
-  ['bosilganda', /\.bottom-nav\.pressed \.bn-blob-fill\.bn-travel/],
   ['sudralganda', /\.bottom-nav\.dragging \.bn-blob-fill\.bn-travel/],
   ['harakat kamaytirilganda', /\[data-reduce-motion="1"\] \.bn-blob-fill\.bn-travel/],
 ]) {
   check(name + ' cho\'zilish o\'chadi', re.test(html));
 }
+check('bosilganda cho\'zilish uzilmaydi',
+  !/\.bottom-nav\.pressed \.bn-blob-(fill|gloss)\.bn-travel/.test(html));
+
+/* ---------- Bosilganda ----------
+   Katak butunlay — belgisi va yozuvi bilan birga — siqiladi.
+   Ilgari faqat ikonka siqilardi, ya'ni katakning yarmi javob
+   berib, yarmi bermagandek bo'lardi. */
+check('bosilgan katak siqiladi', /\.bn-item\.bn-down\{[\s\S]{0,160}transform:scale\(0\.9\d\)/.test(html));
+check('siqilish animatsiya bilan', /\.bn-item,\.bn-ghost\{[\s\S]*?transition:color[^;]*,\s*\n\s*transform [\d.]+s/.test(html));
+/* Bosilishi tez, qaytishi sekinroq: shunda u "qo'yib yuborildi"
+   degan tuyg'u beradi. */
+const down = html.match(/\.bn-item\.bn-down\{[\s\S]*?\n {2}\}/);
+if (down) {
+  const dn = +(down[0].match(/transform ([\d.]+)s/) || [])[1];
+  const base = +(html.match(/\.bn-item,\.bn-ghost\{[\s\S]*?transform ([\d.]+)s/) || [])[1];
+  check('bosilishi qaytishidan tez', dn > 0 && base > 0 && dn < base, { bosilish: dn, qaytish: base });
+}
+/* Ikonka alohida siqilmaydi — katak bilan birga ketadi, aks holda
+   belgi yozuvdan ko'proq kichrayib, katak bir tekis bosilgandek
+   ko'rinmasdi. */
+check('ikonka alohida siqilmaydi',
+  !/\.bn-item\.bn-down \.ic-svg\{/.test(html) && !/\.bn-item:active \.ic-svg\{/.test(html));
+check('harakat kamaytirilganda siqilish yo\'q',
+  /\[data-reduce-motion="1"\] \.bn-item\{[\s\S]{0,120}transform:none/.test(html));
+
+/* Tabletka faqat O'ZI turgan katak bosilganda siqiladi. */
+check('tabletka press-active ga bog\'langan',
+  /\.bottom-nav\.press-active \.bn-blob-fill,[\s\S]{0,80}\.bn-blob-gloss\{transform:scale\(0\.9\d\)/.test(html));
+check('press-active JS da qo\'yiladi',
+  /classList\.toggle\("press-active",[\s\S]{0,120}classList\.contains\("active"\)/.test(html));
+check('press-active olib ham tashlanadi',
+  (html.match(/classList\.remove\("press-active"\)/g) || []).length >= 2);
+/* Linza olib tashlanganda undan qolgan `.pressed` bo'rtishlari
+   (scale 1.14) shu yerda turardi: `.press-active` ga o'tilgach
+   qoplama ko'tarilib, istalgan katak bosilganda tabletka
+   kattalashib ketardi. */
+check('eski linza bo\'rtishi qolmadi',
+  !/\.bottom-nav\.pressed \.bn-blob-(fill|gloss|mag|rim)\{/.test(html));
 
 /* ---------- Til almashganda qayta o'lchanadi ---------- */
 const lang = html.match(/function applyLang\(\)\{[\s\S]*?\n {2}\}/);

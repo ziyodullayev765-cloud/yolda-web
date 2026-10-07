@@ -920,27 +920,22 @@
     .bn-blob-fill{background:var(--nav-solid);}
   }
 
-  /* Bosilganda linza bo'rtadi: kattalashadi, ko'tariladi, kattalashtirish
-     kuchayadi va kamalak yorqinlashadi. */
+  /* Linza (lupa) olib tashlanganda undan qolgan bosilish qoidalari
+     shu yerda turardi: bosilganda tomchi `scale(1.14)` ga bo'rtib,
+     ko'tarilardi. Ular o'chirilmagan edi, chunki pastdagi "oddiy
+     shisha" bloki ularni baribir bosib turardi — ko'rinmagandan
+     keyin yo'q deb o'ylash oson.
+
+     Keyin o'sha blokdagi qoida `.pressed` dan `.press-active` ga
+     o'tkazildi (tabletka faqat o'zi turgan katak bosilganda
+     siqilsin deb) va qoplama ko'tarilib, bu yerdagi eski bo'rtish
+     sizib chiqdi: istalgan katak bosilsa, tabletka kattalashardi.
+     Shuning uchun endi ular butunlay olib tashlandi; bosilishning
+     o'zi pastda, bitta joyda yozilgan.
+
+     `--mag` qoldirildi: u kattalashtirilgan nusxaning kuchi, nusxa
+     esa hamon `display:none`. */
   .bottom-nav.pressed .bn-blob{--mag:1.5;}
-  .bottom-nav.pressed .bn-blob-fill{
-    transform:scale(1.14) translateY(-4px);
-    box-shadow:0 14px 28px rgba(15,23,42,0.32);
-  }
-  :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-fill{
-    box-shadow:0 14px 28px rgba(0,0,0,0.75);
-  }
-  .bottom-nav.pressed .bn-blob-gloss{
-    transform:scale(1.14) translateY(-4px);
-    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.95),
-               inset 0 -9px 18px rgba(255,255,255,0.26);
-  }
-  :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-gloss{
-    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.4),
-               inset 0 -9px 18px rgba(255,255,255,0.11);
-  }
-  .bottom-nav.pressed .bn-blob-mag{transform:scale(1.14) translateY(-4px);}
-  .bottom-nav.pressed .bn-blob-rim{transform:scale(1.14) translateY(-4px);opacity:1;}
   /* Sudralayotganda tomchi cho'ziladi — suyuq shishaday. */
   .bottom-nav.dragging .bn-blob-fill,
   .bottom-nav.dragging .bn-blob-gloss,
@@ -952,8 +947,20 @@
      yerda kechikish bo'lib tuyulardi. */
   .bottom-nav.dragging .bn-blob{transition:opacity 0.15s linear;}
   .bottom-nav.dragging .bn-item .ic-svg{transition:none;}
-  /* Bosilgan bo'limning ikonkasi ham bir siltanadi. */
-  .bn-item.bn-down .ic-svg{transform:scale(0.88);}
+  /* ---------- Bosilganda ----------
+     Ilgari faqat ikonka siqilardi, yozuv esa joyida qolardi —
+     katakning yarmi javob berib, yarmi bermagandek. Endi katak
+     butunlay, belgisi va yozuvi bilan birga siqiladi: barmoq
+     ostidagi narsa bir butun bo'lib bosilgandek seziladi.
+
+     Qaytishi bosilishidan sekinroq — shunda u "qo'yib yuborildi"
+     degan tuyg'u beradi, orqaga otilgandek emas. Barmoq tekkan
+     zahoti javob bo'lishi kerak, shuning uchun bosilishi tez. */
+  .bn-item.bn-down{
+    transform:scale(0.93);
+    transition:color 0.34s var(--ease),
+               transform 0.13s cubic-bezier(0.3,0,0.4,1);
+  }
   :root[data-reduce-motion="1"] .bn-blob,
   :root[data-reduce-motion="1"] .bn-blob-fill,
   :root[data-reduce-motion="1"] .bn-blob-gloss,
@@ -977,8 +984,11 @@
     padding:0 4px;position:relative;z-index:1;
     font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.01em;
     color:var(--muted);
-    /* Rang ham linza bilan birga oqib o'tsin, birdan yonib qolmasin. */
-    transition:color 0.34s var(--ease);
+    /* Rang ham linza bilan birga oqib o'tsin, birdan yonib qolmasin.
+       Siqilishning qaytishi esa yumshoq: bosilganda tez (0.13s),
+       qo'yib yuborilganda sekinroq — pastdagi `.bn-down` ga qarang. */
+    transition:color 0.34s var(--ease),
+               transform 0.26s cubic-bezier(0.22,1,0.36,1);
     -webkit-tap-highlight-color:transparent;
   }
   .bn-item .ic-svg,.bn-ghost .ic-svg{
@@ -990,8 +1000,12 @@
   .bn-item.active .ic-svg,
   .bn-ghost.active .ic-svg{transform:translateY(-2px) scale(1.12);}
   .bn-item:hover{color:var(--route-dark);}
-  .bn-item:active .ic-svg{transform:scale(0.9);}
+  /* Siqilish endi katakning o'zida (`.bn-down`), shuning uchun bu
+     yerda ikonka alohida siqilmaydi: ikkalasi ustma-ust tushsa,
+     belgi yozuvdan ko'ra ko'proq kichrayib, katak bir tekis
+     bosilgandek ko'rinmasdi. */
   :root[data-reduce-motion="1"] .bn-item .ic-svg{transition:none;transform:none;}
+  :root[data-reduce-motion="1"] .bn-item{transition:color 0.2s linear;transform:none;}
 
   /* "Yuk joylash" — qolgan bo'limlardan farq qilmaydi.
 
@@ -1040,9 +1054,18 @@
     /* En ham joy bilan birga oqib o'tsin: bo'lim almashganda
        tabletka bir vaqtning o'zida suriladi va yangi yozuvga
        moslashadi. Ikkisi bir xil egri chiziqda — bitta harakatga
-       qo'shilib ketadi. */
-    transition:transform 0.62s cubic-bezier(0.26,1.12,0.32,1),
-               width 0.62s cubic-bezier(0.26,1.12,0.32,1),
+       qo'shilib ketadi.
+
+       Egri chiziq ataylab oshib ketmaydigan (overshoot'siz) qilib
+       olindi. Ilgari bu yerda `cubic-bezier(0.26,1.12,0.32,1)`
+       turardi: u maqsaddan oshib o'tib, keyin qaytardi. Joy uchun
+       bu hali ham mayin ko'rinardi, lekin EN ham shu egri chiziqda
+       edi — ya'ni tabletka kerakligidan kengroq bo'lib, so'ng
+       torayardi. Ikki oshib-qaytish ustma-ust tushib, harakat
+       silliq emas, taka-puka bo'lib chiqardi. Endi jonlilikni
+       yo'ldagi cho'zilish beradi, surilishning o'zi esa tekis. */
+    transition:transform 0.52s cubic-bezier(0.22,1,0.36,1),
+               width 0.52s cubic-bezier(0.22,1,0.36,1),
                opacity 0.3s var(--ease);
   }
   .bn-blob-mag,
@@ -1068,9 +1091,14 @@
   :root[data-theme="dark"] .bn-blob-gloss{
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.16);
   }
-  /* Bosilganda ham, sudralganda ham shakl o'zgarmaydi. */
-  .bottom-nav.pressed .bn-blob-fill,
-  .bottom-nav.pressed .bn-blob-gloss{transform:scale(0.97);}
+  /* Tabletka faqat O'ZI turgan katak bosilganda siqiladi.
+     Ilgari bu `.pressed` ga, ya'ni butun panelga bog'langan edi:
+     "Profil" bosilsa, "Asosiy" ostidagi tabletka siqilardi —
+     bosilgan joyda emas, boshqa yerda harakat bo'lardi. Qaysi
+     katak bosilgani JS da ma'lum, shuning uchun u `press-active`
+     sinfini qo'yadi. */
+  .bottom-nav.press-active .bn-blob-fill,
+  .bottom-nav.press-active .bn-blob-gloss{transform:scale(0.95);}
   .bottom-nav.dragging .bn-blob-fill,
   .bottom-nav.dragging .bn-blob-gloss{transform:none;}
 
@@ -1090,24 +1118,37 @@
 
      Harakatning o'zi `.bn-blob` dagi `transition` da; bu yerda
      faqat shaklning o'zgarishi, ya'ni ikkalasi bir vaqtda ketadi. */
+  /* Cho'zilish ham, qaytish ham mayin: o'rtadagi ikki nuqta
+     burchaksiz o'tishni beradi — ularsiz tabletka eng cho'zilgan
+     joyida bir "sinib" qo'yardi. */
   @keyframes navBlobTravel{
     0%  {transform:scaleX(1) scaleY(1);}
-    32% {transform:scaleX(var(--stretch,1.1)) scaleY(var(--squash,0.94));}
+    16% {transform:scaleX(calc(1 + (var(--stretch,1.1) - 1) * 0.72))
+                   scaleY(calc(1 - (1 - var(--squash,0.94)) * 0.72));}
+    30% {transform:scaleX(var(--stretch,1.1)) scaleY(var(--squash,0.94));}
+    58% {transform:scaleX(calc(1 + (var(--stretch,1.1) - 1) * 0.34))
+                   scaleY(calc(1 - (1 - var(--squash,0.94)) * 0.34));}
     100%{transform:scaleX(1) scaleY(1);}
   }
   .bn-blob-fill.bn-travel,
   .bn-blob-gloss.bn-travel{
-    animation:navBlobTravel 0.54s cubic-bezier(0.3,0.86,0.28,1) both;
+    animation:navBlobTravel 0.5s cubic-bezier(0.37,0,0.33,1) both;
   }
-  /* Bosib turilgan yoki sudralayotgan holat ustun: o'sha paytda
-     cho'zilish ortiqcha bo'lardi. */
-  .bottom-nav.pressed .bn-blob-fill.bn-travel,
-  .bottom-nav.pressed .bn-blob-gloss.bn-travel,
+  /* Sudrash paytida cho'zilish bo'lmaydi: tabletka barmoq ortidan
+     yuradi, uning ustiga yana shakl o'zgarishi tushsa, u qo'ldan
+     chiqib ketayotgandek ko'rinardi.
+
+     Bosilish esa ataylab to'xtatilmaydi. Ilgari u ham shu yerda
+     edi — natijada yo'lda ketayotgan tabletka bosilgan zahoti
+     shaklini birdan tashlab yuborardi. Endi animatsiya o'z
+     yo'lini tugatadi, bosilishning siqilishi esa undan keyin
+     ko'rinadi: hech narsa sakramaydi. */
   .bottom-nav.dragging .bn-blob-fill.bn-travel,
   .bottom-nav.dragging .bn-blob-gloss.bn-travel{animation:none;}
-  :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-fill{
-    box-shadow:0 2px 12px rgba(0,0,0,0.45);
-  }
+  /* Bu yerda yana bitta qoida turardi: qorong'i mavzuda bosilganda
+     soyani oddiy holiga qaytarardi, chunki yuqoridagi eski linza
+     bloki uni kuchaytirib yuborardi. O'sha blok olib tashlangach
+     bu ham keraksiz bo'lib qoldi. */
 
   /* "Yuk joylash" paneldan bo'rtib chiqmaydi — qolgan bo'limlar
      bilan bir qatorda, bir xil balandlikda turadi. */
@@ -17275,7 +17316,7 @@
          u yangi animatsiyani uzib qo'yardi. */
       el.__travelTimer = setTimeout(function(){
         el.classList.remove("bn-travel");
-      }, 620);
+      }, 580);
     });
   }
 
@@ -17562,12 +17603,18 @@
       nav.classList.add("pressed");
       downItem = e.target.closest ? e.target.closest(".bn-item") : null;
       if(downItem) downItem.classList.add("bn-down");
+      /* Tabletka faqat o'zi turgan katak bosilganda siqiladi —
+         aks holda bosilgan joyda emas, boshqa yerda harakat
+         bo'lardi. */
+      nav.classList.toggle("press-active",
+        Boolean(downItem && downItem.classList.contains("active")));
       closeNavPick();
       startHold(downItem);
     });
 
     function clearPress(){
       nav.classList.remove("pressed");
+      nav.classList.remove("press-active");
       if(downItem) downItem.classList.remove("bn-down");
       downItem = null;
     }
@@ -17583,6 +17630,7 @@
         // Sudrash boshlangach bosilgan bo'limning siqilishi ortiqcha:
         // endi linzaning o'zi cho'zilib ko'rsatadi.
         if(downItem){ downItem.classList.remove("bn-down"); downItem = null; }
+        nav.classList.remove("press-active");
         try{ nav.setPointerCapture(pointerId); }catch(err){}
         // Turgan joyidan davom etsin: sudrash boshlanishida sakramasin.
         var navBox = nav.getBoundingClientRect();
