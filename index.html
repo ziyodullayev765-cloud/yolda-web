@@ -959,6 +959,10 @@
   :root[data-reduce-motion="1"] .bn-blob-gloss,
   :root[data-reduce-motion="1"] .bn-blob-mag,
   :root[data-reduce-motion="1"] .bn-blob-rim{transition:opacity 0.2s linear;transform:none;}
+  /* Harakatni kamaytirish so'ralganda yo'ldagi cho'zilish ham
+     bo'lmaydi — `transform:none` ni animatsiya bosib ketardi. */
+  :root[data-reduce-motion="1"] .bn-blob-fill.bn-travel,
+  :root[data-reduce-motion="1"] .bn-blob-gloss.bn-travel{animation:none;}
   /* Sudrash paytida ustidan o'tilayotgan bo'lim oldindan yorishadi. */
   .bn-item.bn-armed{color:var(--route);}
   .bn-item.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
@@ -1069,6 +1073,38 @@
   .bottom-nav.pressed .bn-blob-gloss{transform:scale(0.97);}
   .bottom-nav.dragging .bn-blob-fill,
   .bottom-nav.dragging .bn-blob-gloss{transform:none;}
+
+  /* ---------- Yo'ldagi cho'zilish ----------
+     Tabletka bir bo'limdan ikkinchisiga qattiq jism kabi sirg'alib
+     o'tardi: joyi o'zgarardi, o'zi esa o'zgarmasdi. Haqiqiy narsa
+     bunday yurmaydi — tez ketayotganda yo'nalish bo'ylab biroz
+     cho'ziladi, to'xtaganda o'z holiga qaytadi.
+
+     Shuning uchun harakat boshida tabletka ko'ndalangiga cho'zilib,
+     balandligi shuncha pasayadi (yuzasi saqlanadi — shundagina u
+     cho'zilgandek ko'rinadi, kattalashgandek emas), so'ng o'z
+     shakliga qaytadi. Qancha cho'zilishi yo'lning uzunligiga
+     bog'liq: qo'shni bo'limga o'tganda sezilar-sezilmas, panelning
+     bir chetidan ikkinchisiga o'tganda esa ko'proq. Miqdorni JS
+     o'lchaydi va `--stretch` / `--squash` ga yozadi.
+
+     Harakatning o'zi `.bn-blob` dagi `transition` da; bu yerda
+     faqat shaklning o'zgarishi, ya'ni ikkalasi bir vaqtda ketadi. */
+  @keyframes navBlobTravel{
+    0%  {transform:scaleX(1) scaleY(1);}
+    32% {transform:scaleX(var(--stretch,1.1)) scaleY(var(--squash,0.94));}
+    100%{transform:scaleX(1) scaleY(1);}
+  }
+  .bn-blob-fill.bn-travel,
+  .bn-blob-gloss.bn-travel{
+    animation:navBlobTravel 0.54s cubic-bezier(0.3,0.86,0.28,1) both;
+  }
+  /* Bosib turilgan yoki sudralayotgan holat ustun: o'sha paytda
+     cho'zilish ortiqcha bo'lardi. */
+  .bottom-nav.pressed .bn-blob-fill.bn-travel,
+  .bottom-nav.pressed .bn-blob-gloss.bn-travel,
+  .bottom-nav.dragging .bn-blob-fill.bn-travel,
+  .bottom-nav.dragging .bn-blob-gloss.bn-travel{animation:none;}
   :root[data-theme="dark"] .bottom-nav.pressed .bn-blob-fill{
     box-shadow:0 2px 12px rgba(0,0,0,0.45);
   }
@@ -17183,7 +17219,64 @@
     // aks holda linza chap chekkada bir zumga ko'rinib ketardi.
     if(!box.width) return;
     syncLensClone();
-    placeNavLens(box.left - navBox.left + box.width / 2, navLensWidth(active));
+    var x = box.left - navBox.left + box.width / 2;
+    flashLensTravel(x);
+    placeNavLens(x, navLensWidth(active));
+  }
+
+  /* ---------- Yo'ldagi cho'zilish ----------
+     Tabletka qancha yo'l yurishini shu yerda o'lchab, CSS ga
+     cho'zilish miqdorini beramiz: qo'shni bo'limga o'tganda
+     sezilar-sezilmas, panelning bir chetidan ikkinchisiga
+     o'tganda esa ko'proq. Shaklning o'zi CSS dagi
+     `navBlobTravel` da (yuqoriga qarang).
+
+     `null` — tabletka hali hech qayerda bo'lmagan, ya'ni bu
+     ilovaning birinchi chizilishi: o'sha paytda cho'zilish
+     noto'g'ri bo'lardi, chunki hech qanday harakat yo'q. */
+  var lastLensX = null;
+
+  function flashLensTravel(x){
+    var prev = lastLensX;
+    lastLensX = x;
+    if(typeof prev !== "number" || !isFinite(prev)) return;
+    var dist = Math.abs(x - prev);
+    // Juda qisqa siljish (masalan til almashganda en o'zgarishi) —
+    // bu harakat emas, cho'zilish ham kerak emas.
+    if(dist < 6) return;
+
+    /* Boshlang'ich 0.055 — qo'shni bo'lim ham quruq o'tmasin;
+       yuqori chegara 0.20 — bundan ortig'i cho'zilish emas,
+       shaklning buzilishi bo'lib ko'rinadi. */
+    var stretch = 1 + Math.min(0.20, 0.055 + dist / 1400);
+    // Yuzasi saqlangandek: ko'ndalangiga cho'zilsa, balandligi
+    // pasayadi. To'liq teskari nisbat (1/stretch) ortiqcha
+    // ko'rinadi, shuning uchun uning yarmidan ko'prog'i olinadi.
+    var squash = 1 - (stretch - 1) * 0.55;
+
+    ["bn-blob-fill", "bn-blob-gloss"].forEach(function(cls){
+      var el = document.querySelector(".bn-blob > ." + cls);
+      if(!el) return;
+      el.style.setProperty("--stretch", stretch.toFixed(3));
+      el.style.setProperty("--squash", squash.toFixed(3));
+      /* Sinf olib tashlanib, qayta qo'yiladi — aks holda ketma-ket
+         bosishda animatsiya qaytadan boshlanmasdi. Orasidagi
+         o'lcham o'qish brauzerni uni haqiqatan o'chirishga
+         majburlaydi. */
+      clearTimeout(el.__travelTimer);
+      el.classList.remove("bn-travel");
+      void el.offsetWidth;
+      el.classList.add("bn-travel");
+      /* Tugagach sinf ketadi: `both` bilan animatsiya oxirgi
+         kadrni ushlab turardi va bosilgandagi siqilish
+         (`.pressed`) undan keyin ishlamay qolardi.
+         `animationend` emas, taymer: sinf qayta qo'yilganda
+         brauzer `animationcancel` ni keyingi kadrda yuboradi va
+         u yangi animatsiyani uzib qo'yardi. */
+      el.__travelTimer = setTimeout(function(){
+        el.classList.remove("bn-travel");
+      }, 620);
+    });
   }
 
   /**

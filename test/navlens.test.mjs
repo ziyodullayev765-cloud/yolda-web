@@ -67,7 +67,7 @@ check('yozuv data-i18n bo\'yicha topiladi',
 
 /* ---------- O'lchangan en haqiqatan qo'llanadi ---------- */
 check('moveNavBlob o\'lchangan enni uzatadi',
-  /placeNavLens\(box\.left - navBox\.left \+ box\.width \/ 2, navLensWidth\(active\)\)/.test(html));
+  /var x = box\.left - navBox\.left \+ box\.width \/ 2;[\s\S]{0,80}placeNavLens\(x, navLensWidth\(active\)\)/.test(html));
 check('placeNavLens enni qabul qiladi', /function placeNavLens\(x, w\)\{/.test(html));
 check('en --ld ga yoziladi', /if\(w\) blob\.style\.setProperty\("--ld", w \+ "px"\)/.test(html));
 
@@ -87,6 +87,56 @@ const blob = html.match(/\n {2}\.bn-blob\{[\s\S]*?\n {2}\}/g) || [];
 check('.bn-blob qoidasi topildi', blob.length > 0);
 check('en ham animatsiya bilan o\'zgaradi',
   blob.some((b) => /transition:[^}]*\bwidth\b/.test(b)), { qoidalar: blob.length });
+
+/* ---------- Yo'ldagi cho'zilish ----------
+   Tabletka bir bo'limdan ikkinchisiga o'tganda yo'nalish bo'ylab
+   cho'zilib, yetib borgach o'z holiga qaytadi. Bu ham jim
+   yo'qoladigan narsalardan: animatsiya o'chsa, tabletka baribir
+   to'g'ri joyga boradi — faqat qattiq jism kabi. */
+check('navBlobTravel keyframe bor', /@keyframes navBlobTravel\{/.test(html));
+const kf = html.match(/@keyframes navBlobTravel\{[\s\S]*?\n {2}\}/);
+if (kf) {
+  check('cho\'zilish o\'rtada eng kuchli',
+    /32%\s*\{transform:scaleX\(var\(--stretch[^)]*\)\) scaleY\(var\(--squash/.test(kf[0]));
+  /* Boshi ham, oxiri ham 1 — aks holda shakl o'zgargancha qolib
+     ketardi va keyingi bosilish allaqachon buzilgan holatdan
+     boshlanardi. */
+  check('boshi va oxiri o\'z shaklida',
+    /0%\s*\{transform:scaleX\(1\) scaleY\(1\);\}/.test(kf[0])
+    && /100%\s*\{transform:scaleX\(1\) scaleY\(1\);\}/.test(kf[0]));
+}
+check('cho\'zilish qatlamlarga qo\'llangan',
+  /\.bn-blob-fill\.bn-travel,[\s\S]{0,80}\.bn-blob-gloss\.bn-travel\{[\s\S]{0,120}animation:navBlobTravel/.test(html));
+
+const flash = html.match(/function flashLensTravel\(x\)\{[\s\S]*?\n {2}\}/);
+check('flashLensTravel bor', Boolean(flash));
+if (flash) {
+  const f = flash[0];
+  check('miqdor yo\'l uzunligidan o\'lchanadi', /var dist = Math\.abs\(x - prev\)/.test(f));
+  check('yuqori chegara bor', /Math\.min\(0\.20,/.test(f));
+  /* Birinchi chizilishda harakat yo'q — cho'zilish ham bo'lmasligi
+     kerak, aks holda ilova ochilishida tabletka sababsiz silkinardi. */
+  check('birinchi chizilishda cho\'zilmaydi', /typeof prev !== "number"/.test(f));
+  check('juda qisqa siljish e\'tiborga olinmaydi', /if\(dist < 6\) return;/.test(f));
+  check('yuzasi saqlangandek ko\'rinadi', /var squash = 1 - \(stretch - 1\) \* 0\.55;/.test(f));
+  /* Sinf taymer bilan olib tashlanadi: `animationend` ga qo'yilsa,
+     ketma-ket bosishda `animationcancel` yangi animatsiyani uzib
+     qo'yardi. */
+  check('sinf keyin olib tashlanadi', /__travelTimer = setTimeout/.test(f));
+  check('qayta boshlash uchun oqim majburlanadi', /void el\.offsetWidth;/.test(f));
+}
+check('moveNavBlob cho\'zilishni ishga tushiradi',
+  /flashLensTravel\(x\);[\s\S]{0,80}placeNavLens\(x, navLensWidth\(active\)\)/.test(html));
+
+/* Bosilgan, sudralayotgan va harakat kamaytirilgan holatlarda
+   cho'zilish bo'lmaydi: animatsiya `transform` ni bosib ketardi. */
+for (const [name, re] of [
+  ['bosilganda', /\.bottom-nav\.pressed \.bn-blob-fill\.bn-travel/],
+  ['sudralganda', /\.bottom-nav\.dragging \.bn-blob-fill\.bn-travel/],
+  ['harakat kamaytirilganda', /\[data-reduce-motion="1"\] \.bn-blob-fill\.bn-travel/],
+]) {
+  check(name + ' cho\'zilish o\'chadi', re.test(html));
+}
 
 /* ---------- Til almashganda qayta o'lchanadi ---------- */
 const lang = html.match(/function applyLang\(\)\{[\s\S]*?\n {2}\}/);
