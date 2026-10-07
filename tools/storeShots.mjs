@@ -185,7 +185,14 @@ const SHOTS = [
 
 const run = async () => {
   mkdirSync(OUT, { recursive: true });
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  /* Dasturiy GPU shart. Oddiy headless rejimda `backdrop-filter`
+     UMUMAN chizilmaydi — CSS.supports "ha" deydi, ekranda esa hech
+     narsa bo'lmaydi. Ya'ni pastki panelning shishasi rasmda
+     ko'rinmay, ilova haqiqiy telefondagidan boshqacha chiqardi. */
+  const browser = await chromium.launch({
+    executablePath: '/opt/pw-browsers/chromium',
+    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--enable-gpu-rasterization'],
+  });
 
   for (const theme of ['light']) {
     const ctx = await browser.newContext({

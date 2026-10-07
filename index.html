@@ -184,10 +184,15 @@
     --chrome-glass:rgba(255,255,255,0.62);
     --chrome-solid:rgba(255,255,255,0.94);
     --chrome-brd:rgba(255,255,255,0.55);
-    /* Pastki panel sarlavhadan ko'ra shaffofroq: u sahifaning ustida
-       suzib turadi va ostidagi kontent ko'rinib tursin. Xiralashtirish
-       kuchliroq, shuning uchun yozuv baribir o'qiladi. */
-    --nav-glass:rgba(255,255,255,0.34);
+    /* Pastki panel sahifaning ustida suzib turadi va ostidagi kontent
+       xiralashib bilinib turadi.
+
+       Ilgari bu 0.34 edi — ya'ni panelning o'z rangi deyarli yo'q, nima
+       ko'rinsa ham ostidagi narsadan kelardi. Ostiga to'q sariq belgi
+       (masalan "Reyting va sharhlar") kelib qolsa, panelning uchdan
+       biri to'q sariq dog'ga aylanardi. Shisha ostidagi narsani
+       ESLATIShi kerak, uni ko'rsatishi emas. */
+    --nav-glass:rgba(255,255,255,0.72);
     --nav-solid:rgba(255,255,255,0.92);
     --nav-brd:rgba(255,255,255,0.5);
     --nav-lens:rgba(255,255,255,0.55);
@@ -266,7 +271,7 @@
     --chrome-glass:rgba(8,8,8,0.62);
     --chrome-solid:rgba(8,8,8,0.96);
     --chrome-brd:rgba(255,255,255,0.10);
-    --nav-glass:rgba(12,12,12,0.34);
+    --nav-glass:rgba(14,14,14,0.76);
     --nav-solid:rgba(10,10,10,0.94);
     --nav-brd:rgba(255,255,255,0.12);
     --nav-lens:rgba(255,255,255,0.14);
@@ -699,8 +704,15 @@
     display:flex;align-items:center;
     border-radius:999px;
     background:var(--nav-glass);
-    -webkit-backdrop-filter:saturate(200%) blur(30px);
-    backdrop-filter:saturate(200%) blur(30px);
+    /* `saturate` ataylab past. 200% da ostidagi rangli belgi ikki
+       barobar to'yinib, panelni bo'yab yuborardi: to'q sariq kvadrat
+       ustidan o'tganda panelning chap uchdan biri jigarrang dog'
+       bo'lib qolardi. 115% — rang biroz jonli, lekin kuchaymaydi.
+       Xiralashtirish esa oshirildi: keng blur shaklning qirrasini
+       yo'qotadi, ya'ni ostidagi kvadratning cheti panel ichida
+       chiziq bo'lib ko'rinmaydi. */
+    -webkit-backdrop-filter:saturate(115%) blur(40px);
+    backdrop-filter:saturate(115%) blur(40px);
     border:1px solid var(--nav-brd);
     box-shadow:0 10px 34px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.06);
     padding:0 6px;
