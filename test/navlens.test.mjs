@@ -223,6 +223,41 @@ if (toast) {
     toast[0].match(/pointer-events:[^;]*/));
 }
 
+/* ---------- Bosishni panelning o'zi hal qiladi ----------
+   Ilgari bo'lim almashuvi brauzerning "click" hodisasiga
+   qoldirilgandi. Lekin brauzer click ni har doim ham yubormaydi:
+   barmoq uzilmay turib ikkinchisi tushsa, teginish ko'p barmoqli
+   deb hisoblanadi va click umuman kelmaydi. Tez bosganda aynan
+   shunday bo'ladi, shuning uchun bo'lim ochilmay qolardi.
+
+   Shuning uchun `finish()` endi barmoq uzilgan katakni o'zi
+   topadi — sudrashda ham, oddiy bosishda ham. */
+/* Faylda `finish(e)` nomli bir nechta funksiya bor (yon tomonga
+   surish ham shunday nomlangan) — bizga pastki paneldagisi kerak,
+   uni `wasDragging` dan tanib olamiz. */
+const finishFn = [...html.matchAll(/function finish\(e\)\{[\s\S]*?\n {4}\}/g)]
+  .map((m) => m[0]).filter((s) => s.includes('wasDragging'));
+check('panelning finish() i topildi', finishFn.length === 1, finishFn.length);
+if (finishFn.length === 1) {
+  const f = finishFn[0];
+  check('oddiy bosishda ham katak topiladi', /var item = wasDragging \? target : null;/.test(f), f.slice(0, 200));
+  check('barmoq uzilgan joydan olinadi', /item = itemAt\(e\.clientX\)/.test(f));
+  /* Panel tashqarisida uzilsa — bekor qilingan bosish. */
+  check('panel tashqarisida ochilmaydi', /e\.clientY >= box\.top/.test(f) && /e\.clientY <= box\.bottom/.test(f));
+  /* Panelning o'zi ochgandan keyin brauzerning clicki yutilishi
+     kerak, aks holda bo'lim ikki marta almashardi. */
+  check('keyingi click yutiladi', /dragEndedAt = Date\.now\(\);[\s\S]{0,200}var item = wasDragging/.test(f));
+  check('eski "clickka qoldirish" yo\'li qolmadi', !/if\(!wasDragging\)\{ moveNavBlob\(\); return; \}/.test(f));
+}
+/* Ustma-ust tushgan teginishda navbat yangisiga o'tadi: odam
+   oxirgi tekkan katagini kutadi. Ilgari ikkinchi barmoq butunlay
+   e'tiborsiz qolardi (`return`). */
+check('ustma-ust teginishda navbat yangisiga o\'tadi',
+  !/\} else if\(pointerId !== null\)\{\s*return;\s*\}/.test(html));
+/* Uzilib qolgan teginishdan keyin katak yashil bo'lib qolmasin. */
+check('yangi teginish eski yashil belgini tozalaydi',
+  /setArmed\(null\);\s*\n\s*pointerId = e\.pointerId;/.test(html));
+
 /* ---------- Belgilar bir xil o'lchamda ----------
    Besh belgining to'rttasi 16 birlik joy egallaydi (4 dan 20
    gacha). "+" 14 da, quloqchinlar esa 19 da edi — panelda biri

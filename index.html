@@ -17717,12 +17717,27 @@
       // Bir teginish tugaganini brauzer ba'zan bildirmay qoladi
       // (DOM qayta chizilsa). Shunda pointerId osilib qolar va
       // keyingi teginishlar umuman hisobga olinmasdi.
-      if(pointerId !== null && e.isPrimary !== false){
+      if(pointerId !== null){
+        /* Avvalgi teginish hali tugamagan, lekin yangisi tushdi.
+           Tez bosganda aynan shunday bo'ladi: barmoq avvalgisi
+           to'liq uzilgunicha yana tegadi.
+
+           Ilgari bunday teginish (ikkinchi barmoq) butunlay
+           e'tiborsiz qolardi va odam nimani oxirgi bosgan bo'lsa,
+           o'sha ochilmasdi. Endi navbat yangisiga o'tadi: odam
+           oxirgi tekkan katagini kutadi. */
+        cancelHold();
         dragging = false;
+        nav.classList.remove("dragging");
         try{ nav.releasePointerCapture(pointerId); }catch(err){}
-      } else if(pointerId !== null){
-        return;
       }
+      /* Oldingi teginishdan qolgan "ustidan o'tilmoqda" belgisi
+         o'chiriladi. U sudrash paytida katakni yoritib turadi va
+         `finish()` da olib tashlanadi — lekin teginish uzilib
+         qolsa (masalan ikkinchi barmoq tushsa yoki tizim teginishni
+         bekor qilsa) o'sha joyda qolib ketardi: tanlanmagan katak
+         yashil bo'lib turaverardi. */
+      setArmed(null);
       pointerId = e.pointerId;
       startX = e.clientX;
       dragging = false;
@@ -17801,10 +17816,32 @@
         return;
       }
 
-      if(!wasDragging){ moveNavBlob(); return; }
+      /* ---------- Oddiy bosish ----------
+         Ilgari bu yerda shunchaki `moveNavBlob()` turardi va bo'lim
+         almashuvini brauzerning o'z "click" hodisasiga qoldirardik.
+         Lekin brauzer `click` ni HAR DOIM ham yubormaydi: barmoq
+         uzilmay turib ikkinchisi tushsa, teginish ko'p barmoqli
+         deb hisoblanadi va click umuman kelmaydi.
+
+         Tez bosganda aynan shunday bo'ladi — barmoq avvalgisi
+         to'liq uzilgunicha yana tegadi. Shuning uchun bo'lim
+         ochilmay qolardi.
+
+         Endi panel buni o'zi qiladi: barmoq qayerda uzilgan bo'lsa,
+         o'sha katak ochiladi. Keyin kelishi mumkin bo'lgan "click"
+         esa qalqon bilan yutiladi, aks holda bo'lim ikki marta
+         almashardi. */
       dragEndedAt = Date.now();
 
-      var name = target && target.getAttribute("data-tab-link");
+      var item = wasDragging ? target : null;
+      if(!item){
+        /* Barmoq panelning ichida uzilgandagina. Tashqarida uzilsa —
+           bu bekor qilingan bosish, hech narsa ochilmaydi. */
+        var box = nav.getBoundingClientRect();
+        if(e.clientY >= box.top - 4 && e.clientY <= box.bottom + 4) item = itemAt(e.clientX);
+      }
+
+      var name = item && item.getAttribute("data-tab-link");
       if(name) switchTab(name);
       else moveNavBlob();
     }
