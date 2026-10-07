@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node test/trucks.test.mjs && node test/admin.test.mjs && node test/notify.test.mjs && node test/auth.test.mjs && node test/storage.test.mjs && node test/deleteAccount.test.mjs && node test/quota.test.mjs && node test/standalone.test.mjs && node test/privacy.test.mjs && node test/navlens.test.mjs && node test/textfit.test.mjs && node test/flows.test.mjs",
+    "test": "node test/trucks.test.mjs && node test/admin.test.mjs && node test/notify.test.mjs && node test/auth.test.mjs && node test/storage.test.mjs && node test/deleteAccount.test.mjs && node test/quota.test.mjs && node test/standalone.test.mjs && node test/privacy.test.mjs && node test/navlens.test.mjs && node test/textfit.test.mjs && node test/ptr.test.mjs && node test/flows.test.mjs",
     "test:flows": "node test/flows.test.mjs",
     "build:pages": "node tools/buildPrivacy.mjs && node tools/buildDeletion.mjs"
   }

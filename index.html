@@ -3004,16 +3004,64 @@
   /* Yuqoridan pastga tortib yangilash — o'rnatilgan ilova uchun.
      Brauzerda buni Chrome/Safari o'zi qiladi, u yerda bu qo'shilmaydi. */
   .ptr{
-    position:fixed;top:0;left:50%;z-index:120;width:36px;height:36px;margin-left:-18px;
-    border-radius:50%;background:var(--card);color:var(--route);
-    box-shadow:0 4px 16px rgba(15,23,42,.18);
+    position:fixed;top:0;left:50%;z-index:120;width:44px;height:44px;margin-left:-22px;
+    color:var(--muted);
     display:flex;align-items:center;justify-content:center;
-    transform:translateY(-52px);opacity:0;pointer-events:none;
+    transform:translateY(-56px);opacity:0;pointer-events:none;
   }
-  .ptr svg{width:19px;height:19px;display:block;}
-  .ptr-spin svg{animation:ptrSpin 0.8s linear infinite;}
-  @keyframes ptrSpin{to{transform:rotate(360deg);}}
-  :root[data-reduce-motion="1"] .ptr-spin svg{animation:none;}
+
+  /* ---------- Aylanadigan belgi ----------
+     O'n ikkita tayoqcha doira bo'ylab tiziladi va navbat bilan
+     so'nib boradi — aylanish shundan ko'rinadi, hech narsa
+     haqiqatan aylanmaydi.
+
+     Ikki narsani bilib qo'yish kerak:
+
+     1. Tayoqchaning o'z holati `opacity:0`. Ya'ni ANIMATSIYASIZ u
+        umuman ko'rinmaydi. Shuning uchun belgi tortish paytida ham
+        aylanib turadi, faqat yangilash paytida emas: aks holda
+        barmoq tortayotganda ekranda bo'sh joy bo'lardi.
+
+        Aylanish faqat `.ptr-live` bo'lganda ketadi. Belgi ikkita —
+        biri butun sahifa uchun, biri xabarlar ro'yxati uchun — va
+        ikkalasi ham doim sahifada turadi. Animatsiya sinfga
+        bog'lanmasa, ko'rinmayotgan ikki belgida yigirma to'rtta
+        animatsiya tinimsiz aylanib yotardi.
+
+     2. Kechikishlar foydalanuvchi yuborgan ko'rinishda qoldirildi.
+        Davomiylik 1s bo'lgani uchun -1.1s va -1s aslida -0.1s va
+        0s bilan bir xil, ya'ni 2- tayoqcha 12- bilan, 3- esa 1-
+        bilan bir vaqtda so'nadi. O'n ikki tayoqchaga o'n bosqich
+        to'g'ri keladi — aylanishda tepada sezilar-sezilmas
+        "qoqilish" bo'ladi. Bu ataylab o'zgartirilmadi. */
+  .ptr-loader{position:relative;width:100%;height:100%;}
+  .ptr-bar{
+    position:absolute;left:50%;top:30%;
+    width:8%;height:24%;
+    background:currentColor;border-radius:50px;
+    box-shadow:0 0 3px rgba(0,0,0,0.2);
+    opacity:0;
+  }
+  .ptr-live .ptr-bar{animation:ptrFade 1s linear infinite;}
+  @keyframes ptrFade{from{opacity:1;}to{opacity:0.25;}}
+  /* Harakatni kamaytirish so'ralganda tayoqchalar qimirlamaydi.
+     `animation:none` bilan ularning o'z `opacity:0` i qaytadi va
+     belgi butunlay yo'q bo'lib qolardi, shuning uchun bu yerda
+     unga qat'iy ko'rinish beriladi. */
+  :root[data-reduce-motion="1"] .ptr-live .ptr-bar{animation:none;opacity:0.55;}
+  /* Har bir tayoqcha 30 daraja burilib, markazdan chetga suriladi. */
+  .ptr-bar:nth-child(1){transform:rotate(0deg) translate(0,-130%);animation-delay:0s;}
+  .ptr-bar:nth-child(2){transform:rotate(30deg) translate(0,-130%);animation-delay:-1.1s;}
+  .ptr-bar:nth-child(3){transform:rotate(60deg) translate(0,-130%);animation-delay:-1s;}
+  .ptr-bar:nth-child(4){transform:rotate(90deg) translate(0,-130%);animation-delay:-0.9s;}
+  .ptr-bar:nth-child(5){transform:rotate(120deg) translate(0,-130%);animation-delay:-0.8s;}
+  .ptr-bar:nth-child(6){transform:rotate(150deg) translate(0,-130%);animation-delay:-0.7s;}
+  .ptr-bar:nth-child(7){transform:rotate(180deg) translate(0,-130%);animation-delay:-0.6s;}
+  .ptr-bar:nth-child(8){transform:rotate(210deg) translate(0,-130%);animation-delay:-0.5s;}
+  .ptr-bar:nth-child(9){transform:rotate(240deg) translate(0,-130%);animation-delay:-0.4s;}
+  .ptr-bar:nth-child(10){transform:rotate(270deg) translate(0,-130%);animation-delay:-0.3s;}
+  .ptr-bar:nth-child(11){transform:rotate(300deg) translate(0,-130%);animation-delay:-0.2s;}
+  .ptr-bar:nth-child(12){transform:rotate(330deg) translate(0,-130%);animation-delay:-0.1s;}
   /* Ikki marta yangilash bo'lmasin: o'zimiznikini qo'shgan joyda
      brauzerning o'z overscroll harakati o'chiriladi. */
   html.ptr-on,html.ptr-on body{overscroll-behavior-y:contain;}
@@ -18358,17 +18406,26 @@
        - faqat sahifa eng tepasida turganda va harakat aniq pastga
          qaratilgan bo'lsa ishlaydi, yonlamasiga surishga tegmaydi.
      ============================================================ */
+  /* Tortib yangilash belgisi. Ikki joyda kerak — butun sahifa uchun
+     va xabarlar ro'yxati uchun — shuning uchun bitta joyda
+     yasaladi. O'n ikkita tayoqchaning o'rni va navbati CSS da
+     (`.ptr-bar`), bu yerda faqat ularning o'zi. */
+  function makePtrIndicator(){
+    var el = document.createElement("div");
+    el.className = "ptr";
+    el.setAttribute("aria-hidden", "true");
+    var bars = "";
+    for(var i = 0; i < 12; i++) bars += '<span class="ptr-bar"></span>';
+    el.innerHTML = '<span class="ptr-loader">' + bars + '</span>';
+    document.body.appendChild(el);
+    return el;
+  }
+
   function initPullToRefresh(){
     if(!installAlreadyDone() || isTelegramWebApp) return;
     document.documentElement.classList.add("ptr-on");
 
-    var indicator = document.createElement("div");
-    indicator.className = "ptr";
-    indicator.setAttribute("aria-hidden", "true");
-    indicator.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
-      + 'stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/>'
-      + '<polyline points="20.5 3.5 20.5 10 14 10"/></svg>';
-    document.body.appendChild(indicator);
+    var indicator = makePtrIndicator();
 
     var THRESHOLD = 70;   // shuncha tortilsa yangilanadi
     var MAX = 112;        // undan nariga cho'zilmaydi
@@ -18381,16 +18438,24 @@
 
     function draw(dist){
       var eased = Math.min(dist, MAX);
-      indicator.style.transform = "translateY(" + (eased - 52) + "px) rotate(" + Math.round(eased * 3) + "deg)";
+      /* Aylanish faqat belgi ko'rinib turganda ketadi — ko'rinmas
+         belgida o'n ikkita animatsiyani tinimsiz aylantirish bekor
+         ish bo'lardi. */
+      indicator.classList.add("ptr-live");
+      /* Faqat pastga suriladi. Aylanishni belgi o'zi qiladi —
+         ustiga yana burash ikkita harakatni urishtirardi. */
+      indicator.style.transform = "translateY(" + (eased - 56) + "px)";
       indicator.style.opacity = String(Math.min(1, eased / THRESHOLD));
     }
 
     function reset(){
-      indicator.classList.remove("ptr-spin");
       indicator.style.transition = "transform .25s ease, opacity .25s ease";
-      indicator.style.transform = "translateY(-52px)";
+      indicator.style.transform = "translateY(-56px)";
       indicator.style.opacity = "0";
-      setTimeout(function(){ indicator.style.transition = ""; }, 280);
+      setTimeout(function(){
+        indicator.style.transition = "";
+        indicator.classList.remove("ptr-live");
+      }, 280);
     }
 
     // Xarita, karusel va shunga o'xshash o'zi sudraladigan widgetlar
@@ -18437,7 +18502,6 @@
       indicator.style.transition = "transform .2s ease";
       indicator.style.transform = "translateY(22px)";
       indicator.style.opacity = "1";
-      indicator.classList.add("ptr-spin");
       // Kirgan holat saqlanadi (restoreAuth) — yangilangandan keyin
       // odam yana o'z profilida qoladi, qaytadan kirish so'ralmaydi.
       setTimeout(function(){ location.reload(); }, 220);
@@ -18488,13 +18552,7 @@
   }
 
   function initChatPullRefresh(){
-    var ind = document.createElement("div");
-    ind.className = "ptr";
-    ind.setAttribute("aria-hidden", "true");
-    ind.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
-      + 'stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/>'
-      + '<polyline points="20.5 3.5 20.5 10 14 10"/></svg>';
-    document.body.appendChild(ind);
+    var ind = makePtrIndicator();
 
     var THRESHOLD = 68;   // shuncha tortilsa yangilanadi
     var MAX = 108;        // undan nariga cho'zilmaydi
@@ -18502,16 +18560,20 @@
 
     function draw(dist){
       var eased = Math.min(dist, MAX);
-      ind.style.transform = "translateY(" + (eased - 52) + "px) rotate(" + Math.round(eased * 3) + "deg)";
+      ind.classList.add("ptr-live");
+      /* Faqat pastga suriladi. Aylanishni belgi o'zi qiladi. */
+      ind.style.transform = "translateY(" + (eased - 56) + "px)";
       ind.style.opacity = String(Math.min(1, eased / THRESHOLD));
     }
 
     function reset(){
-      ind.classList.remove("ptr-spin");
       ind.style.transition = "transform .25s ease, opacity .25s ease";
-      ind.style.transform = "translateY(-52px)";
+      ind.style.transform = "translateY(-56px)";
       ind.style.opacity = "0";
-      setTimeout(function(){ ind.style.transition = ""; }, 280);
+      setTimeout(function(){
+        ind.style.transition = "";
+        ind.classList.remove("ptr-live");
+      }, 280);
     }
 
     window.addEventListener("touchstart", function(ev){
@@ -18548,7 +18610,6 @@
       ind.style.transition = "transform .2s ease";
       ind.style.transform = "translateY(22px)";
       ind.style.opacity = "1";
-      ind.classList.add("ptr-spin");
       // Javob juda tez kelsa aylanish ko'rinmay qolardi — eng kamida
       // shuncha turadi, shunda harakat tugaganini odam sezadi.
       var started = Date.now();
