@@ -18,6 +18,18 @@
       if(glass === "off" || glass === "low" || glass === "high"){
         document.documentElement.setAttribute("data-glass", glass);
       }
+      /* Ochilish animatsiyasi faqat bir marta — ilovaga birinchi
+         kirganda. Keyingi safar odam uni allaqachon ko'rgan, 3.5
+         soniya kutib o'tirishi esa behuda.
+
+         Bayroq aynan shu yerda, birinchi chizishdan OLDIN qo'yiladi:
+         keyinroq qo'yilsa, ekran bir lahza yashil bo'lib ko'rinib
+         ketardi. Saqlagich ishlamasa (yopiq rejim, bloklangan sayt
+         ma'lumotlari) animatsiya har safar ko'rinadi — bu xato emas,
+         shunchaki eski xulq. */
+      if(localStorage.getItem("yolda_splash_seen") === "1"){
+        document.documentElement.setAttribute("data-splash", "off");
+      }
     }catch(e){}
   })();
 </script>
@@ -457,6 +469,13 @@
      Eng muhimi: u JAVASCRIPTSIZ ham yo'qoladi. Chiqib ketishi CSS
      animatsiyasi bilan (`forwards`), ya'ni skript xato bersa ham odam
      ekran ortida qolib ketmaydi. JS faqat qoldig'ini tozalaydi.
+
+     FAQAT BIR MARTA. Animatsiya ilovaga birinchi kirganda ko'rinadi,
+     keyin esa umuman chizilmaydi — har safar 3.5 soniya kutish
+     tanishtiruv emas, to'siq bo'lib qolardi. Belgi brauzer
+     xotirasida (`yolda_splash_seen`) va qaror sahifaning eng
+     birinchi skriptida qabul qilinadi, ya'ni yashil ekran bir
+     lahza ham ko'rinib ketmaydi.
      ============================================================ */
   .splash{
     position:fixed;inset:0;z-index:99999;
@@ -464,6 +483,10 @@
     background:radial-gradient(circle at 50% 44%, #0E3D28 0%, #061D13 58%, #020A06 100%);
     animation:splashOut 0.4s var(--ease, ease) 3.1s forwards;
   }
+  /* Ilgari ko'rgan odamga umuman chizilmaydi. Bayroq <html> ga
+     birinchi skriptda qo'yiladi, ya'ni bu qoida sahifa chizilgunicha
+     amalda bo'ladi: yashil ekran bir lahza ham ko'rinmaydi. */
+  :root[data-splash="off"] .splash{display:none;}
   .splash-inner{display:flex;flex-direction:column;align-items:center;gap:24px;}
   .splash-mark{
     width:116px;height:116px;display:block;
@@ -4574,6 +4597,19 @@
       gone = true;
       if(el.parentNode) el.parentNode.removeChild(el);
     }
+
+    /* Ilgari ko'rilgan bo'lsa — CSS uni allaqachon yashirgan, bu
+       yerda faqat DOM'dan olib tashlanadi. Hech qanday kutish,
+       hech qanday hodisa kutilmaydi. */
+    if(document.documentElement.getAttribute("data-splash") === "off"){
+      drop();
+      return;
+    }
+    /* Ko'rsatildi deb belgilaymiz — keyingi kirishda o'tkazib
+       yuboriladi. Oxirigacha kutilmasa ham (odam bosib yopsa yoki
+       ilovani yopsa) belgi qoladi: animatsiya bir marta ko'rsatilsa
+       bas, uni "to'liq ko'rish" shart emas. */
+    try{ localStorage.setItem("yolda_splash_seen", "1"); }catch(e){}
     el.addEventListener("click", function(){
       el.style.transition = "opacity .18s ease";
       el.style.opacity = "0";
