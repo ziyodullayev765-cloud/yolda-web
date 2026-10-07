@@ -1,0 +1,13 @@
+# Saytga chiqmaydigan narsalar.
+#
+# Bu yerdagilar faqat ishlab chiqish uchun: hech biri ishga
+# tushganda chaqirilmaydi (api/ va lib/ ulardan hech narsa import
+# qilmaydi — buni grep bilan tekshirish mumkin). Deployga qo'shilsa,
+# foyda yo'q, hajm esa ortadi.
+#
+# Diqqat: maxfiylik.html va hisob-ochirish.html bu yerda BO'LMASLIGI
+# kerak — Play Market aynan o'sha ikki manzilni so'raydi.
+
+test/
+tools/
+store/

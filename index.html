@@ -2595,6 +2595,20 @@
     min-height:44px;padding-left:6px;white-space:nowrap;
   }
   .home-sec-all .ic-svg{font-size:15px;}
+  /* Tor ekranda (360 px kengligidagi telefonlar) sarlavha ikki
+     qatorga bo'linib, yonidagi "Barchasini ko'rish" bilan qiyshayib
+     qolardi: belgi o'rtada osilib qolar, yozuvlar bir-biriga
+     tiqilardi. Unda havolaning so'zi olinadi — strelka o'zi yetarli,
+     chunki u sarlavhaning davomi. So'z o'chmaydi, faqat
+     ko'rinmaydi: ekran o'quvchisi uni avvalgidek o'qiydi. */
+  @media (max-width: 400px){
+    .home-sec-head{align-items:flex-start;}
+    .home-sec-all{min-height:32px;padding-left:4px;}
+    .home-sec-all > span{
+      position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+    }
+  }
 
   /* ---------- 3. Yuk kartochkasi ---------- */
   .home-load-card{
