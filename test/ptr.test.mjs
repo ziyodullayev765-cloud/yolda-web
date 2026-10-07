@@ -79,6 +79,42 @@ if (ptr) {
   check('neytral rangda', /color:var\(--muted\)/.test(ptr[0]), ptr[0]);
 }
 
+/* ---------- Qayerda ishlaydi ----------
+   Telegram ichida pastga tortish — Telegram'ning o'z harakati:
+   ilovani pastga surib yopadi. Ilova `tg.disableVerticalSwipes()`
+   ni chaqiradi, ya'ni o'sha harakat bo'sh turadi va uni o'zimiz
+   ishlatsak bo'ladi.
+
+   Lekin bu metod Telegram 7.7 dan boshlab bor. Eskiroq mijozda
+   chaqiruv jimgina o'tib ketadi va pastga tortish hamon ilovani
+   yopadi — o'sha yerda tortib yangilash qo'shilsa, ikkisi urishib,
+   ilova ko'z oldida yopilardi.
+
+   Shuning uchun shart metod bor-yo'qligida emas, u HAQIQATAN
+   ishlaganida: `isVerticalSwipesEnabled` aynan `false` bo'lishi
+   kerak. Mana shu shartni qotirib qo'yamiz — "Telegram bo'lsa
+   bo'ldi" degan yengil shartga almashtirib yuborilmasin. */
+check('qayerda ishlashi bitta joyda hal qilinadi', /function pagePtrEnabled\(\)\{/.test(html));
+const gate = html.match(/function pagePtrEnabled\(\)\{[\s\S]*?\n {2}\}/);
+if (gate) {
+  check('Telegram ichida ham ishlaydi', /isTelegramWebApp\) return telegramSwipesOff\(\)/.test(gate[0]), gate[0]);
+  check('tashqarida faqat o\'rnatilgan ilovada', /return installAlreadyDone\(\);/.test(gate[0]), gate[0]);
+}
+const swipes = html.match(/function telegramSwipesOff\(\)\{[\s\S]*?\n {2}\}/);
+check('telegramSwipesOff topildi', Boolean(swipes));
+if (swipes) {
+  /* `!== true` emas, aynan `=== false`: eski mijozda bu xossa
+     umuman yo'q (undefined) va u "o'chirilgan" degani emas. */
+  check('aynan false ekani tekshiriladi',
+    /isVerticalSwipesEnabled === false/.test(swipes[0]), swipes[0]);
+}
+check('eski "Telegramda qo\'shilmaydi" sharti qolmadi',
+  !/if\(!installAlreadyDone\(\) \|\| isTelegramWebApp\) return;/.test(html));
+check('tortib yangilash Telegram aniqlangandan keyin ishga tushadi',
+  /initTelegramWebApp\(\);[\s\S]*?initPullToRefresh\(\);/.test(html));
+/* Xabarlar ro'yxatining o'z yangilashi bilan urishmasin. */
+check('xabarlar ro\'yxatiga tegmaydi', /if\(chatListPullable\(\)\) return;/.test(html));
+
 /* ---------- JS tomoni ---------- */
 check('belgi bitta joyda yasaladi', /function makePtrIndicator\(\)\{/.test(html));
 const make = html.match(/function makePtrIndicator\(\)\{[\s\S]*?\n {2}\}/);

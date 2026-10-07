@@ -18435,11 +18435,18 @@
      sahifani yangilash uchun ilovadan butunlay chiqib, qaytadan
      kirishdan boshqa yo'l qolmagan edi.
 
-     Shuning uchun faqat o'sha holatda o'zimiznikini qo'shamiz:
-       - brauzerda qo'shilmaydi (u yerda ikkitasi urishib ketardi);
-       - Telegram ichida qo'shilmaydi — u yerda pastga tortish
-         Telegram'ning o'z harakati, ya'ni ilovani yopish;
+     Xuddi shu muammo Telegram ichida ham bor: u yerda ham manzil
+     qatori yo'q. Shuning uchun u yerga ham qo'shildi — lekin faqat
+     Telegram'ning o'z pastga surishi o'chirilgan bo'lsa
+     (pagePtrEnabled ga qarang).
+
+     Qoidalar:
+       - brauzerda qo'shilmaydi (u yerda ikkitasi urishib ketardi —
+         Chrome ham, Safari ham buni o'zi qiladi);
        - varaq (Sheet) ochiq turganda ishlamaydi;
+       - xabarlar ro'yxati ochiq turganda ishlamaydi — u yerda o'z
+         yangilashi bor va ikkisi birga ishlasa ikki marta
+         yangilangan bo'lardi;
        - faqat sahifa eng tepasida turganda va harakat aniq pastga
          qaratilgan bo'lsa ishlaydi, yonlamasiga surishga tegmaydi.
      ============================================================ */
@@ -18458,8 +18465,32 @@
     return el;
   }
 
+  /* Telegram ichida pastga tortish — Telegram'ning o'z harakati:
+     ilovani pastga surib yopadi. Shuning uchun u yerda tortib
+     yangilash qo'shilmagan edi.
+
+     Lekin ilova `tg.disableVerticalSwipes()` ni allaqachon chaqiradi
+     (ro'yxatni aylantirganda ilova yopilib ketmasin deb), ya'ni o'sha
+     harakat bo'sh turadi va uni o'zimiz ishlatsak bo'ladi.
+
+     Faqat bitta shart bor: bu metod Telegram 7.7 dan boshlab paydo
+     bo'lgan. Eskiroq mijozda chaqiruv jimgina o'tib ketadi va pastga
+     tortish hamon ilovani yopadi — o'sha yerda tortib yangilash
+     qo'shilsa, ikkisi urishib, ilova ko'z oldida yopilardi. Shuning
+     uchun gap metod bor-yo'qligida emas, u HAQIQATAN ishlaganida:
+     `isVerticalSwipesEnabled` aynan `false` bo'lishi kerak. */
+  function telegramSwipesOff(){
+    var tg = window.Telegram && window.Telegram.WebApp;
+    return !!tg && tg.isVerticalSwipesEnabled === false;
+  }
+
+  function pagePtrEnabled(){
+    if(isTelegramWebApp) return telegramSwipesOff();
+    return installAlreadyDone();
+  }
+
   function initPullToRefresh(){
-    if(!installAlreadyDone() || isTelegramWebApp) return;
+    if(!pagePtrEnabled()) return;
     document.documentElement.classList.add("ptr-on");
 
     var indicator = makePtrIndicator();
