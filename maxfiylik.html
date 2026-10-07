@@ -44,8 +44,9 @@
   h1{font-size:23px;line-height:1.25;margin:0 0 6px;letter-spacing:-0.01em;}
   h4{font-size:15.5px;margin:26px 0 6px;color:var(--ink);}
   p{margin:0 0 10px;color:var(--soft);}
+  ul,ol{margin:0 0 10px;padding-left:22px;color:var(--soft);}
+  li{margin:0 0 5px;}
   b{color:var(--ink);}
-  .updated{color:var(--muted);font-size:13px;margin:0 0 4px;}
   footer{
     margin-top:36px;padding-top:18px;border-top:1px solid var(--line);
     color:var(--muted);font-size:13.5px;
@@ -115,7 +116,7 @@
       var b = e.target.closest("[data-lang]");
       if(b) show(b.getAttribute("data-lang"));
     });
-    /* Ilovada tanlangan til, yoki brauzerning tili, yoki o'zbekcha. */
+    /* Ilgari tanlangan til, yoki brauzerning tili, yoki o'zbekcha. */
     var start = "";
     try{ start = localStorage.getItem("yolda_privacy_lang") || ""; }catch(e){}
     if(langs.indexOf(start) === -1){

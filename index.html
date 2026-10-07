@@ -5728,6 +5728,7 @@
       "myload.empty": "Hozir olingan yukingiz yo'q.",
       "myload.browse": "Yuklarni ko'rish",
       "privacy.publicLink": "Bu sahifani brauzerda ochish",
+      "profile.deleteMore": "Batafsil: nima o'chadi, nima qoladi",
 
       "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
       "trucks.sub": "Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.",
@@ -6245,6 +6246,7 @@
       "myload.empty": "Сейчас у вас нет взятого груза.",
       "myload.browse": "Смотреть грузы",
       "privacy.publicLink": "Открыть эту страницу в браузере",
+      "profile.deleteMore": "Подробнее: что удаляется, что остаётся",
 
       "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовик", "trucks.titleB": "продайте или купите",
       "trucks.sub": "Только грузовой транспорт: грузовики, фургоны, прицепы и спецтехника.",
@@ -6758,6 +6760,7 @@
       "myload.empty": "You have no load in hand right now.",
       "myload.browse": "Browse loads",
       "privacy.publicLink": "Open this page in a browser",
+      "profile.deleteMore": "Details: what is deleted, what is kept",
 
       "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a freight vehicle",
       "trucks.sub": "Freight transport only: trucks, vans, trailers and special equipment.",
@@ -9343,6 +9346,23 @@
   /** True once signed in by either method — the one check every gate below uses. */
   function isSignedIn(){ return !!googleIdToken || !!telegramInitData || !!phoneToken; }
 
+  /**
+   * Ilova o'rnatilgan holda ochilganmi (Play Market'dagi nusxa,
+   * telefon ekraniga qo'yilgan PWA, iOS'dagi "Add to Home Screen").
+   *
+   * Farqi shundaki, bunday oynada brauzerning manzil qatori va
+   * "orqaga" tugmasi yo'q: boshqa ilovaga olib ketadigan havolani
+   * bossa, odam qaytib kela olmaydi. Shuning uchun shunday
+   * havolalar o'rnatilgan ilovada taklif qilinmaydi.
+   */
+  function isInstalledApp(){
+    try{
+      return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+        || (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches)
+        || window.navigator.standalone === true;
+    }catch(e){ return false; }
+  }
+
   function onTelegramSignIn(){
     var label = (telegramUser && (telegramUser.firstName || telegramUser.username)) || "Telegram";
 
@@ -9541,11 +9561,21 @@
           banner.hidden = false;
         }
       }
-      // Kirish ekranidagi Telegram tugmasi. Bot nomi sozlamalardan
-      // kelmasa tugma umuman chizilmaydi — bosilganda hech qayerga
-      // olib bormaydigan tugma turmasin.
+      /* Kirish ekranidagi Telegram tugmasi. Bot nomi sozlamalardan
+         kelmasa tugma umuman chizilmaydi — bosilganda hech qayerga
+         olib bormaydigan tugma turmasin.
+
+         O'rnatilgan ilovada (Play Market'dan yuklangan nusxada) bu
+         tugma ko'rinmaydi: u odamni ilovadan butunlay chiqarib,
+         Telegram'ga olib ketadi va u yerdan qaytib kelish yo'li yo'q.
+         Brauzerda esa hammasi avvalgidek — Telegram orqali kirish
+         yo'qolgani yo'q, faqat chiqib ketish yo'li bo'lmagan joyda
+         taklif qilinmaydi. Telegram ichida ham chiqmaydi: u yerda
+         kirish o'zi avtomatik bo'ladi. */
+      var tgLoginOk = TELEGRAM_BOT_USERNAME && !isTelegramWebApp && !isInstalledApp();
+
       var welcomeTg = document.getElementById("welcomeTelegramBtn");
-      if(welcomeTg && TELEGRAM_BOT_USERNAME && !isTelegramWebApp){
+      if(welcomeTg && tgLoginOk){
         welcomeTg.href = "https://t.me/" + TELEGRAM_BOT_USERNAME + "?startapp=login";
         welcomeTg.hidden = false;
       }
@@ -9554,7 +9584,7 @@
       var tgBtn = document.getElementById("telegramLoginBtn");
       // Only worth offering from a normal browser tab, to a signed-out
       // visitor — inside Telegram itself, auto sign-in already handled it.
-      if(tgRow && tgBtn && TELEGRAM_BOT_USERNAME && !isTelegramWebApp && !isSignedIn()){
+      if(tgRow && tgBtn && tgLoginOk && !isSignedIn()){
         tgBtn.href = "https://t.me/" + TELEGRAM_BOT_USERNAME + "?startapp=login";
         tgRow.style.display = "block";
       }
@@ -10010,6 +10040,9 @@
         + '</label>'
         + '<input type="text" id="fDelConfirm" autocomplete="off" autocapitalize="off" spellcheck="false">'
         + '<p class="note" id="delAccNote"></p>'
+        /* Ochiq sahifaga havola: Google Play akkauntni o'chirish
+           tartibi ilovadan tashqarida ham turishini talab qiladi. */
+        + '<p class="note" style="margin-top:6px;"><a href="/hisob-ochirish" target="_blank" rel="noopener" data-i18n="profile.deleteMore">Batafsil: nima o\'chadi, nima qoladi</a></p>'
         + '<button type="button" class="btn danger" id="btnDelAccConfirm" disabled>'
         +   '<span data-i18n="profile.deleteConfirm">Akkauntni butunlay o\'chirish</span>'
         + '</button>'
