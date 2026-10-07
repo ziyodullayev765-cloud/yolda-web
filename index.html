@@ -1227,8 +1227,21 @@
      ko'rinmas <h1> bo'lib qoldi.) */
   .home .hero-card{min-height:0;}
   .home .hero-card .hero-card-body{max-width:100%;width:100%;padding:14px;}
-  .home .hero-card .hero-card-ctas{flex-wrap:nowrap;}
-  .home .hero-card .hero-card-ctas .hc-btn{flex:1 1 0;min-width:0;padding:0 12px;white-space:nowrap;}
+  /* Ikki tugma yonma-yon turadi, lekin faqat SIG'SA.
+     Ilgari bu yerda `flex-wrap:nowrap` va `min-width:0` turardi:
+     tugmalar hech qachon pastga tushmasdi va matndan kichikroq
+     bo'lishga majbur edi. Natijada ruschada tor ekranda
+     "Разместить груз" tugmaning ichidan chiqib, "+" belgisi
+     chetda qirqilib qolardi — yozuv qo'shni tugmaning ostiga
+     o'tib ketardi.
+
+     `min-width:min-content` bilan tugma o'z yozuvidan kichik
+     bo'lmaydi, `flex-wrap:wrap` esa sig'masa ularni ikki qatorga
+     tushiradi: har biri butun enni olib, matn to'liq o'qiladi. */
+  .home .hero-card .hero-card-ctas{flex-wrap:wrap;}
+  .home .hero-card .hero-card-ctas .hc-btn{
+    flex:1 1 auto;min-width:min-content;padding:0 12px;white-space:nowrap;
+  }
 
   /* ---------- YUKLAR: ixcham qidiruv ----------
      Sarlavha olib tashlangach qidiruv sahifaning boshiga chiqdi, shuning
@@ -1793,6 +1806,14 @@
     display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:19px;
   }
   .home-search-bar .hsb-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:3px;}
+  /* Matn turadigan uya. `min-width:0` shart: flex ichidagi element
+     sukut bo'yicha o'z matnidan kichik bo'lishga ko'nmaydi, matn esa
+     bu yerda bir qatorga majbur. Shuning uchun u yo'q bo'lsa,
+     `.hsb-value` dagi ellipsis hech qachon ishlamaydi — uya
+     torayishdan bosh tortib, butun qatorni ekrandan chiqarib
+     yuboradi. Ruschada "Марка, модель или ключевое слово..."
+     aynan shunday qilgan edi. */
+  .home-search-bar .hsb-slot{flex:1;min-width:0;text-align:left;}
   .home-search-bar .hsb-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16.5px;color:var(--ink);letter-spacing:-0.01em;}
   .home-search-bar .hsb-value .arrow{color:var(--stamp);margin:0 6px;}
   .home-quick-row{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s4);}
@@ -1928,7 +1949,13 @@
 
   /* ---------- Yuk joylash: 5-step wizard ---------- */
   /* Qadamlar yo'lagi — alohida, past shisha yo'lak. */
-  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:0;padding:0;}
+  /* Yon tomonlarda bo'shliq qoldiriladi. Yozuv 30px li doiraning
+     ostida O'RTALASHTIRILGAN va undan kengroq, ya'ni ikki yoniga
+     chiqib turadi. O'rtadagi qadamlarda bu normal — ular bir-biriga
+     tegmaydi. Lekin birinchi va oxirgi qadamning yozuvi qatordan
+     tashqariga chiqib, ekran chetiga tiqilib qolardi: ruschada
+     "Маршрут" chapdan, "Отправить" o'ngdan. */
+  .wizard-steps{display:flex;align-items:flex-start;margin-bottom:0;padding:0 12px;}
   .wizard-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:30px;}
   .wizard-step .ws-dot{
     width:30px;height:30px;border-radius:50%;background:var(--paper-dark);color:var(--muted);
@@ -3830,13 +3857,11 @@
     font-family:'Sora',sans-serif;font-size:14.5px;font-weight:700;letter-spacing:-0.01em;
   }
   .life-entry-t em{font-style:normal;color:var(--route);}
-  .life-entry-s{font-size:11.5px;color:var(--ink-soft);line-height:1.35;overflow-wrap:normal;word-break:normal;}
   .life-entry-go{margin-left:auto;flex-shrink:0;color:var(--route);}
   .life-entry-go .ic-svg{font-size:18px;}
   :root[data-theme="dark"] .life-entry-ico{background:rgba(45,212,128,0.14);color:#2DD480;}
   :root[data-theme="dark"] .life-entry-t em,
   :root[data-theme="dark"] .life-entry-go{color:#2DD480;}
-  :root[data-theme="dark"] .life-entry-s{color:#9FB0A6;}
 
   @media(max-width:359px){
     .lf-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -5353,9 +5378,13 @@
          bo'lim panelda yo'q, lekin bir bosishda ochiladi. -->
     <button type="button" class="life-entry" id="btnOpenTrucks" data-tab-link="trucks">
       <span class="life-entry-ico"><svg class="ic-svg" aria-hidden="true"><use href="#iconTruck"/></svg></span>
+      <!-- Ostida "Sizning biznesingiz uchun eng yaxshi texnika" degan
+           izoh turardi. U hech narsa qo'shmasdi — bosilsa nima
+           bo'lishini "Mashinalar" va o'q belgisi allaqachon aytib
+           turadi — tor ekranda esa ikki qatorga tushib, ikkinchi
+           qatori belgining ostiga o'tib ketardi. -->
       <span class="life-entry-txt">
         <span class="life-entry-t" data-i18n="nav.trucks">Mashinalar</span>
-        <span class="life-entry-s" data-i18n="home.trucksSub">Sizning biznesingiz uchun eng yaxshi texnika</span>
       </span>
       <span class="life-entry-go"><svg class="ic-svg" aria-hidden="true"><use href="#iconChevronRight"/></svg></span>
     </button>
@@ -5365,8 +5394,11 @@
       <div class="home-sec-head">
         <span class="home-sec-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconTarget"/></svg></span>
         <div class="home-sec-text">
+          <!-- Sarlavha ostida "Sizning profilingizga mos yuklar"
+               turardi: bu sarlavhaning o'zini boshqa so'zlar bilan
+               takrorlashdan boshqa narsa emas edi. Ostidagi bo'sh
+               holat ham shu gapni uchinchi marta aytardi. -->
           <h2 data-i18n="home.matchTitle">Sizga mos yuklar</h2>
-          <p data-i18n="home.matchSub">Sizning profilingizga mos yuklar</p>
         </div>
         <a class="home-sec-all" href="#" data-tab-link="loads">
           <span data-i18n="home.seeAll">Barchasini ko'rish</span>
@@ -5422,7 +5454,6 @@
       <div class="home-sec-head plain">
         <div class="home-sec-text">
           <h2 data-i18n="home.trucksTitle">Yuk mashinalari</h2>
-          <p data-i18n="home.trucksSub">Sizning biznesingiz uchun eng yaxshi texnika</p>
         </div>
         <a class="home-sec-all" href="#" data-tab-link="trucks">
           <span data-i18n="home.seeAll">Barchasini ko'rish</span>
@@ -5604,8 +5635,8 @@
       </button>
       <button type="button" class="home-search-bar" id="trucksSearchBar">
         <span class="hsb-icon"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"></use></svg></span>
-        <span style="flex:1;text-align:left;">
-          <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka, model yoki kalit so'z...</span></span>
+        <span class="hsb-slot">
+          <span class="hsb-value" id="trucksSearchValue"><span data-i18n="trucks.searchPlaceholder">Marka yoki model</span></span>
         </span>
       </button>
       <!-- Filtr — qidiruv qatorining o'ng yonida, yashil belgi bo'lib.
@@ -5939,7 +5970,7 @@
       "trucks.catRefrijerator": "Refrijerator", "trucks.catEvakuator": "Evakuator",
       "trucks.catMaxsus": "Maxsus texnika", "trucks.catBoshqa": "Boshqa yuk texnikasi",
       "trucks.catLabel": "Turkum",
-      "trucks.searchPlaceholder": "Marka, model yoki kalit so'z...", "trucks.searchTitle": "Qidirish",
+      "trucks.searchPlaceholder": "Marka yoki model", "trucks.searchTitle": "Qidirish",
       "trucks.recentSearches": "So'nggi qidiruvlar", "trucks.popularSearches": "Mashhur qidiruvlar",
       "trucks.filtersBtn": "Filtrlar", "trucks.applyFilters": "Ko'rsatish", "trucks.resetFilters": "Tozalash",
       "trucks.moreFilters": "Qo'shimcha", "trucks.favorites": "Saqlanganlar",
@@ -6065,7 +6096,7 @@
       "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
       "loads.taken": "Bu yuk allaqachon olingan — yangi taklif qabul qilinmaydi.",
-      "home.matchEyebrow": "Siz uchun", "home.matchTitle": "Sizga mos yuklar",
+      "home.matchTitle": "Sizga mos yuklar",
 
       "chatTab.eyebrow": "Xabarlar", "chatTab.titleA": "To'g'ridan-to'g'ri", "chatTab.titleB": "yozishing",
       "chatTab.sub": "Username orqali qidiring va istalgan foydalanuvchi bilan bog'laning.",
@@ -6091,7 +6122,7 @@
       "life.rankRating": "Reyting",
       "home.heroLine1": "Yukingizni kerakli", "home.heroLine2": "haydovchi bilan", "home.heroLine3": "bog'lang.",
       "home.heroSub": "O'zbekiston bo'ylab yuk toping, yuk joylang va ishonchli haydovchilar bilan bog'laning.",
-      "home.matchSub": "Sizning profilingizga mos yuklar", "home.seeAll": "Barchasini ko'rish",
+      "home.seeAll": "Barchasini ko'rish",
       "nav.accountMenu": "Hisob menyusi",
       "pf.trust": "Ishonchlilik darajasi", "pf.vehicles": "Mening transportlarim",
       "pf.driver": "Haydovchi ma'lumotlari", "pf.loads": "Mening yuklarim",
@@ -6101,7 +6132,7 @@
       "pf.success": "Muvaffaqiyat", "pf.noRating": "Baho yo'q", "profile.addPhone": "Telefon qo'shing",
       "pf.trustSub": "Tasdiqlar va kelishuvlar", "pf.trustSubPct": "muvaffaqiyatli kelishuv",
       "pf.vehiclesSub": "Mashina va e'lonlaringiz", "pf.vehicleWord": "ta transport",
-      "pf.driverSub": "Tajriba, yo'nalishlar va boshqalar",
+      "pf.driverSub": "Tajriba va yo'nalishlar",
       "pf.loadsSub": "Faol va jarayondagi yuklar",
       "pf.reviewsSub": "Baholar va sharhlar", "pf.ratingsWord": "ta baho",
       "pf.activitySub": "Statistika va ko'rsatkichlar",
@@ -6169,8 +6200,8 @@
       "home.how2": "Haydovchini toping", "home.how2sub": "Smart matching orqali",
       "home.how3": "Kelishing", "home.how3sub": "Takliflarni ko'rib chiqing",
       "home.how4": "Yukni kuzating", "home.how4sub": "Jonli kuzatuv",
-      "home.trucksTitle": "Yuk mashinalari", "home.trucksSub": "Sizning biznesingiz uchun eng yaxshi texnika",
-      "home.matchEmpty": "Hozircha sizga mos yuklar topilmadi.", "home.matchEmptyBtn": "Yuklarni ko'rish",
+      "home.trucksTitle": "Yuk mashinalari",
+      "home.matchEmpty": "Hozircha mos yuk yo'q.", "home.matchEmptyBtn": "Yuklarni ko'rish",
       "home.loadError": "Ma'lumotlarni yuklashda xatolik yuz berdi.", "home.retry": "Qayta urinish",
       "home.stat3k": "Ro'yxatdan o'tish narxi", "home.stat3kk": "Komissiya ham yo'q",
 
@@ -6457,7 +6488,7 @@
       "trucks.catRefrijerator": "Рефрижератор", "trucks.catEvakuator": "Эвакуатор",
       "trucks.catMaxsus": "Спецтехника", "trucks.catBoshqa": "Другая грузовая техника",
       "trucks.catLabel": "Категория",
-      "trucks.searchPlaceholder": "Марка, модель или ключевое слово...", "trucks.searchTitle": "Поиск",
+      "trucks.searchPlaceholder": "Марка или модель", "trucks.searchTitle": "Поиск",
       "trucks.recentSearches": "Недавние запросы", "trucks.popularSearches": "Популярные запросы",
       "trucks.filtersBtn": "Фильтры", "trucks.applyFilters": "Показать", "trucks.resetFilters": "Сбросить",
       "trucks.moreFilters": "Дополнительно", "trucks.favorites": "Сохранённые",
@@ -6583,7 +6614,7 @@
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
       "loads.taken": "Этот груз уже занят — новые предложения не принимаются.",
-      "home.matchEyebrow": "Для вас", "home.matchTitle": "Подходящие вам грузы",
+      "home.matchTitle": "Подходящие вам грузы",
 
       "chatTab.eyebrow": "Сообщения", "chatTab.titleA": "Пишите", "chatTab.titleB": "напрямую",
       "chatTab.sub": "Найдите пользователя по username и свяжитесь с ним.",
@@ -6609,7 +6640,7 @@
       "life.rankRating": "Рейтинг",
       "home.heroLine1": "Свяжите свой груз", "home.heroLine2": "с нужным", "home.heroLine3": "водителем.",
       "home.heroSub": "Находите грузы по всему Узбекистану, размещайте свои и связывайтесь с надёжными водителями.",
-      "home.matchSub": "Грузы, подходящие вашему профилю", "home.seeAll": "Смотреть все",
+      "home.seeAll": "Смотреть все",
       "nav.accountMenu": "Меню аккаунта",
       "pf.trust": "Уровень доверия", "pf.vehicles": "Мой транспорт",
       "pf.driver": "Данные водителя", "pf.loads": "Мои грузы",
@@ -6619,7 +6650,7 @@
       "pf.success": "Успешность", "pf.noRating": "Нет оценок", "profile.addPhone": "Добавить телефон",
       "pf.trustSub": "Подтверждения и сделки", "pf.trustSubPct": "успешных сделок",
       "pf.vehiclesSub": "Машина и ваши объявления", "pf.vehicleWord": "транспорт",
-      "pf.driverSub": "Опыт, направления и другое",
+      "pf.driverSub": "Опыт и направления",
       "pf.loadsSub": "Активные и текущие грузы",
       "pf.reviewsSub": "Оценки и отзывы", "pf.ratingsWord": "оценок",
       "pf.activitySub": "Статистика и показатели",
@@ -6687,8 +6718,8 @@
       "home.how2": "Найдите водителя", "home.how2sub": "Через smart matching",
       "home.how3": "Договоритесь", "home.how3sub": "Рассмотрите предложения",
       "home.how4": "Следите за грузом", "home.how4sub": "Отслеживание в реальном времени",
-      "home.trucksTitle": "Грузовики", "home.trucksSub": "Лучшая техника для вашего бизнеса",
-      "home.matchEmpty": "Пока подходящих грузов не найдено.", "home.matchEmptyBtn": "Смотреть грузы",
+      "home.trucksTitle": "Грузовики",
+      "home.matchEmpty": "Пока ничего не найдено.", "home.matchEmptyBtn": "Смотреть грузы",
       "home.loadError": "Не удалось загрузить данные.", "home.retry": "Повторить",
       "home.stat3k": "Стоимость регистрации", "home.stat3kk": "Без комиссии",
 
@@ -6971,7 +7002,7 @@
       "trucks.catRefrijerator": "Refrigerated", "trucks.catEvakuator": "Tow truck",
       "trucks.catMaxsus": "Special equipment", "trucks.catBoshqa": "Other freight vehicle",
       "trucks.catLabel": "Category",
-      "trucks.searchPlaceholder": "Make, model or keyword...", "trucks.searchTitle": "Search",
+      "trucks.searchPlaceholder": "Make or model", "trucks.searchTitle": "Search",
       "trucks.recentSearches": "Recent searches", "trucks.popularSearches": "Popular searches",
       "trucks.filtersBtn": "Filters", "trucks.applyFilters": "Show results", "trucks.resetFilters": "Reset",
       "trucks.moreFilters": "More", "trucks.favorites": "Saved",
@@ -7097,7 +7128,7 @@
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
       "loads.taken": "This load is already taken — no new offers are accepted.",
-      "home.matchEyebrow": "For you", "home.matchTitle": "Loads that fit you",
+      "home.matchTitle": "Loads that fit you",
 
       "chatTab.eyebrow": "Messages", "chatTab.titleA": "Message people", "chatTab.titleB": "directly",
       "chatTab.sub": "Search by username and get in touch with anyone.",
@@ -7123,7 +7154,7 @@
       "life.rankRating": "Rating",
       "home.heroLine1": "Connect your load", "home.heroLine2": "with the right", "home.heroLine3": "driver.",
       "home.heroSub": "Find loads across Uzbekistan, post your own and connect with drivers you can trust.",
-      "home.matchSub": "Loads that fit your profile", "home.seeAll": "See all",
+      "home.seeAll": "See all",
       "nav.accountMenu": "Account menu",
       "pf.trust": "Trust level", "pf.vehicles": "My vehicles",
       "pf.driver": "Driver details", "pf.loads": "My loads",
@@ -7133,7 +7164,7 @@
       "pf.success": "Success rate", "pf.noRating": "No ratings", "profile.addPhone": "Add a phone number",
       "pf.trustSub": "Verifications and deals", "pf.trustSubPct": "of deals completed",
       "pf.vehiclesSub": "Your vehicle and listings", "pf.vehicleWord": "vehicles",
-      "pf.driverSub": "Experience, routes and more",
+      "pf.driverSub": "Experience and routes",
       "pf.loadsSub": "Active and ongoing loads",
       "pf.reviewsSub": "Ratings and reviews", "pf.ratingsWord": "ratings",
       "pf.activitySub": "Statistics and figures",
@@ -7201,8 +7232,8 @@
       "home.how2": "Find a driver", "home.how2sub": "Through smart matching",
       "home.how3": "Agree on terms", "home.how3sub": "Review the offers",
       "home.how4": "Track the load", "home.how4sub": "Real-time tracking",
-      "home.trucksTitle": "Trucks", "home.trucksSub": "The best machines for your business",
-      "home.matchEmpty": "No matching loads just yet.", "home.matchEmptyBtn": "Browse loads",
+      "home.trucksTitle": "Trucks",
+      "home.matchEmpty": "Nothing matching yet.", "home.matchEmptyBtn": "Browse loads",
       "home.loadError": "Something went wrong while loading.", "home.retry": "Try again",
       "home.stat3k": "Sign-up cost", "home.stat3kk": "No commission either",
 
@@ -10345,7 +10376,7 @@
     { id: "vehicles", icon: "iconTruck",    tint: "#2563EB", titleKey: "pf.vehicles", title: "Mening transportlarim",
       subKey: "pf.vehiclesSub", sub: "Mashina va e'lonlaringiz", roles: "DRIVER" },
     { id: "driver",   icon: "iconUser",     tint: "#7C3AED", titleKey: "pf.driver",   title: "Haydovchi ma'lumotlari",
-      subKey: "pf.driverSub",   sub: "Tajriba, yo'nalishlar va boshqalar", roles: "DRIVER" },
+      subKey: "pf.driverSub",   sub: "Tajriba va yo'nalishlar", roles: "DRIVER" },
     { id: "loads",    icon: "iconBox",      tint: "#EA580C", titleKey: "pf.loads",    title: "Mening yuklarim",
       subKey: "pf.loadsSub",    sub: "Faol va jarayondagi yuklar", roles: "OWNER" },
     { id: "reviews",  icon: "iconStar",     tint: "#D97706", titleKey: "pf.reviews",  title: "Reyting va sharhlar",
@@ -11528,7 +11559,7 @@
     }
     var searchVal = document.getElementById("trucksSearchValue");
     if(searchVal){
-      searchVal.textContent = trucksState.q || (t("trucks.searchPlaceholder") || "Marka, model yoki kalit so'z...");
+      searchVal.textContent = trucksState.q || (t("trucks.searchPlaceholder") || "Marka yoki model");
     }
   }
 
@@ -11554,7 +11585,7 @@
     var recent = getTruckRecentSearches();
     var html = ''
       + '<div class="field"><input type="text" id="fTruckSearchInput" placeholder="'
-      +   escapeHtml(t("trucks.searchPlaceholder") || "Marka, model yoki kalit so'z...")
+      +   escapeHtml(t("trucks.searchPlaceholder") || "Marka yoki model")
       +   '" value="'+escapeHtml(trucksState.q)+'" list="truckSearchSuggestions" autocomplete="off" data-autofocus></div>'
       + '<datalist id="truckSearchSuggestions">'
       +   TRUCK_POPULAR_SEARCHES.map(function(s){ return '<option value="'+escapeHtml(s)+'">'; }).join("")
@@ -15724,7 +15755,7 @@
 
         if(!loads.length){
           list.innerHTML = '<div class="home-state">'
-            + '<p data-i18n="home.matchEmpty">Hozircha sizga mos yuklar topilmadi.</p>'
+            + '<p data-i18n="home.matchEmpty">Hozircha mos yuk yo\'q.</p>'
             + '<button type="button" class="btn ghost small" data-tab-link="loads" data-i18n="home.matchEmptyBtn">Yuklarni ko\'rish</button>'
             + '</div>';
           applyLang();
