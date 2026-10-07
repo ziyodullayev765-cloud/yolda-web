@@ -196,7 +196,6 @@
     /* Yorqin fonda yorqinlik bosilmaydi, biroz ko'tariladi: oq
        material ostidagi ranglar undan quyuqroq bo'ladi. */
     --nav-filter:saturate(180%) brightness(1.06) contrast(1.04) blur(32px);
-    --nav-refract:saturate(180%) brightness(1.06) contrast(1.04) blur(26px) url(#navGlassFilter);
     --nav-sheen-top:rgba(255,255,255,0.55);
     --nav-sheen-mid:rgba(255,255,255,0.18);
     --nav-sheen-bot:rgba(255,255,255,0.10);
@@ -287,7 +286,6 @@
        to'q sariq belgini materialning darajasiga tortadi va
        `saturate` 180% bo'lsa ham dog' hosil bo'lmaydi. */
     --nav-filter:saturate(180%) brightness(0.70) contrast(1.06) blur(32px);
-    --nav-refract:saturate(180%) brightness(0.70) contrast(1.06) blur(26px) url(#navGlassFilter);
     --nav-sheen-top:rgba(255,255,255,0.16);
     --nav-sheen-mid:rgba(255,255,255,0.04);
     --nav-sheen-bot:rgba(255,255,255,0.02);
@@ -746,10 +744,10 @@
             yumshoq nur. Shishaning QALINLIGI aynan shundan seziladi;
             busiz panel shunchaki xira to'rtburchak bo'lib qoladi.
 
-       Beshinchisi — qirrada nur sinishi (refraction) — `--nav-refract`
-       orqali qo'shiladi: `backdrop-filter` ga SVG filtri berilsa,
-       ortdagi tasvirni haqiqatan egib bo'ladi. Filtrning o'zi
-       `#navGlassFilter` da, panel markupi yonida yozilgan. */
+       Beshinchisi — qirrada nur sinishi (refraction) — CSS da yo'q:
+       `backdrop-filter` tasvirni surib yoki egib bo'lmaydi. Buning
+       uchun ortdagi sahifani har kadrda WebGL ga ko'chirish kerak,
+       bu esa arzon telefonda silliqlikni o'ldiradi. */
     background:
       linear-gradient(180deg,
         var(--nav-sheen-top) 0%,
@@ -757,14 +755,8 @@
         rgba(255,255,255,0) 42%,
         var(--nav-sheen-bot) 100%),
       var(--nav-glass);
-    /* Birinchi qator — hamma joyda ishlaydigan xiralashtirish.
-       Ikkinchi qator — ustidan, nur sinishi bilan: `url()` ni
-       ko'tarmagan brauzer bu qatorni butunlay tashlab yuboradi va
-       birinchisida qolib ketadi. */
     -webkit-backdrop-filter:var(--nav-filter);
     backdrop-filter:var(--nav-filter);
-    -webkit-backdrop-filter:var(--nav-refract);
-    backdrop-filter:var(--nav-refract);
     border:0.5px solid var(--nav-brd);
     box-shadow:
       inset 0 1px 0 var(--nav-edge-top),
@@ -778,12 +770,6 @@
   }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
     .bottom-nav{background:var(--nav-solid);}
-  }
-  @media (prefers-reduced-transparency: reduce){
-    .bottom-nav{
-      -webkit-backdrop-filter:var(--nav-filter);
-      backdrop-filter:var(--nav-filter);
-    }
   }
 
   /* ---------- Life katagini bosib turganda chiqadigan tanlov ----------
@@ -5771,43 +5757,6 @@
 </section>
 
 </main>
-
-<!-- ---------- Shishada nur sinishi (refraction) ----------
-     Pastki panel shu paytgacha ortidagi tasvirni faqat
-     xiralashtirardi. Haqiqiy shisha esa uni QIRRASIDA EGADI: chetga
-     yaqin joyda tasvir surilib, yupqa rangin halqa paydo bo'ladi.
-
-     CSS buni o'zi qila olmaydi, lekin `backdrop-filter` ga SVG
-     filtri berish mumkin — va u ortdagi tasvirga qo'llanadi.
-
-     Ishlashi: quyidagi rasm "displacement map". Undagi R kanali
-     har piksel uchun X siljishni, G kanali Y siljishni beradi;
-     128 — "siljish yo'q". Panelning ichi tekis 128,128, qirrasida
-     esa qiymat chetga qarab o'zgaradi — shuning uchun egilish faqat
-     chetda ko'rinadi.
-
-     Uch kanal uch xil kuchda suriladi (-20 / -24 / -28), keyin
-     `screen` bilan qaytib qo'shiladi: shishaning qirrasidagi
-     mayin rangin yoyilish (xromatik aberratsiya) shundan chiqadi.
-
-     Qo'llanishi `.bottom-nav` da, ikki qatorda yozilgan — buni
-     ko'tarmagan brauzer (Safari, Firefox) oddiy xiralashtirishda
-     qolib ketadi, hech narsa buzilmaydi. -->
-<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;pointer-events:none">
-  <filter id="navGlassFilter" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
-    <feImage x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"
-             href="data:image/png;base64,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"/>
-    <feDisplacementMap in="SourceGraphic" in2="map" result="dispRed" scale="-20" xChannelSelector="R" yChannelSelector="G"/>
-    <feColorMatrix in="dispRed" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="red"/>
-    <feDisplacementMap in="SourceGraphic" in2="map" result="dispGreen" scale="-24" xChannelSelector="R" yChannelSelector="G"/>
-    <feColorMatrix in="dispGreen" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="green"/>
-    <feDisplacementMap in="SourceGraphic" in2="map" result="dispBlue" scale="-28" xChannelSelector="R" yChannelSelector="G"/>
-    <feColorMatrix in="dispBlue" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0" result="blue"/>
-    <feBlend in="red" in2="green" mode="screen" result="rg"/>
-    <feBlend in="rg" in2="blue" mode="screen" result="output"/>
-    <feGaussianBlur in="output" stdDeviation="3"/>
-  </filter>
-</svg>
 
 <nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
   <!-- Tanlangan bo'lim ostida sirg'aladigan "tomchi". O'lchami va
