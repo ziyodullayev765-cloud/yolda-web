@@ -145,12 +145,27 @@ const handleCommand = async (message) => {
   if (text.startsWith('/start')) {
     await telegram('sendMessage', {
       chat_id: message.chat.id,
+      /* Ilgari bu yerda shunday yozilgandi:
+           «Yangi yuklar haydovchilar guruhiga tushadi. Guruhda
+            "Men olaman" tugmasini bosing — mijoz raqami sizga
+            ko'rinadi.»
+         Haydovchilar guruhi olib tashlanganidan keyin bu yolg'on
+         bo'lib qoldi — va eng yomon joyda qoldi: botni ochgan
+         haydovchi birinchi o'qiydigan gap shu edi. U Telegramda
+         guruh izlab, topolmay, "yuk kelmaydi" deb o'ylardi.
+
+         Endi matn bor narsani aytadi: yuklar ilovada, bot esa
+         faqat xabar beradi. Oxirgi qator eng muhimi — xabar
+         kelishi uchun haydovchi qidiruvini saqlab qo'yishi kerak,
+         aks holda bot jim turadi. */
       text: [
         "Salom\\! Bu — *YO'LDA* yuk bozori boti\\.",
         '',
-        'Yangi yuklar haydovchilar guruhiga tushadi\\. Guruhda *«Men olaman»* tugmasini bosing — mijoz raqami sizga ko\\‘rinadi\\.',
+        'Yangi yuklar *ilovada* chiqadi — «Yuklar» bo‘limida\\. Mos yukni ochib, taklifingizni yuborasiz; yuk egasi takliflardan o‘zi tanlaydi\\.',
         '',
-        'Yuk yubormoqchimisiz? Saytga o\\‘ting va formani to\\‘ldiring\\.',
+        'Bot sizga xabar beradi: sizga mos yuk chiqqanda, taklifingizga javob kelganda va yozishmalarda\\.',
+        '',
+        '*Muhim:* mos yuk haqida xabar olish uchun ilovada qidiruvingizni saqlab qo‘ying \\(«Yuklar» → qidiruvni saqlash\\)\\. Saqlanmasa, bot yangi yuklar haqida xabar bermaydi\\.',
         '',
         'Raqamingizni tasdiqlash uchun: /tasdiq',
       ].join('\n'),

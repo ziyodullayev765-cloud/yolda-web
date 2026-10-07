@@ -18489,6 +18489,128 @@
     return installAlreadyDone();
   }
 
+  /* ---------- Yangilashning o'zi ----------
+     Ilgari bu yerda `location.reload()` turardi va aynan shu
+     animatsiyani o'ldirardi: sahifa qayta yuklanganda CSS
+     animatsiyasi to'xtaydi, brauzer esa yangi sahifa chizilgunicha
+     oxirgi kadrni ushlab turadi — ekranda QOTIB QOLGAN aylana
+     ko'rinardi. Bundan tashqari butun ilova nolga qaytardi:
+     ochilish animatsiyasi qaytadan o'tardi, barcha so'rovlar
+     qaytadan ketardi, "Yuk joylash" formasida yozilgani yo'qolardi.
+
+     Endi faqat ochiq turgan bo'limning ma'lumoti qaytadan olinadi.
+     Ilova joyida qoladi, aylana esa to'xtamaydi. */
+  function refreshCurrentTab(){
+    var tab = visibleTabName();
+    /* Kesh chetlab o'tiladi: tortib yangilash aynan "hoziroq
+       yangila" degani. */
+    delete tabLoadedAt[tab];
+    if(tab === "home"){ markTabLoaded(tab); renderHomeMatch(); renderHomeTrucks(); }
+    else if(tab === "loads"){ markTabLoaded(tab); renderLoadsTab(); }
+    else if(tab === "trucks"){ markTabLoaded(tab); renderTrucksTab(); }
+    else if(tab === "myload"){ loadMyLoad(true); }
+    else if(tab === "life"){ lifeItems = null; renderLife(); }
+    else if(tab === "chat"){ loadChatInbox(true); }
+    else if(tab === "profile"){ markTabLoaded(tab); renderProfile(); }
+    /* "Yuk joylash" — yangilanadigan ma'lumot yo'q, ustiga odam
+       formani to'ldirib o'tirgan bo'lishi mumkin. Unga tegilmaydi. */
+    refreshNotifBadge();
+  }
+
+  /* Aylana ma'lumot kelguncha turishi kerak. Har bir bo'lim uchun
+     alohida "tugadi" signali yozish o'rniga, yangilash davomida
+     ketgan so'rovlarning o'zi sanaladi: bu barcha bo'limlar uchun
+     bir xil ishlaydi va yangi bo'lim qo'shilganda esdan chiqib
+     ketmaydi. */
+  var ptrWatch = null;
+
+  (function wrapFetchForPtr(){
+    var native = window.fetch;
+    if(typeof native !== "function" || native.__yoldaPtr) return;
+    var wrapped = function(){
+      var p = native.apply(this, arguments);
+      var w = ptrWatch;
+      if(w && p && typeof p.then === "function"){
+        w.pending += 1;
+        var settle = function(){ w.pending -= 1; w.check(); };
+        p.then(settle, settle);
+      }
+      return p;
+    };
+    wrapped.__yoldaPtr = true;
+    window.fetch = wrapped;
+  })();
+
+  /* Yangi versiya kutib turganmi. Tortib yangilashning ikkinchi
+     vazifasi shu edi: o'rnatilgan ilovada yangi versiyani olishning
+     boshqa yo'li yo'q. Shuning uchun u saqlanadi — lekin sahifa
+     faqat HAQIQATAN yangi versiya bo'lganda qayta yuklanadi, har
+     bir tortishda emas. */
+  function ptrCheckUpdate(onReady){
+    if(!("serviceWorker" in navigator) || !navigator.serviceWorker.getRegistration) return;
+    navigator.serviceWorker.getRegistration().then(function(reg){
+      if(!reg) return;
+      var waiting = function(){ return reg.waiting; };
+      var apply = function(){
+        var sw = waiting();
+        if(!sw) return false;
+        onReady(function(){
+          /* Yangi versiya o'rnini egallaganda brauzer
+             "controllerchange" yuboradi — shundan keyingi qayta
+             yuklash yangi kodni oladi. Javob kelmasa ham
+             qotib qolmasin: zaxira taymer bor. */
+          var reloaded = false;
+          var go = function(){ if(reloaded) return; reloaded = true; location.reload(); };
+          navigator.serviceWorker.addEventListener("controllerchange", go, { once: true });
+          setTimeout(go, 1500);
+          try{ sw.postMessage("SKIP_WAITING"); }catch(e){ go(); }
+        });
+        return true;
+      };
+      if(apply()) return;
+      reg.update().then(function(){ apply(); }).catch(function(){});
+    }).catch(function(){});
+  }
+
+  /* Yangilashni boshlaydi va tugaganda `onDone` ni chaqiradi.
+     Eng kamida MIN turadi — javob juda tez kelsa, aylana
+     ko'rinmay o'tib ketardi va odam "hech narsa bo'lmadi" deb
+     o'ylardi. Eng ko'pi MAX: tarmoq javob bermasa ham aylana
+     abadiy aylanib qolmasin. */
+  function ptrRefresh(onDone){
+    var MIN = 520, MAX = 6000;
+    var started = Date.now();
+    var done = false;
+    var update = null;
+
+    var finish = function(){
+      if(done) return;
+      done = true;
+      ptrWatch = null;
+      setTimeout(function(){
+        onDone();
+        /* Yangi versiya topilgan bo'lsa — aylana qaytib ketgandan
+           keyin qo'llanadi, shunda qayta yuklash ko'z oldida
+           bo'ladi, aylananing o'rtasida emas. */
+        if(update) setTimeout(update, 320);
+      }, Math.max(0, MIN - (Date.now() - started)));
+    };
+
+    var watch = { pending: 0, check: function(){
+      if(watch.pending <= 0) finish();
+    } };
+    ptrWatch = watch;
+
+    ptrCheckUpdate(function(apply){ update = apply; });
+    refreshCurrentTab();
+
+    /* So'rovlar yuqoridagi chaqiruvda darhol boshlanadi; keyingi
+       navbatda ularning soni ma'lum bo'ladi. Hech biri ketmagan
+       bo'lsa (masalan "Yuk joylash" bo'limi) shu yerda tugaydi. */
+    setTimeout(watch.check, 0);
+    setTimeout(finish, MAX);
+  }
+
   function initPullToRefresh(){
     if(!pagePtrEnabled()) return;
     document.documentElement.classList.add("ptr-on");
@@ -18570,9 +18692,10 @@
       indicator.style.transition = "transform .2s ease";
       indicator.style.transform = "translateY(22px)";
       indicator.style.opacity = "1";
-      // Kirgan holat saqlanadi (restoreAuth) — yangilangandan keyin
-      // odam yana o'z profilida qoladi, qaytadan kirish so'ralmaydi.
-      setTimeout(function(){ location.reload(); }, 220);
+      ptrRefresh(function(){
+        refreshing = false;
+        reset();
+      });
     }
 
     window.addEventListener("touchend", finish, { passive: true });

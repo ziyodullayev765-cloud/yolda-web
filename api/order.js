@@ -328,18 +328,28 @@ const notifyMatches = async (order) => {
     const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel
       ? order.customCargoLabel
       : cargo.label;
+    /* Oxirgi qator ilgari shunday edi:
+         «Yuk haydovchilar guruhida — "Men olaman" tugmasini bosgan
+          birinchi haydovchi oladi.»
+       Haydovchilar guruhi olib tashlanganidan keyin bu gap yolg'on
+       bo'lib qoldi: na guruh bor, na o'sha tugma. Haydovchi
+       Telegramda guruh izlab, topolmay qolardi. Endi xabar bor
+       narsani aytadi — yuk ilovada va u yerda taklif yuboriladi. */
     const text = `<b>Sizga mos yangi yuk</b>\n\n`
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
       + `${esc(formatNum(order.weightKg))} kg · ${esc(cargoLabel)}\n`
       + `<b>${esc(formatNum(order.amount))} so'm</b>\n\n`
-      + `Yuk haydovchilar guruhida — «Men olaman» tugmasini bosgan birinchi haydovchi oladi.`;
+      + `Ilovada ochib, taklifingizni yuboring. Yukni egasi takliflardan o'zi tanlaydi.`;
+    const button = loadUrl(order.code)
+      ? { buttonText: 'Ilovada ochish', buttonUrl: loadUrl(order.code) }
+      : {};
 
     let sent = 0;
     for (const identity of candidates) {
       if (sent >= MAX_MATCH_NOTIFICATIONS) break;
       const searches = JSON.parse((await kvGet(searchesKey(identity))) || '[]');
       if (!Array.isArray(searches) || !searches.some((s) => matchesSearch(order, s))) continue;
-      const ok = await notifyUser(identity, { category: 'matches', text });
+      const ok = await notifyUser(identity, { category: 'matches', text, ...button });
       if (ok) sent += 1;
     }
   } catch (err) {
