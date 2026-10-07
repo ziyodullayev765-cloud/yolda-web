@@ -196,6 +196,62 @@ check('press-active olib ham tashlanadi',
 check('eski linza bo\'rtishi qolmadi',
   !/\.bottom-nav\.pressed \.bn-blob-(fill|gloss|mag|rim)\{/.test(html));
 
+/* ---------- Panel ustida qalqon bo'lmasin ----------
+   Bildirishnoma (toast) aynan pastki panelning o'rniga tushardi:
+   panel pastdan 20px da, balandligi 63px — ikkisi deyarli to'liq
+   ustma-ust kelardi. `pointer-events:auto` bilan u panelni to'rt
+   soniyaga yopib qo'yardi: odam Profilni bosadi — hech narsa
+   bo'lmaydi, ikkinchi marta bosadi — ochiladi.
+
+   Bu xato brauzer testlaridan ham qochib yurgan edi, chunki ular
+   `#toastHost` ni tozalab olardi. Shuning uchun ikkala shart ham
+   shu yerda qotiriladi. */
+check('panelning joyi bitta joyda hisoblanadi', /--nav-top:calc\(/.test(html));
+check('Telegram ichida ham hisoblanadi',
+  /\[data-tg="1"\]\{\s*--nav-top:calc\([^;]*--tg-bottom/.test(html));
+const toastHost = html.match(/#toastHost\{[\s\S]*?\n {2}\}/);
+check('#toastHost qoidasi topildi', Boolean(toastHost));
+if (toastHost) {
+  check('bildirishnoma panel ustida turadi', /bottom:calc\(var\(--nav-top\)/.test(toastHost[0]),
+    toastHost[0].match(/bottom:[^;]*/));
+}
+const toast = html.match(/\n {2}\.toast\{[\s\S]*?\n {2}\}/);
+check('.toast qoidasi topildi', Boolean(toast));
+if (toast) {
+  /* Bildirishnomada bosiladigan narsa yo'q — u o'zi ketadi. */
+  check('bildirishnoma teginishni ushlamaydi', /pointer-events:none/.test(toast[0]),
+    toast[0].match(/pointer-events:[^;]*/));
+}
+
+/* ---------- Belgilar bir xil o'lchamda ----------
+   Besh belgining to'rttasi 16 birlik joy egallaydi (4 dan 20
+   gacha). "+" 14 da, quloqchinlar esa 19 da edi — panelda biri
+   kichik, biri keng bo'lib ko'rinardi. */
+const plus = html.match(/<symbol id="iconPlus"[^>]*>(.*?)<\/symbol>/);
+check('iconPlus topildi', Boolean(plus));
+if (plus) check('"+" qolganlari bilan bir o\'lchamda', /M12 4V20M4 12H20/.test(plus[1]), plus[1]);
+const hp = html.match(/<symbol id="iconHeadphones"[\s\S]*?<\/symbol>/);
+check('iconHeadphones topildi', Boolean(hp));
+if (hp) {
+  /* Quloqliklar 4 dan 20 gacha: chapdagisi 4 da boshlanadi,
+     o'ngdagisi 16+4=20 da tugaydi. */
+  const rects = [...hp[0].matchAll(/<rect x="([\d.]+)"[^>]*width="([\d.]+)"/g)]
+    .map((m) => [+m[1], +m[1] + +m[2]]);
+  check('quloqchinlar 16 birlik kenglikda',
+    rects.length === 2 && Math.min(...rects.map((r) => r[0])) === 4
+    && Math.max(...rects.map((r) => r[1])) === 20, rects);
+}
+/* "+" ga alohida qalinlik berilmasin: u faqat o'lchov farqini
+   yashirish uchun qo'yilgandi. */
+check('"+" ga alohida chiziq qalinligi berilmagan',
+  !/\.bn-item--primary \.bn-fab \.ic-svg\{[^}]*stroke-width/.test(html));
+
+/* ---------- Qorong'u rejimda yashil kamaytirildi ---------- */
+check('qorong\'uda tanlangan katak oq',
+  /\[data-theme="dark"\] \.bn-item\.active,[\s\S]{0,80}\.bn-ghost\.active\{color:#FFFFFF/.test(html));
+/* Yorug' rejimda yashil qoladi — bu brendning rangi. */
+check('yorug\'da yashil joyida', /\.bn-item\.active,\.bn-ghost\.active\{color:var\(--route\);\}/.test(html));
+
 /* ---------- Til almashganda qayta o'lchanadi ---------- */
 const lang = html.match(/function applyLang\(\)\{[\s\S]*?\n {2}\}/);
 check('applyLang topildi', Boolean(lang));

@@ -598,6 +598,16 @@
      ya'ni bu qoidalar hech narsani o'zgartirmaydi.
      ============================================================ */
   :root{--tg-top:0px;--tg-bottom:0px;}
+  /* Pastki panelning joyi bitta joyda hisoblanadi, chunki uning
+     ustiga chiqadigan narsalar ham (bildirishnomalar) shu o'lchovga
+     qarab turishi kerak. `--nav-h` — panelning balandligi; u
+     `.bn-item` ning balandligidan (62px) va 0.5px li ikki
+     chegarasidan iborat. */
+  :root{--nav-gap:20px;--nav-h:63px;}
+  :root{--nav-top:calc(var(--nav-gap) + var(--nav-h) + env(safe-area-inset-bottom, 0px));}
+  :root[data-tg="1"]{
+    --nav-top:calc(var(--nav-gap) + var(--tg-bottom) + var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  }
   :root[data-tg="1"] .nav{padding-top:calc(var(--s3) + var(--tg-top));}
   :root[data-tg="1"] .bottom-nav{bottom:calc(20px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
   /* Oyna ichidagi ekranlar `position:absolute; inset:0` bilan turadi,
@@ -996,6 +1006,16 @@
     transition:transform 0.5s cubic-bezier(0.34,1.42,0.5,1);
   }
   .bn-item.active,.bn-ghost.active{color:var(--route);}
+  /* Qorong'u rejimda tanlangan katak yashil emas, oq bo'ladi.
+     Qora fonda yashil o'zini juda baland tutadi: panel beshta
+     kulrang belgidan va bitta yorqin yashildan iborat bo'lib,
+     ko'z faqat o'shanga qadalardi. Oq ham xuddi shunday aniq
+     ajratadi, lekin qichqirmaydi. Yorug' rejimda yashil qoladi —
+     oq fonda u shu qadar baqirmaydi va bu brendning rangi.
+     Yashil butunlay ketmaydi: u asosiy tugmalarda va belgida
+     qoladi, ya'ni ma'nosi bor joyda. */
+  :root[data-theme="dark"] .bn-item.active,
+  :root[data-theme="dark"] .bn-ghost.active{color:#FFFFFF;}
   /* Tanlanganda ikonka bir sakrab qo'yadi. */
   .bn-item.active .ic-svg,
   .bn-ghost.active .ic-svg{transform:translateY(-2px) scale(1.12);}
@@ -1025,11 +1045,13 @@
     display:flex;align-items:center;justify-content:center;
     flex:0 0 auto;background:none;box-shadow:none;border-radius:0;
   }
-  /* Belgi qolganlari bilan bir xil o'lchamda. `stroke-width` biroz
-     ingichkaroq: "+" boshqa belgilarga qaraganda oddiy shakl va
-     bir xil qalinlikda u yo'g'onroq ko'rinardi. */
+  /* Belgi qolganlari bilan butunlay bir xil: o'lchami ham, chizig'i
+     ham. Ilgari bu yerda `stroke-width:2.1` turardi — "+" ning o'zi
+     kichikroq chizilgani uchun qalinlik bilan "to'ldirilgandi".
+     Sabab `#iconPlus` ning o'zida tuzatilgach, bu ortiqcha
+     bo'lib qoldi: qalinlik faqat farqni ko'rsatib turardi. */
   .bn-item--primary .bn-fab .ic-svg{
-    font-size:21px;stroke-width:2.1;color:inherit;
+    font-size:21px;color:inherit;
     transition:transform 0.5s cubic-bezier(0.34,1.42,0.5,1);
   }
   /* Tanlanganda sakrashi, bosilganda siqilishi va harakatni
@@ -3560,10 +3582,22 @@
 
   /* ---------- TOASTS ---------- */
   #toastHost{
-    position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
-    /* Pastki panel endi 1500 da turadi (xaritadan balandroq bo'lishi
-       uchun) — bildirishnoma undan pastda qolib, panel ortida
-       yashiringan bo'lmasin deb, bundan ham balandroq qo'yildi. */
+    position:fixed;left:50%;transform:translateX(-50%);
+    /* USTIDA emas, USTIDAN YUQORIDA. Ilgari bu `bottom:var(--s5)`
+       edi, ya'ni bildirishnoma aynan pastki panelning o'rniga
+       tushardi: panel pastdan 20px da, balandligi 63px — ikkisi
+       deyarli to'liq ustma-ust kelardi.
+
+       Bu shunchaki ko'rinish muammosi emasdi. `.toast` da
+       `pointer-events:auto` turgani uchun bildirishnoma panelni
+       to'rt soniyaga "qalqon" bilan yopib qo'yardi: odam Profilni
+       bosadi — hech narsa bo'lmaydi, ikkinchi marta bosadi —
+       ochiladi. "Ikki marta bosgandan keyin kiryapti" degan xato
+       shundan edi. */
+    bottom:calc(var(--nav-top) + 10px);
+    /* Pastki panel 1500 da turadi (xaritaning o'z boshqaruvlaridan
+       balandroq bo'lishi uchun) — bildirishnoma undan ham
+       balandroq, aks holda panel ortida yashirinib qolardi. */
     z-index:1600;display:flex;flex-direction:column;gap:var(--s2);
     width:min(420px, calc(100vw - 32px));pointer-events:none;
   }
@@ -3573,7 +3607,13 @@
     -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
     color:#fff;border-radius:var(--r-md);padding:14px 18px;
     box-shadow:var(--sh-4);font-size:14px;line-height:1.5;
-    pointer-events:auto;
+    /* Bildirishnomada bosiladigan hech narsa yo'q: u o'zi to'rt
+       soniyadan keyin ketadi (`toast()` ga qarang). Shuning uchun
+       u teginishni ushlab turmaydi — ostidagi narsa bosilsa,
+       bosish o'shanga o'tib ketadi. Ilgari bu yerda
+       `pointer-events:auto` turardi va u hech qanday vazifa
+       bajarmasdi, faqat ostidagi tugmalarni to'sib qo'yardi. */
+    pointer-events:none;
     animation:toastIn 0.4s var(--ease);
   }
   .toast.out{animation:toastOut 0.3s var(--ease) forwards;}
@@ -4891,7 +4931,12 @@
     <symbol id="iconChevronRight" viewBox="0 0 24 24"><path d="M9 5 16 12 9 19"/></symbol>
     <symbol id="iconChevronDown" viewBox="0 0 24 24"><path d="M5 9 12 16 19 9"/></symbol>
     <!-- Bosh sahifa uchun qo'shilganlari -->
-    <symbol id="iconPlus" viewBox="0 0 24 24"><path d="M12 5V19M5 12H19"/></symbol>
+    <!-- Qolgan belgilar 16 birlik joy egallaydi (masalan uy: 4 dan
+         20 gacha). "+" esa 14 da edi — panelda u boshqalardan
+         kichikroq ko'rinardi, shuning uchun unga alohida qalinroq
+         chiziq berilgandi, bu esa farqni yanada ko'zga tashlardi.
+         Endi o'lchami ham, chizig'i ham qolganlari bilan bir xil. -->
+    <symbol id="iconPlus" viewBox="0 0 24 24"><path d="M12 4V20M4 12H20"/></symbol>
     <symbol id="iconTarget" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22"/></symbol>
     <symbol id="iconHandshake" viewBox="0 0 24 24"><path d="M7.5 11.5 4 8l3.5-3 3 2.5"/><path d="M16.5 11.5 20 8l-3.5-3-3 2.5"/><path d="M10.5 7.5h3l4 4-2.2 2.2-2.3-2.1-2.3 2.1L8.5 13z"/><path d="M9 15.5 11 17.5M12.5 14.5 15 17"/></symbol>
     <symbol id="iconPin" viewBox="0 0 24 24"><path d="M12 21.5C12 21.5 5 15.6 5 10.2A7 7 0 0 1 19 10.2C19 15.6 12 21.5 12 21.5Z"/><circle cx="12" cy="10.2" r="2.6"/></symbol>
@@ -4985,10 +5030,15 @@
       <path d="M12 21.2a2.9 2.9 0 0 1-2.9-2.9c0-1.5 1.2-2.3 2.9-4.4 1.7 2.1 2.9 2.9 2.9 4.4a2.9 2.9 0 0 1-2.9 2.9Z"/>
     </symbol>
     <!-- YO'LDA LIFE bo'limi uchun belgilar -->
+    <!-- Quloqchinlar 19 birlik keng edi, qolgan belgilar esa 16:
+         panelda u yonidagilardan sezilarli kengroq turardi. Endi
+         quloqliklar ichkariga olindi (4 dan 20 gacha), kamon esa
+         ellips yoyi bilan chiziladi — shunda balandligi avvalgidek
+         qoladi, faqat eni qisqaradi. -->
     <symbol id="iconHeadphones" viewBox="0 0 24 24">
-      <path d="M4 15v-3a8 8 0 0 1 16 0v3"/>
-      <rect x="2.5" y="14" width="4.5" height="6.5" rx="2.2"/>
-      <rect x="17" y="14" width="4.5" height="6.5" rx="2.2"/>
+      <path d="M6 15v-3a6 8 0 0 1 12 0v3"/>
+      <rect x="4" y="14" width="4" height="6.5" rx="2"/>
+      <rect x="16" y="14" width="4" height="6.5" rx="2"/>
     </symbol>
     <symbol id="iconPlay" viewBox="0 0 24 24"><path d="M8 5.6 19 12 8 18.4Z"/></symbol>
     <symbol id="iconUsers" viewBox="0 0 24 24">
