@@ -1026,10 +1026,20 @@
      yashirilgan, shuning uchun ostidagi asl belgi va yozuv o'zi
      ko'rinib turadi — tabletka ularning ORTIDA, ustida emas. */
   .bn-blob{
-    --ld:64px;                       /* tabletka eni (JS shuni o'qiydi) */
+    /* Boshlang'ich en. Haqiqiysini JS yozadi: u tanlangan bo'limning
+       yozuviga qarab o'lchanadi (navLensWidth), chunki yozuvlar bir
+       xil emas va qotib qolgan en eng uzunini kesib o'tardi. */
+    --ld:64px;
     height:52px;margin-top:-26px;
     border-radius:999px;
     z-index:0;                       /* belgilar ostida */
+    /* En ham joy bilan birga oqib o'tsin: bo'lim almashganda
+       tabletka bir vaqtning o'zida suriladi va yangi yozuvga
+       moslashadi. Ikkisi bir xil egri chiziqda — bitta harakatga
+       qo'shilib ketadi. */
+    transition:transform 0.62s cubic-bezier(0.26,1.12,0.32,1),
+               width 0.62s cubic-bezier(0.26,1.12,0.32,1),
+               opacity 0.3s var(--ease);
   }
   .bn-blob-mag,
   .bn-blob-rim{display:none !important;}
@@ -7458,6 +7468,10 @@
     document.querySelectorAll(".lang-btn").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-lang") === currentLang);
     });
+    /* Pastki paneldagi tabletka eni yozuvga qarab o'lchanadi, ya'ni
+       til almashganda u ham qaytadan o'lchanishi kerak: "Yuklar"
+       bilan "Грузы" bir xil enda emas. */
+    moveNavBlob();
   }
 
   function setLang(lang){
@@ -17070,16 +17084,77 @@
     mag.appendChild(inner);
   }
 
+  /* ---------- Tabletka eni ----------
+     Ilgari eni CSS da qotib turardi (64px). Yozuvlar esa har xil:
+     "Life" — 19px, "Yuk joylash" — 59px, ruschada "Разместить груз"
+     — 86px. Shuning uchun qisqa yozuvlar tabletkaning o'rtasida
+     suzib yurardi, eng uzuni esa uning qirrasiga tegib turardi:
+     tabletka yozuvni o'rab olmay, kesib o'tayotgandek ko'rinardi.
+
+     Endi eni yozuvga qarab o'lchanadi — har bir bo'limda ikki
+     yonida bir xil bo'shliq qoladi. Shunisi ham muhim: tabletka
+     o'z katagidan kengroq bo'lishi mumkin, chunki kataklar teng
+     bo'lingan, yozuvlar esa teng emas. Lekin qo'shni katakdagi
+     yozuvga tegib ketmasligi kerak — shuning uchun pastda
+     qo'shnilar ham o'lchanadi va eni shunga qarab cheklanadi. */
+  var LENS_PAD = 11;   /* yozuvning ikki yonidagi bo'shliq */
+  var LENS_MIN = 56;   /* eng kichigi: qisqa yozuvda ham belgini o'raydi */
+  var LENS_GAP = 8;    /* qo'shni yozuvgacha qoldiriladigan oraliq */
+
+  /* Katakdagi yozuv. Belgi `.ic-svg`, "Yuk joylash" dagi o'rama esa
+     `.bn-fab` — ikkalasida ham `data-i18n` yo'q, shuning uchun
+     tanlov bir xil ishlaydi. */
+  function navItemLabel(item){
+    return item ? item.querySelector("span[data-i18n]") : null;
+  }
+
+  function navLensWidth(item){
+    var nav = item && item.closest(".bottom-nav");
+    if(!nav) return 0;
+    var box = item.getBoundingClientRect();
+    if(!box.width) return 0;
+    var lab = navItemLabel(item);
+    var w = Math.max(LENS_MIN, (lab ? lab.getBoundingClientRect().width : 0) + LENS_PAD * 2);
+
+    // Qo'shnilarning yozuvi qayerdan boshlanadi.
+    var mid = box.left + box.width / 2;
+    var limit = Infinity;
+    nav.querySelectorAll(":scope > .bn-item").forEach(function(other){
+      if(other === item) return;
+      var ol = navItemLabel(other);
+      if(!ol) return;
+      var ob = ol.getBoundingClientRect();
+      if(!ob.width) return;
+      // Chapdagi yozuvning o'ng cheti yoki o'ngdagining chap cheti —
+      // qaysi biri yaqin bo'lsa, eni o'shanga qarab cheklanadi.
+      if(ob.right <= box.left) limit = Math.min(limit, (mid - ob.right - LENS_GAP) * 2);
+      else if(ob.left >= box.right) limit = Math.min(limit, (ob.left - mid - LENS_GAP) * 2);
+    });
+    if(isFinite(limit)) w = Math.min(w, Math.max(LENS_MIN, limit));
+    return Math.round(w);
+  }
+
   /* Linzani berilgan nuqtaga qo'yadi va nusxani unga moslaydi.
-     `x` — linza markazining panel ichidagi o'rni. */
-  function placeNavLens(x){
+     `x` — linza markazining panel ichidagi o'rni.
+     `w` — eni; berilmasa turgan eni saqlanadi (sudrash shunday
+     ishlaydi: bitta tabletka surilyapti, yo'lda kengayib-torayib
+     ketmasligi kerak). */
+  function placeNavLens(x, w){
     var blob = document.getElementById("bnBlob");
     var nav = document.querySelector(".bottom-nav");
     if(!blob || !nav) return;
     var navBox = nav.getBoundingClientRect();
     if(!navBox.width) return;
-    var d = parseFloat(getComputedStyle(blob).getPropertyValue("--ld")) || 66;
-    var left = x - d / 2;
+    var navStyle = getComputedStyle(nav);
+    var d = w || parseFloat(getComputedStyle(blob).getPropertyValue("--ld")) || 66;
+    if(w) blob.style.setProperty("--ld", w + "px");
+    /* `x` panelning tashqi chetidan o'lchangan, tabletka esa
+       `position:absolute` — ya'ni uning noli panelning CHEGARASIDAN
+       keyin boshlanadi. Chegara hisobga olinmasa, tabletka doim
+       shuncha piksel o'ngga surilib turadi: yozuv o'rtada emas,
+       bir yoni qisiq bo'lib ko'rinadi. */
+    var edge = parseFloat(navStyle.borderLeftWidth) || 0;
+    var left = x - d / 2 - edge;
     var top = navBox.height / 2 - d / 2;
     blob.style.transform = "translateX(" + (Math.round(left * 10) / 10) + "px)";
     // Nusxa panel bilan bir joyda tursin: linzaning surilishi unda
@@ -17108,7 +17183,7 @@
     // aks holda linza chap chekkada bir zumga ko'rinib ketardi.
     if(!box.width) return;
     syncLensClone();
-    placeNavLens(box.left - navBox.left + box.width / 2);
+    placeNavLens(box.left - navBox.left + box.width / 2, navLensWidth(active));
   }
 
   /**
@@ -17327,7 +17402,7 @@
       if(Math.abs(trackX - drawX) < 0.4) drawX = trackX;
       // Markaz bo'yicha qo'yiladi, shunda ichidagi kattalashtirilgan
       // nusxa ham barmoq ostidagi joyni ko'rsatadi.
-      placeNavLens(drawX + blobW / 2);
+      placeNavLens(drawX + blobW / 2, blobW);
       if(dragging && drawX !== trackX) rafId = requestAnimationFrame(paint);
     }
 
