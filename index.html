@@ -5727,6 +5727,7 @@
       "myload.call": "Qo'ng'iroq", "myload.message": "Xabar",
       "myload.empty": "Hozir olingan yukingiz yo'q.",
       "myload.browse": "Yuklarni ko'rish",
+      "privacy.publicLink": "Bu sahifani brauzerda ochish",
 
       "trucks.eyebrow": "Mashinalar", "trucks.titleA": "Yuk mashinasi", "trucks.titleB": "soting yoki oling",
       "trucks.sub": "Faqat yuk transporti: yuk mashinasi, furgon, tirkama va maxsus texnika.",
@@ -6243,6 +6244,7 @@
       "myload.call": "Позвонить", "myload.message": "Сообщение",
       "myload.empty": "Сейчас у вас нет взятого груза.",
       "myload.browse": "Смотреть грузы",
+      "privacy.publicLink": "Открыть эту страницу в браузере",
 
       "trucks.eyebrow": "Машины", "trucks.titleA": "Грузовик", "trucks.titleB": "продайте или купите",
       "trucks.sub": "Только грузовой транспорт: грузовики, фургоны, прицепы и спецтехника.",
@@ -6755,6 +6757,7 @@
       "myload.call": "Call", "myload.message": "Message",
       "myload.empty": "You have no load in hand right now.",
       "myload.browse": "Browse loads",
+      "privacy.publicLink": "Open this page in a browser",
 
       "trucks.eyebrow": "Vehicles", "trucks.titleA": "Buy or sell", "trucks.titleB": "a freight vehicle",
       "trucks.sub": "Freight transport only: trucks, vans, trailers and special equipment.",
@@ -8024,7 +8027,18 @@
     feedback: function(){ return { titleKey: "settings.feedback", html: renderFeedbackPage(), onOpen: bindFeedbackPage }; },
     about: function(){ return { titleKey: "about.title", html: t("about.body") || "" }; },
     terms: function(){ return { titleKey: "terms.title", html: t("terms.body") || "" }; },
-    privacy: function(){ return { titleKey: "settings.privacy", html: t("privacy.body") || "" }; },
+    /* Shu matnning ochiq nusxasi /maxfiylik da turadi (Play Market
+       kirishsiz ochiladigan manzilni talab qiladi). Havola shu yerda
+       ham bo'lsin: odam siyosatni boshqa birovga yuborishi yoki
+       ilovasiz ochishi kerak bo'lishi mumkin. */
+    privacy: function(){
+      return {
+        titleKey: "settings.privacy",
+        html: (t("privacy.body") || "")
+          + '<p style="margin-top:var(--s5);"><a href="/maxfiylik" target="_blank" rel="noopener" '
+          + 'data-i18n="privacy.publicLink">Bu sahifani brauzerda ochish</a></p>'
+      };
+    },
     "link-telegram": function(){ return { titleKey: "link.startTitle", html: renderLinkTelegramPage(), onOpen: bindLinkTelegramPage }; },
     "link-google": function(){ return { titleKey: "link.finishTitle", html: renderLinkGooglePage(), onOpen: bindLinkGooglePage }; },
     verify: function(){ return { titleKey: "verify.pageTitle", html: renderVerifyPage(), onOpen: bindVerifyPage }; }

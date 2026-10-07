@@ -17,7 +17,9 @@
  * CACHE_VERSION o'zgarganda eski kesh butunlay o'chiriladi. Sayt
  * yangilanganda shu raqamni oshirish kerak.
  */
-const CACHE_VERSION = 'yolda-v1';
+// v2: "navigate" so'rovi endi har qanday sahifani qobiq deb
+// saqlamaydi — eski keshda noto'g'ri qobiq qolgan bo'lishi mumkin.
+const CACHE_VERSION = 'yolda-v2';
 const SHELL = [
   '/',
   '/index.html',
@@ -54,6 +56,17 @@ const isBypassed = (request, url) =>
   url.pathname.startsWith('/api/') ||
   url.pathname.startsWith('/admin');
 
+/**
+ * Shu manzil ilovaning o'zimi?
+ *
+ * Saytda ilovadan tashqari oddiy sahifalar ham bor (masalan
+ * /maxfiylik — Play Market so'ragan ochiq hujjat). Ular ham
+ * "navigate" so'rovi bilan ochiladi, lekin ilova qobig'i emas:
+ * ularning javobini qobiq o'rniga keshga qo'yib yuborilsa,
+ * internet uzilganda ilova o'rniga o'sha sahifa ochilardi.
+ */
+const isAppShell = (url) => url.pathname === '/' || url.pathname === '/index.html';
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (isBypassed(event.request, url)) return;
@@ -61,14 +74,23 @@ self.addEventListener('fetch', (event) => {
   // Sahifa ochilishi: avval tarmoq (yangi versiya darrov ko'rinsin),
   // internet bo'lmasa — keshdagi qobiq.
   if (event.request.mode === 'navigate') {
+    const shell = isAppShell(url);
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', copy));
+          // Faqat ilovaning o'zi qobiq sifatida saqlanadi. Boshqa
+          // sahifalar o'z manzili bilan keshlanadi — tarmoqsiz ham
+          // ochiladi, lekin ilovaning o'rnini egallamaydi.
+          if (response && response.ok) {
+            const copy = response.clone();
+            const key = shell ? '/index.html' : event.request;
+            caches.open(CACHE_VERSION).then((cache) => cache.put(key, copy));
+          }
           return response;
         })
-        .catch(() => caches.match('/index.html').then((hit) => hit || caches.match('/'))),
+        .catch(() => (shell
+          ? caches.match('/index.html').then((hit) => hit || caches.match('/'))
+          : caches.match(event.request).then((hit) => hit || caches.match('/index.html')))),
     );
     return;
   }

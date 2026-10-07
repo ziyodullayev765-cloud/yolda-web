@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YO'LDA — Maxfiylik siyosati</title>
+<meta name="description" content="YO'LDA platformasining maxfiylik siyosati: qanday ma'lumot yig'iladi, nima uchun ishlatiladi va kimga ko'rinadi.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0A9F5B">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<style>
+  /* Sahifa o'zi yetarli: tashqaridan shrift ham, skript ham
+     yuklanmaydi. Play Market tekshiruvchisi uni sekin internetda,
+     kirmasdan va har qanday qurilmada ocha olishi kerak. */
+  :root{
+    color-scheme:light dark;
+    --bg:#FFFFFF; --ink:#0F172A; --soft:#334155; --muted:#64748B;
+    --line:#E2E8F0; --brand:#0A9F5B; --tint:#F1F5F9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#061D13; --ink:#E8EEF2; --soft:#C3CDD6; --muted:#8FA0AD;
+      --line:#15372A; --brand:#2ED47A; --tint:#0C2A1D;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:24px 16px 64px;}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+  .mark{width:34px;height:34px;border-radius:9px;flex:none;}
+  .brand{font-weight:800;letter-spacing:0.02em;font-size:17px;}
+  .langs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px;}
+  .langs button{
+    font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    padding:7px 14px;border-radius:999px;border:1px solid var(--line);
+    background:transparent;color:var(--muted);
+  }
+  .langs button.on{background:var(--brand);border-color:var(--brand);color:#fff;}
+  h1{font-size:23px;line-height:1.25;margin:0 0 6px;letter-spacing:-0.01em;}
+  h4{font-size:15.5px;margin:26px 0 6px;color:var(--ink);}
+  p{margin:0 0 10px;color:var(--soft);}
+  b{color:var(--ink);}
+  .updated{color:var(--muted);font-size:13px;margin:0 0 4px;}
+  footer{
+    margin-top:36px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:13.5px;
+  }
+  footer a{color:var(--brand);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+      <rect width="100" height="100" rx="26" fill="#0A9F5B"/>
+      <path d="M18 86 L42 24 H58 L82 86 Z" fill="#FFFFFF"/>
+      <g fill="#0A9F5B">
+        <rect x="46.4" y="68" width="7.2" height="11" rx="1.6"/>
+        <rect x="47.2" y="49" width="5.6" height="9" rx="1.3"/>
+        <rect x="47.8" y="33" width="4.4" height="7" rx="1"/>
+      </g>
+    </svg>
+    <span class="brand">YO'LDA</span>
+  </header>
+
+  <nav class="langs" id="langs" aria-label="Til / Язык / Language"><button type="button" data-lang="uz" class="on" aria-current="true">O'zbekcha</button><button type="button" data-lang="ru">Русский</button><button type="button" data-lang="en">English</button></nav>
+
+<article id="doc-uz" lang="uz">
+  <h1>Maxfiylik siyosati</h1>
+  <h4>1. Umumiy qoidalar</h4><p>Ushbu maxfiylik siyosati YO'LDA platformasidan ("Xizmat") foydalanganda shaxsingizga doir ma'lumotlar qanday yig'ilishi, ishlatilishi, kimga ko'rinishi va qanday himoya qilinishini tushuntiradi. Xizmatdan foydalanish orqali siz shu tartibga rozilik bildirasiz. Rozi bo'lmasangiz, Xizmatdan foydalanmang.</p><h4>2. Qanday ma'lumot yig'amiz</h4><p><b>Kirganda.</b> Google orqali: ism, elektron pochta manzili va profil surati. Telegram orqali: Telegram raqami (ID), @username, ism va surat. Telefon orqali: telefon raqamingiz — tasdiqlash kodi Telegram boti orqali yuboriladi. Parol yo'q — biz parol so'ramaymiz va saqlamaymiz. Tasdiqlash kodining o'zi bazada ochiq saqlanmaydi: faqat uning qaytarib bo'lmaydigan hash'i turadi va u 5 daqiqadan keyin, yoki bir marta ishlatilgach, o'chadi.</p><p><b>Profilda.</b> Username, telefon raqam, shahar, rol (haydovchi yoki yuk beruvchi), mashina turi, tajriba, yo'nalishlar, yuk turlari, o'zingiz haqingizdagi qisqa matn va avatar. Bularning barchasi ixtiyoriy.</p><p><b>Yuk joylashtirganda.</b> Yo'nalish va manzillar, og'irlik, hajm, joy soni, yuk turi, mashina turi, sana, narx, izoh, ism va telefon raqam.</p><p><b>Mashina e'lonida.</b> Marka, yil, probeg, narx, shahar, texnik ma'lumotlar, rasmlar, sotuvchi ismi va telefon raqami.</p><p><b>Xabarlashuvda.</b> Yozgan xabarlaringiz.</p><p><b>Tasdiqlashda.</b> Shaxs hujjati, haydovchilik guvohnomasi yoki texnik pasport rasmi — faqat o'zingiz yuborsangiz (5-bandga qarang).</p><p><b>Baholar.</b> Boshqa foydalanuvchilarga qo'ygan bahoingiz va sharhingiz.</p><p><b>Texnik ma'lumot.</b> Sayt joylashgan xizmat (Vercel) so'rovlar jurnalida IP manzil va brauzer ma'lumotini saqlaydi.</p><p>Biz qurilmangizning joylashuvini (GPS) <b>so'ramaymiz</b> va olmaymiz. Xaritada shaharlar orasidagi taxminiy yo'nalish ko'rsatiladi, sizning joylashuvingiz emas.</p><h4>3. Nima uchun ishlatamiz</h4><p>Yukingizni haydovchilarga yetkazish, sizni boshqa foydalanuvchilar bilan bog'lash, buyurtma holatini kuzatish, bildirishnoma yuborish, firibgarlik va suiiste'molning oldini olish, nizolarni ko'rib chiqish va xizmatni yaxshilash uchun.</p><p>Ma'lumotlaringiz reklama uchun ishlatilmaydi va uchinchi shaxslarga sotilmaydi. Saytda reklama tarmoqlari, kuzatuv (tracking) skriptlari va analitika xizmatlari yo'q.</p><h4>4. Kim nimani ko'radi</h4><p><b>Hammaga ochiq:</b> username, ko'rsatiladigan ism, avatar, shahar, rol, bahoingiz va sharhlar, tasdiq belgilari, o'zingiz haqingizdagi matn, ro'yxatdan o'tgan sana va yetkazilgan yuklar soni.</p><p><b>Hech qachon ochiq emas:</b> elektron pochta manzilingiz, tasdiqlash hujjatlaringiz va yozishmalaringiz. Xabarlar faqat siz va suhbatdoshingizga ko'rinadi.</p><p><b>Yuklar ro'yxatida</b> telefon raqam, ism, izoh va pochta manzili ko'rsatilmaydi — faqat yo'nalish, yuk va narx.</p><p><b>Mashina e'lonida telefon raqamingiz ataylab ochiq</b> — e'lonning maqsadi shu, xaridor sizga qo'ng'iroq qila olishi kerak. Raqamingiz ochiq bo'lishini istamasangiz, e'lon bermang.</p><p><b>Telegram bildirishnomalari.</b> Telegram hisobingiz ulangan bo'lsa, bot sizga buyurtma holati va mos yangi yuklar haqida xabar yuboradi; bu xabar matni Telegram serverlaridan o'tadi. <b>Yuklaringiz hech qanday ochiq Telegram guruhiga yoki kanalga joylashtirilmaydi</b> — platformadagi barcha ish ilovaning o'zida bo'ladi. Bildirishnomalarni Sozlamalardan o'chirib qo'yishingiz mumkin.</p><p><b>Telefon raqam.</b> Yuk e'loningizda raqamingiz boshqalarga ko'rsatilmaydi. U faqat siz haydovchini tanlaganingizdan keyin va faqat shu ikki tomonga ochiladi.</p><p><b>Administratorlar</b> shikoyat va nizolarni hal qilish, tasdiqlash hujjatlarini ko'rib chiqish va suiiste'molni to'xtatish uchun buyurtma va profil ma'lumotlariga kirishi mumkin.</p><h4>5. Tasdiqlash hujjatlari</h4><p>Hujjat rasmini faqat o'zingiz yuborasiz va faqat tasdiqlash uchun ishlatiladi. U boshqa foydalanuvchilarga hech qachon ko'rsatilmaydi va uchinchi tomonga berilmaydi. <b>Moderator qaror chiqargandan keyin — tasdiqlangan bo'ladimi yoki rad etiladimi — hujjat rasmi darhol o'chiriladi.</b> Profilingizda faqat natija qoladi: tasdiqlangan yoki yo'q.</p><h4>6. Qurilmangizda saqlanadigan ma'lumot</h4><p>Brauzeringizning xotirasida (localStorage) faqat quyidagilar saqlanadi: kirish belgisi, til va mavzu tanlovi, bildirishnoma sozlamalari, saqlangan e'lonlar, oxirgi qidiruvlar va "ilovani o'rnatish" taklifini yopganingiz. Bularning hech biri serverga yuborilmaydi va reklama uchun ishlatilmaydi. Reklama cookie'lari yo'q.</p><h4>7. Uchinchi tomon xizmatlari</h4><p>Xizmat quyidagilarga tayanadi: Google (kirish va shriftlar), Telegram (kirish, tasdiqlash kodi va bildirishnomalar), Vercel (sayt joylashuvi), Upstash (ma'lumotlar bazasi), OpenStreetMap va unpkg (xarita). Sahifani ochganingizda IP manzilingiz shu xizmatlarga ko'rinadi. Telegram orqali yuborilgan bildirishnoma matni Telegram serverlaridan o'tadi. Ularning har biri o'z maxfiylik siyosatiga ega.</p><h4>8. Ma'lumot qayerda saqlanadi</h4><p>Ma'lumotlar Vercel va Upstash infratuzilmasida, O'zbekiston hududidan tashqarida joylashgan serverlarda saqlanadi. O'zbekiston Respublikasining "Shaxsga doir ma'lumotlar to'g'risida"gi qonuni fuqarolarning shaxsiy ma'lumotlarini mamlakat hududidagi bazalarda saqlashni talab qiladi; biz bu talabga to'liq moslashish ustida ishlayapmiz va holat o'zgarganda shu bandni yangilaymiz.</p><h4>9. Qancha vaqt saqlanadi</h4><p>Profilingiz va e'lonlaringiz siz o'chirmaguningizcha yoki hisobingizni o'chirishni so'ramaguningizcha saqlanadi. Buyurtmalar tarixi nizo va statistika uchun saqlanadi. Tasdiqlash hujjatlari ko'rib chiqilgach darhol o'chiriladi. Mashina e'lonini va xabaringizni istalgan vaqtda o'zingiz o'chirishingiz mumkin.</p><h4>10. Xavfsizlik</h4><p>Sayt faqat HTTPS orqali ishlaydi. Har bir so'rov serverda qaytadan tekshiriladi — kim ekaningiz brauzerdagi so'zga qarab emas, Google yoki Telegram bergan imzoga qarab aniqlanadi. Siz faqat o'zingizning ma'lumotingizni o'zgartira olasiz. Administrator paneli alohida parol va huquqlar bilan himoyalangan. Parol saqlamaymiz, chunki parol umuman yo'q. Shunga qaramay, internetdagi hech bir xizmat mutlaq xavfsiz emas.</p><h4>11. Sizning huquqlaringiz</h4><p>Siz: ma'lumotlaringizni ko'rish va tuzatish; profilingizni, e'lonlaringizni va xabarlaringizni o'chirish; hisobingizni butunlay o'chirishni so'rash; roziligingizni qaytarib olish (bu holda Xizmatdan foydalanish to'xtaydi) huquqiga egasiz. So'rovingizni Aloqa bo'limi orqali yuboring — imkon qadar tez bajaramiz.</p><h4>12. Bolalar</h4><p>Xizmat 18 yoshdan kichiklar uchun mo'ljallanmagan. Agar bola ma'lumoti bizga tushib qolganini bilsak, uni o'chiramiz.</p><h4>13. O'zgarishlar</h4><p>Siyosat o'zgarishi mumkin. Muhim o'zgarish bo'lsa, ilovada xabar beramiz.</p><h4>14. Aloqa</h4><p>Savol yoki so'rov bo'lsa: +998 94 440 20 90 yoki @ziyodullayv (Telegram).</p>
+</article>
+<article id="doc-ru" lang="ru" hidden>
+  <h1>Политика конфиденциальности</h1>
+  <h4>1. Общие положения</h4><p>Данная политика конфиденциальности объясняет, какие персональные данные собирает платформа YO'LDA («Сервис»), как они используются, кому видны и как защищаются. Пользуясь Сервисом, вы соглашаетесь с этим порядком. Если вы не согласны — не пользуйтесь Сервисом.</p><h4>2. Какие данные мы собираем</h4><p><b>При входе.</b> Через Google: имя, адрес электронной почты и фото профиля. Через Telegram: Telegram ID, @username, имя и фото. По номеру телефона: сам номер — код подтверждения приходит через Telegram-бота. Пароля нет — мы не запрашиваем и не храним пароли. Сам код подтверждения не хранится в базе в открытом виде: там лежит только его необратимый хеш, который удаляется через 5 минут или сразу после первого использования.</p><p><b>В профиле.</b> Username, номер телефона, город, роль (водитель или грузоотправитель), тип машины, опыт, маршруты, типы грузов, короткий текст о себе и аватар. Всё это по желанию.</p><p><b>При размещении груза.</b> Маршрут и адреса, вес, объём, количество мест, тип груза, тип машины, дата, цена, комментарий, имя и номер телефона.</p><p><b>В объявлении о машине.</b> Марка, год, пробег, цена, город, технические данные, фотографии, имя и телефон продавца.</p><p><b>В переписке.</b> Отправленные вами сообщения.</p><p><b>При верификации.</b> Фото документа, водительского удостоверения или техпаспорта — только если вы сами его отправите (см. пункт 5).</p><p><b>Оценки.</b> Оценки и отзывы, которые вы оставляете другим пользователям.</p><p><b>Технические данные.</b> Хостинг (Vercel) записывает IP-адрес и данные браузера в журнал запросов.</p><p>Мы <b>не запрашиваем</b> и не получаем геолокацию (GPS) вашего устройства. На карте показывается примерный маршрут между городами, а не ваше местоположение.</p><h4>3. Как мы используем данные</h4><p>Чтобы передать ваш груз водителям, связать вас с другими пользователями, отслеживать статус заказа, отправлять уведомления, предотвращать мошенничество и злоупотребления, рассматривать споры и улучшать сервис.</p><p>Данные не используются для рекламы и не продаются третьим лицам. На сайте нет рекламных сетей, трекеров и аналитических скриптов.</p><h4>4. Кто что видит</h4><p><b>Открыто всем:</b> username, отображаемое имя, аватар, город, роль, рейтинг и отзывы, значки верификации, текст о себе, дата регистрации и число доставленных грузов.</p><p><b>Никогда не публикуется:</b> ваш адрес электронной почты, документы верификации и переписка. Сообщения видны только вам и собеседнику.</p><p><b>В списке грузов</b> не показываются телефон, имя, комментарий и почта — только маршрут, груз и цена.</p><p><b>В объявлении о машине ваш номер телефона открыт намеренно</b> — в этом смысл объявления, покупатель должен вам позвонить. Если не хотите, чтобы номер был открыт, не размещайте объявление.</p><p><b>Уведомления в Telegram.</b> Если ваш Telegram-аккаунт привязан, бот присылает вам статус заказа и подходящие новые грузы; текст такого уведомления проходит через серверы Telegram. <b>Ваши грузы не публикуются ни в какой открытой группе или канале Telegram</b> — вся работа платформы происходит внутри приложения. Уведомления можно отключить в Настройках.</p><p><b>Номер телефона.</b> В объявлении о грузе ваш номер не показывается другим. Он открывается только после того, как вы выбрали водителя, и только этим двум сторонам.</p><p><b>Администраторы</b> могут просматривать данные заказов и профиля для рассмотрения жалоб и споров, проверки документов и пресечения злоупотреблений.</p><h4>5. Документы верификации</h4><p>Фото документа отправляете только вы сами, и оно используется исключительно для проверки. Оно никогда не показывается другим пользователям и не передаётся третьим лицам. <b>После решения модератора — независимо от того, одобрено оно или отклонено, — фото документа немедленно удаляется.</b> В профиле остаётся только результат: проверено или нет.</p><h4>6. Что хранится на вашем устройстве</h4><p>В памяти браузера (localStorage) хранится только: признак входа, выбор языка и темы, настройки уведомлений, сохранённые объявления, последние поиски и отметка о закрытии предложения «установить приложение». Ничего из этого не отправляется на сервер и не используется для рекламы. Рекламных cookie нет.</p><h4>7. Сторонние сервисы</h4><p>Сервис использует: Google (вход и шрифты), Telegram (вход, код подтверждения и уведомления), Vercel (хостинг), Upstash (база данных), OpenStreetMap и unpkg (карта). При открытии страницы ваш IP-адрес виден этим сервисам. Текст уведомления, отправленного через Telegram, проходит через серверы Telegram. У каждого из них своя политика конфиденциальности.</p><h4>8. Где хранятся данные</h4><p>Данные хранятся в инфраструктуре Vercel и Upstash, на серверах за пределами Узбекистана. Закон Республики Узбекистан «О персональных данных» требует хранить персональные данные граждан в базах на территории страны; мы работаем над полным приведением в соответствие и обновим этот пункт, когда ситуация изменится.</p><h4>9. Сроки хранения</h4><p>Профиль и объявления хранятся, пока вы их не удалите или не запросите удаление аккаунта. История заказов сохраняется для разбора споров и статистики. Документы верификации удаляются сразу после проверки. Объявление о машине и своё сообщение вы можете удалить сами в любой момент.</p><h4>10. Безопасность</h4><p>Сайт работает только по HTTPS. Каждый запрос заново проверяется на сервере: кто вы — определяется не словом браузера, а подписью Google или Telegram. Вы можете менять только свои данные. Панель администратора защищена отдельным паролем и правами. Пароли мы не храним, потому что их нет вовсе. Тем не менее ни один сервис в интернете не является абсолютно безопасным.</p><h4>11. Ваши права</h4><p>Вы вправе: просматривать и исправлять свои данные; удалять профиль, объявления и сообщения; запросить полное удаление аккаунта; отозвать согласие (в этом случае пользование Сервисом прекращается). Отправьте запрос через раздел «Контакты» — выполним как можно быстрее.</p><h4>12. Дети</h4><p>Сервис не предназначен для лиц младше 18 лет. Если нам станет известно, что мы получили данные ребёнка, мы их удалим.</p><h4>13. Изменения</h4><p>Политика может меняться. О существенных изменениях мы сообщим в приложении.</p><h4>14. Контакты</h4><p>Вопросы и запросы: +998 94 440 20 90 или @ziyodullayv (Telegram).</p>
+</article>
+<article id="doc-en" lang="en" hidden>
+  <h1>Privacy Policy</h1>
+  <h4>1. General</h4><p>This privacy policy explains what personal data the YO'LDA platform (the "Service") collects, how it is used, who can see it, and how it is protected. By using the Service you agree to these terms. If you do not agree, do not use the Service.</p><h4>2. What data we collect</h4><p><b>When you sign in.</b> With Google: name, email address and profile photo. With Telegram: Telegram ID, @username, name and photo. With a phone number: the number itself — the verification code is delivered by the Telegram bot. There is no password — we never ask for one and never store one. The verification code itself is never stored in plain form: only an irreversible hash of it is kept, and that is deleted after 5 minutes or as soon as it has been used once.</p><p><b>In your profile.</b> Username, phone number, city, role (driver or cargo owner), vehicle type, experience, routes, cargo types, a short bio and an avatar. All of it is optional.</p><p><b>When you post a load.</b> Route and addresses, weight, volume, number of items, cargo type, vehicle type, date, price, note, name and phone number.</p><p><b>In a vehicle listing.</b> Make, year, mileage, price, city, technical details, photos, seller name and phone number.</p><p><b>In messages.</b> The messages you send.</p><p><b>For verification.</b> A photo of an ID document, driving licence or vehicle registration — only if you submit it yourself (see section 5).</p><p><b>Ratings.</b> The ratings and reviews you leave for other users.</p><p><b>Technical data.</b> Our host (Vercel) records IP address and browser details in its request logs.</p><p>We do <b>not</b> request or receive your device's location (GPS). The map shows an approximate route between cities, not where you are.</p><h4>3. How we use your data</h4><p>To pass your load on to drivers, connect you with other users, track order status, send notifications, prevent fraud and abuse, handle disputes, and improve the Service.</p><p>Your data is not used for advertising and is not sold to third parties. The site carries no ad networks, tracking scripts or analytics services.</p><h4>4. Who sees what</h4><p><b>Public to everyone:</b> username, display name, avatar, city, role, rating and reviews, verification badges, bio, join date, and number of loads delivered.</p><p><b>Never published:</b> your email address, your verification documents, and your conversations. Messages are visible only to you and the person you are talking to.</p><p><b>The load list</b> does not show phone number, name, note or email — only route, cargo and price.</p><p><b>In a vehicle listing your phone number is public on purpose</b> — that is the point of an ad, a buyer has to be able to call you. If you do not want your number public, do not post a listing.</p><p><b>Telegram notifications.</b> If your Telegram account is linked, the bot sends you order updates and matching new loads; the text of such a notification passes through Telegram's servers. <b>Your loads are not posted to any public Telegram group or channel</b> — all platform activity happens inside the app. Notifications can be turned off in Settings.</p><p><b>Your phone number.</b> It is not shown to others on a load listing. It is revealed only after you have chosen a driver, and only to those two parties.</p><p><b>Administrators</b> may access order and profile data to handle reports and disputes, review verification documents, and stop abuse.</p><h4>5. Verification documents</h4><p>A document photo is submitted only by you and is used solely for verification. It is never shown to other users and never shared with third parties. <b>Once a moderator makes a decision — approved or rejected — the document photo is deleted immediately.</b> Only the outcome remains on your profile: verified or not.</p><h4>6. What is stored on your device</h4><p>Your browser's storage (localStorage) holds only: your sign-in token, language and theme choice, notification settings, saved listings, recent searches, and whether you dismissed the "install the app" prompt. None of it is sent to our server or used for advertising. There are no advertising cookies.</p><h4>7. Third-party services</h4><p>The Service relies on: Google (sign-in and fonts), Telegram (sign-in, verification code and notifications), Vercel (hosting), Upstash (database), OpenStreetMap and unpkg (map). When you open the page, your IP address is visible to these services. The text of a notification sent through Telegram passes through Telegram's servers. Each of them has its own privacy policy.</p><h4>8. Where data is stored</h4><p>Data is stored on Vercel and Upstash infrastructure, on servers outside Uzbekistan. The Law of the Republic of Uzbekistan "On Personal Data" requires citizens' personal data to be stored in databases located within the country; we are working towards full compliance and will update this section when that changes.</p><h4>9. How long we keep it</h4><p>Your profile and listings are kept until you delete them or ask us to delete your account. Order history is retained for dispute resolution and statistics. Verification documents are deleted as soon as they are reviewed. You can delete a vehicle listing or your own message yourself at any time.</p><h4>10. Security</h4><p>The site is served over HTTPS only. Every request is re-verified on the server: who you are is decided by the signature issued by Google or Telegram, not by anything the browser claims. You can only change your own data. The admin panel is protected by a separate password and permissions. We store no passwords, because there are none. Even so, no service on the internet is absolutely secure.</p><h4>11. Your rights</h4><p>You have the right to: view and correct your data; delete your profile, listings and messages; request full deletion of your account; and withdraw your consent (which ends your use of the Service). Send your request through the Contact section — we will act on it as quickly as we can.</p><h4>12. Children</h4><p>The Service is not intended for anyone under 18. If we learn that we hold a child's data, we delete it.</p><h4>13. Changes</h4><p>This policy may change. We will announce any significant change in the app.</p><h4>14. Contact</h4><p>Questions or requests: +998 94 440 20 90 or @ziyodullayv (Telegram).</p>
+</article>
+
+  <footer>
+    <p>+998 94 440 20 90 &middot; <a href="https://t.me/ziyodullayv" rel="noopener">@ziyodullayv</a></p>
+    <p><a href="/">YO'LDA</a></p>
+  </footer>
+
+</div>
+<script>
+  /* Til tanlash. Skriptsiz ham sahifa o'qiladi: o'zbekcha matn
+     boshidanoq ochiq turadi, qolgan ikkitasi hidden bilan
+     yashiringan — ya'ni skript ishlamasa ham hujjat ko'rinadi. */
+  (function(){
+    var langs = ["uz","ru","en"];
+    var nav = document.getElementById("langs");
+    function show(pick){
+      langs.forEach(function(l){
+        var el = document.getElementById("doc-" + l);
+        if(el) el.hidden = (l !== pick);
+      });
+      nav.querySelectorAll("[data-lang]").forEach(function(b){
+        var on = b.getAttribute("data-lang") === pick;
+        b.classList.toggle("on", on);
+        if(on) b.setAttribute("aria-current", "true");
+        else b.removeAttribute("aria-current");
+      });
+      document.documentElement.lang = pick;
+      try{ localStorage.setItem("yolda_privacy_lang", pick); }catch(e){}
+    }
+    nav.addEventListener("click", function(e){
+      var b = e.target.closest("[data-lang]");
+      if(b) show(b.getAttribute("data-lang"));
+    });
+    /* Ilovada tanlangan til, yoki brauzerning tili, yoki o'zbekcha. */
+    var start = "";
+    try{ start = localStorage.getItem("yolda_privacy_lang") || ""; }catch(e){}
+    if(langs.indexOf(start) === -1){
+      var nl = (navigator.language || "").slice(0, 2).toLowerCase();
+      start = langs.indexOf(nl) === -1 ? "uz" : nl;
+    }
+    if(start !== "uz") show(start);
+  })();
+</script>
+</body>
+</html>
