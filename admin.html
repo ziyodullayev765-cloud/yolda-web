@@ -522,6 +522,54 @@
   .usage-sub i{font-style:normal;opacity:0.8;}
   .usage-keys{margin:0;font-size:13.5px;}
   .usage-note{margin:0;font-size:12px;line-height:1.6;opacity:0.62;}
+
+  /* ---------- Ikonkalar ----------
+     Har bir kartochka — tortib tashlash maydoni: rasmni Chrome'dan
+     yoki papkadan ustiga sudrab tashlash mumkin, tanlangan bo'lsa
+     Ctrl+V bilan qo'yish ham.
+
+     Kartochkaning O'ZI maydon bo'lgani uchun "qayerga tashlash
+     kerak" degan savol tug'ilmaydi: rasm qaysi ikonkaning o'rniga
+     tushishini odam ko'rib turadi. */
+  .icon-grid{
+    display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fill, minmax(132px, 1fr));
+  }
+  .icon-card{
+    position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:14px 10px;border-radius:14px;
+    border:1px solid rgba(127,127,127,0.22);
+    background:rgba(127,127,127,0.04);
+    transition:border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  }
+  .icon-card.is-custom{border-color:rgba(22,163,74,0.45);}
+  .icon-card-pic{
+    display:flex;align-items:center;justify-content:center;
+    width:46px;height:46px;border-radius:12px;
+    background:rgba(127,127,127,0.10);
+  }
+  .icon-card-name{
+    font-size:11.5px;opacity:0.72;text-align:center;
+    word-break:break-all;line-height:1.3;
+  }
+  .icon-card-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+  /* Sudrab kelinganda. `pointer-events:none` ichki elementlarga:
+     aks holda sudrash ichkariga o'tganda "chiqib ketdi" hodisasi
+     kelib, belgi miltillab turardi. */
+  .icon-card.drop-on{
+    border-color:#16A34A;background:rgba(22,163,74,0.12);transform:scale(1.02);
+  }
+  .icon-card.drop-on > *{pointer-events:none;}
+  .icon-card.busy{opacity:0.55;}
+  .icon-drop-hint{
+    position:absolute;inset:0;display:none;
+    align-items:center;justify-content:center;
+    border-radius:14px;font-size:12px;font-weight:700;color:#16A34A;
+    background:rgba(22,163,74,0.10);
+  }
+  .icon-card.drop-on .icon-drop-hint{display:flex;}
+  .icon-card:focus-visible{outline:2px solid #16A34A;outline-offset:2px;}
+  .icon-card.picked{border-color:#16A34A;box-shadow:0 0 0 2px rgba(22,163,74,0.25);}
 </style>
 </head>
 <body>
@@ -3020,18 +3068,214 @@
                   : "");
           }
 
-          return '<div class="icon-card' + (url ? " is-custom" : "") + '">'
+          /* Kartochkaning o'zi tortib tashlash maydoni. Yozib
+             qo'yish (paste) uchun u tanlanadigan ham bo'lishi
+             kerak — shuning uchun tabindex. */
+          var droppable = writable && storageOn;
+          return '<div class="icon-card' + (url ? " is-custom" : "") + '"'
+            + (droppable ? ' data-icon-drop="' + esc(id) + '" tabindex="0"' : '') + '>'
+            + (droppable ? '<div class="icon-drop-hint">Shu yerga tashlang</div>' : '')
             + '<div class="icon-card-pic">' + preview + "</div>"
             + '<div class="icon-card-name">' + esc(id) + "</div>"
             + '<div class="icon-card-acts">' + actions + "</div>"
             + "</div>";
         }).join("");
 
-        return warn + stats + '<div class="icon-grid">' + cards + "</div>";
+        /* Qisqa ko'rsatma: tortib tashlash ko'rinmaydigan
+           imkoniyat, aytilmasa hech kim topmaydi. */
+        var howto = (writable && storageOn)
+          ? '<p class="usage-note" style="margin:0 0 12px;">'
+            + 'Rasmni to‘g‘ridan Chrome‘dan yoki papkadan ikonkaning ustiga sudrab tashlang. '
+            + 'Yoki ikonkani bosib tanlang va Ctrl+V bilan qo‘ying.'
+            + '</p>'
+          : '';
+        return warn + stats + howto + '<div class="icon-grid">' + cards + "</div>";
       });
   }
 
   /** Rasm tanlangach: kichraytirib, serverga yuboramiz. */
+  /* ============================================================
+     Ikonkani tortib tashlash va qo'yish
+     ------------------------------------------------------------
+     Ilgari yagona yo'l "Rasm" tugmasini bosib, fayl tanlash edi.
+     Chrome'dagi rasmni qo'yish uchun avval uni saqlab olish,
+     keyin papkadan topish kerak edi — uch qadam.
+
+     Endi uchta yo'l bor va uchalasi ham bitta joyga olib boradi:
+
+       1. Papkadan faylni sudrab tashlash;
+       2. CHROME'DAN rasmni to'g'ridan sudrab tashlash;
+       3. Rasmni nusxalab, ikonkani tanlab, Ctrl+V.
+
+     Ikkinchisi eng qiyini. Brauzer sahifadan sudralgan rasmning
+     O'ZINI bermaydi — faqat manzilini beradi. O'sha manzilni
+     brauzerning o'zi yuklab olishi ham ko'pincha ishlamaydi
+     (boshqa saytdagi rasm CORS sababli `canvas` ga tushmaydi).
+
+     Shuning uchun ikki qadam: avval brauzerda urinib ko'riladi —
+     agar sayt ruxsat bersa, rasm shu yerda 128px ga kichraytirilib
+     yuboriladi. Bo'lmasa, manzil serverga beriladi va rasmni
+     server olib keladi (lib/remoteImage.js: faqat https, ichki
+     manzillar rad etiladi, yo'naltirish o'chirilgan, hajmi
+     cheklangan).
+     ============================================================ */
+
+  /* Sudralgan narsadan rasm manzilini ajratib olish.
+     Chrome turli shakllarda beradi, shuning uchun bir nechta
+     joyga qaraladi. */
+  function imageUrlFromDrop(dt){
+    if(!dt) return "";
+    var direct = (dt.getData("text/uri-list") || "").split("\n")
+      .map(function(x){ return x.trim(); })
+      .filter(function(x){ return x && x.charAt(0) !== "#"; })[0] || "";
+    if(direct) return direct;
+
+    /* HTML bo'lagi: ichidan <img src> olinadi. Chrome rasmni
+       sudraganda ko'pincha aynan shuni beradi. */
+    var html = dt.getData("text/html") || "";
+    var m = /<img[^>]+src\s*=\s*["']([^"']+)["']/i.exec(html);
+    if(m) return m[1];
+
+    var plain = (dt.getData("text/plain") || "").trim();
+    return /^https?:\/\//i.test(plain) ? plain : "";
+  }
+
+  /* Manzildagi rasmni olishga BRAUZERDA urinish.
+     Muvaffaqiyatli bo'lsa 128px li PNG qaytaradi, bo'lmasa null —
+     chaqirgan tomon serverga murojaat qiladi. */
+  function iconDataUrlFromRemote(url){
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      var done = false;
+      var finish = function(v){ if(!done){ done = true; resolve(v); } };
+      img.onload = function(){
+        try{
+          var size = 128;
+          var canvas = document.createElement("canvas");
+          canvas.width = size; canvas.height = size;
+          var ctx = canvas.getContext("2d");
+          var scale = Math.min(size / img.width, size / img.height);
+          var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          ctx.drawImage(img, Math.round((size - w) / 2), Math.round((size - h) / 2), w, h);
+          // Sayt CORS bermagan bo'lsa shu yerda xato bo'ladi.
+          finish(canvas.toDataURL("image/png"));
+        }catch(e){ finish(null); }
+      };
+      img.onerror = function(){ finish(null); };
+      img.src = url;
+      // Javob kelmasa kutib qolmaymiz.
+      setTimeout(function(){ finish(null); }, 6000);
+    });
+  }
+
+  function iconCardBusy(id, on){
+    var card = document.querySelector('[data-icon-drop="' + id + '"]');
+    if(card) card.classList.toggle("busy", Boolean(on));
+  }
+
+  /** Manzil bo'yicha ikonka qo'yish. */
+  function uploadIconUrl(id, url){
+    if(!/^https?:\/\//i.test(url)){ toast("Bu rasm havolasi emas", "bad"); return; }
+    iconCardBusy(id, true);
+    iconDataUrlFromRemote(url).then(function(dataUrl){
+      // Brauzerda bo'lmasa — serverga manzilning o'zini beramiz.
+      return Api.post("save-icon", dataUrl ? { id: id, dataUrl: dataUrl } : { id: id, url: url });
+    }).then(function(){
+      iconError = "";
+      iconCardBusy(id, false);
+      toast("Ikonka almashtirildi", "ok");
+      Store.load("icons", true);
+    }).catch(function(e){
+      iconCardBusy(id, false);
+      if(handleApiError(e)) return;
+      iconError = e.message;
+      toast(e.message, "bad");
+      render();
+    });
+  }
+
+  /* Tanlangan kartochka — Ctrl+V shunga tushadi. */
+  var pickedIcon = "";
+
+  function initIconDrop(){
+    if(initIconDrop.done) return;
+    initIconDrop.done = true;
+
+    /* Sahifaning o'ziga tashlab yuborilsa brauzer faylni ochib,
+       admin paneldan chiqib ketardi. */
+    ["dragover", "drop"].forEach(function(ev){
+      document.addEventListener(ev, function(e){
+        if(e.target.closest && e.target.closest("[data-icon-drop]")) return;
+        e.preventDefault();
+      });
+    });
+
+    document.addEventListener("dragover", function(e){
+      var card = e.target.closest && e.target.closest("[data-icon-drop]");
+      if(!card) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      card.classList.add("drop-on");
+    });
+
+    document.addEventListener("dragleave", function(e){
+      var card = e.target.closest && e.target.closest("[data-icon-drop]");
+      if(card) card.classList.remove("drop-on");
+    });
+
+    document.addEventListener("drop", function(e){
+      var card = e.target.closest && e.target.closest("[data-icon-drop]");
+      if(!card) return;
+      e.preventDefault();
+      card.classList.remove("drop-on");
+      var id = card.getAttribute("data-icon-drop");
+
+      /* Papkadan sudralgan fayl — eng ishonchli yo'l, shuning
+         uchun birinchi shu qaraladi. */
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if(file && /^image\//.test(file.type)){ uploadIconFile(id, file); return; }
+
+      var url = imageUrlFromDrop(e.dataTransfer);
+      if(url){ uploadIconUrl(id, url); return; }
+      toast("Bu yerda rasm topilmadi", "bad");
+    });
+
+    /* Kartochkani tanlash — keyin Ctrl+V bosiladi. */
+    document.addEventListener("click", function(e){
+      var card = e.target.closest && e.target.closest("[data-icon-drop]");
+      document.querySelectorAll(".icon-card.picked").forEach(function(el){
+        el.classList.remove("picked");
+      });
+      pickedIcon = "";
+      // Tugma bosilgan bo'lsa — bu tanlash emas, o'sha amal.
+      if(!card || (e.target.closest && e.target.closest("button, label"))) return;
+      card.classList.add("picked");
+      pickedIcon = card.getAttribute("data-icon-drop");
+    });
+
+    document.addEventListener("paste", function(e){
+      if(!pickedIcon) return;
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      for(var i = 0; i < items.length; i++){
+        if(items[i].kind !== "file") continue;
+        var f = items[i].getAsFile();
+        if(f && /^image\//.test(f.type)){
+          e.preventDefault();
+          uploadIconFile(pickedIcon, f);
+          return;
+        }
+      }
+      /* Rasmning o'zi emas, manzili nusxalangan bo'lishi ham
+         mumkin ("Copy image address"). */
+      var text = (e.clipboardData && e.clipboardData.getData("text/plain") || "").trim();
+      if(/^https?:\/\//i.test(text)){
+        e.preventDefault();
+        uploadIconUrl(pickedIcon, text);
+      }
+    });
+  }
+
   function uploadIconFile(id, file){
     if(!file) return;
     if(file.size > 4 * 1024 * 1024){ toast("Rasm juda katta", "bad"); return; }
@@ -3771,6 +4015,11 @@
   window.addEventListener("pageshow", function(e){
     if(e.persisted && session.role) checkSession();
   });
+
+  /* Tortib tashlash `document` ga ulanadi, kartochkaning o'ziga
+     emas — shuning uchun bir marta, boshida ulansa kifoya;
+     kartochkalar keyin qayta chizilsa ham ishlayveradi. */
+  initIconDrop();
 
   checkSession();
 })();

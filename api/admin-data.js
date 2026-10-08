@@ -36,6 +36,7 @@ import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
 import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/life.js';
 import { uploadImage, keyFromUrl, deleteObject, storageConfigured, storageMissing } from '../lib/storage.js';
+import { fetchRemoteImage } from '../lib/remoteImage.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -823,7 +824,22 @@ const saveIcon = async (req, res) => {
     return res.status(400).json({ error: 'Juda ko‘p ikonka almashtirilgan' });
   }
 
-  const uploaded = await uploadImage(body.dataUrl, 'icon', MAX_ICON_BYTES);
+  /* Rasm ikki yo'l bilan kelishi mumkin:
+       dataUrl — fayl tanlangan yoki qo'yilgan (paste);
+       url     — Chrome'dan to'g'ridan tortib tashlangan.
+
+     Ikkinchi holatda brauzer rasmning o'zini bermaydi, faqat
+     manzilini beradi — va o'sha manzilni brauzerning o'zi
+     yuklab olishi ham ishlamaydi (CORS). Shuning uchun uni
+     server olib keladi; tekshiruvlar lib/remoteImage.js da. */
+  let source = body.dataUrl;
+  if (!source && body.url) {
+    const got = await fetchRemoteImage(body.url, MAX_ICON_BYTES);
+    if (got.error) return res.status(400).json({ error: got.error });
+    source = got.dataUrl;
+  }
+
+  const uploaded = await uploadImage(source, 'icon', MAX_ICON_BYTES);
   if (!uploaded || uploaded.error) {
     return res.status(400).json({ error: (uploaded && uploaded.error) || 'Rasm yuklanmadi' });
   }
