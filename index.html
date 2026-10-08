@@ -981,8 +981,9 @@
   :root[data-reduce-motion="1"] .bn-blob-fill.bn-travel,
   :root[data-reduce-motion="1"] .bn-blob-gloss.bn-travel{animation:none;}
   /* Sudrash paytida ustidan o'tilayotgan bo'lim oldindan yorishadi. */
-  .bn-item.bn-armed{color:var(--route);}
-  .bn-item.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
+  .bn-item.bn-armed,.bn-ghost.bn-armed{color:var(--route);}
+  .bn-item.bn-armed .ic-svg,
+  .bn-ghost.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
 
   .bn-item,.bn-ghost{
     /* Balandlik qat'iy: shunda barcha bo'limlar — "Yuk joylash" ham —
@@ -1026,6 +1027,17 @@
   /* Tanlanganda ikonka bir sakrab qo'yadi. */
   .bn-item.active .ic-svg,
   .bn-ghost.active .ic-svg{transform:translateY(-2px) scale(1.12);}
+
+  /* SUDRALAYOTGANDA faqat linza ostidagi katak yorishadi.
+     Ilgari eski tanlangan katak ham yorug' bo'lib turardi: linza
+     undan uzoqlashib ketsa ham joyi oq bo'lib qolardi va panelda
+     ikkita "tanlangan" ko'rinardi — biri linza ostida, biri
+     uning orqasida qolgan joyda. Endi linza qayerga borsa,
+     o'sha yer yorishadi, qolgani o'z rangiga qaytadi. */
+  .bottom-nav.dragging .bn-item.active:not(.bn-armed),
+  .bottom-nav.dragging .bn-ghost.active:not(.bn-armed){color:var(--muted);}
+  .bottom-nav.dragging .bn-item.active:not(.bn-armed) .ic-svg,
+  .bottom-nav.dragging .bn-ghost.active:not(.bn-armed) .ic-svg{transform:none;}
   .bn-item:hover{color:var(--route-dark);}
   /* Siqilish endi katakning o'zida (`.bn-down`), shuning uchun bu
      yerda ikonka alohida siqilmaydi: ikkalasi ustma-ust tushsa,
@@ -18561,6 +18573,21 @@
       if(armed) armed.classList.remove("bn-armed");
       armed = el;
       if(armed) armed.classList.add("bn-armed");
+      syncGhostArmed();
+    }
+
+    /* Linza ICHIDAGI kattalashtirilgan nusxa sudrash boshlanganda
+       bir marta ko'chiriladi, ya'ni o'sha paytdagi holatni saqlab
+       qoladi. Shuning uchun yorishgan katak unda ham qo'lda
+       ko'chirib boriladi — aks holda shishaning ichida eskisi,
+       tashqarisida yangisi yorug' bo'lib turardi. */
+    function syncGhostArmed(){
+      var ghosts = nav.querySelectorAll(".bn-ghost");
+      if(!ghosts.length) return;
+      var idx = armed ? itemsOf().indexOf(armed) : -1;
+      for(var i = 0; i < ghosts.length; i++){
+        ghosts[i].classList.toggle("bn-armed", i === idx);
+      }
     }
 
     /* Sudrash paytida linza barmoq ostida turadi — bo'limdan bo'limga

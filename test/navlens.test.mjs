@@ -295,7 +295,27 @@ check('sudralganda ham mavzuga bo\'ysunadi',
   && html.includes(':root[data-theme="dark"] .bn-ghost.bn-armed{color:#FFFFFF;}'),
   'qorong\'u rejimda oq');
 check('yorug\' rejimda yashil qoladi',
-  html.includes('.bn-item.bn-armed{color:var(--route);}'));
+  html.includes('.bn-item.bn-armed,.bn-ghost.bn-armed{color:var(--route);}'));
+
+/* Sudralayotganda AYNAN BITTA katak yorug' bo'lishi kerak —
+   linza ostidagisi. Ilgari eski tanlangan katak ham yorug'
+   qolardi: linza undan uzoqlashsa ham joyi oq bo'lib turardi va
+   panelda ikkita "tanlangan" ko'rinardi. Brauzerda o'lchangan:
+   tuzatishdan oldin ["home","loads"], keyin ["loads"]. */
+check('sudralganda eski joy o\'chadi',
+  html.includes('.bottom-nav.dragging .bn-item.active:not(.bn-armed),')
+  && html.includes('.bottom-nav.dragging .bn-ghost.active:not(.bn-armed){color:var(--muted);}'));
+check('eski joyning ikonkasi ham qaytadi',
+  html.includes('.bottom-nav.dragging .bn-ghost.active:not(.bn-armed) .ic-svg{transform:none;}'));
+/* Linza ICHIDAGI nusxa sudrash boshlanganda bir marta
+   ko'chiriladi, ya'ni o'zi yangilanmaydi — qo'lda ergashtiriladi.
+   Usiz shishaning ichida eskisi, tashqarisida yangisi yorug'
+   bo'lib turardi. */
+check('shisha ichidagi nusxa ham ergashadi', html.includes('function syncGhostArmed(){'));
+check('ergashtirish setArmed dan chaqiriladi',
+  /armed\.classList\.add\("bn-armed"\);\s*\n\s*syncGhostArmed\(\);/.test(html));
+check('shisha ichidagisi ham yorishadi',
+  html.includes('.bn-item.bn-armed,.bn-ghost.bn-armed{color:var(--route);}'));
 
 /* "+" ga alohida qalinlik berilmasin: u faqat o'lchov farqini
    yashirish uchun qo'yilgandi. */
