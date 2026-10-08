@@ -28,6 +28,7 @@ import {
   kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvSmembers, kvRange,
 } from '../lib/kv.js';
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
+import { ensurePublicId } from '../lib/publicId.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
 import { deleteAccount, activeOrdersFor } from '../lib/deleteAccount.js';
@@ -297,6 +298,20 @@ const handleProfile = async (req, res) => {
   const touchesAnyField = ['username', 'displayName', 'role', 'city', 'bio', 'phone', 'vehicleType', 'plateNumber', 'telegramUsername', 'avatarDataUrl', 'notify', 'experienceYears', 'routes', 'cargoKinds']
     .some((k) => body[k] !== undefined);
   if (!touchesAnyField) {
+    /* Hech narsa o'zgartirilmayapti — bu profilni O'QISH. Aynan
+       shu yerda raqami yo'qlarga raqam beriladi.
+
+       Nega shu yerda: raqam telefon orqali ro'yxatdan o'tganda
+       beriladi, lekin Google va Telegram orqali kirganlar hamda
+       bu o'zgarishdan oldin ro'yxatdan o'tganlar ham bor. Ular
+       uchun alohida ko'chirish skriptini yozish mumkin edi, lekin
+       ilovani har ochganda shu yo'l baribir bosib o'tiladi —
+       ya'ni raqam o'z-o'zidan tarqaladi va hech kim e'tiborsiz
+       qolmaydi. */
+    if (await ensurePublicId(email, existing)) {
+      // Saqlanmasa ham javob to'g'ri: keyingi ochilishda yana urinadi.
+      await kvSet(profileKey, JSON.stringify(existing)).catch(() => {});
+    }
     return res.status(200).json({ ok: true, profile: withTelegramFlag(existing, await telegramReachable(email)) });
   }
   if (await kvSismember('banned', email.toLowerCase())) {
@@ -307,6 +322,9 @@ const handleProfile = async (req, res) => {
   // Set once, the first time this identity actually saves anything — real
   // "member since" data for the Mashinalar seller card, not a guess.
   if (!next.joinedAt) next.joinedAt = Date.now();
+  // Birinchi saqlashda raqam ham beriladi — profilni to'ldirish
+  // odatda o'qishdan oldin kelishi mumkin.
+  await ensurePublicId(email, next);
 
   if (body.username !== undefined && body.username !== null && body.username !== '') {
     const username = String(body.username).trim();

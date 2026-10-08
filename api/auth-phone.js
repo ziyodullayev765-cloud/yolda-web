@@ -18,6 +18,7 @@
  */
 import { kvGet, kvSet } from '../lib/kv.js';
 import { setVerification } from '../lib/verification.js';
+import { ensurePublicId } from '../lib/publicId.js';
 import {
   normalisePhone, identityForPhone, prettyPhone,
   authConfigured, readAccount, saveAccount,
@@ -170,6 +171,16 @@ const upsertProfile = async (identity, phone, firstName, lastName) => {
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   if (fullName && !profile.name) profile.name = fullName;
   profile.phone = phone;
+  /* Har bir odamga o'z raqami beriladi — qisqa, o'zgarmas va
+     telefonda aytish oson (100001, 100002...). Ichki shaxs
+     (`tg:123`, `ph:998...`) ko'rsatish uchun yaramaydi: unda
+     telefon raqami yoki pochta manzili ochiq turadi.
+
+     Profil allaqachon mavjud bo'lsa (odam ilgari Telegram orqali
+     kirgan bo'lishi mumkin) va raqami bor bo'lsa — tegilmaydi:
+     raqam o'zgarmasligi kerak, aks holda uni birovga aytib
+     bo'lmasdi. */
+  await ensurePublicId(identity, profile);
   // Raqam Telegram botining «Raqamni ulashish» tugmasi orqali
   // tasdiqlangan — kod aynan shu yo'l bilan yetib borgan.
   setVerification(profile, 'PHONE', {

@@ -4369,6 +4369,31 @@
     font-variant-numeric:tabular-nums;
   }
   .pf-id-phone.muted{color:var(--muted);}
+  /* Odamning o'z raqami. Telefon raqamidan past turadi va
+     ko'rinishi soddaroq: bu ma'lumot emas, tanitish vositasi.
+     Bosilsa nusxalanadi, shuning uchun tugma — lekin tugmaga
+     o'xshab turmaydi, aks holda profil boshidagi uchta harakat
+     (tahrirlash, qo'ng'iroq, nusxalash) bir-biriga raqobat
+     qilardi. */
+  .pf-id-num{
+    /* `width:fit-content` shart: tugma blok ichida turadi va usiz
+       butun enga cho'zilardi — ko'rinmas, lekin bosiladigan uch
+       yuz pikselli maydon paydo bo'lardi.
+
+       Chapdagi bo'shliq avatar ustunining eni: 88px + 16px
+       oraliq. Shunda raqam ism va telefon bilan bir ustunda
+       turadi, avatarning ostida yolg'iz qolmaydi. */
+    display:inline-flex;align-items:center;gap:5px;
+    width:fit-content;align-self:flex-start;
+    margin:2px 0 0 104px;
+    background:none;border:0;padding:4px 0;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;
+    color:var(--muted);letter-spacing:0.01em;
+    font-variant-numeric:tabular-nums;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pf-id-num .ic-svg{font-size:13px;opacity:0.7;}
+  .pf-id-num:active{opacity:0.6;}
   .pf-id-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px;}
   .pf-chip{
     display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
@@ -6228,6 +6253,7 @@
       "pf.verified": "Tasdiqlangan ma'lumotlar", "pf.settings": "Sozlamalar",
       "pf.notSet": "Kiritilmagan", "pf.noData": "Ma'lumot yo'q", "pf.tripsShort": "safar",
       "pf.success": "Muvaffaqiyat", "pf.noRating": "Baho yo'q", "profile.addPhone": "Telefon qo'shing",
+      "profile.idLabel": "ID", "profile.idCopied": "Raqam nusxalandi", "profile.idCopyManual": "Raqamingiz:",
       "pf.trustSub": "Tasdiqlar va kelishuvlar", "pf.trustSubPct": "muvaffaqiyatli kelishuv",
       "pf.vehiclesSub": "Mashina va e'lonlaringiz", "pf.vehicleWord": "ta transport",
       "pf.driverSub": "Tajriba va yo'nalishlar",
@@ -6746,6 +6772,7 @@
       "pf.verified": "Подтверждённые данные", "pf.settings": "Настройки",
       "pf.notSet": "Не указано", "pf.noData": "Нет данных", "pf.tripsShort": "рейсов",
       "pf.success": "Успешность", "pf.noRating": "Нет оценок", "profile.addPhone": "Добавить телефон",
+      "profile.idLabel": "ID", "profile.idCopied": "Номер скопирован", "profile.idCopyManual": "Ваш номер:",
       "pf.trustSub": "Подтверждения и сделки", "pf.trustSubPct": "успешных сделок",
       "pf.vehiclesSub": "Машина и ваши объявления", "pf.vehicleWord": "транспорт",
       "pf.driverSub": "Опыт и направления",
@@ -7260,6 +7287,7 @@
       "pf.verified": "Verified details", "pf.settings": "Settings",
       "pf.notSet": "Not set", "pf.noData": "No data", "pf.tripsShort": "trips",
       "pf.success": "Success rate", "pf.noRating": "No ratings", "profile.addPhone": "Add a phone number",
+      "profile.idLabel": "ID", "profile.idCopied": "Number copied", "profile.idCopyManual": "Your number:",
       "pf.trustSub": "Verifications and deals", "pf.trustSubPct": "of deals completed",
       "pf.vehiclesSub": "Your vehicle and listings", "pf.vehicleWord": "vehicles",
       "pf.driverSub": "Experience and routes",
@@ -10178,6 +10206,19 @@
       +     '</span>'
       +   '</span>'
       + '</button>'
+      /* Odamning o'z raqami — tahrirlash tugmasidan TASHQARIDA.
+         Ichkarida bo'lsa tugma ichida tugma bo'lardi: bunday
+         markup noto'g'ri va ichkaridagi bosilish ishonchsiz
+         ishlaydi.
+
+         Nima uchun kerak: telefon raqamini bermasdan o'zini
+         tanitish uchun — "mening raqamim 100342". Bosilsa
+         nusxalanadi. */
+      + (p.publicId
+          ? '<button type="button" class="pf-id-num" data-copy-id="'+escapeHtml(String(p.publicId))+'">'
+            + '<span data-i18n="profile.idLabel">ID</span>&nbsp;' + escapeHtml(String(p.publicId))
+            + icon("iconClipboard") + '</button>'
+          : '')
       // Uchta raqam bitta kartochkada, orasida ajratuvchi chiziq.
       // Boshida faqat safarlar soni ma'lum (u profilda turadi);
       // qolgan ikkitasi serverdan kelgach to'ldiriladi.
@@ -18096,6 +18137,31 @@
     e.preventDefault();
     switchTab(el.getAttribute("data-tab-link"));
   });
+
+  /* Profildagi o'z raqamini nusxalash.
+     Delegatsiya bilan: profil har safar qaytadan chiziladi, ya'ni
+     elementga to'g'ridan bog'langan tinglovchi darhol eskirardi. */
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest && e.target.closest("[data-copy-id]");
+    if(!btn) return;
+    e.preventDefault();
+    var id = btn.getAttribute("data-copy-id") || "";
+    var done = function(){
+      haptic("light");
+      toast(t("profile.idCopied") || "Raqam nusxalandi");
+    };
+    /* Clipboard API xavfsiz kontekstda va ruxsat berilgandagina
+       ishlaydi. Ishlamasa — odam baribir raqamni ko'rib turibdi,
+       shuning uchun bu yerda xato ko'rsatilmaydi. */
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(id).then(done).catch(function(){
+        window.prompt(t("profile.idCopyManual") || "Raqamingiz:", id);
+      });
+    } else {
+      window.prompt(t("profile.idCopyManual") || "Raqamingiz:", id);
+    }
+  });
+
   // Same delegation approach for load cards — they get rebuilt on every
   // fetchLoads()/renderHomeMatch() re-render, so per-element binding would
   // go stale immediately.
