@@ -232,6 +232,58 @@ flow('4. index.html');
 
   check('ro‘yxat ilovaga uzatiladi', html.includes('applyIconOverrides(cfg.icons, cfg.iconsPlain)'));
   check('niqoblar uchun joy bor', html.includes('<defs id="iconMaskDefs">'));
+
+  /* ---- Asosiy ikonkalar sahifaning O'ZIDA ----
+     Ilgari ular bazadagi jadvalda turardi: ilova ochilib,
+     /api/config javob bergandan keyin almashardi va bir lahza
+     eskisi ko'rinib ketardi. Shu bilan birga baza tozalansa
+     ikonkalar ham yo'qolardi. */
+  const QUYILGAN = [
+    'iconVerifiedBadge', 'iconHome', 'iconSearch', 'iconPlus', 'iconHandshake',
+    'iconHeadphones', 'iconUser', 'iconBox', 'iconTelegram', 'iconTruck',
+    'iconSnow', 'iconBolt', 'iconMap', 'iconReceipt', 'iconRefresh', 'iconEye',
+    'iconEyeOff', 'iconTarget', 'iconPin', 'iconChart', 'iconSettings',
+    'iconUsers', 'iconFuel', 'iconGear', 'iconSun', 'iconHeart',
+  ];
+  /* Rangli ikonkalar bo'yalmaydi — bitta rangga bo'yash
+     belgisini buzardi. */
+  const RANGLI = new Set(['iconVerifiedBadge', 'iconBox']);
+
+  QUYILGAN.forEach((id) => {
+    const m = html.match(new RegExp('<symbol id="' + id + '" viewBox="0 0 24 24">([\\s\\S]*?)</symbol>'));
+    if (!m) { check(id + ' sprite ichida', false); return; }
+    if (RANGLI.has(id)) {
+      check(id + ' o‘z rangida', m[1].includes('<image href="https://'), m[1].slice(0, 80));
+      check(id + ' bo‘yalmagan', !m[1].includes('currentColor'), m[1].slice(0, 80));
+    } else {
+      check(id + ' ilova rangini oladi',
+        m[1].includes('fill="currentColor"') && m[1].includes('mask="url(#iconmask-' + id + ')"'),
+        m[1].slice(0, 120));
+      const mask = html.match(new RegExp('<mask id="iconmask-' + id + '"[^>]*>([\\s\\S]*?)</mask>'));
+      check(id + ' niqobi defs ichida', Boolean(mask));
+      if (mask) {
+        check(id + ' niqobda rasm bor', mask[1].includes('<image href="https://'), mask[1].slice(0, 80));
+        check(id + ' shaffoflik bo‘yicha qirqiladi',
+          /mask-type:alpha/.test(html.match(new RegExp('<mask id="iconmask-' + id + '"[^>]*>'))[0]));
+      }
+    }
+  });
+  check('niqoblar soni to‘g‘ri',
+    (html.match(/<mask id="iconmask-/g) || []).length === QUYILGAN.length - RANGLI.size,
+    (html.match(/<mask id="iconmask-/g) || []).length);
+
+  /* Hech qaysi ikonka eski chizmasi bilan ikki marta
+     yozilmagan bo'lsin — aks holda qaysi biri chiqishi
+     tartibga bog'liq bo'lib qolardi. */
+  QUYILGAN.forEach((id) => {
+    check(id + ' bir marta yozilgan',
+      (html.match(new RegExp('<symbol id="' + id + '"', 'g')) || []).length === 1);
+  });
+
+  /* Bazadagi rasm sahifadagi bilan bir xil bo'lsa qayta
+     chizilmasin — har ochilishda 24 ta niqob behuda yasalardi. */
+  check('bir xil bo‘lsa qayta chizilmaydi', html.includes('if(hozir.indexOf(url) >= 0) return;'));
+  check('usul ham solishtiriladi', html.includes('if(hozirNiqob === !plain[id]){'));
   check('shaffoflik bo‘yicha qirqiladi', html.includes('mask-type:alpha'));
   check('rangni ilova beradi', html.includes('fill="currentColor"') && html.includes('mask="url(#'));
   check('o‘z rangidagilar eskidek rasm bo‘lib qoladi',

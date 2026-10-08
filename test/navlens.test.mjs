@@ -259,23 +259,31 @@ check('yangi teginish eski yashil belgini tozalaydi',
   /setArmed\(null\);\s*\n\s*pointerId = e\.pointerId;/.test(html));
 
 /* ---------- Belgilar bir xil o'lchamda ----------
-   Besh belgining to'rttasi 16 birlik joy egallaydi (4 dan 20
-   gacha). "+" 14 da, quloqchinlar esa 19 da edi — panelda biri
-   kichik, biri keng bo'lib ko'rinardi. */
-const plus = html.match(/<symbol id="iconPlus"[^>]*>(.*?)<\/symbol>/);
-check('iconPlus topildi', Boolean(plus));
-if (plus) check('"+" qolganlari bilan bir o\'lchamda', /M12 4V20M4 12H20/.test(plus[1]), plus[1]);
-const hp = html.match(/<symbol id="iconHeadphones"[\s\S]*?<\/symbol>/);
-check('iconHeadphones topildi', Boolean(hp));
-if (hp) {
-  /* Quloqliklar 4 dan 20 gacha: chapdagisi 4 da boshlanadi,
-     o'ngdagisi 16+4=20 da tugaydi. */
-  const rects = [...hp[0].matchAll(/<rect x="([\d.]+)"[^>]*width="([\d.]+)"/g)]
-    .map((m) => [+m[1], +m[1] + +m[2]]);
-  check('quloqchinlar 16 birlik kenglikda',
-    rects.length === 2 && Math.min(...rects.map((r) => r[0])) === 4
-    && Math.max(...rects.map((r) => r[1])) === 20, rects);
-}
+   Ilgari belgilar qo'lda chizilgan edi va har biri boshqa joy
+   egallardi: to'rttasi 16 birlik (4 dan 20 gacha), "+" 14,
+   quloqchinlar 19 — panelda biri kichik, biri keng ko'rinardi.
+   O'lcham har bir chiziqdan tekshirilardi.
+
+   Endi belgilar egasi qo'ygan rasmlar. Ularning har biri bir xil
+   katakka (0 0 24 24) `preserveAspectRatio` bilan joylashtiriladi,
+   ya'ni o'lcham chizmadan emas, katakdan keladi. Shuning uchun
+   tekshiriladigan narsa ham o'zgardi: beshala belgi ham o'sha
+   katakda va butun katakni egallashi kerak. */
+const NAV_IKONKA = ['iconHome', 'iconSearch', 'iconPlus', 'iconHeadphones', 'iconUser'];
+NAV_IKONKA.forEach((id) => {
+  const m = html.match(new RegExp('<symbol id="' + id + '" viewBox="([^"]*)">([\\s\\S]*?)</symbol>'));
+  check(id + ' topildi', Boolean(m));
+  if (!m) return;
+  check(id + ' bir xil katakda', m[1] === '0 0 24 24', m[1]);
+  /* Rasm ham, uni bo'yaydigan to'rtburchak ham butun katakni
+     egallaydi — birortasi kichik bo'lib qolmasin. */
+  check(id + ' katakni to\'liq egallaydi',
+    /width="24"[^>]*height="24"/.test(m[2]), m[2].slice(0, 120));
+});
+/* Bo'yaladigan belgi rasmning o'zini emas, SHAKLINI oladi:
+   aks holda qorong'u rejimda qora rasm qora panelda yo'qolardi. */
+check('"+" ilova rangini oladi',
+  /<symbol id="iconPlus"[^>]*><rect[^>]*fill="currentColor"[^>]*mask="url\(#iconmask-iconPlus\)"/.test(html));
 /* "+" ga alohida qalinlik berilmasin: u faqat o'lchov farqini
    yashirish uchun qo'yilgandi. */
 check('"+" ga alohida chiziq qalinligi berilmagan',
