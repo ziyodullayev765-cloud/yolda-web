@@ -107,6 +107,11 @@ flow('2. Shahar tanlagichlari');
   /* `hidden` atributi yetarli emas edi: sinfdagi `display:flex`
      brauzerning `[hidden]{display:none}` qoidasidan kuchliroq. */
   check('yashirish ishlaydi', html.includes('.loads-cities[hidden]{display:none;}'));
+  /* Yuqoridan bo'shliq shart: usiz qator qidiruv kartochkasining
+     pastki chekkasiga yopishib qolardi (o'lchangan: 0px). */
+  check('yuqoridan bo\'shliq bor',
+    /\.loads-cities\{[^}]*margin:var\(--s4\) 0 var\(--s3\)/.test(html),
+    'kartochka bilan oralig\'i');
   check('yuk sahifasida yashiriladi',
     html.includes('"backhaulBanner", "loadsCityChips"'));
 }

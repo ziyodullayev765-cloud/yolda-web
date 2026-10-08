@@ -1868,7 +1868,10 @@
      shuning uchun u har doim haqiqatga mos. */
   .loads-cities{
     display:flex;gap:var(--s2);overflow-x:auto;scrollbar-width:none;
-    margin:0 0 var(--s3);padding-bottom:2px;-webkit-overflow-scrolling:touch;
+    /* Yuqoridan bo'shliq SHART: usiz qator qidiruv kartochkasining
+       pastki chekkasiga yopishib qolardi va tanlagichlar
+       kartochkaning dumaloq burchagiga tegib turardi. */
+    margin:var(--s4) 0 var(--s3);padding-bottom:2px;-webkit-overflow-scrolling:touch;
   }
   .loads-cities::-webkit-scrollbar{display:none;}
   /* `hidden` atributi o'z-o'zidan yetmaydi: yuqoridagi `display:flex`
