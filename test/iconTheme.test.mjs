@@ -244,6 +244,10 @@ flow('4. index.html');
     'iconSnow', 'iconBolt', 'iconMap', 'iconReceipt', 'iconRefresh', 'iconEye',
     'iconEyeOff', 'iconTarget', 'iconPin', 'iconChart', 'iconSettings',
     'iconUsers', 'iconFuel', 'iconGear', 'iconSun', 'iconHeart',
+    'iconWeight', 'iconCheck', 'iconAlert', 'iconInboxEmpty', 'iconClock',
+    'iconClose', 'iconDownload', 'iconShare', 'iconEdit', 'iconShield',
+    'iconFlame', 'iconLogout', 'iconBed', 'iconWrench', 'iconMonitor',
+    'iconFood', 'iconParking', 'iconCheckLine', 'iconReactThumb',
   ];
   /* Rangli ikonkalar bo'yalmaydi — bitta rangga bo'yash
      belgisini buzardi. */
