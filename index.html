@@ -1038,7 +1038,30 @@
   .bottom-nav.dragging .bn-ghost.active:not(.bn-armed){color:var(--muted);}
   .bottom-nav.dragging .bn-item.active:not(.bn-armed) .ic-svg,
   .bottom-nav.dragging .bn-ghost.active:not(.bn-armed) .ic-svg{transform:none;}
-  .bn-item:hover{color:var(--route-dark);}
+  /* HOVER FAQAT HAQIQIY KO'RSATGICH BO'LGAN JOYDA.
+     Ilgari bu qoida shartsiz edi va yashil berardi. Teginishli
+     ekranda esa brauzer `:hover` ni tegilgan katakka DARHOL
+     qo'yadi, `active` esa bir lahza keyin — ya'ni bo'lim
+     almashtirilganda katak bir zum yashil bo'lib ketardi va
+     keyin oqqa o'tardi (rang 0.34s da oqib o'tadi, shuning
+     uchun chaqnash ko'rinardi). Ko'p brauzerlar `:hover` ni
+     oxirgi tegilgan elementda qoldiradi ham — yashil o'sha
+     joyda qotib turardi.
+
+     `pointer: fine` bilan teginishli ekranlar butunlay chetda
+     qoladi. Sudrash paytida ham o'chiriladi: u yerda yorug'
+     katakni linza belgilaydi, hover emas. */
+  @media (hover: hover) and (pointer: fine){
+    .bottom-nav:not(.dragging) .bn-item:hover:not(.active):not(.bn-armed){
+      color:var(--route-dark);
+    }
+    /* Qorong'u rejimda panel oq-qora: yashil chaqnab ketardi.
+       Oq esa "tanlangan" degan ma'noni berardi, shuning uchun
+       oraliq rang — shunchaki ishora. */
+    :root[data-theme="dark"] .bottom-nav:not(.dragging) .bn-item:hover:not(.active):not(.bn-armed){
+      color:var(--ink-soft);
+    }
+  }
   /* Siqilish endi katakning o'zida (`.bn-down`), shuning uchun bu
      yerda ikonka alohida siqilmaydi: ikkalasi ustma-ust tushsa,
      belgi yozuvdan ko'ra ko'proq kichrayib, katak bir tekis

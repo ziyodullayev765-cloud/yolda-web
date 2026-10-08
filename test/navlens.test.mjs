@@ -317,6 +317,30 @@ check('ergashtirish setArmed dan chaqiriladi',
 check('shisha ichidagisi ham yorishadi',
   html.includes('.bn-item.bn-armed,.bn-ghost.bn-armed{color:var(--route);}'));
 
+/* ---------- `:hover` teginishli ekranda ----------
+   Qoida shartsiz edi va yashil berardi. Teginishli ekranda
+   brauzer `:hover` ni tegilgan katakka DARHOL qo'yadi, `active`
+   esa bir lahza keyin — ya'ni bo'lim almashtirilganda katak bir
+   zum yashil bo'lib ketardi. Ko'p brauzerlar (iOS) `:hover` ni
+   oxirgi tegilgan elementda qoldiradi ham.
+
+   Chromium teginishda hover bermaydi, shuning uchun buni
+   hodisa bilan sinab bo'lmaydi — qoidaning O'ZI teginishli
+   ekranda yoqilmasligi tekshiriladi. */
+check('hover shartsiz qolmadi',
+  !/\n  \.bn-item:hover\{color:var\(--route-dark\);\}/.test(html));
+check('hover faqat haqiqiy ko\'rsatgichda',
+  html.includes('@media (hover: hover) and (pointer: fine){')
+  && /@media \(hover: hover\) and \(pointer: fine\)\{[\s\S]{0,400}\.bn-item:hover:not\(\.active\):not\(\.bn-armed\)/.test(html));
+check('qorong\'u rejimda hover yashil emas',
+  html.includes(':root[data-theme="dark"] .bottom-nav:not(.dragging) .bn-item:hover:not(.active):not(.bn-armed){'));
+/* Sudrash paytida yorug' katakni linza belgilaydi, hover emas. */
+check('sudralganda hover o\'chadi',
+  /\.bottom-nav:not\(\.dragging\) \.bn-item:hover/.test(html));
+/* Tanlangan katakka hover tegsa ham u o'z rangini saqlaydi. */
+check('tanlangan katakka hover tegmaydi',
+  /\.bn-item:hover:not\(\.active\)/.test(html));
+
 /* "+" ga alohida qalinlik berilmasin: u faqat o'lchov farqini
    yashirish uchun qo'yilgandi. */
 check('"+" ga alohida chiziq qalinligi berilmagan',
