@@ -19,6 +19,9 @@ const kvmock = {
   // satrni ham, to'plamni ham, ro'yxatni ham.
   kvDel: async (k) => { store.delete(k); sets.delete(k); lists.delete(k); return true; },
   kvSadd: async (k, m) => { if (!sets.has(k)) sets.set(k, new Set()); sets.get(k).add(m); return true; },
+  kvSaddNew: async (k, m) => { if (!sets.has(k)) sets.set(k, new Set());
+    const had = sets.get(k).has(m); sets.get(k).add(m); return !had; },
+  kvExpire: async () => true,
   kvSrem: async (k, m) => { if (sets.has(k)) sets.get(k).delete(m); return true; },
   kvSmembers: async (k) => [...(sets.get(k) || [])],
   kvRange: async (k) => [...(lists.get(k) || [])],
@@ -60,6 +63,7 @@ export async function load(url, context, next) {
       "const m = globalThis.__kvmock;" +
       "export const kvGet = m.kvGet; export const kvSet = m.kvSet; export const kvDel = m.kvDel;" +
       "export const kvSadd = m.kvSadd; export const kvSrem = m.kvSrem;" +
+      "export const kvSaddNew = m.kvSaddNew; export const kvExpire = m.kvExpire;" +
       "export const kvSmembers = m.kvSmembers; export const kvRange = m.kvRange;" };
   }
   if (url === 'mock:storage') {

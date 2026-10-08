@@ -29,6 +29,8 @@ export const kvGet = async (k) => store.has(k) ? store.get(k) : null;
 export const kvSet = async (k, v) => { store.set(k, String(v)); return true; };
 export const kvDel = async (k) => { store.delete(k); return true; };
 export const kvSadd = async () => true;
+export const kvSaddNew = async () => true;
+export const kvExpire = async () => true;
 export const kvSrem = async () => true;
 export const kvSmembers = async () => [];
 export const kvSismember = async () => false;

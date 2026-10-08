@@ -31,6 +31,7 @@
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLrem,
   kvDbSize, kvUsedMemory, kvMonthCommands } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
+import { grantPremium, revokePremium, premiumState, premiumMembers } from '../lib/premium.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
 import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/life.js';
@@ -100,12 +101,20 @@ const getUsers = async (res) => {
   // One SMEMBERS for the whole banned set, not one SISMEMBER per user —
   // O(1) extra KV round trip no matter how many users there are.
   const bannedSet = new Set((await kvSmembers('banned')).map((s) => s.toLowerCase()));
+  /* Premium ham xuddi "bloklangan" kabi: butun to'plam bir marta
+     o'qiladi, har bir odam uchun alohida so'rov qilinmaydi. */
+  const premiumSet = new Set(await premiumMembers());
 
   const users = await Promise.all(
     emails.map(async (email) => {
       kvSadd('profile_emails', email).catch(() => {});
       const profile = parseProfile(await kvGet(`profile:${email}`));
-      return { email, ...profile, banned: bannedSet.has(email.toLowerCase()) };
+      return {
+        email,
+        ...profile,
+        banned: bannedSet.has(email.toLowerCase()),
+        premium: premiumSet.has(email),
+      };
     }),
   );
   users.sort((a, b) => (a.username || a.email).localeCompare(b.username || b.email));
@@ -564,6 +573,29 @@ const updateUser = async (req, res) => {
     next.ratingSum = ratingSum;
   }
 
+  /* Premium — yagona imtiyozi vaqt: yangi yuk xabari unga darhol,
+     qolganlarga bir soatdan keyin boradi (lib/premium.js).
+
+     Profil yozuviga emas, alohida kalitga saqlanadi: yangi yuk
+     kelganda "kim premium" degan savolga bitta so'rov bilan javob
+     berish kerak, har bir odamning yozuvini o'qib chiqish emas.
+
+     To'lov tizimi hali yo'q, shuning uchun premiumni faqat shu
+     yerdan — admin qo'lda beradi. Ilovada "sotib olish" tugmasi
+     yo'q va ataylab yo'q: ishlamaydigan tugmadan ko'ra tugmasiz
+     qolgani yaxshi. */
+  if (body.premium !== undefined) {
+    if (body.premium) {
+      const days = Number(body.premiumDays);
+      const until = Number.isFinite(days) && days > 0 ? Date.now() + days * 86400000 : 0;
+      if (!(await grantPremium(email, until))) {
+        return res.status(502).json({ error: 'Premium berilmadi, qayta urinib ko‘ring' });
+      }
+    } else if (!(await revokePremium(email))) {
+      return res.status(502).json({ error: 'Premium olib tashlanmadi' });
+    }
+  }
+
   const saved = await kvSet(`profile:${email}`, JSON.stringify(next));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
 
@@ -572,7 +604,7 @@ const updateUser = async (req, res) => {
     else await kvSrem('banned', email.toLowerCase());
   }
 
-  return res.status(200).json({ ok: true, profile: next });
+  return res.status(200).json({ ok: true, profile: { ...next, ...(await premiumState(email)) } });
 };
 
 /**

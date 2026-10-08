@@ -24,6 +24,9 @@ const kvmock = {
   kvPush: async (k, v) => { calls.push('LPUSH ' + k); if (!lists.has(k)) lists.set(k, []); lists.get(k).unshift(v); return true; },
   kvRange: async (k) => { calls.push('LRANGE ' + k); return [...(lists.get(k) || [])]; },
   kvSadd: async (k, m) => { calls.push('SADD ' + k); if (!sets.has(k)) sets.set(k, new Set()); sets.get(k).add(m); return true; },
+  kvSaddNew: async (k, m) => { calls.push('SADD ' + k); if (!sets.has(k)) sets.set(k, new Set());
+    const had = sets.get(k).has(m); sets.get(k).add(m); return !had; },
+  kvExpire: async () => true,
   kvSrem: async (k, m) => { calls.push('SREM ' + k); if (sets.has(k)) sets.get(k).delete(m); return true; },
   kvSmembers: async (k) => { calls.push('SMEMBERS ' + k); return [...(sets.get(k) || [])]; },
   kvSismember: async (k, m) => { calls.push('SISMEMBER ' + k); return Boolean(sets.get(k) && sets.get(k).has(m)); },
@@ -44,6 +47,7 @@ export async function load(url, context, next) {
       "export const kvGet=m.kvGet; export const kvSet=m.kvSet; export const kvDel=m.kvDel;" +
       "export const kvIncr=m.kvIncr; export const kvPush=m.kvPush; export const kvRange=m.kvRange;" +
       "export const kvLrem=async()=>true; export const kvSadd=m.kvSadd; export const kvSrem=m.kvSrem;" +
+      "export const kvSaddNew=m.kvSaddNew; export const kvExpire=m.kvExpire;" +
       "export const kvSmembers=m.kvSmembers; export const kvSismember=m.kvSismember;" +
       "export const kvKeys=m.kvKeys; export const kvConfigured=true;" +
       "export const kvDbSize=async()=>0; export const kvUsedMemory=async()=>0;" +

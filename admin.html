@@ -3468,6 +3468,18 @@
         + '<div class="field"><label for="umRatingSum">Baholar yig\'indisi</label>'
         + '<input type="number" id="umRatingSum" min="0" step="1" value="' + (user.ratingSum || 0) + '"></div>'
         + '</div>'
+        /* Premium — yagona imtiyozi vaqt: yangi yuk xabari unga
+           darhol, qolganlarga bir soatdan keyin boradi.
+
+           To'lov tizimi hali yo'q, shuning uchun premium faqat shu
+           yerdan beriladi. Ilovada "sotib olish" tugmasi yo'q va
+           ataylab yo'q: ishlamaydigan tugmadan ko'ra tugmasiz
+           qolgani yaxshi. */
+        + '<label class="check"><input type="checkbox" id="umPremium"' + (user.premium ? " checked" : "")
+        + '> Premium — yangi yuklarni birinchi ko\'radi</label>'
+        + '<div class="field"><label for="umPremiumDays">Premium muddati (kun)</label>'
+        + '<input type="number" id="umPremiumDays" min="0" step="1" placeholder="bo\'sh bo\'lsa muddatsiz" value="">'
+        + '<small class="hint">Bo\'sh qoldirilsa muddatsiz. Mavjud muddatga tegilmaydi — yangi son kiritilgandagina almashadi.</small></div>'
         + '<label class="check"><input type="checkbox" id="umVerified"' + (user.verified ? " checked" : "")
         + '> Tasdiqlangan profil</label>'
         + '<label class="check"><input type="checkbox" id="umBanned"' + (user.banned ? " checked" : "")
@@ -3494,8 +3506,13 @@
       ratingCount: isNaN(ratingCount) ? 0 : ratingCount,
       ratingSum: isNaN(ratingSum) ? 0 : ratingSum,
       verified: byId("umVerified").checked,
-      banned: byId("umBanned").checked
+      banned: byId("umBanned").checked,
+      premium: byId("umPremium").checked
     };
+    /* Muddat faqat kiritilgan bo'lsa yuboriladi: bo'sh maydon
+       "muddatni o'chir" degani emas, "tegma" degani. */
+    var premiumDays = parseInt(byId("umPremiumDays").value, 10);
+    if(!isNaN(premiumDays) && premiumDays > 0) payload.premiumDays = premiumDays;
     var saveBtn = byId("modalFoot").querySelector('[data-act="modal-save"]');
     if(saveBtn) saveBtn.disabled = true;
 

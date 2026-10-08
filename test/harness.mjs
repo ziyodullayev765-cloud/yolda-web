@@ -69,6 +69,16 @@ export const kvSadd = async (k, m) => {
   db.sets.get(k).add(String(m));
   return true;
 };
+/* Haqiqiysi kabi: a'zo YANGI qo'shilganda true qaytaradi.
+   Bildirishnomaning ikki marta yuborilmasligi aynan shunga
+   tayanadi, shuning uchun taqlid ham xuddi shunday tutishi kerak. */
+export const kvSaddNew = async (k, m) => {
+  if (!db.sets.has(k)) db.sets.set(k, new Set());
+  const had = db.sets.get(k).has(String(m));
+  db.sets.get(k).add(String(m));
+  return !had;
+};
+export const kvExpire = async () => true;
 export const kvSrem = async (k, m) => { if (db.sets.has(k)) db.sets.get(k).delete(String(m)); return true; };
 export const kvSmembers = async (k) => (db.sets.has(k) ? [...db.sets.get(k)] : []);
 export const kvSismember = async (k, m) => db.sets.has(k) && db.sets.get(k).has(String(m));
@@ -130,6 +140,16 @@ function libPath(file) {
 /** `api/<name>.js` ni yuklaydi va uning handler'ini qaytaradi. */
 export const loadApi = async (relPath, name) =>
   (await import(rewrite(relPath, name))).default;
+
+/**
+ * Xuddi shunday, lekin butun modulni qaytaradi.
+ *
+ * Ba'zi endpointlar handler'dan tashqari yordamchi funksiyalarni
+ * ham chiqaradi (masalan `sweepNotifyQueue`) va ularni to'g'ridan
+ * chaqirish kerak bo'ladi: ular so'rov ichida "yo'l-yo'lakay"
+ * ishlaydi, ya'ni javob qaytgandan keyin tugashi mumkin.
+ */
+export const loadApiAll = async (relPath, name) => import(rewrite(relPath, name));
 
 /** `lib/<file>` ning testdagi nusxasini yuklaydi. */
 export const loadLib = async (file) => import(libPath(file));

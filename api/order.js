@@ -17,13 +17,17 @@
  * function exists rather than the page calling Telegram directly.
  */
 
-import { kvPush, kvGet, kvSet, kvDel, kvSismember, kvSmembers, kvRange } from '../lib/kv.js';
+import {
+  kvPush, kvGet, kvSet, kvDel, kvSismember, kvSmembers, kvRange, kvSaddNew, kvExpire,
+} from '../lib/kv.js';
+import { premiumMembers } from '../lib/premium.js';
+import { queueDelayed, drainDue } from '../lib/notifyQueue.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import {
   CARGO, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
-import { ANY_CITY, cityIndexKey, searchesKey, matchesSearch } from '../lib/savedSearch.js';
+import { searchesKey, matchesSearch } from '../lib/savedSearch.js';
 import {
   OFFERABLE_ORDER_STATUSES, MAX_OFFERS_PER_ORDER, validateOffer,
   offerKey, orderOffersKey, driverOffersKey, publicOfferShape,
@@ -297,65 +301,152 @@ const createOrder = async (req, res) => {
   await kvPush('order_codes', code).catch(() => {});
   // Yangi yuk ro'yxatda darhol ko'rinsin, 30 soniya kutmasin.
   await invalidateLoadsCache();
-  await notifyMatches(record);
+  await notifyNewLoad(record);
 
   return res.status(200).json({ ok: true, code, amount, distanceKm });
 };
 
+/* ============================================================
+   Yangi yuk haqida xabar
+   ------------------------------------------------------------
+   ILGARI QANDAY EDI. Xabar faqat SAQLANGAN QIDIRUVI bor odamga
+   ketardi. Qidiruv saqlash — ilovaning ichida, "Yuklar"
+   bo'limidagi ixtiyoriy amal; deyarli hech kim qilmagan. Natijada
+   yangi yuk chiqardi-yu, hech kim bilmasdi. "Haydovchilarga nega
+   yuk yuborilmayapdi" degan savolning sababi shu edi.
+
+   ENDI QANDAY. Xabar ikki to'lqinda ketadi:
+
+     1-to'lqin, DARHOL — premium egalariga;
+     2-to'lqin, BIR SOATDAN KEYIN — qolganlarga.
+
+   Premiumning imtiyozi shu: u birinchi ko'radi va taklifni
+   birinchi yuborishga ulguradi. Yukning o'zi hammaga ochiq,
+   hech narsa yopilmaydi.
+
+   KIMGA. Saqlangan qidiruvi bor odam faqat o'sha qidiruvga mos
+   yukni oladi — u nima kerakligini aytib qo'ygan, buni hurmat
+   qilamiz. Qidiruvi yo'q odam hamma yukni oladi, chunki aks holda
+   u hech narsa olmasdi. Yuk egasining o'ziga yuborilmaydi.
+
+   IKKI MARTA YUBORILMASLIGI. Har bir (yuk, odam) juftligi
+   `notified:<kod>` to'plamida atomik "band qilinadi"
+   (`kvSaddNew`). Bir soat ichida ikkita so'rov navbatni bir
+   vaqtda bo'shatsa ham, odam xabarni bir marta oladi.
+   ============================================================ */
+
+/** Bir so'rovda ko'pi bilan shuncha xabar — so'rov cho'zilib ketmasin. */
+const NOTIFY_CHUNK = 20;
+/** Bitta yukka umuman shuncha xabar (ikki to'lqin birga). */
+const MAX_LOAD_NOTIFICATIONS = 400;
+/** Qolganlar shuncha vaqtdan keyin oladi. */
+export const NON_PREMIUM_DELAY_MS = 60 * 60 * 1000;
+/** "Yuborildi" belgisi shuncha turadi, keyin o'zi o'chadi. */
+const NOTIFIED_TTL_S = 7 * 24 * 60 * 60;
+
+const notifiedKey = (code) => `notified:${code}`;
+
+/** Xabar matni va tugmasi — ikki to'lqin uchun bir xil. */
+const newLoadMessage = (order) => {
+  const cargo = CARGO[order.cargoType] || CARGO.OTHER;
+  const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel
+    ? order.customCargoLabel
+    : cargo.label;
+  /* Oxirgi qator ilgari shunday edi:
+       «Yuk haydovchilar guruhida — "Men olaman" tugmasini bosgan
+        birinchi haydovchi oladi.»
+     Haydovchilar guruhi olib tashlanganidan keyin bu gap yolg'on
+     bo'lib qoldi: na guruh bor, na o'sha tugma. Haydovchi
+     Telegramda guruh izlab, topolmay qolardi. */
+  const text = `<b>Yangi yuk</b>\n\n`
+    + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
+    + `${esc(formatNum(order.weightKg))} kg · ${esc(cargoLabel)}\n`
+    + `<b>${esc(formatNum(order.amount))} so'm</b>\n\n`
+    + `Ilovada ochib, taklifingizni yuboring. Yukni egasi takliflardan o'zi tanlaydi.`;
+  const button = loadUrl(order.code)
+    ? { buttonText: 'Ilovada ochish', buttonUrl: loadUrl(order.code) }
+    : {};
+  return { text, button };
+};
+
+/** Shu odamga shu yuk haqida xabar berish kerakmi. */
+const wantsLoad = async (identity, order) => {
+  if (!identity || identity === order.ownerIdentity) return false;
+  let searches = [];
+  try { searches = JSON.parse((await kvGet(searchesKey(identity))) || '[]'); } catch { searches = []; }
+  // Qidiruvi yo'q — hammasi keladi. Bor — faqat mosi.
+  if (!Array.isArray(searches) || !searches.length) return true;
+  return searches.some((s) => matchesSearch(order, s));
+};
+
 /**
- * Yangi yuk saqlangan qidiruvlarga mos kelsa, egalariga xabar beradi.
- *
- * Butun foydalanuvchilar ro'yxati ko'rilmaydi: shahar indeksidan faqat
- * shu shahardan (yoki "har qanday shahar") yuk kutayotganlar olinadi.
- *
- * Buyurtma joylash yo'lida turgani uchun ikkita cheklov bor:
- *   - bir yukka ko'pi bilan MAX_MATCH_NOTIFICATIONS ta xabar;
- *   - xato bo'lsa jim o'tiladi — bildirishnoma buyurtmani buzmasin.
+ * Berilgan odamlarga yuboradi, `NOTIFY_CHUNK` dan oshmaydi.
+ * @returns {Promise<{sent:number, left:string[]}>}
  */
-const MAX_MATCH_NOTIFICATIONS = 25;
+const sendLoadTo = async (order, identities) => {
+  const { text, button } = newLoadMessage(order);
+  const key = notifiedKey(order.code);
+  let sent = 0;
+  const left = [];
+  for (const identity of identities) {
+    if (sent >= NOTIFY_CHUNK) { left.push(identity); continue; }
+    if (!(await wantsLoad(identity, order))) continue;
+    // Atomik band qilish: ikki marta yuborilmaydi.
+    if (!(await kvSaddNew(key, identity))) continue;
+    await notifyUser(identity, { category: 'matches', text, ...button });
+    sent += 1;
+  }
+  if (sent) await kvExpire(key, NOTIFIED_TTL_S).catch(() => {});
+  return { sent, left };
+};
 
-const notifyMatches = async (order) => {
+/** Yuk joylangan zahoti: premiumga darhol, qolganlarga navbatga. */
+const notifyNewLoad = async (order) => {
   try {
-    const candidates = new Set([
-      ...(await kvSmembers(cityIndexKey(order.fromCity))),
-      ...(await kvSmembers(cityIndexKey(ANY_CITY))),
-    ]);
-    // O'z yukining xabari o'ziga kelmasin.
-    candidates.delete(order.ownerIdentity);
-    if (!candidates.size) return;
-
-    const cargo = CARGO[order.cargoType] || CARGO.OTHER;
-    const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel
-      ? order.customCargoLabel
-      : cargo.label;
-    /* Oxirgi qator ilgari shunday edi:
-         «Yuk haydovchilar guruhida — "Men olaman" tugmasini bosgan
-          birinchi haydovchi oladi.»
-       Haydovchilar guruhi olib tashlanganidan keyin bu gap yolg'on
-       bo'lib qoldi: na guruh bor, na o'sha tugma. Haydovchi
-       Telegramda guruh izlab, topolmay qolardi. Endi xabar bor
-       narsani aytadi — yuk ilovada va u yerda taklif yuboriladi. */
-    const text = `<b>Sizga mos yangi yuk</b>\n\n`
-      + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
-      + `${esc(formatNum(order.weightKg))} kg · ${esc(cargoLabel)}\n`
-      + `<b>${esc(formatNum(order.amount))} so'm</b>\n\n`
-      + `Ilovada ochib, taklifingizni yuboring. Yukni egasi takliflardan o'zi tanlaydi.`;
-    const button = loadUrl(order.code)
-      ? { buttonText: 'Ilovada ochish', buttonUrl: loadUrl(order.code) }
-      : {};
-
-    let sent = 0;
-    for (const identity of candidates) {
-      if (sent >= MAX_MATCH_NOTIFICATIONS) break;
-      const searches = JSON.parse((await kvGet(searchesKey(identity))) || '[]');
-      if (!Array.isArray(searches) || !searches.some((s) => matchesSearch(order, s))) continue;
-      const ok = await notifyUser(identity, { category: 'matches', text, ...button });
-      if (ok) sent += 1;
-    }
+    const premium = await premiumMembers();
+    if (premium.length) await sendLoadTo(order, premium);
+    /* Qolganlar bir soatdan keyin. Ro'yxat hozir olinmaydi — bir
+       soat ichida yangi odam qo'shilishi mumkin va u ham olishi
+       kerak. */
+    await queueDelayed({ kind: 'load', code: order.code }, NON_PREMIUM_DELAY_MS);
   } catch (err) {
-    console.error('match notify failed:', err.message);
+    console.error('new load notify failed:', err.message);
   }
 };
+
+/**
+ * Navbatdagi ishni bajaradi: ikkinchi to'lqin.
+ *
+ * Odam ko'p bo'lsa bir so'rovda hammasiga yuborilmaydi — qolganlari
+ * ishning o'zida qaytariladi va navbat keyingi murojaatda davom
+ * etadi.
+ */
+const runNotifyJob = async (job) => {
+  if (!job || job.kind !== 'load' || !job.code) return null;
+  const raw = await kvGet(`order:${job.code}`);
+  if (!raw) return null;                      // yuk o'chirilgan
+  let order;
+  try { order = JSON.parse(raw); } catch { return null; }
+  /* Yuk allaqachon haydovchi topgan yoki bekor qilingan bo'lsa,
+     "yangi yuk" degan xabarning ma'nosi yo'q. */
+  if ((order.status || 'NEW') !== 'NEW') return null;
+  order.code = job.code;
+
+  const everyone = Array.isArray(job.rest)
+    ? job.rest
+    : (await kvSmembers('profile_emails')).slice(0, MAX_LOAD_NOTIFICATIONS);
+  const { left } = await sendLoadTo(order, everyone);
+  return left.length ? { kind: 'load', code: job.code, rest: left } : null;
+};
+
+/**
+ * Navbatga yo'l-yo'lakay ko'z tashlash.
+ *
+ * Tez-tez chaqiriladigan endpointlardan chaqiriladi. Navbat bo'sh
+ * bo'lsa bitta GET bilan tugaydi va hech qachon xato tashlamaydi —
+ * bildirishnoma yuklar ro'yxatini buzmasligi kerak.
+ */
+export const sweepNotifyQueue = () => drainDue(runNotifyJob).catch(() => 0);
 
 /** GET ?code=&phone= — a cargo owner checking their own order's status. */
 const getOrderStatus = async (req, res) => {
@@ -695,6 +786,21 @@ const openLoads = async () => {
   // Saqlanmasa ham javob to'g'ri bo'ladi, shunchaki keyingi so'rov
   // yana sekin ketadi — shuning uchun xatosi jim o'tadi.
   await kvSet(LOADS_CACHE_KEY, JSON.stringify({ at: Date.now(), items })).catch(() => {});
+
+  /* Kechiktirilgan bildirishnomalarga yo'l-yo'lakay ko'z tashlanadi.
+     Jadval (cron) ishlatilmaydi: Vercel Hobby'da u kuniga bir
+     martagina ishga tushadi, ya'ni soatlik aniqlik bermaydi.
+
+     Nega aynan SHU yerda — keshni qayta qurish yo'lida? Chunki bu
+     yo'l allaqachon uch yuzdan ortiq KV buyrug'ini talab qiladi,
+     bitta qo'shimcha o'qish unda sezilmaydi. Keshdan o'qish yo'li
+     esa bitta buyruqda tugaydi va u ilovaning eng ko'p
+     chaqiriladigan joyi — unga bitta buyruq qo'shish narxni ikki
+     barobar oshirardi (test/quota.test.mjs aynan shuni qo'riqlaydi).
+
+     Kesh har o'ttiz soniyada eskiradi, ya'ni navbat ham shu
+     oraliqda ko'rib turiladi. */
+  sweepNotifyQueue();
   return items;
 };
 

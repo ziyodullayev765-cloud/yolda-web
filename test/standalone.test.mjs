@@ -48,6 +48,9 @@ export const kvSet = async (k, v) => {
 };
 export const kvDel = async (k) => { store.delete(k); return true; };
 export const kvSadd = async (k, m) => { if(!sets.has(k)) sets.set(k, new Set()); sets.get(k).add(m); return true; };
+export const kvSaddNew = async (k, m) => { if(!sets.has(k)) sets.set(k, new Set());
+  const had = sets.get(k).has(m); sets.get(k).add(m); return !had; };
+export const kvExpire = async () => true;
 export const kvSrem = async (k, m) => { if(sets.has(k)) sets.get(k).delete(m); return true; };
 export const kvSmembers = async (k) => sets.has(k) ? [...sets.get(k)] : [];
 export const kvSismember = async (k, m) => sets.has(k) && sets.get(k).has(m);
