@@ -2414,6 +2414,68 @@
   .set-switch[aria-checked="true"]{background:var(--route);}
   .set-switch[aria-checked="true"]::after{transform:translateX(19px);}
 
+  /* ---------- Hisob-kitob bo'limi ---------- */
+  .earn-now{
+    text-align:center;padding:var(--s5);border-radius:var(--r-lg);
+    background:linear-gradient(135deg, rgba(10,159,91,0.08), rgba(11,170,99,0.05));
+    border:1px solid rgba(10,159,91,0.18);margin-bottom:var(--s4);
+  }
+  .earn-now-k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;}
+  .earn-now-v{
+    font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;color:var(--route);
+    letter-spacing:-0.02em;margin-top:6px;line-height:1.1;
+  }
+  .earn-now-v span{font-size:14px;font-weight:600;color:var(--ink-soft);}
+  .earn-now-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+
+  .earn-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2);margin-bottom:var(--s4);}
+  .earn-tot{
+    text-align:center;background:var(--paper-dark);border-radius:var(--r-md);
+    padding:var(--s3) var(--s2);min-width:0;
+  }
+  .earn-tot-v{display:block;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--ink);word-break:break-word;}
+  .earn-tot-k{display:block;font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.3;}
+
+  .earn-title{
+    font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ink);
+    margin:var(--s5) 0 var(--s3);letter-spacing:-0.01em;
+  }
+  .earn-months{display:flex;flex-direction:column;gap:var(--s3);}
+  .earn-month-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);}
+  .earn-month-k{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .earn-month-v{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--ink);}
+  /* Ustun: eng kuchli oyga nisbatan. Raqamlarni o'qimasdan ham
+     qaysi oy ko'p bo'lgani ko'rinadi. */
+  .earn-bar{height:6px;border-radius:3px;background:var(--paper-dark);overflow:hidden;margin:5px 0 3px;}
+  .earn-bar span{display:block;height:100%;border-radius:3px;background:var(--route);min-width:2px;}
+  .earn-month-sub{font-size:11.5px;color:var(--muted);}
+
+  .earn-cities{display:flex;flex-direction:column;gap:var(--s2);}
+  .earn-city{
+    display:flex;align-items:center;gap:var(--s3);
+    background:var(--paper-dark);border-radius:var(--r-md);padding:10px var(--s4);
+  }
+  .earn-city .ic-svg{font-size:17px;color:var(--ink-soft);flex:none;}
+  .earn-city-k{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);word-break:break-word;}
+  .earn-city-v{
+    flex:none;font-size:12px;font-weight:700;color:var(--route);
+    background:rgba(10,159,91,0.1);padding:3px 10px;border-radius:var(--r-pill);
+  }
+
+  .earn-list{display:flex;flex-direction:column;}
+  .earn-item{
+    display:flex;align-items:center;gap:var(--s3);
+    padding:12px 0;border-top:1px solid var(--border);
+  }
+  .earn-list .earn-item:first-child{border-top:none;}
+  .earn-item-main{flex:1;min-width:0;}
+  .earn-item-route{font-size:14px;font-weight:600;color:var(--ink);word-break:break-word;}
+  .earn-item-sub{font-size:11.5px;color:var(--muted);margin-top:2px;word-break:break-word;}
+  .earn-item-amt{
+    flex:none;font-family:'Space Grotesk',sans-serif;font-size:14.5px;font-weight:700;color:var(--ink);
+  }
+  .earn-note{margin-top:var(--s4);}
+
   .lang-switch,.theme-switch{display:flex;gap:8px;flex-wrap:wrap;}
   .lang-btn,.theme-btn{
     flex:1;min-width:88px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
@@ -6748,6 +6810,13 @@
       "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
 
       "common.back": "Orqaga", "common.min": "Eng kam", "common.max": "Eng ko'p",
+      "pf.earnings": "Hisob-kitob", "pf.earningsSub": "Tashuvlar va summalar",
+      "earn.thisMonth": "Shu oy", "earn.trips": "ta tashuv",
+      "earn.totalTrips": "Jami tashuv", "earn.totalSum": "Jami summa", "earn.totalKm": "Jami masofa, km",
+      "earn.byMonth": "Oylar bo'yicha", "earn.topCities": "Eng ko'p borilgan manzillar",
+      "earn.allTrips": "Hamma tashuvlar",
+      "earn.empty": "Hali yetkazilgan yuk yo'q.", "earn.emptyBtn": "Yuklarni ko'rish",
+      "earn.note": "Summalar — kelishilgan narxlar. Ilova hech qanday ulush ushlamaydi.",
       "set.groupProfile": "PROFIL", "set.groupApp": "ILOVA",
       "set.groupLoads": "YUKLAR", "set.groupHelp": "YORDAM",
       "set.editProfile": "Profil ma'lumotlari", "set.editProfileSub": "Ism, surat va boshqalar",
@@ -7282,6 +7351,13 @@
       "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
 
       "common.back": "Назад", "common.min": "Мин.", "common.max": "Макс.",
+      "pf.earnings": "Отчёт", "pf.earningsSub": "Рейсы и суммы",
+      "earn.thisMonth": "Этот месяц", "earn.trips": "рейсов",
+      "earn.totalTrips": "Всего рейсов", "earn.totalSum": "Всего сумма", "earn.totalKm": "Всего км",
+      "earn.byMonth": "По месяцам", "earn.topCities": "Куда возили чаще всего",
+      "earn.allTrips": "Все рейсы",
+      "earn.empty": "Доставленных грузов пока нет.", "earn.emptyBtn": "Посмотреть грузы",
+      "earn.note": "Суммы — согласованные цены. Приложение не удерживает комиссию.",
       "set.groupProfile": "ПРОФИЛЬ", "set.groupApp": "ПРИЛОЖЕНИЕ",
       "set.groupLoads": "ГРУЗЫ", "set.groupHelp": "ПОМОЩЬ",
       "set.editProfile": "Данные профиля", "set.editProfileSub": "Имя, фото и другое",
@@ -7812,6 +7888,13 @@
       "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
 
       "common.back": "Back", "common.min": "Min", "common.max": "Max",
+      "pf.earnings": "Earnings", "pf.earningsSub": "Trips and amounts",
+      "earn.thisMonth": "This month", "earn.trips": "trips",
+      "earn.totalTrips": "Total trips", "earn.totalSum": "Total amount", "earn.totalKm": "Total km",
+      "earn.byMonth": "By month", "earn.topCities": "Most frequent destinations",
+      "earn.allTrips": "All trips",
+      "earn.empty": "No delivered loads yet.", "earn.emptyBtn": "Browse loads",
+      "earn.note": "Amounts are the agreed prices. The app takes no cut.",
       "set.groupProfile": "PROFILE", "set.groupApp": "APP",
       "set.groupLoads": "LOADS", "set.groupHelp": "HELP",
       "set.editProfile": "Profile details", "set.editProfileSub": "Name, photo and more",
@@ -10944,6 +11027,10 @@
       subKey: "pf.reviewsSub",  sub: "Baholar va sharhlar", roles: "*" },
     { id: "activity", icon: "iconChart",    tint: "#8B5CF6", titleKey: "pf.activity", title: "Faoliyat",
       subKey: "pf.activitySub", sub: "Statistika va ko'rsatkichlar", roles: "*" },
+    /* Tashuv daftari — faqat haydovchida. Yuk beruvchida
+       yetkazilgan yuk bo'lmaydi, ya'ni bo'lim doim bo'sh turardi. */
+    { id: "earnings", icon: "iconReceipt",  tint: "#0891B2", titleKey: "pf.earnings", title: "Hisob-kitob",
+      subKey: "pf.earningsSub", sub: "Tashuvlar va summalar", roles: "DRIVER" },
     { id: "verified", icon: "iconShield",   tint: "#0D9488", titleKey: "pf.verified", title: "Tasdiqlangan ma'lumotlar",
       subKey: "pf.verifiedSub", sub: "Hujjatlar va tasdiqlashlar", roles: "*" }
     /* "Sozlamalar" ro'yxatdan olib tashlandi — u sarlavhadagi menyu
@@ -11006,6 +11093,7 @@
           loads: renderLoadsSection,
           reviews: renderReviewsSection,
           activity: renderActivitySection,
+          earnings: renderEarningsSection,
           verified: renderVerifiedSection
         }[id];
         if(render) render(body, p);
@@ -11369,6 +11457,133 @@
         + '</div>';
       applyLang();
     });
+  }
+
+  /* ---------- Hisob-kitob ----------
+     Haydovchi yuk yetkazganda server tashuv daftariga qisqa yozuv
+     qo'shadi (lib/earnings.js). Bu bo'lim o'shani ko'rsatadi:
+     shu oy qancha, oldingi oylar qancha, eng ko'p qayerga borgan
+     va hamma tashuvlar ro'yxati.
+
+     SUMMA — KELISHILGAN NARX. Ilovada to'lov tizimi yo'q va hech
+     qanday komissiya ushlanmaydi, shuning uchun bu "sof daromad"
+     emas. Sarlavhada ham shunday yozilgan: o'ylab topilgan
+     "daromad" so'zi odamni chalg'itardi. */
+  var MONTH_NAMES = {
+    uz: ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"],
+    ru: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+    en: ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  };
+
+  /** "2026-10" → "Oktabr 2026". */
+  function monthLabel(key){
+    var parts = String(key || "").split("-");
+    var year = parts[0];
+    var idx = Number(parts[1]) - 1;
+    var base = currentLang === "uz-cyrl" ? "uz" : currentLang;
+    var names = MONTH_NAMES[base] || MONTH_NAMES.uz;
+    var name = names[idx] || "";
+    if(currentLang === "uz-cyrl") name = transliterateHtmlAware(name);
+    return name ? (name + " " + year) : year;
+  }
+
+  /** Kun-oy-yil: tashuvlar ro'yxatidagi sana. */
+  function earningDate(ms){
+    var d = new Date(ms);
+    if(isNaN(d.getTime())) return "";
+    var base = currentLang === "uz-cyrl" ? "uz" : currentLang;
+    var names = MONTH_NAMES[base] || MONTH_NAMES.uz;
+    var name = (names[d.getMonth()] || "").toLowerCase();
+    if(currentLang === "uz-cyrl") name = transliterateHtmlAware(name);
+    return d.getDate() + "-" + name + ", " + d.getFullYear();
+  }
+
+  function renderEarningsSection(body, p){
+    fetch("/api/order?action=earnings&" + profileApiQuery())
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; })
+      .then(function(data){
+        if(!data || !data.ok){ pfError(body, function(){ renderEarningsSection(body, p); }); return; }
+
+        var entries = data.entries || [];
+        if(!entries.length){
+          /* Bo'sh bo'lsa nol emas, sabab ko'rsatiladi: "0 so'm"
+             degan katta raqam xato bo'lgandek taassurot qoldiradi. */
+          body.innerHTML = pfEmpty("earn.empty", "Hali yetkazilgan yuk yo'q.",
+            "earn.emptyBtn", "Yuklarni ko'rish", function(){ Sheet.close(); switchTab("loads"); });
+          applyLang();
+          return;
+        }
+
+        var tm = data.thisMonth || { count: 0, amount: 0 };
+        var html = ""
+          + '<div class="earn-now">'
+          +   '<div class="earn-now-k" data-i18n="earn.thisMonth">Shu oy</div>'
+          +   '<div class="earn-now-v">'+formatNum(tm.amount)+' <span data-i18n="loads.sum">so\'m</span></div>'
+          +   '<div class="earn-now-sub">'+tm.count+' <span data-i18n="earn.trips">ta tashuv</span></div>'
+          + '</div>'
+
+          + '<div class="earn-totals">'
+          +   '<div class="earn-tot"><span class="earn-tot-v">'+data.totals.count+'</span>'
+          +     '<span class="earn-tot-k" data-i18n="earn.totalTrips">Jami tashuv</span></div>'
+          +   '<div class="earn-tot"><span class="earn-tot-v">'+formatNum(data.totals.amount)+'</span>'
+          +     '<span class="earn-tot-k" data-i18n="earn.totalSum">Jami summa</span></div>'
+          +   '<div class="earn-tot"><span class="earn-tot-v">'+formatNum(data.totals.distanceKm)+'</span>'
+          +     '<span class="earn-tot-k" data-i18n="earn.totalKm">Jami masofa, km</span></div>'
+          + '</div>';
+
+        /* Oylar. Eng ko'p summali oy ustun bo'lib, qolganlari
+           unga nisbatan o'lchanadi — raqamlarni o'qimasdan ham
+           qaysi oy kuchli bo'lgani ko'rinadi. */
+        var top = data.months.reduce(function(m, x){ return Math.max(m, x.amount); }, 0);
+        html += '<h4 class="earn-title" data-i18n="earn.byMonth">Oylar bo\'yicha</h4>'
+          + '<div class="earn-months">'
+          + data.months.map(function(m){
+              var pct = top ? Math.round(m.amount / top * 100) : 0;
+              return '<div class="earn-month">'
+                + '<div class="earn-month-head">'
+                +   '<span class="earn-month-k">'+escapeHtml(monthLabel(m.key))+'</span>'
+                +   '<span class="earn-month-v">'+formatNum(m.amount)+'</span>'
+                + '</div>'
+                + '<div class="earn-bar"><span style="width:'+pct+'%"></span></div>'
+                + '<div class="earn-month-sub">'+m.count+' <span data-i18n="earn.trips">ta tashuv</span></div>'
+                + '</div>';
+            }).join("")
+          + '</div>';
+
+        if(data.topCities && data.topCities.length){
+          html += '<h4 class="earn-title" data-i18n="earn.topCities">Eng ko\'p borilgan manzillar</h4>'
+            + '<div class="earn-cities">'
+            + data.topCities.map(function(c){
+                return '<div class="earn-city">'
+                  + icon("iconPin")
+                  + '<span class="earn-city-k">'+escapeHtml(c.city)+'</span>'
+                  + '<span class="earn-city-v">'+c.count+'</span>'
+                  + '</div>';
+              }).join("")
+            + '</div>';
+        }
+
+        html += '<h4 class="earn-title" data-i18n="earn.allTrips">Hamma tashuvlar</h4>'
+          + '<div class="earn-list">'
+          + entries.map(function(e){
+              return '<div class="earn-item">'
+                + '<div class="earn-item-main">'
+                +   '<div class="earn-item-route">'+escapeHtml(e.fromCity)+' → '+escapeHtml(e.toCity)+'</div>'
+                +   '<div class="earn-item-sub">'+escapeHtml(earningDate(e.deliveredAt))
+                +     (e.distanceKm ? ' · ' + formatNum(e.distanceKm) + ' km' : '')
+                +     ' · ' + escapeHtml(e.code) + '</div>'
+                + '</div>'
+                + '<div class="earn-item-amt">'+formatNum(e.amount)+'</div>'
+                + '</div>';
+            }).join("")
+          + '</div>'
+          + '<p class="note earn-note" data-i18n="earn.note">Summalar — kelishilgan narxlar. '
+          + 'Ilova hech qanday ulush ushlamaydi.</p>';
+
+        body.innerHTML = html;
+        applyLang();
+      });
   }
 
   /* ---------- 7. Tasdiqlangan ma'lumotlar ----------

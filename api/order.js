@@ -35,6 +35,7 @@ import {
 import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
 import { LOADS_CACHE_KEY, LOADS_CACHE_MS, invalidateLoadsCache } from '../lib/loadsCache.js';
 import { loadUrl } from '../lib/appUrl.js';
+import { recordDelivery, readLedger, summarise } from '../lib/earnings.js';
 
 const PRICE_PER_KM = Number(process.env.PRICE_PER_KM || 2500);
 const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
@@ -1476,6 +1477,53 @@ const listMyLoads = async (req, res) => {
 };
 
 /**
+ * GET ?action=earnings — haydovchining tashuv daftari.
+ *
+ * Oylik yig'indi, eng ko'p borilgan manzillar va yetkazilgan
+ * yuklarning to'liq ro'yxati. Hammasi `earnings:<shaxs>`
+ * daftaridan, ya'ni bitta so'rovda.
+ *
+ * ESKI TASHUVLAR. Daftar paydo bo'lishidan oldin yetkazilganlar
+ * unda yo'q, shuning uchun birinchi ochilishda u bir marta
+ * buyurtmalar ro'yxatidan to'ldiriladi. Bu qimmat yo'l (uch
+ * yuzta o'qish), lekin faqat bir marta va faqat shu bo'lim
+ * ochilganda yuradi — ilovaning issiq yo'llariga tegmaydi.
+ */
+const getEarnings = async (req, res) => {
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const past = async () => {
+    const codes = await kvRange('order_codes', 0, 299);
+    const raw = await Promise.all(codes.map((code) => kvGet(`order:${code}`)));
+    return raw
+      .map((str) => {
+        if (!str) return null;
+        try {
+          return JSON.parse(str);
+        } catch {
+          return null;
+        }
+      })
+      .filter((o) => o && o.status === 'DELIVERED' && o.driver && o.driver.identity === identity);
+  };
+
+  const entries = await readLedger(identity, past);
+  const report = summarise(entries);
+
+  return res.status(200).json({
+    ok: true,
+    ...report,
+    /* "Yuk eltganlarining hammasi" — to'liq ro'yxat. Oyna
+       daftarникidek: oxirgi 300 ta tashuv. */
+    entries,
+  });
+};
+
+/**
  * POST ?action=advance — biriktirilgan haydovchi buyurtmani bir bosqich
  * oldinga suradi.
  *
@@ -1524,6 +1572,9 @@ const advanceOrder = async (req, res) => {
       // Hisoblagich yetkazishning o'zidan muhim emas.
       console.error('deliveredCount update failed:', err.message);
     }
+    /* Tashuv daftariga yoziladi — "Hisob-kitob" bo'limi shundan
+       o'qiydi. Yozilmasa ham yuk yetkazilgan bo'lib qolaveradi. */
+    await recordDelivery(identity, order);
   }
 
 
@@ -1929,6 +1980,7 @@ export default async function handler(req, res) {
     if (action === 'my-load') return getMyLoad(req, res);
     if (action === 'my-loads') return listMyLoads(req, res);
     if (action === 'stats') return getHomeStats(req, res);
+    if (action === 'earnings') return getEarnings(req, res);
     return getOrderStatus(req, res);
   }
   if (req.method === 'POST') {
