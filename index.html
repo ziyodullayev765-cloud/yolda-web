@@ -2428,7 +2428,9 @@
   .earn-now-v span{font-size:14px;font-weight:600;color:var(--ink-soft);}
   .earn-now-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
 
-  .earn-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2);margin-bottom:var(--s4);}
+  /* To'rtta katak ikki qatorda: tor varaqda to'rttasi yonma-yon
+     tursa, "4 000 000" kabi raqamlar bo'linib ketardi. */
+  .earn-totals{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s2);margin-bottom:var(--s4);}
   .earn-tot{
     text-align:center;background:var(--paper-dark);border-radius:var(--r-md);
     padding:var(--s3) var(--s2);min-width:0;
@@ -6810,6 +6812,11 @@
       "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
 
       "common.back": "Orqaga", "common.min": "Eng kam", "common.max": "Eng ko'p",
+      "pf.shipments": "Hisob-kitob", "pf.shipmentsSub": "Bergan yuklaringiz",
+      "earn.loads": "ta yuk", "earn.totalLoads": "Jami yuk",
+      "earn.totalTons": "Jami og'irlik, tonna",
+      "earn.topCitiesOwner": "Eng ko'p yuborilgan manzillar", "earn.allLoads": "Hamma yuklar",
+      "earn.emptyOwner": "Hali yetkazilgan yukingiz yo'q.", "earn.emptyOwnerBtn": "Yuk joylash",
       "pf.earnings": "Hisob-kitob", "pf.earningsSub": "Tashuvlar va summalar",
       "earn.thisMonth": "Shu oy", "earn.trips": "ta tashuv",
       "earn.totalTrips": "Jami tashuv", "earn.totalSum": "Jami summa", "earn.totalKm": "Jami masofa, km",
@@ -7351,6 +7358,11 @@
       "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
 
       "common.back": "Назад", "common.min": "Мин.", "common.max": "Макс.",
+      "pf.shipments": "Отчёт", "pf.shipmentsSub": "Ваши отправленные грузы",
+      "earn.loads": "грузов", "earn.totalLoads": "Всего грузов",
+      "earn.totalTons": "Всего вес, тонн",
+      "earn.topCitiesOwner": "Куда отправляли чаще всего", "earn.allLoads": "Все грузы",
+      "earn.emptyOwner": "Доставленных грузов пока нет.", "earn.emptyOwnerBtn": "Разместить груз",
       "pf.earnings": "Отчёт", "pf.earningsSub": "Рейсы и суммы",
       "earn.thisMonth": "Этот месяц", "earn.trips": "рейсов",
       "earn.totalTrips": "Всего рейсов", "earn.totalSum": "Всего сумма", "earn.totalKm": "Всего км",
@@ -7888,6 +7900,11 @@
       "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
 
       "common.back": "Back", "common.min": "Min", "common.max": "Max",
+      "pf.shipments": "Report", "pf.shipmentsSub": "Loads you shipped",
+      "earn.loads": "loads", "earn.totalLoads": "Total loads",
+      "earn.totalTons": "Total weight, tonnes",
+      "earn.topCitiesOwner": "Most frequent destinations", "earn.allLoads": "All loads",
+      "earn.emptyOwner": "No delivered loads yet.", "earn.emptyOwnerBtn": "Post a load",
       "pf.earnings": "Earnings", "pf.earningsSub": "Trips and amounts",
       "earn.thisMonth": "This month", "earn.trips": "trips",
       "earn.totalTrips": "Total trips", "earn.totalSum": "Total amount", "earn.totalKm": "Total km",
@@ -11031,6 +11048,11 @@
        yetkazilgan yuk bo'lmaydi, ya'ni bo'lim doim bo'sh turardi. */
     { id: "earnings", icon: "iconReceipt",  tint: "#0891B2", titleKey: "pf.earnings", title: "Hisob-kitob",
       subKey: "pf.earningsSub", sub: "Tashuvlar va summalar", roles: "DRIVER" },
+    /* Yuk beruvchining o'z daftari: nechta yuk bergan, necha
+       tonna, qancha. Haydovchinikidan alohida — bitta odam
+       ikkalasi ham bo'lsa, raqamlar aralashib ketardi. */
+    { id: "shipments", icon: "iconChart",   tint: "#C026D3", titleKey: "pf.shipments", title: "Hisob-kitob",
+      subKey: "pf.shipmentsSub", sub: "Bergan yuklaringiz", roles: "OWNER" },
     { id: "verified", icon: "iconShield",   tint: "#0D9488", titleKey: "pf.verified", title: "Tasdiqlangan ma'lumotlar",
       subKey: "pf.verifiedSub", sub: "Hujjatlar va tasdiqlashlar", roles: "*" }
     /* "Sozlamalar" ro'yxatdan olib tashlandi — u sarlavhadagi menyu
@@ -11094,6 +11116,7 @@
           reviews: renderReviewsSection,
           activity: renderActivitySection,
           earnings: renderEarningsSection,
+          shipments: renderShipmentsSection,
           verified: renderVerifiedSection
         }[id];
         if(render) render(body, p);
@@ -11498,19 +11521,33 @@
     return d.getDate() + "-" + name + ", " + d.getFullYear();
   }
 
-  function renderEarningsSection(body, p){
-    fetch("/api/order?action=earnings&" + profileApiQuery())
+  /** Yuk beruvchi tomoni — o'sha chizuvchi, boshqa daftar. */
+  function renderShipmentsSection(body, p){ renderEarningsSection(body, p, "owner"); }
+
+  /** Og'irlik tonnada: kilogrammda million chiqib, o'qib bo'lmaydi. */
+  function formatTons(kg){
+    var t = Number(kg || 0) / 1000;
+    if(!t) return "0";
+    return t >= 10 ? formatNum(Math.round(t)) : (Math.round(t * 10) / 10).toString();
+  }
+
+  function renderEarningsSection(body, p, side){
+    var owner = side === "owner";
+    fetch("/api/order?action=earnings" + (owner ? "&side=owner" : "") + "&" + profileApiQuery())
       .then(function(r){ return r.ok ? r.json() : null; })
       .catch(function(){ return null; })
       .then(function(data){
-        if(!data || !data.ok){ pfError(body, function(){ renderEarningsSection(body, p); }); return; }
+        if(!data || !data.ok){ pfError(body, function(){ renderEarningsSection(body, p, side); }); return; }
 
         var entries = data.entries || [];
         if(!entries.length){
           /* Bo'sh bo'lsa nol emas, sabab ko'rsatiladi: "0 so'm"
              degan katta raqam xato bo'lgandek taassurot qoldiradi. */
-          body.innerHTML = pfEmpty("earn.empty", "Hali yetkazilgan yuk yo'q.",
-            "earn.emptyBtn", "Yuklarni ko'rish", function(){ Sheet.close(); switchTab("loads"); });
+          body.innerHTML = owner
+            ? pfEmpty("earn.emptyOwner", "Hali yetkazilgan yukingiz yo'q.",
+                "earn.emptyOwnerBtn", "Yuk joylash", function(){ Sheet.close(); switchTab("order"); })
+            : pfEmpty("earn.empty", "Hali yetkazilgan yuk yo'q.",
+                "earn.emptyBtn", "Yuklarni ko'rish", function(){ Sheet.close(); switchTab("loads"); });
           applyLang();
           return;
         }
@@ -11520,14 +11557,19 @@
           + '<div class="earn-now">'
           +   '<div class="earn-now-k" data-i18n="earn.thisMonth">Shu oy</div>'
           +   '<div class="earn-now-v">'+formatNum(tm.amount)+' <span data-i18n="loads.sum">so\'m</span></div>'
-          +   '<div class="earn-now-sub">'+tm.count+' <span data-i18n="earn.trips">ta tashuv</span></div>'
+          +   '<div class="earn-now-sub">'+tm.count+' '
+          +     '<span data-i18n="'+(owner ? "earn.loads" : "earn.trips")+'">'
+          +     (owner ? "ta yuk" : "ta tashuv")+'</span></div>'
           + '</div>'
 
           + '<div class="earn-totals">'
           +   '<div class="earn-tot"><span class="earn-tot-v">'+data.totals.count+'</span>'
-          +     '<span class="earn-tot-k" data-i18n="earn.totalTrips">Jami tashuv</span></div>'
+          +     '<span class="earn-tot-k" data-i18n="'+(owner ? "earn.totalLoads" : "earn.totalTrips")+'">'
+          +     (owner ? "Jami yuk" : "Jami tashuv")+'</span></div>'
           +   '<div class="earn-tot"><span class="earn-tot-v">'+formatNum(data.totals.amount)+'</span>'
           +     '<span class="earn-tot-k" data-i18n="earn.totalSum">Jami summa</span></div>'
+          +   '<div class="earn-tot"><span class="earn-tot-v">'+formatTons(data.totals.weightKg)+'</span>'
+          +     '<span class="earn-tot-k" data-i18n="earn.totalTons">Jami og\'irlik, tonna</span></div>'
           +   '<div class="earn-tot"><span class="earn-tot-v">'+formatNum(data.totals.distanceKm)+'</span>'
           +     '<span class="earn-tot-k" data-i18n="earn.totalKm">Jami masofa, km</span></div>'
           + '</div>';
@@ -11546,13 +11588,16 @@
                 +   '<span class="earn-month-v">'+formatNum(m.amount)+'</span>'
                 + '</div>'
                 + '<div class="earn-bar"><span style="width:'+pct+'%"></span></div>'
-                + '<div class="earn-month-sub">'+m.count+' <span data-i18n="earn.trips">ta tashuv</span></div>'
+                + '<div class="earn-month-sub">'+m.count+' '
+                +   '<span data-i18n="'+(owner ? "earn.loads" : "earn.trips")+'">'
+                +   (owner ? "ta yuk" : "ta tashuv")+'</span></div>'
                 + '</div>';
             }).join("")
           + '</div>';
 
         if(data.topCities && data.topCities.length){
-          html += '<h4 class="earn-title" data-i18n="earn.topCities">Eng ko\'p borilgan manzillar</h4>'
+          html += '<h4 class="earn-title" data-i18n="'+(owner ? "earn.topCitiesOwner" : "earn.topCities")+'">'
+            + (owner ? "Eng ko'p yuborilgan manzillar" : "Eng ko'p borilgan manzillar")+'</h4>'
             + '<div class="earn-cities">'
             + data.topCities.map(function(c){
                 return '<div class="earn-city">'
@@ -11564,13 +11609,15 @@
             + '</div>';
         }
 
-        html += '<h4 class="earn-title" data-i18n="earn.allTrips">Hamma tashuvlar</h4>'
+        html += '<h4 class="earn-title" data-i18n="'+(owner ? "earn.allLoads" : "earn.allTrips")+'">'
+          + (owner ? "Hamma yuklar" : "Hamma tashuvlar")+'</h4>'
           + '<div class="earn-list">'
           + entries.map(function(e){
               return '<div class="earn-item">'
                 + '<div class="earn-item-main">'
                 +   '<div class="earn-item-route">'+escapeHtml(e.fromCity)+' → '+escapeHtml(e.toCity)+'</div>'
                 +   '<div class="earn-item-sub">'+escapeHtml(earningDate(e.deliveredAt))
+                +     (e.weightKg ? ' · ' + formatTons(e.weightKg) + ' t' : '')
                 +     (e.distanceKm ? ' · ' + formatNum(e.distanceKm) + ' km' : '')
                 +     ' · ' + escapeHtml(e.code) + '</div>'
                 + '</div>'

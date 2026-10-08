@@ -35,7 +35,9 @@ import {
 import { validateReview, applyReview, reviewsKey, CRITERIA } from '../lib/reviews.js';
 import { LOADS_CACHE_KEY, LOADS_CACHE_MS, invalidateLoadsCache } from '../lib/loadsCache.js';
 import { loadUrl } from '../lib/appUrl.js';
-import { recordDelivery, readLedger, summarise } from '../lib/earnings.js';
+import {
+  recordDelivery, readLedger, summarise, DRIVER_SIDE, OWNER_SIDE,
+} from '../lib/earnings.js';
 
 const PRICE_PER_KM = Number(process.env.PRICE_PER_KM || 2500);
 const PRICE_PER_KG = Number(process.env.PRICE_PER_KG || 300);
@@ -1496,6 +1498,11 @@ const getEarnings = async (req, res) => {
   });
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
+  /* Qaysi tomon: o'z tashuvlari (haydovchi) yoki o'zi bergan
+     yuklar (yuk beruvchi). Bitta odam ikkalasi ham bo'lishi
+     mumkin, shuning uchun daftarlar alohida. */
+  const side = String(req.query.side || '') === OWNER_SIDE ? OWNER_SIDE : DRIVER_SIDE;
+
   const past = async () => {
     const codes = await kvRange('order_codes', 0, 299);
     const raw = await Promise.all(codes.map((code) => kvGet(`order:${code}`)));
@@ -1508,14 +1515,20 @@ const getEarnings = async (req, res) => {
           return null;
         }
       })
-      .filter((o) => o && o.status === 'DELIVERED' && o.driver && o.driver.identity === identity);
+      .filter((o) => {
+        if (!o || o.status !== 'DELIVERED') return false;
+        return side === OWNER_SIDE
+          ? (o.ownerIdentity || o.googleEmail) === identity
+          : Boolean(o.driver && o.driver.identity === identity);
+      });
   };
 
-  const entries = await readLedger(identity, past);
+  const entries = await readLedger(identity, past, side);
   const report = summarise(entries);
 
   return res.status(200).json({
     ok: true,
+    side,
     ...report,
     /* "Yuk eltganlarining hammasi" — to'liq ro'yxat. Oyna
        daftarникidek: oxirgi 300 ta tashuv. */
@@ -1572,9 +1585,12 @@ const advanceOrder = async (req, res) => {
       // Hisoblagich yetkazishning o'zidan muhim emas.
       console.error('deliveredCount update failed:', err.message);
     }
-    /* Tashuv daftariga yoziladi — "Hisob-kitob" bo'limi shundan
-       o'qiydi. Yozilmasa ham yuk yetkazilgan bo'lib qolaveradi. */
-    await recordDelivery(identity, order);
+    /* Daftarlarga yoziladi — "Hisob-kitob" bo'limi shundan
+       o'qiydi. Ikki tomon alohida: haydovchi o'z tashuvlarini,
+       yuk beruvchi o'z bergan yuklarini ko'radi. Yozilmasa ham
+       yuk yetkazilgan bo'lib qolaveradi. */
+    await recordDelivery(identity, order, DRIVER_SIDE);
+    await recordDelivery(order.ownerIdentity || order.googleEmail, order, OWNER_SIDE);
   }
 
 

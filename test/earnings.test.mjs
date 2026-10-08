@@ -32,11 +32,12 @@ const earnings = await loadLib('earnings.js');
 const DRIVER = 'driver1@example.com';
 const OWNER = 'shipper@example.com';
 const AS_DRIVER = { googleIdToken: DRIVER };
+const AS_OWNER = { googleIdToken: OWNER };
 
 /** Yetkazilgan buyurtmani to'g'ridan bazaga qo'yadi. */
-const seedDelivered = (code, from, to, amount, km, deliveredAt) => {
+const seedDelivered = (code, from, to, amount, km, deliveredAt, weightKg = 1000) => {
   db.strings.set(`order:${code}`, JSON.stringify({
-    code, fromCity: from, toCity: to, amount, agreedAmount: amount, distanceKm: km,
+    code, fromCity: from, toCity: to, amount, agreedAmount: amount, distanceKm: km, weightKg,
     status: 'DELIVERED', deliveredAt, ownerIdentity: OWNER,
     driver: { identity: DRIVER, name: 'Bekzod' },
   }));
@@ -45,8 +46,8 @@ const seedDelivered = (code, from, to, amount, km, deliveredAt) => {
   db.lists.set('order_codes', list);
 };
 
-const ledger = () =>
-  (db.lists.get(`earnings:${DRIVER}`) || []).map((x) => JSON.parse(x));
+const ledger = (key = `earnings:${DRIVER}`) =>
+  (db.lists.get(key) || []).map((x) => JSON.parse(x));
 
 const fresh = () => { db.reset(); };
 
@@ -58,9 +59,9 @@ flow('1. Hisobot yasash');
   const OCT = Date.UTC(2026, 9, 10);
   const SEP = Date.UTC(2026, 8, 5);
   const entries = [
-    { code: 'A', fromCity: 'Toshkent', toCity: 'Samarqand', amount: 900000, distanceKm: 300, deliveredAt: OCT },
-    { code: 'B', fromCity: 'Toshkent', toCity: 'Samarqand', amount: 100000, distanceKm: 300, deliveredAt: OCT },
-    { code: 'C', fromCity: 'Buxoro', toCity: 'Nukus', amount: 500000, distanceKm: 700, deliveredAt: SEP },
+    { code: 'A', fromCity: 'Toshkent', toCity: 'Samarqand', amount: 900000, distanceKm: 300, weightKg: 20000, deliveredAt: OCT },
+    { code: 'B', fromCity: 'Toshkent', toCity: 'Samarqand', amount: 100000, distanceKm: 300, weightKg: 5000, deliveredAt: OCT },
+    { code: 'C', fromCity: 'Buxoro', toCity: 'Nukus', amount: 500000, distanceKm: 700, weightKg: 1500, deliveredAt: SEP },
   ];
   const r = earnings.summarise(entries, OCT);
 
@@ -69,6 +70,7 @@ flow('1. Hisobot yasash');
   check('jami summa', r.totals.amount === 1500000, r.totals);
   check('jami tashuv', r.totals.count === 3, r.totals);
   check('jami masofa', r.totals.distanceKm === 1300, r.totals);
+  check('jami og\'irlik', r.totals.weightKg === 26500, r.totals);
 
   check('ikki oy', r.months.length === 2, r.months.map((m) => m.key));
   check('yangi oy tepada', r.months[0].key === '2026-10', r.months[0]);
@@ -99,7 +101,7 @@ flow('2. Yetkazilganda daftarga yoziladi');
   fresh();
   db.strings.set(`order:YL-1`, JSON.stringify({
     code: 'YL-1', fromCity: 'Toshkent', toCity: 'Buxoro', amount: 700000,
-    agreedAmount: 850000, distanceKm: 580, status: 'ON_THE_WAY',
+    agreedAmount: 850000, distanceKm: 580, weightKg: 12000, status: 'ON_THE_WAY',
     ownerIdentity: OWNER, driver: { identity: DRIVER, name: 'Bekzod' },
   }));
   db.strings.set(`activeLoad:${DRIVER}`, 'YL-1');
@@ -113,6 +115,15 @@ flow('2. Yetkazilganda daftarga yoziladi');
   check('yo\'nalish yozildi', L[0] && L[0].toCity === 'Buxoro', L[0]);
   check('masofa yozildi', L[0] && L[0].distanceKm === 580, L[0]);
   check('sana yozildi', L[0] && L[0].deliveredAt > 0, L[0]);
+  check('og\'irlik yozildi', L[0] && L[0].weightKg === 12000, L[0]);
+
+  /* Yuk beruvchining daftariga ham o'sha paytda yoziladi —
+     lekin BOSHQA kalitga: bitta odam ikkala rolda bo'lsa,
+     raqamlar aralashib ketardi. */
+  const O = ledger(`shipments:${OWNER}`);
+  check('yuk beruvchi daftariga ham tushdi', O.length === 1, O);
+  check('o\'sha yukning o\'zi', O[0] && O[0].code === 'YL-1', O[0]);
+  check('haydovchi daftariga yuk beruvchiniki qo\'shilmadi', ledger().length === 1);
 }
 
 /* ============================================================
@@ -173,4 +184,39 @@ flow('4. Hali tashuvi yo\'q odam');
   check('shu oy bor', Boolean(r.payload.thisMonth), r.payload.thisMonth);
 }
 
-t.done(4);
+/* ============================================================
+   5. Yuk beruvchi tomoni
+   ============================================================ */
+flow('5. Yuk beruvchi tomoni');
+{
+  fresh();
+  const now = Date.now();
+  seedDelivered('S-1', 'Toshkent', 'Samarqand', 900000, 300, now - 2 * 86400000, 20000);
+  seedDelivered('S-2', 'Toshkent', 'Buxoro', 600000, 580, now - 5 * 86400000, 3000);
+
+  const r = await get(order, { action: 'earnings', side: 'owner', ...AS_OWNER });
+  check('javob keldi', r.payload && r.payload.ok, r.payload);
+  check('tomoni aytiladi', r.payload.side === 'owner', r.payload.side);
+  check('ikkita yuk', r.payload.totals.count === 2, r.payload.totals);
+  check('jami summa', r.payload.totals.amount === 1500000, r.payload.totals);
+  check('jami og\'irlik', r.payload.totals.weightKg === 23000, r.payload.totals);
+  check('eng ko\'p yuborilgan manzil',
+    r.payload.topCities[0].city === 'Samarqand', r.payload.topCities);
+  check('hamma yuklar ro\'yxati', (r.payload.entries || []).length === 2);
+
+  /* ENG MUHIMI: ikki daftar aralashmasin. O'sha odam haydovchi
+     sifatida so'rasa, bergan yuklari chiqmasligi kerak. */
+  const asDriver = await get(order, { action: 'earnings', ...AS_OWNER });
+  check('haydovchi tomoni bo\'sh', asDriver.payload.totals.count === 0, asDriver.payload.totals);
+  check('daftarlar alohida kalitda',
+    Boolean(db.lists.get(`shipments:${OWNER}`)) && !db.lists.get(`earnings:${OWNER}`),
+    [...db.lists.keys()]);
+
+  // Buyurtmalar o'chsa ham turadi.
+  db.lists.set('order_codes', []);
+  db.keysLike('order:').forEach((k) => db.strings.delete(k));
+  const again = await get(order, { action: 'earnings', side: 'owner', ...AS_OWNER });
+  check('buyurtmalar o\'chsa ham turadi', again.payload.totals.count === 2, again.payload.totals);
+}
+
+t.done(5);
