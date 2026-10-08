@@ -1770,32 +1770,100 @@
     -webkit-backdrop-filter:none;backdrop-filter:none;
   }
   .chip.active{border-color:var(--route);color:var(--route);background:rgba(10,159,91,0.08);}
+  /* ---------- Yuk kartochkasi ----------
+     Ilgari kartochka ustma-ust qatorlardan iborat edi: belgilar,
+     yo'nalish, narx, keyin bir uyum kichik yozuv. Ko'z uchta
+     narsani qidiradi — qayerdan qayerga, qancha, qachon — lekin
+     ularning uchalasi ham har safar boshqa joyda turardi.
+
+     Endi tartib qat'iy: chapda belgi, o'ngda narx, o'rtada
+     yo'nalish va ostida ikki qator — og'irlik/miqdor va
+     sana/masofa. Ro'yxatdagi hamma kartochkada o'sha joyda. */
   .load-card{
+    display:flex;align-items:stretch;gap:var(--s4);
     background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);
-    padding:var(--s5);margin-bottom:var(--s3);box-shadow:var(--sh-1);cursor:pointer;
+    padding:var(--s4);margin-bottom:var(--s3);box-shadow:var(--sh-1);cursor:pointer;
     transition:transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
   }
   .load-card:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:rgba(10,159,91,0.25);}
   .load-card:active{transform:translateY(-1px);}
-  .load-card .lc-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--s3);padding-right:var(--s6);}
+  /* Yuk turining belgisi. Rasm emas: e'londa rasm yo'q, bo'sh
+     ramka esa "rasm yuklanmadi" degandek ko'rinardi. */
+  .load-card .lc-thumb{
+    position:relative;flex:none;width:62px;height:62px;border-radius:var(--r-md);
+    background:var(--paper-dark);display:flex;align-items:center;justify-content:center;
+  }
+  .load-card .lc-thumb .ic-svg{font-size:27px;color:var(--ink-soft);}
+  .load-card .lc-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+  .load-card .lc-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .load-card .lc-head{display:flex;align-items:flex-start;gap:var(--s3);}
   .load-card .lc-route{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;color:var(--ink);
+    flex:1;min-width:0;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:var(--ink);
     letter-spacing:-0.015em;line-height:1.3;
   }
-  .load-card .lc-route .arrow{color:var(--stamp);margin:0 6px;font-weight:400;}
+  .load-card .lc-route .arrow{color:var(--stamp);font-weight:400;}
   .load-card .lc-price{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--route);
-    letter-spacing:-0.01em;margin:4px 0 var(--s3);
+    flex:none;text-align:right;line-height:1.15;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:var(--ink);
+    letter-spacing:-0.01em;
   }
-  .load-card .lc-price span{font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
-  .load-card .lc-meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);font-size:12.5px;color:var(--ink-soft);}
-  .load-card .lc-meta span{display:flex;align-items:center;gap:4px;}
+  .load-card .lc-price span{display:block;font-size:11px;font-weight:600;color:var(--muted);}
+  /* Ikki qator: har birida ikkita fakt. Bitta uzun qatorga
+     tiqilsa, tor ekranda ixtiyoriy joydan uzilib ketardi. */
+  .load-card .lc-rows{display:flex;flex-direction:column;gap:3px;margin-top:1px;}
+  .load-card .lc-row{display:flex;flex-wrap:wrap;gap:4px var(--s4);font-size:12.5px;color:var(--ink-soft);}
+  .load-card .lc-row span{display:flex;align-items:center;gap:5px;min-width:0;}
+  .load-card .lc-row .ic-svg{font-size:14px;color:var(--muted);flex:none;}
+  /* O'ng chekkadagi ustun: tepada narx, pastda saqlash va strelka.
+     `padding-left` kerak: yo'nalish uzun bo'lsa (masalan
+     "Samarqand -> Toshkent") narxga tegib ketardi va ikkisi bitta
+     yozuvdek ko'rinardi. */
+  .load-card .lc-side{
+    display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;
+    gap:var(--s3);padding-left:var(--s2);
+  }
+  .load-card .lc-actions{display:flex;align-items:center;gap:4px;}
+  .load-card .lc-chev{font-size:17px;color:var(--muted);line-height:1;}
+  /* Saqlash -- chegarasiz belgi. Ilgari bu tugmaning o'z uslubi
+     yo'q edi va brauzer uni oddiy to'rtburchak tugma qilib
+     chizardi. */
+  .load-card .lc-fav{
+    display:flex;align-items:center;justify-content:center;
+    width:26px;height:26px;padding:0;border:none;background:none;
+    color:var(--muted);cursor:pointer;line-height:0;
+  }
+  .load-card .lc-fav .ic-svg{font-size:17px;}
+  .load-card .lc-fav.on .ic-svg{fill:currentColor;}
   .load-card .lc-badge{
-    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
-    padding:3px 9px;border-radius:var(--r-pill);
+    display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+    padding:2px 0;border-radius:var(--r-pill);
   }
-  .load-card .lc-badge.fresh{background:rgba(22,163,74,0.1);color:var(--accepted);}
-  .load-card .lc-badge.backhaul{background:rgba(245,158,11,0.12);color:var(--warn);}
+  /* Yashil nuqta — e'lon yangiligining eng tinch ko'rsatkichi. */
+  .load-card .lc-badge.fresh{color:var(--accepted);}
+  .load-card .lc-badge.fresh::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;
+  }
+  .load-card .lc-badge.backhaul{background:rgba(245,158,11,0.12);color:var(--warn);padding:3px 9px;}
+
+  /* Shahar tanlagichlari: eng ko'p uchraydigan yo'nalishlar.
+     Ro'yxat qo'lda yozilmaydi — kelgan e'lonlardan hisoblanadi,
+     shuning uchun u har doim haqiqatga mos. */
+  .loads-cities{
+    display:flex;gap:var(--s2);overflow-x:auto;scrollbar-width:none;
+    margin:0 0 var(--s3);padding-bottom:2px;-webkit-overflow-scrolling:touch;
+  }
+  .loads-cities::-webkit-scrollbar{display:none;}
+  /* `hidden` atributi o'z-o'zidan yetmaydi: yuqoridagi `display:flex`
+     brauzerning `[hidden]{display:none}` qoidasidan kuchliroq, ya'ni
+     yashirilgan qator baribir ko'rinib turardi. */
+  .loads-cities[hidden]{display:none;}
+  .loads-cities .lcy{
+    flex:none;padding:8px 15px;border-radius:var(--r-pill);border:1px solid var(--border);
+    background:var(--card);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;
+    white-space:nowrap;transition:background 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease);
+  }
+  .loads-cities .lcy.on{background:var(--ink);border-color:var(--ink);color:var(--card);}
   .empty-state{text-align:center;padding:var(--s7) var(--s4);color:var(--ink-soft);}
   .empty-state .ic-svg{font-size:40px;color:var(--muted);margin-bottom:var(--s3);}
   .empty-state p{margin:0 0 var(--s4);font-size:14px;line-height:1.6;}
@@ -2154,29 +2222,107 @@
   }
   .load-card .lc-fav.on{color:#EF4444;}
 
-  /* ---------- Load details ---------- */
-  .detail-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s4);}
+  /* ---------- Yuk sahifasi ----------
+     Yuqorida keng sarlavha maydoni, ostida ko'tarilib turgan
+     varaq. Haydovchi birinchi qaraydigan to'rt fakt — og'irlik,
+     miqdor, sana, masofa — bitta qatorda, keyin yo'nalish va
+     aloqa, keyin tavsif. Oxirida bitta katta tugma. */
+  .ld-hero{
+    position:relative;height:210px;border-radius:var(--r-xl);overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(145deg, var(--paper-dark), rgba(127,127,127,0.14));
+  }
+  /* E'londa rasm yo'q, shuning uchun bu yerda yuk turining
+     belgisi turadi. Bo'sh ramka "rasm yuklanmadi" degandek
+     ko'rinardi, bu esa shunchaki belgi. */
+  .ld-hero .ld-hero-art{font-size:84px;color:var(--muted);opacity:0.55;}
+  .ld-hero-bar{
+    position:absolute;left:0;right:0;top:0;padding:var(--s4);
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  }
+  .ld-hero-badge{
+    position:absolute;left:var(--s4);bottom:var(--s4);
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 11px;border-radius:var(--r-pill);
+    background:var(--card);color:var(--accepted);font-size:11.5px;font-weight:700;
+    box-shadow:var(--sh-1);
+  }
+  .ld-hero-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .detail-topbar{display:flex;align-items:center;gap:8px;}
   .detail-topbar .dt-icon-btn{
     width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--card);
     display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:16px;
   }
   .detail-topbar .dt-icon-btn.on{color:#EF4444;border-color:#EF4444;}
-  .detail-route-big{
-    display:flex;align-items:center;justify-content:center;gap:var(--s3);
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.01em;
-    margin:var(--s2) 0 var(--s5);text-align:center;
+
+  /* Varaq sarlavha maydonining ustiga chiqib turadi. */
+  .ld-sheet{
+    position:relative;margin-top:-18px;border-radius:var(--r-xl);
+    background:var(--card);border:1px solid var(--border);box-shadow:var(--sh-2);
+    padding:var(--s5) var(--s4) calc(var(--nav-top) + var(--s4));
   }
-  .detail-route-big .arrow{color:var(--stamp);}
+  .ld-grab{width:38px;height:4px;border-radius:2px;background:var(--border);margin:0 auto var(--s4);}
+  .ld-head{display:flex;align-items:flex-start;gap:var(--s3);}
+  .ld-head .ld-thumb{
+    flex:none;width:48px;height:48px;border-radius:var(--r-md);background:var(--paper-dark);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ld-head .ld-thumb .ic-svg{font-size:22px;color:var(--ink-soft);}
+  .ld-head-main{flex:1;min-width:0;}
+  .ld-head-main .ld-route{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);
+    letter-spacing:-0.015em;line-height:1.25;
+  }
+  .ld-head-main .ld-route .arrow{color:var(--stamp);font-weight:400;}
+  .ld-head-main .ld-cat{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .ld-head .ld-price{
+    flex:none;text-align:right;line-height:1.15;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;color:var(--ink);
+  }
+  .ld-head .ld-price span{display:block;font-size:11px;font-weight:600;color:var(--muted);}
+  .ld-head .ld-price{max-width:40%;}
+  .ld-head .ld-price .ld-price-note{font-size:10.5px;font-weight:500;line-height:1.3;}
+
+  /* To'rt fakt bir qatorda. Tor ekranda ham to'rttasi sig'adi:
+     qiymat qisqa, yozuv esa ostida kichik. */
+  .ld-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s2);margin:var(--s5) 0 var(--s4);}
+  .ld-stat{text-align:center;min-width:0;}
+  .ld-stat .ic-svg{font-size:19px;color:var(--ink-soft);}
+  .ld-stat .v{font-size:13px;font-weight:700;color:var(--ink);margin-top:5px;line-height:1.2;word-break:break-word;}
+  .ld-stat .k{font-size:10.5px;color:var(--muted);margin-top:2px;}
+
+  .ld-row{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    background:var(--paper-dark);border:none;border-radius:var(--r-md);
+    padding:var(--s4);margin-bottom:var(--s3);cursor:pointer;color:inherit;font:inherit;
+  }
+  .ld-row:disabled{cursor:default;}
+  .ld-row > .ic-svg{font-size:20px;color:var(--ink-soft);flex:none;}
+  .ld-row .ld-row-main{flex:1;min-width:0;}
+  .ld-row .ld-row-k{font-size:12px;color:var(--muted);}
+  .ld-row .ld-row-v{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px;word-break:break-word;}
+  .ld-row .ld-row-go{font-size:17px;color:var(--muted);flex:none;}
+  .ld-row .addr-line{margin:4px 0 0;}
+
+  .ld-sec-title{
+    font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:var(--ink);
+    margin:var(--s5) 0 var(--s3);letter-spacing:-0.01em;
+  }
+  .ld-desc{font-size:14px;line-height:1.65;color:var(--ink-soft);margin:0;}
+  /* Katta tugma — sahifadagi yagona asosiy qadam. */
+  .ld-cta{
+    display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+    margin-top:var(--s5);padding:17px var(--s4);border:none;border-radius:var(--r-lg);
+    background:var(--ink);color:var(--card);cursor:pointer;
+    font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.01em;
+    transition:transform 0.16s var(--ease), opacity 0.16s var(--ease);
+  }
+  .ld-cta:active{transform:scale(0.985);}
+  .ld-cta .ic-svg{font-size:19px;}
   .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-bottom:var(--s4);}
   .detail-grid .dg-item{background:var(--paper-dark);border-radius:var(--r-md);padding:var(--s3) var(--s4);}
   .detail-grid .dg-item .lbl{font-size:11px;color:var(--muted);margin-bottom:2px;}
   .detail-grid .dg-item .val{font-size:14px;font-weight:600;color:var(--ink);}
-  .detail-price{
-    text-align:center;padding:var(--s5);border-radius:var(--r-lg);
-    background:linear-gradient(135deg, rgba(10,159,91,0.06), rgba(11,170,99,0.06));
-    margin-bottom:var(--s4);
-  }
-  .detail-price .amt{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:var(--route);}
   .lang-switch,.theme-switch{display:flex;gap:8px;flex-wrap:wrap;}
   .lang-btn,.theme-btn{
     flex:1;min-width:88px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
@@ -5737,6 +5883,10 @@
 
     <div id="backhaulBanner" hidden></div>
 
+    <!-- Eng ko'p uchraydigan jo'nash shaharlari. Ro'yxat qo'lda
+         yozilmaydi — kelgan e'lonlardan hisoblanadi. -->
+    <div class="loads-cities" id="loadsCityChips" hidden></div>
+
     <p class="note" id="loadsCount" style="margin:var(--s3) 0 var(--s3);"></p>
 
     <div class="loads-desktop-grid" id="loadsDesktopGrid">
@@ -6248,6 +6398,11 @@
       "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "Faqat mos yuklar",
       "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
+      "loads.statWeight": "Og'irlik", "loads.statQty": "Yuk miqdori",
+      "loads.statDate": "Sana", "loads.statDistance": "Masofa",
+      "loads.route": "Yo'nalish", "loads.contact": "Aloqa",
+      "loads.detailsTitle": "Tafsilotlar",
+      "loads.priceProposed": "Yuk beruvchi taklifi", "loads.priceEstimate": "Taxminiy",
       "loads.taken": "Bu yuk allaqachon olingan — yangi taklif qabul qilinmaydi.",
       "home.matchTitle": "Sizga mos yuklar",
 
@@ -6767,6 +6922,11 @@
       "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "Только подходящие",
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
+      "loads.statWeight": "Вес", "loads.statQty": "Количество",
+      "loads.statDate": "Дата", "loads.statDistance": "Расстояние",
+      "loads.route": "Маршрут", "loads.contact": "Контакт",
+      "loads.detailsTitle": "Подробности",
+      "loads.priceProposed": "Предложение отправителя", "loads.priceEstimate": "Примерно",
       "loads.taken": "Этот груз уже занят — новые предложения не принимаются.",
       "home.matchTitle": "Подходящие вам грузы",
 
@@ -7282,6 +7442,11 @@
       "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "Matching loads only",
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
+      "loads.statWeight": "Weight", "loads.statQty": "Quantity",
+      "loads.statDate": "Date", "loads.statDistance": "Distance",
+      "loads.route": "Route", "loads.contact": "Contact",
+      "loads.detailsTitle": "Details",
+      "loads.priceProposed": "Shipper's price", "loads.priceEstimate": "Estimated",
       "loads.taken": "This load is already taken — no new offers are accepted.",
       "home.matchTitle": "Loads that fit you",
 
@@ -14297,26 +14462,89 @@
     var fav = isFavorite(o.code);
     var hasBadgeRow = (o._match != null) || isFresh;
 
+    /* Ikki qator, har birida ikkita fakt. Birinchisi yukning
+       o'zi haqida (og'irlik va miqdor), ikkinchisi safar haqida
+       (sana va masofa). Ixtiyoriy maydon bo'lmasa o'rni bo'sh
+       qolmaydi — keyingisi suriladi. */
+    var about = [icon("iconWeight")+' '+formatNum(o.weightKg)+' kg'];
+    if(o.quantity){
+      about.push(icon("iconBox")+' '+formatNum(o.quantity)+' '
+        + escapeHtml(QUANTITY_UNITS[o.quantityUnit] || QUANTITY_UNITS.JOY));
+    } else if(o.volumeM3){
+      about.push(icon("iconBox")+' '+escapeHtml(String(o.volumeM3))+' m³');
+    } else {
+      about.push(icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel));
+    }
+    var trip = [];
+    if(dateLabel) trip.push(icon("iconClock")+' '+escapeHtml(dateLabel));
+    if(o.distanceKm) trip.push(icon("iconRoute")+' '+formatNum(o.distanceKm)+' km');
+    if(trip.length < 2 && o.truckType){
+      trip.push(icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType));
+    }
+
     return '<div class="load-card" data-code="'+escapeHtml(o.code)+'">'
-      + (hasBadgeRow
-          ? '<div class="lc-badges">'
-            + (o._match != null ? '<span class="match-badge">'+icon("iconFlame")+' '+o._match+'% <span data-i18n="loads.matchShort">mos</span></span>' : '')
-            + (isFresh ? '<span class="lc-badge fresh">'+icon("iconBolt")+' <span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
-            + '</div>'
-          : '')
-      + '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
-      + '<div class="lc-route">'+escapeHtml(o.fromCity)+'<span class="arrow">→</span>'+escapeHtml(o.toCity)+'</div>'
-      + '<div class="lc-price">'+formatNum(o.amount)+' <span data-i18n="loads.sum">so\'m</span></div>'
-      + '<div class="lc-meta">'
-      +   '<span>'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</span>'
-      +   '<span>'+icon("iconWeight")+' '+formatNum(o.weightKg)+' kg</span>'
-      +   (o.volumeM3 ? '<span>'+icon("iconBox")+' '+escapeHtml(String(o.volumeM3))+' m³</span>' : '')
-      +   (o.quantity ? '<span>'+icon("iconClipboard")+' '+formatNum(o.quantity)+' '
-      +     escapeHtml(QUANTITY_UNITS[o.quantityUnit] || QUANTITY_UNITS.JOY)+'</span>' : '')
-      +   (o.truckType ? '<span>'+icon("iconTruck")+' '+escapeHtml(VEHICLE_LABELS[o.truckType] || o.truckType)+'</span>' : '')
-      +   (dateLabel ? '<span>'+icon("iconRoute")+' '+escapeHtml(dateLabel)+'</span>' : '')
+      + '<div class="lc-thumb">'+icon(cargo ? cargo.icon : "iconBox")+'</div>'
+      + '<div class="lc-body">'
+      +   (hasBadgeRow
+            ? '<div class="lc-badges">'
+              + (o._match != null ? '<span class="match-badge">'+icon("iconFlame")+' '+o._match+'% <span data-i18n="loads.matchShort">mos</span></span>' : '')
+              + (isFresh ? '<span class="lc-badge fresh"><span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
+              + '</div>'
+            : '')
+      +   '<div class="lc-head">'
+      +     '<div class="lc-route">'+escapeHtml(o.fromCity)+' <span class="arrow">→</span> '+escapeHtml(o.toCity)+'</div>'
+      +   '</div>'
+      +   '<div class="lc-rows">'
+      +     '<div class="lc-row"><span>'+about.join('</span><span>')+'</span></div>'
+      +     (trip.length ? '<div class="lc-row"><span>'+trip.join('</span><span>')+'</span></div>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="lc-side">'
+      +   '<div class="lc-price">'+formatNum(o.amount)+'<span data-i18n="loads.sum">so\'m</span></div>'
+      +   '<div class="lc-actions">'
+      +     '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      +     '<span class="lc-chev" aria-hidden="true">›</span>'
+      +   '</div>'
       + '</div>'
       + '</div>';
+  }
+
+  /* ---------- Shahar tanlagichlari ----------
+     Ro'yxatdagi e'lonlar qaysi shaharlardan ketayotganini
+     ko'rsatadi. Shaharlar qo'lda yozilmaydi: kelgan e'lonlardan
+     sanab chiqiladi, shuning uchun bosilganda hech qachon bo'sh
+     ro'yxat chiqmaydi. */
+  /* Shaharlar faqat FILTRSIZ ro'yxatdan yig'iladi. Aks holda
+     "Toshkent" bosilgandan keyin javobda boshqa shahar qolmay,
+     tanlagichlar bittaga tushib qolardi va orqaga qaytish yo'li
+     yo'qolardi. */
+  var loadsCityPool = [];
+
+  function renderLoadCityChips(loads){
+    var box = document.getElementById("loadsCityChips");
+    if(!box) return;
+    if(!loadsState.fromCity){
+      var count = {};
+      (loads || []).forEach(function(o){
+        if(o.fromCity) count[o.fromCity] = (count[o.fromCity] || 0) + 1;
+      });
+      loadsCityPool = Object.keys(count)
+        .sort(function(a, b){ return count[b] - count[a]; })
+        .slice(0, 6);
+    }
+    var cities = loadsCityPool.slice();
+    if(loadsState.fromCity && cities.indexOf(loadsState.fromCity) === -1){
+      cities.unshift(loadsState.fromCity);
+    }
+    if(!cities.length){ box.hidden = true; box.innerHTML = ""; return; }
+
+    box.hidden = false;
+    box.innerHTML = '<button type="button" class="lcy'+(loadsState.fromCity ? "" : " on")+'" data-city="">'
+      + '<span data-i18n="loads.anyCity">Barchasi</span></button>'
+      + cities.map(function(c){
+          return '<button type="button" class="lcy'+(loadsState.fromCity === c ? " on" : "")+'" '
+            + 'data-city="'+escapeHtml(c)+'">'+escapeHtml(c)+'</button>';
+        }).join("");
   }
 
   function emptyLoadsHtml(){
@@ -14376,6 +14604,7 @@
         lastLoadsResult = loads;
 
         if(countEl) countEl.textContent = loads.length + " ta yuk topildi";
+        renderLoadCityChips(loads);
         list.innerHTML = loads.length ? loads.map(loadCardHtml).join("") : emptyLoadsHtml();
         applyLang();
 
@@ -16006,7 +16235,7 @@
   /* ---------- Load details — full view swapped into the Yuklar tab. ---------- */
   function openLoadDetail(code){
     switchTab("loads");
-    ["loadsDesktopGrid", "loadsCount", "backhaulBanner"].forEach(function(id){
+    ["loadsDesktopGrid", "loadsCount", "backhaulBanner", "loadsCityChips"].forEach(function(id){
       var el = document.getElementById(id);
       if(el) el.hidden = true;
     });
@@ -16034,12 +16263,16 @@
     // loadsDesktopGrid ham qaytarilishi shart: yuklar ro'yxatining o'zi
     // shu konteynerda. Usiz detaldan orqaga qaytgan odam bo'sh sahifani
     // ko'rardi — openLoadDetail uni yashiradi, bu esa qaytarmasdi.
-    ["loadsDesktopGrid", "loadsCount", "backhaulBanner"].forEach(function(id){
+    ["loadsDesktopGrid", "loadsCount", "backhaulBanner", "loadsCityChips"].forEach(function(id){
       var el = document.getElementById(id);
       if(el) el.hidden = false;
     });
     var searchCard = document.querySelector(".loads-search-card");
     if(searchCard) searchCard.hidden = false;
+    /* Bo'sh tanlagichlar qatori ko'rinib qolmasin: yuqoridagi
+       halqa hammasini ochadi, bunda esa hech narsa yo'q. */
+    var chips = document.getElementById("loadsCityChips");
+    if(chips && !chips.innerHTML) chips.hidden = true;
     loadBackhaul();
   }
 
@@ -16047,70 +16280,134 @@
     var detailView = document.getElementById("loadDetailView");
     if(!detailView) return;
     var cargo = cargoById(d.cargoType);
+    var cargoIcon = cargo ? cargo.icon : "iconBox";
     var cargoLabel = (d.cargoType === "OTHER" && d.customCargoLabel) ? d.customCargoLabel : (cargo ? cargo.label : d.cargoType);
     var fav = isFavorite(d.code);
     var dateLabel = d.pickupDate ? formatLoadDate(d.pickupDate) : "—";
+    var isFresh = d.createdAt && (Date.now() - d.createdAt) < 2 * 3600 * 1000;
 
-    // Taklif faqat hali bo'sh yukka yuboriladi — server ham shunday
-    // qaraydi. Olingan yukka tugmani qoldirish "bosdim, hech narsa
-    // bo'lmadi" degani bo'lardi; o'rniga nima uchun yo'qligini yozamiz.
+    /* Taklif faqat hali bo'sh yukka yuboriladi — server ham shunday
+       qaraydi. Olingan yukka tugmani qoldirish "bosdim, hech narsa
+       bo'lmadi" degani bo'lardi; o'rniga nima uchun yo'qligini yozamiz. */
     var openForOffers = (d.status || "NEW") === "NEW";
-    var contactBtns = "";
-    if(d.ownerUsername){
-      // Yolg'iz qolgan tugma yarim kenglikda turmasin — .row2 ikkita
-      // ustunli panjara, ikkinchisi bo'sh qolsa qiyshiq ko'rinadi.
-      contactBtns = '<div class="'+(openForOffers ? "row2" : "")+'" id="detailContactRow" style="margin-top:var(--s4);">'
-        + (openForOffers
-            ? '<button type="button" class="btn" id="btnDetailOffer">'+icon("iconArrowRight")+' <span data-i18n="loads.sendOffer">Taklif yuborish</span></button>'
-            : "")
-        + '<button type="button" class="btn ghost" id="btnDetailMessage">'
-        +   icon("iconChat")+' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
-        + '</div>';
-    }
-    if(!openForOffers){
-      contactBtns += '<p class="note" style="margin-top:var(--s3);" data-i18n="loads.taken">'
-        + 'Bu yuk allaqachon olingan — yangi taklif qabul qilinmaydi.</p>';
-    }
+
+    /* Haydovchi birinchi qaraydigan to'rt fakt. Mahsulot
+       chizmasidagi to'rtinchisi "vaqt" edi — e'londa vaqt
+       so'ralmaydi, shuning uchun uning o'rnida masofa turadi:
+       bu haydovchi uchun baribir kerakli raqam. */
+    var stats = [
+      { ic: "iconWeight", v: formatNum(d.weightKg) + " kg", k: "Og'irlik", kk: "loads.statWeight" },
+      d.quantity
+        ? { ic: "iconBox",
+            v: formatNum(d.quantity) + " " + (QUANTITY_UNITS[d.quantityUnit] || QUANTITY_UNITS.JOY),
+            k: "Yuk miqdori", kk: "loads.statQty" }
+        : (d.volumeM3
+            ? { ic: "iconBox", v: d.volumeM3 + " m³", k: "Hajm", kk: "order.volumeShort" }
+            : { ic: cargoIcon, v: cargoLabel, k: "Yuk turi", kk: "loads.cargoType" }),
+      { ic: "iconClock", v: dateLabel, k: "Sana", kk: "loads.statDate" },
+      { ic: "iconRoute", v: formatNum(d.distanceKm) + " km", k: "Masofa", kk: "loads.statDistance" }
+    ];
+
+    /* Qolgan faktlar pastda. Ixtiyoriy maydon bo'lmasa qatori
+       ham chiqmaydi — "—" bilan to'ldirilgan katak ma'lumot emas. */
+    var facts = [];
+    if(d.truckType) facts.push(["loads.truckType", "Mashina turi", VEHICLE_LABELS[d.truckType] || d.truckType]);
+    if(d.quantity && d.volumeM3) facts.push(["order.volumeShort", "Hajm", d.volumeM3 + " m³"]);
+    facts.push(["order.trackCodeLabel", "Buyurtma kodi", d.code]);
+
+    var addr = addressLineHtml("iconArrowRight", d.fromAddress, d.fromPoint, "loads.from", "Qayerdan")
+      + addressLineHtml("iconArrowRight", d.toAddress, d.toPoint, "loads.to", "Qayerga");
 
     detailView.innerHTML =
-      '<div class="detail-topbar">'
-      +   '<button type="button" class="dt-icon-btn" id="btnDetailBack" aria-label="Orqaga">&larr;</button>'
-      +   '<div style="display:flex;gap:8px;">'
-      +     '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
-      +     '<button type="button" class="dt-icon-btn" id="btnDetailShare" aria-label="Ulashish">'+icon("iconShare")+'</button>'
+      '<div class="ld-hero">'
+      +   '<div class="ld-hero-art">'+icon(cargoIcon)+'</div>'
+      +   '<div class="ld-hero-bar">'
+      +     '<div class="detail-topbar">'
+      +       '<button type="button" class="dt-icon-btn" id="btnDetailBack" aria-label="Orqaga">&larr;</button>'
+      +     '</div>'
+      +     '<div class="detail-topbar">'
+      +       '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      +       '<button type="button" class="dt-icon-btn" id="btnDetailShare" aria-label="Ulashish">'+icon("iconShare")+'</button>'
+      +     '</div>'
       +   '</div>'
+      +   (isFresh ? '<span class="ld-hero-badge"><span data-i18n="loads.freshBadge">Yangi</span></span>' : '')
       + '</div>'
-      + '<div class="detail-route-big">'+escapeHtml(d.fromCity)+' <span class="arrow">→</span> '+escapeHtml(d.toCity)+'</div>'
-      // Manzil va nuqtaga havola — haydovchi shu ikkisidan qayerga
-      // borishini biladi; ikkalasi ham ixtiyoriy.
-      + addressLineHtml("iconArrowRight", d.fromAddress, d.fromPoint, "loads.from", "Qayerdan")
-      + addressLineHtml("iconArrowRight", d.toAddress, d.toPoint, "loads.to", "Qayerga")
-      + '<div class="detail-price"><div class="amt">'+formatNum(d.amount)+' so\'m</div>'
-      +   '<p class="note" style="margin:4px 0 0;">'+(d.isProposed ? "Yuk beruvchi taklifi" : "Taxminiy narx")+'</p></div>'
-      + '<div class="detail-grid">'
-      +   '<div class="dg-item"><div class="lbl" data-i18n="loads.cargoType">Yuk turi</div><div class="val">'+icon(cargo ? cargo.icon : "iconBox")+' '+escapeHtml(cargoLabel)+'</div></div>'
-      +   '<div class="dg-item"><div class="lbl">Og\'irlik</div><div class="val">'+formatNum(d.weightKg)+' kg</div></div>'
-      // Hajm va joy soni ixtiyoriy — kiritilmagan bo'lsa katak ham
-      // chiqmaydi, "—" bilan to'ldirilgan bo'sh katak ma'lumot emas.
-      +   (d.volumeM3
-            ? '<div class="dg-item"><div class="lbl" data-i18n="order.volumeShort">Hajm</div>'
-              + '<div class="val">'+escapeHtml(String(d.volumeM3))+' m³</div></div>'
+
+      + '<div class="ld-sheet">'
+      +   '<div class="ld-grab"></div>'
+      +   '<div class="ld-head">'
+      +     '<div class="ld-thumb">'+icon(cargoIcon)+'</div>'
+      +     '<div class="ld-head-main">'
+      +       '<div class="ld-route">'+escapeHtml(d.fromCity)+' <span class="arrow">→</span> '+escapeHtml(d.toCity)+'</div>'
+      +       '<div class="ld-cat">'+escapeHtml(cargoLabel)+'</div>'
+      +     '</div>'
+      +     '<div class="ld-price">'+formatNum(d.amount)
+      +       '<span data-i18n="loads.sum">so\'m</span>'
+      +       '<span class="ld-price-note">'
+      +       (d.isProposed
+                 ? '<span data-i18n="loads.priceProposed">Yuk beruvchi taklifi</span>'
+                 : '<span data-i18n="loads.priceEstimate">Taxminiy</span>')
+      +       '</span>'
+      +     '</div>'
+      +   '</div>'
+
+      +   '<div class="ld-stats">'
+      +     stats.map(function(x){
+            return '<div class="ld-stat">'+icon(x.ic)
+              + '<div class="v">'+escapeHtml(String(x.v))+'</div>'
+              + '<div class="k" data-i18n="'+x.kk+'">'+escapeHtml(x.k)+'</div></div>';
+          }).join("")
+      +   '</div>'
+
+      +   '<div class="ld-row" id="rowRoute">'
+      +     icon("iconPin")
+      +     '<div class="ld-row-main">'
+      +       '<div class="ld-row-k" data-i18n="loads.route">Yo\'nalish</div>'
+      +       '<div class="ld-row-v">'+escapeHtml(d.fromCity)+' → '+escapeHtml(d.toCity)+'</div>'
+      +       addr
+      +     '</div>'
+      +   '</div>'
+
+      /* Aloqa. Telefon raqami bu yerda KO'RSATILMAYDI: e'lon
+         hammaga ochiq, raqam esa shaxsiy ma'lumot — server ham
+         uni yuk olinmaguncha bermaydi. Shuning uchun aloqa
+         ilova ichidagi yozishuv orqali. */
+      +   (d.ownerUsername
+            ? '<button type="button" class="ld-row" id="rowContact">'
+              + icon("iconUser")
+              + '<div class="ld-row-main">'
+              +   '<div class="ld-row-k" data-i18n="loads.contact">Aloqa</div>'
+              +   '<div class="ld-row-v">'+escapeHtml(d.name || "—")+' · @'+escapeHtml(d.ownerUsername)+'</div>'
+              + '</div>'
+              + '<span class="ld-row-go" aria-hidden="true">›</span>'
+              + '</button>'
+            : '<div class="ld-row">'
+              + icon("iconUser")
+              + '<div class="ld-row-main">'
+              +   '<div class="ld-row-k" data-i18n="loads.contact">Aloqa</div>'
+              +   '<div class="ld-row-v">'+escapeHtml(d.name || "—")+'</div>'
+              + '</div></div>')
+
+      +   '<h3 class="ld-sec-title" data-i18n="loads.detailsTitle">Tafsilotlar</h3>'
+      +   '<div class="detail-grid">'
+      +     facts.map(function(f){
+            return '<div class="dg-item"><div class="lbl" data-i18n="'+f[0]+'">'+escapeHtml(f[1])+'</div>'
+              + '<div class="val">'+escapeHtml(String(f[2]))+'</div></div>';
+          }).join("")
+      +   '</div>'
+
+      +   (openForOffers
+            ? '<button type="button" class="ld-cta" id="btnDetailOffer">'
+              + '<span data-i18n="loads.sendOffer">Taklif yuborish</span>'+icon("iconArrowRight")+'</button>'
+            : '<p class="note" style="margin-top:var(--s4);" data-i18n="loads.taken">'
+              + 'Bu yuk allaqachon olingan — yangi taklif qabul qilinmaydi.</p>')
+      +   (d.ownerUsername
+            ? '<button type="button" class="btn ghost" id="btnDetailMessage" style="margin-top:var(--s3);">'
+              + icon("iconChat")+' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
             : '')
-      +   (d.quantity
-            ? '<div class="dg-item"><div class="lbl" data-i18n="order.quantityShort">Joy soni</div>'
-              + '<div class="val">'+formatNum(d.quantity)+' '
-              + escapeHtml(QUANTITY_UNITS[d.quantityUnit] || QUANTITY_UNITS.JOY)+'</div></div>'
-            : '')
-      +   '<div class="dg-item"><div class="lbl" data-i18n="loads.truckType">Mashina turi</div><div class="val">'+(d.truckType ? escapeHtml(VEHICLE_LABELS[d.truckType] || d.truckType) : "Farqi yo'q")+'</div></div>'
-      +   '<div class="dg-item"><div class="lbl">Masofa</div><div class="val">'+formatNum(d.distanceKm)+' km</div></div>'
-      +   '<div class="dg-item"><div class="lbl" data-i18n="order.trackCodeLabel">Buyurtma kodi</div><div class="val">'+escapeHtml(d.code)+'</div></div>'
-      +   '<div class="dg-item"><div class="lbl">Yuklash sanasi</div><div class="val">'+escapeHtml(dateLabel)+'</div></div>'
-      + '</div>'
-      + '<div class="card"><h3 class="card-title">'+icon("iconUser")+' Yuk beruvchi</h3>'
-      +   '<p class="note" style="margin:0;">'+escapeHtml(d.name || "—")+(d.ownerUsername ? " · @"+escapeHtml(d.ownerUsername) : "")+'</p></div>'
-      + contactBtns
-      // Takliflar: yuk egasiga kelganlari, haydovchiga o'zinikini.
-      + '<div id="offersBox"></div>';
+      /* Takliflar: yuk egasiga kelganlari, haydovchiga o'zinikini. */
+      +   '<div id="offersBox"></div>'
+      + '</div>';
 
     applyLang();
 
@@ -16127,14 +16424,19 @@
     var shareBtn = document.getElementById("btnDetailShare");
     if(shareBtn) shareBtn.addEventListener("click", function(){ shareLoad(d); });
 
-    // Ilgari bu tugma shunchaki chat ochardi — "taklif" nomi bilan, lekin
-    // hech qanday taklif yuborilmasdi. Endi u haqiqiy taklif oynasini ochadi.
+    /* Asosiy qadam — taklif yuborish. Ilgari bu tugma shunchaki
+       chat ochardi: nomi "taklif" edi, lekin hech qanday taklif
+       yuborilmasdi. */
     var offerBtn = document.getElementById("btnDetailOffer");
     if(offerBtn) offerBtn.addEventListener("click", function(){ openOfferSheet(d); });
-    loadOffers(d);
+
+    var contactRow = document.getElementById("rowContact");
+    if(contactRow) contactRow.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
+
     var msgBtn = document.getElementById("btnDetailMessage");
     if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
 
+    loadOffers(d);
   }
 
   /**
@@ -18268,6 +18570,17 @@
       var nowFav = toggleFavorite(favBtn.getAttribute("data-fav"));
       favBtn.classList.toggle("on", nowFav);
       favBtn.innerHTML = icon("iconHeart", nowFav ? "filled" : "");
+      return;
+    }
+    /* Shahar tanlagichi. Filtr oynasidagi "Qayerdan" bilan bitta
+       holatni bo'lishadi — ikkisi bir-biriga zid tushib qolmasin. */
+    var cityChip = e.target.closest(".loads-cities .lcy");
+    if(cityChip){
+      var city = cityChip.getAttribute("data-city") || "";
+      loadsState.fromCity = city;
+      var fromSel = document.getElementById("fLoadsFrom");
+      if(fromSel) fromSel.value = city;
+      fetchLoads();
       return;
     }
     var card = e.target.closest(".load-card[data-code], .home-load-card[data-code]");
