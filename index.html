@@ -1272,6 +1272,24 @@
      ular ikki qatorga tushib, joyni ko'p olardi). Faqat yuqori qism
      nishonga olingan — "Ko'proq filtr" oynasidagi maydonlarga tegilmaydi. */
   .loads-search-card{padding:14px;}
+  /* Qidiruvni saqlash — ikkinchi darajali amal, shuning uchun
+     ixcham va bo'yoqsiz. Ilgari u qalin yashil yozuv bo'lib,
+     qidiruv qutisidan ko'ra ko'proq e'tibor tortardi. */
+  .loads-save-row{display:flex;justify-content:flex-end;}
+  .loads-save-chip{
+    display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+    padding:6px 12px;border-radius:var(--r-pill);
+    border:1px solid var(--border);background:none;
+    color:var(--ink-soft);font:inherit;font-size:12px;font-weight:600;
+    cursor:pointer;white-space:nowrap;
+    transition:color 0.18s var(--ease), border-color 0.18s var(--ease), background 0.18s var(--ease);
+  }
+  .loads-save-chip .ic-svg{font-size:14px;color:var(--muted);}
+  .loads-save-chip:hover,.loads-save-chip:active{
+    color:var(--route);border-color:var(--route);background:rgba(10,159,91,0.07);
+  }
+  .loads-save-chip:hover .ic-svg,.loads-save-chip:active .ic-svg{color:var(--route);}
+  .loads-save-chip[hidden]{display:none;}
   .loads-quick-row{display:flex;gap:10px;align-items:stretch;}
   .loads-quick-input{
     flex:1;min-width:0;display:flex;align-items:center;gap:8px;
@@ -1834,7 +1852,6 @@
     color:var(--muted);cursor:pointer;line-height:0;
   }
   .load-card .lc-fav .ic-svg{font-size:17px;}
-  .load-card .lc-fav.on .ic-svg{fill:currentColor;}
   .load-card .lc-badge{
     display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
     padding:2px 0;border-radius:var(--r-pill);
@@ -2323,6 +2340,77 @@
   .detail-grid .dg-item{background:var(--paper-dark);border-radius:var(--r-md);padding:var(--s3) var(--s4);}
   .detail-grid .dg-item .lbl{font-size:11px;color:var(--muted);margin-bottom:2px;}
   .detail-grid .dg-item .val{font-size:14px;font-weight:600;color:var(--ink);}
+  /* ---------- Sozlamalar sahifasi ----------
+     Ilgari hamma qator bitta uzun ro'yxat edi va har birida
+     faqat nom turardi: "Til", "Ko'rinish", "Yordam". Qaysi qator
+     nima qilishini faqat nomidan taxmin qilish kerak edi, va
+     o'xshash narsalar (profil, ilova, yuklar, yordam) aralash
+     yotardi.
+
+     Endi uchta o'zgarish: qatorlar mavzusiga ko'ra guruhlangan va
+     har guruhning ustida kichik sarlavha bor; har bir qatorda nom
+     ostida nima qilishi yoki hozirgi qiymati yozilgan; tungi rejim
+     esa alohida sahifaga o'tmasdan, shu yerda almashadi. */
+  .set-head{display:flex;align-items:flex-start;gap:var(--s3);margin-bottom:var(--s4);}
+  .set-head-main{flex:1;min-width:0;}
+  .set-head-sub{font-size:13px;color:var(--muted);margin:3px 0 0;line-height:1.45;}
+
+  /* Tepadagi odam kartochkasi. */
+  .set-me{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s4);cursor:pointer;color:inherit;font:inherit;margin-bottom:var(--s5);
+  }
+  .set-me-pic{
+    flex:none;width:46px;height:46px;border-radius:50%;overflow:hidden;
+    background:var(--paper-dark);display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink-soft);
+  }
+  .set-me-pic img{width:100%;height:100%;object-fit:cover;display:block;}
+  .set-me-main{flex:1;min-width:0;}
+  .set-me-name{display:block;font-size:15.5px;font-weight:700;color:var(--ink);line-height:1.25;word-break:break-word;}
+  .set-me-sub{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;word-break:break-word;}
+
+  /* Guruh sarlavhasi — kichik, bo'g'iq, katta harflarda. */
+  .set-group{
+    font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--muted);margin:var(--s5) 0 var(--s2);padding:0 var(--s2);
+  }
+  .set-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    overflow:hidden;
+  }
+  .set-row{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    background:none;border:none;border-top:1px solid var(--border);
+    padding:13px var(--s4);cursor:pointer;color:inherit;font:inherit;
+  }
+  .set-card .set-row:first-child{border-top:none;}
+  .set-row > .ic-svg{font-size:20px;color:var(--ink-soft);flex:none;}
+  .set-row-main{flex:1;min-width:0;}
+  .set-row-title{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .set-row-sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35;word-break:break-word;}
+  .set-row-chev{font-size:17px;color:var(--muted);flex:none;}
+  .set-row-tag{
+    font-size:11.5px;font-weight:700;color:var(--route);flex:none;
+    background:rgba(10,159,91,0.1);padding:3px 9px;border-radius:var(--r-pill);
+  }
+
+  /* Tungi rejim kaliti. Sahifaga o'tmasdan shu yerda almashadi —
+     bu sozlama ichida eng ko'p bosiladigani. */
+  .set-switch{
+    flex:none;width:46px;height:27px;border-radius:14px;border:none;padding:0;
+    background:var(--border);cursor:pointer;position:relative;
+    transition:background 0.22s var(--ease);
+  }
+  .set-switch::after{
+    content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;
+    background:#FFFFFF;box-shadow:var(--sh-1);
+    transition:transform 0.22s var(--ease);
+  }
+  .set-switch[aria-checked="true"]{background:var(--route);}
+  .set-switch[aria-checked="true"]::after{transform:translateX(19px);}
+
   .lang-switch,.theme-switch{display:flex;gap:8px;flex-wrap:wrap;}
   .lang-btn,.theme-btn{
     flex:1;min-width:88px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
@@ -3043,7 +3131,6 @@
   }
   .hlc-fav .ic-svg{font-size:19px;}
   .hlc-fav.on{color:#EF4444;}
-  .hlc-fav.on .ic-svg{fill:currentColor;}
 
   /* ---------- 5. Qanday ishlaydi ---------- */
   .hiw-row{
@@ -3112,7 +3199,6 @@
   }
   .htc-fav .ic-svg{font-size:18px;}
   .htc-fav.on{color:#EF4444;}
-  .htc-fav.on .ic-svg{fill:currentColor;}
 
   /* ---------- Yuklanish / bo'sh / xato holatlari ---------- */
   .home-skel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;}
@@ -5345,6 +5431,11 @@
     <symbol id="iconStar" viewBox="0 0 24 24">
       <path d="m12 3.2 2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 18.17l-5.88 3.14 1.12-6.55L2.48 10.1l6.58-.96L12 3.2Z"/>
     </symbol>
+    <!-- To'ldirilgan yurakcha. Saqlangan holatda shu chiqadi:
+         egasi qo'ygan yurakcha chiziqli rasm, undan faqat shakli
+         olinadi va ichi shaklga kirmaydi — ya'ni uni bo'yab
+         bo'lmaydi. Buni ham admin paneldan almashtirish mumkin. -->
+    <symbol id="iconHeartFilled" viewBox="0 0 24 24"><path d="M12 20.7 10.55 19.4C5.4 14.76 2 11.68 2 7.9 2 4.82 4.42 2.4 7.5 2.4c1.74 0 3.41.81 4.5 2.09C13.09 3.21 14.76 2.4 16.5 2.4 19.58 2.4 22 4.82 22 7.9c0 3.78-3.4 6.86-8.55 11.5L12 20.7z" fill="currentColor" stroke="none"/></symbol>
     <symbol id="iconHeart" viewBox="0 0 24 24"><rect x="0" y="0" width="24" height="24" fill="currentColor" stroke="none" mask="url(#iconmask-iconHeart)"/></symbol>
     <symbol id="iconTrash" viewBox="0 0 24 24">
       <path d="M3.6 6.2h16.8"/>
@@ -5825,10 +5916,14 @@
           <svg class="ic-svg" aria-hidden="true"><use href="#iconSliders"/></svg>
         </button>
       </div>
-      <div style="display:flex;gap:var(--s4);flex-wrap:wrap;align-items:center;">
-        <button type="button" class="link-btn" id="btnSaveSearch" hidden>
+      <!-- Ilgari bu yerda butun qatorni egallagan katta yashil
+           yozuv turardi va u tor ekranda ikki qatorga bo'linib,
+           sarlavhadek ko'rinardi. Endi ixcham tugma: qidiruv
+           qutisining o'ng pastki burchagida, yozuvi qisqa. -->
+      <div class="loads-save-row">
+        <button type="button" class="loads-save-chip" id="btnSaveSearch" hidden>
           <svg class="ic-svg" aria-hidden="true"><use href="#iconBell"></use></svg>
-          <span data-i18n="search.save">Bu qidiruvni saqlash va xabar olish</span>
+          <span data-i18n="search.save">Qidiruvni saqlash</span>
         </button>
       </div>
       <!-- Lives here (not inline) so its <select>/<input> elements and their
@@ -6360,7 +6455,7 @@
       "next.LOADED": "Yo'lga chiqdim", "next.ON_THE_WAY": "Yetkazdim",
       "track.release": "Haydovchini bo'shatish", "track.cancel": "Buyurtmani bekor qilish",
       "track.cancelled": "Bu buyurtma bekor qilingan.",
-      "search.save": "Bu qidiruvni saqlash va xabar olish", "search.anyRoute": "Barcha yo'nalishlar",
+      "search.save": "Qidiruvni saqlash", "search.anyRoute": "Barcha yo'nalishlar",
       "search.delete": "O'chirish", "search.saved": "Qidiruv saqlandi",
       "search.savedSub": "Mos yuk chiqqanda Telegram orqali xabar beramiz",
       "search.saveFailed": "Saqlanmadi",
@@ -6650,6 +6745,16 @@
       "contact.supportMsgLabel": "Xabaringiz", "contact.supportBtn": "Yuborish",
 
       "common.back": "Orqaga", "common.min": "Eng kam", "common.max": "Eng ko'p",
+      "set.groupProfile": "PROFIL", "set.groupApp": "ILOVA",
+      "set.groupLoads": "YUKLAR", "set.groupHelp": "YORDAM",
+      "set.editProfile": "Profil ma'lumotlari", "set.editProfileSub": "Ism, surat va boshqalar",
+      "set.verifySub": "Telefon, shaxs, guvohnoma va transport", "set.shareSub": "Havolani do'stlaringizga yuboring",
+      "set.notifSub": "Qanday xabar olishingiz",
+      "set.dark": "Tungi rejim", "set.darkSub": "Ko'rinishni o'zgartirish",
+      "set.linkSub": "Bildirishnomalarni Telegramda oling", "set.linkGoogleSub": "Ikkinchi kirish yo'li",
+      "set.myLoadsSub": "Joylashtirgan va olgan yuklaringiz", "set.savedSub": "Keyinroq ko'rish uchun",
+      "set.chatSub": "Yozishuvlaringiz", "set.supportSub": "Savollaringizga javob toping",
+      "set.feedbackSub": "Nima yoqmadi yoki nima yetishmadi", "set.aboutSub": "Versiya va ma'lumotlar",
       "settings.title": "Sozlamalar", "settings.lang": "Til", "settings.theme": "Ko'rinish",
       "settings.light": "Kunduzgi", "settings.dark": "Tungi", "settings.auto": "Tizim",
       "settings.support": "Yordam", "settings.privacy": "Maxfiylik siyosati",
@@ -6884,7 +6989,7 @@
       "next.LOADED": "Выехал", "next.ON_THE_WAY": "Доставил",
       "track.release": "Освободить водителя", "track.cancel": "Отменить заказ",
       "track.cancelled": "Этот заказ отменён.",
-      "search.save": "Сохранить поиск и получать уведомления", "search.anyRoute": "Все маршруты",
+      "search.save": "Сохранить поиск", "search.anyRoute": "Все маршруты",
       "search.delete": "Удалить", "search.saved": "Поиск сохранён",
       "search.savedSub": "Сообщим в Telegram, когда появится подходящий груз",
       "search.saveFailed": "Не сохранено",
@@ -7174,6 +7279,16 @@
       "contact.supportMsgLabel": "Ваше сообщение", "contact.supportBtn": "Отправить",
 
       "common.back": "Назад", "common.min": "Мин.", "common.max": "Макс.",
+      "set.groupProfile": "ПРОФИЛЬ", "set.groupApp": "ПРИЛОЖЕНИЕ",
+      "set.groupLoads": "ГРУЗЫ", "set.groupHelp": "ПОМОЩЬ",
+      "set.editProfile": "Данные профиля", "set.editProfileSub": "Имя, фото и другое",
+      "set.verifySub": "Телефон, личность, права и транспорт", "set.shareSub": "Отправьте ссылку друзьям",
+      "set.notifSub": "Как вы получаете уведомления",
+      "set.dark": "Тёмный режим", "set.darkSub": "Изменить оформление",
+      "set.linkSub": "Получайте уведомления в Telegram", "set.linkGoogleSub": "Второй способ входа",
+      "set.myLoadsSub": "Размещённые и принятые грузы", "set.savedSub": "Чтобы посмотреть позже",
+      "set.chatSub": "Ваши переписки", "set.supportSub": "Найдите ответы на вопросы",
+      "set.feedbackSub": "Что не понравилось или чего не хватило", "set.aboutSub": "Версия и сведения",
       "settings.title": "Настройки", "settings.lang": "Язык", "settings.theme": "Оформление",
       "settings.light": "Дневной", "settings.dark": "Ночной", "settings.auto": "Системный",
       "settings.support": "Помощь", "settings.privacy": "Политика конфиденциальности",
@@ -7404,7 +7519,7 @@
       "next.LOADED": "On my way", "next.ON_THE_WAY": "Delivered",
       "track.release": "Release the driver", "track.cancel": "Cancel the order",
       "track.cancelled": "This order has been cancelled.",
-      "search.save": "Save this search and get alerts", "search.anyRoute": "All routes",
+      "search.save": "Save this search", "search.anyRoute": "All routes",
       "search.delete": "Delete", "search.saved": "Search saved",
       "search.savedSub": "We will message you on Telegram when a matching load appears",
       "search.saveFailed": "Not saved",
@@ -7694,6 +7809,16 @@
       "contact.supportMsgLabel": "Your message", "contact.supportBtn": "Send",
 
       "common.back": "Back", "common.min": "Min", "common.max": "Max",
+      "set.groupProfile": "PROFILE", "set.groupApp": "APP",
+      "set.groupLoads": "LOADS", "set.groupHelp": "HELP",
+      "set.editProfile": "Profile details", "set.editProfileSub": "Name, photo and more",
+      "set.verifySub": "Phone, identity, licence and vehicle", "set.shareSub": "Send the link to friends",
+      "set.notifSub": "How you get notified",
+      "set.dark": "Dark mode", "set.darkSub": "Change the appearance",
+      "set.linkSub": "Get notifications in Telegram", "set.linkGoogleSub": "A second way to sign in",
+      "set.myLoadsSub": "Loads you posted and took", "set.savedSub": "To look at later",
+      "set.chatSub": "Your conversations", "set.supportSub": "Find answers to your questions",
+      "set.feedbackSub": "What was wrong or missing", "set.aboutSub": "Version and details",
       "settings.title": "Settings", "settings.lang": "Language", "settings.theme": "Appearance",
       "settings.light": "Light", "settings.dark": "Dark", "settings.auto": "System",
       "settings.support": "Help", "settings.privacy": "Privacy policy",
@@ -8775,55 +8900,139 @@
      Contact-tab section. The Contact tab keeps its own copy of the plain
      settings rows too (untouched) since a few things there — FAQ, report,
      support form — still live only there and route people here via "Yordam". ---------- */
+  /* ---------- Sozlamalar sahifasi ----------
+     Qatorlar mavzusiga ko'ra guruhlangan va har birida nom ostida
+     nima qilishi yozilgan. Ilgari hammasi bitta uzun ro'yxat edi
+     va faqat nom turardi.
+
+     TO'LOVLAR GURUHI YO'Q. Ilovada to'lov tizimi mavjud emas:
+     "To'lov usullari" yoki "To'lovlar tarixi" degan qator
+     qo'yilsa, u bosilganda hech narsa bo'lmasdi yoki bo'sh
+     ro'yxat chiqardi. Bo'sh va'da bermaymiz. */
+  function setRow(opts){
+    return '<button type="button" class="set-row"' + (opts.attrs || "") + '>'
+      + icon(opts.icon)
+      + '<div class="set-row-main">'
+      +   '<div class="set-row-title"' + (opts.titleKey ? ' data-i18n="'+opts.titleKey+'"' : '')
+      +     '>' + escapeHtml(opts.title) + '</div>'
+      +   (opts.sub
+            ? '<div class="set-row-sub"' + (opts.subKey ? ' data-i18n="'+opts.subKey+'"' : '')
+              + '>' + escapeHtml(opts.sub) + '</div>'
+            : '')
+      + '</div>'
+      + (opts.tag ? '<span class="set-row-tag">'+escapeHtml(opts.tag)+'</span>' : '')
+      + (opts.right || '<span class="set-row-chev" aria-hidden="true">›</span>')
+      + '</button>';
+  }
+
+  /** Hozirgi tilning o'z nomi — qator tagida ko'rinadi. */
+  function currentLangLabel(){
+    return { uz: "O'zbekcha", "uz-cyrl": "Ўзбекча", ru: "Русский", en: "English" }[currentLang] || "O'zbekcha";
+  }
+
   function renderAccountSettingsPage(){
     var p = lastLoadedProfile || {};
     var showLinkTelegram = Boolean(googleIdToken && !isTelegramWebApp);
     var showLinkGoogle = Boolean(telegramInitData && isTelegramWebApp);
 
-    // Uchta tasdiq bor, shuning uchun qator "hammasi tugadi" bo'lmaguncha
-    // ko'rinib turadi va yonida nechtasi olingani yozilib boradi.
+    /* Uchta tasdiq bor, shuning uchun qator "hammasi tugadi"
+       bo'lmaguncha nechtasi olingani bilan turadi. */
     var vDone = VERIFY_KINDS.filter(function(k){
       return verifyStateOf(p, k).status === "VERIFIED";
     }).length;
     var vPending = VERIFY_KINDS.some(function(k){
       return verifyStateOf(p, k).status === "PENDING";
     });
-    var verifyGroup = (
-      '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      + '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="verify">'
-      +   verifyBadgeSvg(vDone ? "" : "muted")
-      +   '<span data-i18n="settings.verify">Profilni tasdiqlash</span>'
-      +   '<span class="sr-tag">'
-      +     (vPending ? '<span data-i18n="verify.pendingTag">kutilmoqda</span> · ' : '')
-      +     vDone + '/' + VERIFY_KINDS.length + '</span>'
-      +   '<svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg>'
-      + '</button></li>'
-      + '</ul></div>'
-    );
 
-    return verifyGroup
-      + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-tab-link="chat">'+icon("iconChat")+'<span data-i18n="nav.chat">Xabarlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" id="btnOpenSaved">'+icon("iconHeart")+'<span data-i18n="saved.title">Saqlanganlar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      + '</ul></div>'
-      + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="language">'+icon("iconRoute")+'<span data-i18n="settings.lang">Til</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="theme">'+icon("iconBadge")+'<span data-i18n="settings.theme">Ko\'rinish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      // Profilni ulashish ilgari sarlavhadagi uchta tugmadan biri edi.
-      // Sarlavhada endi bitta tishli g'ildirak turadi, shuning uchun
-      // ulashish shu ro'yxatga ko'chdi — yo'qolgani yo'q.
-      +   '<li><button type="button" class="settings-row lg lg-tap" id="btnShareProfile">'+icon("iconShare")+'<span data-i18n="profile.shareAria">Profilni ulashish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="notifications">'+icon("iconBell")+'<span data-i18n="settings.notifications">Bildirishnomalar</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   (showLinkTelegram ? '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="link-telegram">'+icon("iconTelegram")+'<span data-i18n="settings.linkTelegram">Telegram bilan bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
-      +   (showLinkGoogle ? '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="link-google">'+icon("iconUser")+'<span data-i18n="settings.linkGoogle">Google akkauntga bog\'lash</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>' : '')
-      + '</ul></div>'
-      + '<div class="info-card profile-settings-card"><ul class="settings-menu">'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-tab-link="contact">'+icon("iconChat")+'<span data-i18n="settings.support">Yordam</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="feedback">'+icon("iconAlert")+'<span data-i18n="settings.feedback">Fikr bildirish</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="about">'+icon("iconInfo")+'<span data-i18n="settings.about">Yolda haqida</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="terms">'+icon("iconClipboard")+'<span data-i18n="settings.terms">Foydalanish shartlari</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      +   '<li><button type="button" class="settings-row lg lg-tap" data-settings-page="privacy">'+icon("iconReceipt")+'<span data-i18n="settings.privacy">Maxfiylik siyosati</span><svg class="ic-svg sr-chev" aria-hidden="true"><use href="#iconChevronRight"/></svg></button></li>'
-      + '</ul></div>'
+    var avatar = profileAvatarUrl(p);
+    var name = p.displayName || p.name || (t("profile.noName") || "Ismsiz");
+    var sub = p.username ? ("@" + p.username) : (p.city || "");
+
+    var dark = (document.documentElement.getAttribute("data-theme") || "light") === "dark";
+
+    var html = ""
+      + '<button type="button" class="set-me" data-edit-profile="1">'
+      +   '<span class="set-me-pic">'
+      +     (avatar
+            ? '<img src="'+escapeHtml(avatar)+'" alt="">'
+            : escapeHtml(String(name).trim().charAt(0).toUpperCase() || "?"))
+      +   '</span>'
+      +   '<span class="set-me-main">'
+      +     '<span class="set-me-name">'+escapeHtml(name)+'</span>'
+      +     (sub ? '<span class="set-me-sub">'+escapeHtml(sub)+'</span>' : '')
+      +   '</span>'
+      +   '<span class="set-row-chev" aria-hidden="true">›</span>'
+      + '</button>'
+
+      + '<div class="set-group" data-i18n="set.groupProfile">PROFIL</div>'
+      + '<div class="set-card">'
+      +   setRow({ icon: "iconUser", attrs: ' data-edit-profile="1"',
+                  titleKey: "set.editProfile", title: "Profil ma'lumotlari",
+                  subKey: "set.editProfileSub", sub: "Ism, surat va boshqalar" })
+      +   setRow({ icon: "iconShield", attrs: ' data-settings-page="verify"',
+                  titleKey: "settings.verify", title: "Profilni tasdiqlash",
+                  subKey: "set.verifySub", sub: "Telefon, shaxs, guvohnoma va transport",
+                  tag: (vPending ? "⏳ " : "") + vDone + "/" + VERIFY_KINDS.length })
+      +   setRow({ icon: "iconShare", attrs: ' id="btnShareProfile"',
+                  titleKey: "profile.shareAria", title: "Profilni ulashish",
+                  subKey: "set.shareSub", sub: "Havolani do'stlaringizga yuboring" })
+      + '</div>'
+
+      + '<div class="set-group" data-i18n="set.groupApp">ILOVA</div>'
+      + '<div class="set-card">'
+      +   setRow({ icon: "iconBell", attrs: ' data-settings-page="notifications"',
+                  titleKey: "settings.notifications", title: "Bildirishnomalar",
+                  subKey: "set.notifSub", sub: "Qanday xabar olishingiz" })
+      +   setRow({ icon: "iconMoon", attrs: ' id="btnToggleDark"',
+                  titleKey: "set.dark", title: "Tungi rejim",
+                  subKey: "set.darkSub", sub: "Ko'rinishni o'zgartirish",
+                  right: '<span class="set-switch" id="darkSwitch" role="switch" '
+                    + 'aria-checked="'+(dark ? "true" : "false")+'" aria-hidden="true"></span>' })
+      +   setRow({ icon: "iconRoute", attrs: ' data-settings-page="language"',
+                  titleKey: "settings.lang", title: "Til", sub: currentLangLabel() })
+      +   (showLinkTelegram
+            ? setRow({ icon: "iconTelegram", attrs: ' data-settings-page="link-telegram"',
+                       titleKey: "settings.linkTelegram", title: "Telegram bilan bog'lash",
+                       subKey: "set.linkSub", sub: "Bildirishnomalarni Telegramda oling" })
+            : '')
+      +   (showLinkGoogle
+            ? setRow({ icon: "iconUser", attrs: ' data-settings-page="link-google"',
+                       titleKey: "settings.linkGoogle", title: "Google akkauntga bog'lash",
+                       subKey: "set.linkGoogleSub", sub: "Ikkinchi kirish yo'li" })
+            : '')
+      + '</div>'
+
+      + '<div class="set-group" data-i18n="set.groupLoads">YUKLAR</div>'
+      + '<div class="set-card">'
+      +   setRow({ icon: "iconBox", attrs: ' data-tab-link="myload"',
+                  titleKey: "pf.loads", title: "Mening yuklarim",
+                  subKey: "set.myLoadsSub", sub: "Joylashtirgan va olgan yuklaringiz" })
+      +   setRow({ icon: "iconHeart", attrs: ' id="btnOpenSaved"',
+                  titleKey: "saved.title", title: "Saqlanganlar",
+                  subKey: "set.savedSub", sub: "Keyinroq ko'rish uchun" })
+      +   setRow({ icon: "iconChat", attrs: ' data-tab-link="chat"',
+                  titleKey: "nav.chat", title: "Xabarlar",
+                  subKey: "set.chatSub", sub: "Yozishuvlaringiz" })
+      + '</div>'
+
+      + '<div class="set-group" data-i18n="set.groupHelp">YORDAM</div>'
+      + '<div class="set-card">'
+      +   setRow({ icon: "iconHeadphones", attrs: ' data-tab-link="contact"',
+                  titleKey: "settings.support", title: "Yordam markazi",
+                  subKey: "set.supportSub", sub: "Savollaringizga javob toping" })
+      +   setRow({ icon: "iconAlert", attrs: ' data-settings-page="feedback"',
+                  titleKey: "settings.feedback", title: "Fikr bildirish",
+                  subKey: "set.feedbackSub", sub: "Nima yoqmadi yoki nima yetishmadi" })
+      +   setRow({ icon: "iconInfo", attrs: ' data-settings-page="about"',
+                  titleKey: "settings.about", title: "Ilova haqida",
+                  subKey: "set.aboutSub", sub: "Versiya va ma'lumotlar" })
+      +   setRow({ icon: "iconClipboard", attrs: ' data-settings-page="terms"',
+                  titleKey: "settings.terms", title: "Foydalanish shartlari" })
+      +   setRow({ icon: "iconReceipt", attrs: ' data-settings-page="privacy"',
+                  titleKey: "settings.privacy", title: "Maxfiylik siyosati" })
+      + '</div>';
+
+    return html
       + renderDangerZone()
       + '<p style="color:var(--muted);font-size:12.5px;text-align:center;margin:var(--s5) 0 0;">© 2026 YO\'LDA</p>';
   }
@@ -8848,6 +9057,24 @@
         });
         var savedBtn = container.querySelector("#btnOpenSaved");
         if(savedBtn) savedBtn.addEventListener("click", openSavedSheet);
+
+        /* Tungi rejim shu yerda almashadi — alohida sahifaga
+           o'tish shart emas. "Avtomatik" tanlovi "Ko'rinish"
+           sahifasida qoladi: bu yerdagi kalit faqat ikkitadan
+           birini tanlaydi va uchinchi holatni ko'rsata olmaydi. */
+        var darkBtn = container.querySelector("#btnToggleDark");
+        if(darkBtn) darkBtn.addEventListener("click", function(){
+          var sw = container.querySelector("#darkSwitch");
+          var now = (document.documentElement.getAttribute("data-theme") || "light") === "dark";
+          setTheme(now ? "light" : "dark");
+          if(sw) sw.setAttribute("aria-checked", now ? "false" : "true");
+        });
+
+        container.querySelectorAll("[data-edit-profile]").forEach(function(b){
+          b.addEventListener("click", function(){
+            openProfileEditSheet(lastLoadedProfile || {});
+          });
+        });
       }
     });
   }
@@ -11710,7 +11937,7 @@
       +   (tk.verified ? '<span class="tc-badge verified" data-i18n="trucks.badgeVerified">Tekshirilgan</span>' : '')
       +   (isFresh ? '<span class="tc-badge fresh" data-i18n="trucks.badgeNew">Yangi</span>' : '')
       + '</div>'
-      + '<button type="button" class="tc-fav" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      + '<button type="button" class="tc-fav" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+heartIcon(fav)+'</button>'
       + '<div class="tc-photo">'
       +   (photo ? '<img src="'+photo+'" alt="" loading="lazy">' : truckBrandMarkHtml(tk.brand))
       + '</div>'
@@ -12170,7 +12397,7 @@
       +     (tk.priceType === "NEGOTIABLE" ? '<div class="tc-meta" data-i18n="trucks.negotiable">Kelishiladi</div>' : '')
       +     '<h3 class="card-title" style="margin:var(--s2) 0 0;">'+escapeHtml(tk.brand)+'</h3>'
       +   '</div>'
-      +   '<button type="button" class="tc-fav" style="position:static;flex-shrink:0;" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      +   '<button type="button" class="tc-fav" style="position:static;flex-shrink:0;" data-truck-fav="'+escapeHtml(tk.id)+'" aria-label="Saqlash">'+heartIcon(fav)+'</button>'
       + '</div>'
       + '<div class="tc-meta" style="margin:var(--s2) 0 var(--s4);">'
       +   escapeHtml(truckRelativeTime(tk.createdAt))
@@ -12901,7 +13128,7 @@
     if(wasFav) truckFavIds = truckFavIds.filter(function(x){ return x !== id; });
     else truckFavIds.push(id);
     document.querySelectorAll('[data-truck-fav="'+id+'"]').forEach(function(b){
-      b.innerHTML = icon("iconHeart", wasFav ? "" : "filled");
+      b.innerHTML = heartIcon(!wasFav);
     });
 
     fetch("/api/trucks?action=" + (wasFav ? "unfavorite" : "favorite"), {
@@ -14499,7 +14726,7 @@
       + '<div class="lc-side">'
       +   '<div class="lc-price">'+formatNum(o.amount)+'<span data-i18n="loads.sum">so\'m</span></div>'
       +   '<div class="lc-actions">'
-      +     '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      +     '<button type="button" class="lc-fav'+(fav?' on':'')+'" data-fav="'+escapeHtml(o.code)+'" aria-label="Saqlash">'+heartIcon(fav)+'</button>'
       +     '<span class="lc-chev" aria-hidden="true">›</span>'
       +   '</div>'
       + '</div>'
@@ -14736,7 +14963,7 @@
       return;
     }
     var now = toggleDriverSaved(saveBtn.getAttribute("data-save-driver"));
-    saveBtn.innerHTML = icon("iconHeart", now ? "filled" : "")
+    saveBtn.innerHTML = heartIcon(now)
       + ' <span data-i18n="saved.save">' + escapeHtml(t("saved.save") || "Saqlash") + '</span>';
     toast(now ? (t("saved.added") || "Saqlandi") : (t("saved.removed") || "Olib tashlandi"), "", "success");
   });
@@ -14788,7 +15015,7 @@
       +     ' <span data-i18n="loads.sendMessage">Xabar yozish</span></button>'
       +   '<button type="button" class="btn ghost" id="btnSaveDriver" '
       +     'data-save-driver="'+escapeHtml(p.username)+'">'
-      +     icon("iconHeart", isDriverSaved(p.username) ? "filled" : "")
+      +     heartIcon(isDriverSaved(p.username))
       +     ' <span data-i18n="saved.save">Saqlash</span></button>'
       + '</div>';
   }
@@ -16323,7 +16550,7 @@
       +       '<button type="button" class="dt-icon-btn" id="btnDetailBack" aria-label="Orqaga">&larr;</button>'
       +     '</div>'
       +     '<div class="detail-topbar">'
-      +       '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+icon("iconHeart", fav ? "filled" : "")+'</button>'
+      +       '<button type="button" class="dt-icon-btn'+(fav?' on':'')+'" id="btnDetailFav" aria-label="Saqlash">'+heartIcon(fav)+'</button>'
       +       '<button type="button" class="dt-icon-btn" id="btnDetailShare" aria-label="Ulashish">'+icon("iconShare")+'</button>'
       +     '</div>'
       +   '</div>'
@@ -16415,7 +16642,7 @@
     if(favBtn) favBtn.addEventListener("click", function(){
       var now = toggleFavorite(d.code);
       favBtn.classList.toggle("on", now);
-      favBtn.innerHTML = icon("iconHeart", now ? "filled" : "");
+      favBtn.innerHTML = heartIcon(now);
     });
 
     var shareBtn = document.getElementById("btnDetailShare");
@@ -16843,6 +17070,9 @@
   }, true);
   /* Sprite'dagi belgini chizadi. `cls` — qo'shimcha sinf, masalan
      "filled" (yurak/yulduz ichi bo'yalgan holati). */
+  /** Yurakcha: saqlangan bo'lsa to'ldirilgani, bo'lmasa chiziqlisi. */
+  function heartIcon(on){ return icon(on ? "iconHeartFilled" : "iconHeart"); }
+
   function icon(id, cls){
     return '<svg class="ic-svg'+(cls ? ' '+cls : '')+'" aria-hidden="true"><use href="#'+id+'"></use></svg>';
   }
@@ -18566,7 +18796,7 @@
       e.stopPropagation();
       var nowFav = toggleFavorite(favBtn.getAttribute("data-fav"));
       favBtn.classList.toggle("on", nowFav);
-      favBtn.innerHTML = icon("iconHeart", nowFav ? "filled" : "");
+      favBtn.innerHTML = heartIcon(nowFav);
       return;
     }
     /* Shahar tanlagichi. Filtr oynasidagi "Qayerdan" bilan bitta
