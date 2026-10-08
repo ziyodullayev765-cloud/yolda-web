@@ -553,6 +553,18 @@
     word-break:break-all;line-height:1.3;
   }
   .icon-card-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+  /* Ilova rangida chiziladigan ikonka shu yerda ham xuddi ilovadagidek
+     ko'rinadi: rasmdan faqat shakli olinadi, rangni matn beradi. */
+  .icon-card-tint{
+    display:block;width:30px;height:30px;background-color:currentColor;
+    -webkit-mask:var(--pic) center/contain no-repeat;
+    mask:var(--pic) center/contain no-repeat;
+  }
+  .icon-card-mode{
+    display:flex;align-items:center;gap:5px;
+    font-size:10.5px;opacity:0.7;cursor:pointer;user-select:none;
+  }
+  .icon-card-mode input{margin:0;}
   /* Sudrab kelinganda. `pointer-events:none` ichki elementlarga:
      aks holda sudrash ichkariga o'tganda "chiqib ketdi" hodisasi
      kelib, belgi miltillab turardi. */
@@ -2959,6 +2971,14 @@
     return (data && typeof data === "object") ? data : {};
   }
 
+  /** O'z rangida chiziladigan ikonkalar (qolgani ilova rangini oladi). */
+  function iconPlainSet(){
+    var list = (Store.raw.icons && Store.raw.icons.iconsPlain) || [];
+    var out = {};
+    list.forEach(function(id){ out[id] = true; });
+    return out;
+  }
+
   /* Baza qancha to'lgani.
 
      Joy va kalitlar soni Redis'ning o'zidan olinadi — aniq.
@@ -3049,10 +3069,18 @@
           + stat("Almashtirilgan", String(changed), "o'z rasmingiz", "check", changed ? "ok" : "")
           + "</div>";
 
+        var plainSet = iconPlainSet();
+
         var cards = iconSprite.ids.map(function(id){
           var url = map[id];
+          var plain = Boolean(plainSet[id]);
+          /* Ko'rinishi ilovadagidek bo'lishi kerak: ilova rangida
+             chiziladigan rasm bu yerda ham niqob orqali ko'rsatiladi,
+             aks holda admin boshqa narsani ko'rib turgan bo'lardi. */
           var preview = url
-            ? '<img src="' + esc(url) + '" alt="" style="width:30px;height:30px;object-fit:contain;">'
+            ? (plain
+                ? '<img src="' + esc(url) + '" alt="" style="width:30px;height:30px;object-fit:contain;">'
+                : '<span class="icon-card-tint" style="--pic:url(&quot;' + esc(url) + '&quot;)"></span>')
             : '<svg style="width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;'
               + 'stroke-linecap:round;stroke-linejoin:round;"><use href="#' + esc(id) + '"></use></svg>';
 
@@ -3066,6 +3094,14 @@
                   ? '<button type="button" class="btn small ghost" data-act="icon-reset" '
                     + 'data-id="' + esc(id) + '">Asliga</button>'
                   : "");
+            /* Rangli belgilar uchun (Telegram ko'k, tasdiq nishoni
+               yashil) bo'yash noto'g'ri bo'ladi — shu yerda
+               o'chiriladi. */
+            if(url){
+              actions += '<label class="icon-card-mode" title="Rangli belgilar uchun yoqing">'
+                + '<input type="checkbox" data-icon-plain="' + esc(id) + '"'
+                + (plain ? " checked" : "") + "> O‘z rangida</label>";
+            }
           }
 
           /* Kartochkaning o'zi tortib tashlash maydoni. Yozib
@@ -3159,7 +3195,8 @@
           var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
           ctx.drawImage(img, Math.round((size - w) / 2), Math.round((size - h) / 2), w, h);
           // Sayt CORS bermagan bo'lsa shu yerda xato bo'ladi.
-          finish(canvas.toDataURL("image/png"));
+          var dataUrl = canvas.toDataURL("image/png");
+          finish({ dataUrl: dataUrl, plain: isColorful(ctx, size) });
         }catch(e){ finish(null); }
       };
       img.onerror = function(){ finish(null); };
@@ -3178,9 +3215,14 @@
   function uploadIconUrl(id, url){
     if(!/^https?:\/\//i.test(url)){ toast("Bu rasm havolasi emas", "bad"); return; }
     iconCardBusy(id, true);
-    iconDataUrlFromRemote(url).then(function(dataUrl){
-      // Brauzerda bo'lmasa — serverga manzilning o'zini beramiz.
-      return Api.post("save-icon", dataUrl ? { id: id, dataUrl: dataUrl } : { id: id, url: url });
+    iconDataUrlFromRemote(url).then(function(got){
+      /* Brauzerda bo'lmasa — serverga manzilning o'zini beramiz.
+         Bu holatda rasmga qarab bo'lmaydi, shuning uchun rejim
+         yuborilmaydi: server avvalgisini saqlab qoladi (yangisi
+         uchun — ilova rangida), admin esa belgini o'zi qo'yadi. */
+      return Api.post("save-icon", got
+        ? { id: id, dataUrl: got.dataUrl, plain: got.plain }
+        : { id: id, url: url });
     }).then(function(){
       iconError = "";
       iconCardBusy(id, false);
@@ -3276,6 +3318,39 @@
     });
   }
 
+  /**
+   * Rasm rangli (ko'p rangli) mi — ya'ni uni bitta rangga bo'yash
+   * noto'g'ri bo'ladimi.
+   *
+   * Chiziqli ikonka bitta rangdan iborat bo'ladi: qora, kulrang
+   * yoki oq. Shunda rasmdan faqat shakli olinib, rang ilovadan
+   * berilsa bo'ladi. Logotip esa bir nechta rangdan iborat —
+   * uni bo'yash uni buzadi.
+   *
+   * Shuning uchun: ko'rinadigan piksellarning to'yinganligi
+   * (eng katta va eng kichik kanal farqi) qaraladi. Shaffof va
+   * chekkadagi yarim shaffof piksellar hisobga olinmaydi — ular
+   * rangni noto'g'ri ko'rsatadi.
+   */
+  function isColorful(ctx, size){
+    try{
+      var px = ctx.getImageData(0, 0, size, size).data;
+      var seen = 0, colored = 0;
+      for(var i = 0; i < px.length; i += 4){
+        if(px[i + 3] < 200) continue;         // shaffof yoki chekka
+        seen++;
+        var r = px[i], g = px[i + 1], b = px[i + 2];
+        if(Math.max(r, g, b) - Math.min(r, g, b) > 30) colored++;
+      }
+      if(!seen) return false;
+      // Oz sonli rangli piksel — siqilishdan qolgan iz bo'lishi mumkin.
+      return colored / seen > 0.12;
+    }catch(e){
+      // O'qib bo'lmasa — bo'yamaymiz, rasm o'z holicha qolsin.
+      return true;
+    }
+  }
+
   function uploadIconFile(id, file){
     if(!file) return;
     if(file.size > 4 * 1024 * 1024){ toast("Rasm juda katta", "bad"); return; }
@@ -3296,7 +3371,16 @@
         var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
         ctx.drawImage(img, Math.round((size - w) / 2), Math.round((size - h) / 2), w, h);
 
-        Api.post("save-icon", { id: id, dataUrl: canvas.toDataURL("image/png") })
+        /* Rasm rangli bo'lsa (Telegram ko'k, tasdiq nishoni yashil)
+           uni ilova rangiga bo'yash noto'g'ri bo'lardi. Rasm shu
+           yerda — o'z sahifamizdagi `data:` dan chizilgan, ya'ni
+           canvas "zaharlanmagan" — shuning uchun qarab ko'rsa
+           bo'ladi. Admin keyin belgini o'zi ham o'zgartira oladi. */
+        Api.post("save-icon", {
+          id: id,
+          dataUrl: canvas.toDataURL("image/png"),
+          plain: isColorful(ctx, size),
+        })
           .then(function(){
             iconError = "";
             toast("Ikonka almashtirildi", "ok");
@@ -3313,6 +3397,22 @@
       img.src = reader.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  /** Rasmni qayta yuklamasdan rejimini almashtirish. */
+  function setIconMode(id, plain){
+    iconCardBusy(id, true);
+    Api.post("icon-mode", { id: id, plain: Boolean(plain) }).then(function(){
+      iconCardBusy(id, false);
+      toast(plain ? "Rasm o‘z rangida chiziladi" : "Rasm ilova rangini oladi", "ok");
+      Store.load("icons", true);
+    }).catch(function(e){
+      iconCardBusy(id, false);
+      if(handleApiError(e)) return;
+      toast(e.message, "bad");
+      // Belgi haqiqatdan chetga chiqib qolmasin.
+      Store.load("icons", true);
+    });
   }
 
   function resetIcon(id){
@@ -3865,6 +3965,11 @@
     if(picker){
       uploadIconFile(picker.getAttribute("data-icon-file"), picker.files && picker.files[0]);
       picker.value = "";   // bir xil faylni qayta tanlash ham ishlasin
+      return;
+    }
+    var mode = e.target.closest("[data-icon-plain]");
+    if(mode){
+      setIconMode(mode.getAttribute("data-icon-plain"), mode.checked);
       return;
     }
     var t = e.target.closest("[data-act]");

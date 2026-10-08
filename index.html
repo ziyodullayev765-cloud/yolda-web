@@ -4910,6 +4910,10 @@
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Admin paneldan qo'yilgan rasmlar uchun niqoblar shu yerga
+       qo'shiladi. Symbol ichida emas: `<use>` symbol'ni nusxalaydi
+       va ichidagi id lar takrorlanib ketardi. -->
+  <defs id="iconMaskDefs"></defs>
   <symbol id="truckIcon" viewBox="0 0 240 110">
     <rect x="0" y="18" width="196" height="4" fill="currentColor"/>
     <rect x="0" y="18" width="130" height="56" rx="6" fill="currentColor"/>
@@ -9882,7 +9886,7 @@
 
     fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
       TELEGRAM_BOT_USERNAME = cfg.telegramBotUsername || "";
-      applyIconOverrides(cfg.icons);
+      applyIconOverrides(cfg.icons, cfg.iconsPlain);
 
       // Platform settings an admin can change from /admin → Sozlamalar.
       // Each one falls back to the value already in the markup, so an
@@ -16530,17 +16534,68 @@
      yurmaymiz: symbol'ning ichini rasmga almashtiramiz. Shunda
      mavjud va keyin chiziladigan hamma nusxa o'z-o'zidan yangi
      rasmni ko'rsatadi, hech qayerda qo'shimcha kod kerak emas.
+
+     RANG. Ilovaning o'z ikonkalari chizilgan, ya'ni rangi yo'q:
+     `currentColor` orqali atrofidagi matn rangini oladi. Shuning
+     uchun ular qorong'u rejimda oqarib, yorug'ida qorayib,
+     tanlangan bo'lim ustida esa yashil bo'lib turadi.
+
+     Rasmning rangi esa ichida qotib qolgan. Oddiy `<image>` qilib
+     qo'yilsa ikkita nuqson chiqadi va ikkalasi ham ko'rinib
+     turadi: yorug' rejim uchun qilingan qora rasm qorong'u rejimda
+     qora panel ustida deyarli yo'qoladi; tanlangan bo'limda esa
+     yozuv yashil, belgisi qora bo'lib qoladi.
+
+     Shuning uchun rasmdan faqat SHAKLI olinadi — shaffof bo'lmagan
+     joylari niqob (mask) bo'ladi va uning ustiga `currentColor`
+     bilan bo'yalgan to'rtburchak qo'yiladi. Natijada rasm chizilgan
+     ikonka bilan bir xil tutadi.
+
+     Rangli belgilar (Telegram ko'k, tasdiq nishoni yashil) uchun
+     bu noto'g'ri bo'lardi — ular admin panelda "o'z rangida" deb
+     belgilanadi va eskidek `<image>` bo'lib qoladi.
      ============================================================ */
-  function applyIconOverrides(map){
+  function applyIconOverrides(map, plainIds){
     if(!map) return;
+    var plain = {};
+    (plainIds || []).forEach(function(id){ plain[id] = true; });
+
+    var defs = document.getElementById("iconMaskDefs");
     Object.keys(map).forEach(function(id){
       var url = map[id];
       if(!url || !/^https:\/\//.test(String(url))) return;
       var symbol = document.getElementById(id);
       if(!symbol || String(symbol.nodeName).toLowerCase() !== "symbol") return;
       symbol.setAttribute("viewBox", "0 0 24 24");
-      symbol.innerHTML = '<image href="'+escapeHtml(url)+'" x="0" y="0" width="24" height="24" '
+
+      var img = '<image href="'+escapeHtml(url)+'" x="0" y="0" width="24" height="24" '
         + 'preserveAspectRatio="xMidYMid meet"></image>';
+
+      if(plain[id] || !defs){ symbol.innerHTML = img; return; }
+
+      /* Niqob symbol'ning ICHIDA emas, sprite'ning `<defs>` ida
+         turadi: `<use>` symbol'ni nusxalaydi va ichidagi id lar
+         takrorlanib ketardi. */
+      var maskId = "iconmask-" + id;
+      var mask = document.getElementById(maskId);
+      if(!mask){
+        mask = document.createElementNS("http://www.w3.org/2000/svg", "mask");
+        mask.setAttribute("id", maskId);
+        mask.setAttribute("maskUnits", "userSpaceOnUse");
+        mask.setAttribute("x", "0"); mask.setAttribute("y", "0");
+        mask.setAttribute("width", "24"); mask.setAttribute("height", "24");
+        // Oq-qoralik emas, shaffoflik bo'yicha qirqiladi.
+        mask.setAttribute("style", "mask-type:alpha");
+        defs.appendChild(mask);
+      }
+      mask.innerHTML = img;
+
+      /* `fill` va `stroke` to'rtburchakning o'zida yozilgan:
+         `.ic-svg` dagi `fill:none; stroke:currentColor` faqat
+         meros bo'lib tushadi, elementning o'z atributi esa undan
+         ustun turadi. */
+      symbol.innerHTML = '<rect x="0" y="0" width="24" height="24" fill="currentColor" '
+        + 'stroke="none" mask="url(#'+maskId+')"></rect>';
     });
   }
   /** Small green check badge next to a verified profile's @username in chat (search/inbox/thread). */

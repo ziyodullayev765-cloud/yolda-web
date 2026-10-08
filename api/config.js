@@ -21,6 +21,7 @@
  */
 import { kvGet, kvSmembers } from '../lib/kv.js';
 import { publicShape as lifeShape, sortItems as sortLifeItems } from '../lib/life.js';
+import { normalizeIcons } from '../lib/icons.js';
 
 const FALLBACK = {
   platformName: "YO'LDA",
@@ -73,18 +74,26 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=60');
   // Admin paneldan almashtirilgan ikonkalar. Bo'sh bo'lsa ilova o'z
   // chizilgan ikonkalarini ishlatadi — bu jadval faqat ustiga yozadi.
+  /* `icons` shakli o'zgarmaydi (`{id: havola}`): keshdan ochilgan
+     eski sahifa ham aynan shuni kutadi. O'z rangida chiziladigan
+     ikonkalar alohida ro'yxatda keladi — eski sahifa uni shunchaki
+     e'tiborsiz qoldiradi. */
   let icons = {};
+  let iconsPlain = [];
   try {
-    const parsed = JSON.parse((await kvGet('icon_overrides')) || '{}');
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) icons = parsed;
+    const got = normalizeIcons(JSON.parse((await kvGet('icon_overrides')) || '{}'));
+    icons = got.urls;
+    iconsPlain = got.plain;
   } catch {
     icons = {};
+    iconsPlain = [];
   }
 
   res.status(200).json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || '',
     icons,
+    iconsPlain,
     platformName: settings.platformName,
     supportPhone: settings.supportPhone,
     supportTelegram: settings.supportTelegram,

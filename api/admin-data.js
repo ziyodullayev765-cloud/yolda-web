@@ -37,6 +37,7 @@ import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/ver
 import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/life.js';
 import { uploadImage, keyFromUrl, deleteObject, storageConfigured, storageMissing } from '../lib/storage.js';
 import { fetchRemoteImage } from '../lib/remoteImage.js';
+import { normalizeIcons, iconUrl, iconIsPlain, iconEntry } from '../lib/icons.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -796,15 +797,19 @@ const readIcons = async () => {
   }
 };
 
-const getIcons = async (res) =>
-  res.status(200).json({
+const getIcons = async (res) => {
+  const { urls, plain } = normalizeIcons(await readIcons());
+  return res.status(200).json({
     ok: true,
-    icons: await readIcons(),
+    icons: urls,
+    // O'z rangida chiziladiganlar; qolgani ilova rangini oladi.
+    iconsPlain: plain,
     storage: storageConfigured(),
     // Sozlanmagan bo'lsa — aynan qaysi o'zgaruvchi yetishmayotgani.
     // Faqat nomlari; qiymatlar hech qachon chiqarilmaydi.
     missing: storageMissing(),
   });
+};
 
 const saveIcon = async (req, res) => {
   if (!storageConfigured()) {
@@ -845,16 +850,42 @@ const saveIcon = async (req, res) => {
   }
 
   const previous = icons[id];
-  icons[id] = uploaded.url;
+  /* Rasm odatda ilova rangida chiziladi — shunda u qorong'u va
+     yorug' rejimda, tanlangan bo'lim ustida ham to'g'ri ko'rinadi.
+     `plain` — rangli belgilar uchun (Telegram, tasdiq nishoni). */
+  const plain = body.plain === undefined ? iconIsPlain(previous) : Boolean(body.plain);
+  icons[id] = iconEntry(uploaded.url, plain);
   if (!(await kvSet(ICONS_KEY, JSON.stringify(icons)))) {
     return res.status(500).json({ error: 'Saqlanmadi' });
   }
 
   // Eski rasm endi hech qayerda ishlatilmaydi.
-  const oldKey = keyFromUrl(previous);
-  if (oldKey && previous !== uploaded.url) deleteObject(oldKey).catch(() => {});
+  const previousUrl = iconUrl(previous);
+  const oldKey = keyFromUrl(previousUrl);
+  if (oldKey && previousUrl !== uploaded.url) deleteObject(oldKey).catch(() => {});
 
-  return res.status(200).json({ ok: true, id, url: uploaded.url });
+  return res.status(200).json({ ok: true, id, url: uploaded.url, plain });
+};
+
+/**
+ * Rasmni qayta yuklamasdan faqat rejimini almashtirish:
+ * ilova rangida chizilsinmi yoki o'z rangida.
+ */
+const setIconMode = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const id = String(body.id || '').trim();
+  if (!ICON_ID_RE.test(id)) return res.status(400).json({ error: 'Ikonka nomi noto‘g‘ri' });
+
+  const icons = await readIcons();
+  const url = iconUrl(icons[id]);
+  if (!url) return res.status(404).json({ error: 'Bu ikonka almashtirilmagan' });
+
+  const plain = Boolean(body.plain);
+  icons[id] = iconEntry(url, plain);
+  if (!(await kvSet(ICONS_KEY, JSON.stringify(icons)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+  return res.status(200).json({ ok: true, id, plain });
 };
 
 const deleteIcon = async (req, res) => {
@@ -870,7 +901,7 @@ const deleteIcon = async (req, res) => {
   if (!(await kvSet(ICONS_KEY, JSON.stringify(icons)))) {
     return res.status(500).json({ error: 'Saqlanmadi' });
   }
-  const oldKey = keyFromUrl(previous);
+  const oldKey = keyFromUrl(iconUrl(previous));
   if (oldKey) deleteObject(oldKey).catch(() => {});
 
   // Asl (chizilgan) ikonka qaytadi — hech narsa yo'qolmaydi.
@@ -935,6 +966,7 @@ const WRITE_PERMISSIONS = {
   'delete-life': 'life:write',
   'save-icon': 'icons:write',
   'delete-icon': 'icons:write',
+  'icon-mode': 'icons:write',
   // Hech bir rolda yo'q — faqat SUPER_ADMIN dagi "*" qamrab oladi.
   'purge-orders': 'orders:purge',
 };
@@ -983,6 +1015,7 @@ export default async function handler(req, res) {
     if (action === 'delete-life') return deleteLife(req, res);
     if (action === 'save-icon') return saveIcon(req, res);
     if (action === 'delete-icon') return deleteIcon(req, res);
+    if (action === 'icon-mode') return setIconMode(req, res);
     if (action === 'purge-orders') return purgeOrders(req, res);
   }
 

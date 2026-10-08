@@ -322,7 +322,7 @@ flow('4. Admin paneldagi tortib tashlash');
   /* Brauzerda bo'lmasa serverga manzilning O'ZI beriladi —
      aks holda Chrome'dan tortib tashlash ishlamay qolardi. */
   check('brauzerda bo‘lmasa serverga manzil beriladi',
-    /dataUrl \? \{ id: id, dataUrl: dataUrl \} : \{ id: id, url: url \}/.test(html));
+    /got\s*\n?\s*\? \{ id: id, dataUrl: got\.dataUrl, plain: got\.plain \}\s*\n?\s*: \{ id: id, url: url \}/.test(html));
 
   check('papkadagi fayl avval qaraladi',
     html.indexOf('e.dataTransfer.files') < html.indexOf('imageUrlFromDrop(e.dataTransfer)'));
