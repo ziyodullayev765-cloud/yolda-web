@@ -1015,7 +1015,14 @@
      Yashil butunlay ketmaydi: u asosiy tugmalarda va belgida
      qoladi, ya'ni ma'nosi bor joyda. */
   :root[data-theme="dark"] .bn-item.active,
-  :root[data-theme="dark"] .bn-ghost.active{color:#FFFFFF;}
+  :root[data-theme="dark"] .bn-ghost.active,
+  /* Sudrash paytida ustidan o'tilayotgan katak ham shu qoidaga
+     bo'ysunadi. Ilgari u faqat `.bn-armed` da yashil edi va
+     qorong'u rejimda linza surilganda har bir katak navbat bilan
+     yashil bo'lib chiqardi — tanlangani esa oq. Ya'ni bir vaqtning
+     o'zida ikkita boshqa-boshqa rangdagi "tanlangan" ko'rinardi. */
+  :root[data-theme="dark"] .bn-item.bn-armed,
+  :root[data-theme="dark"] .bn-ghost.bn-armed{color:#FFFFFF;}
   /* Tanlanganda ikonka bir sakrab qo'yadi. */
   .bn-item.active .ic-svg,
   .bn-ghost.active .ic-svg{transform:translateY(-2px) scale(1.12);}

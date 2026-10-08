@@ -284,14 +284,34 @@ NAV_IKONKA.forEach((id) => {
    aks holda qorong'u rejimda qora rasm qora panelda yo'qolardi. */
 check('"+" ilova rangini oladi',
   /<symbol id="iconPlus"[^>]*><rect[^>]*fill="currentColor"[^>]*mask="url\(#iconmask-iconPlus\)"/.test(html));
+/* ---------- Sudrash paytidagi rang ----------
+   Linza surilganda ustidan o'tilayotgan katak yorishib turadi
+   (`bn-armed`). Uning rangi faqat yashil edi va qorong'u rejimda
+   bu xato berardi: tanlangan katak OQ, ustidan o'tilayotgani esa
+   YASHIL — ya'ni bir vaqtda ikkita boshqa-boshqa rangdagi
+   "tanlangan" ko'rinardi. Brauzerda o'lchangan: rgb(48,208,128). */
+check('sudralganda ham mavzuga bo\'ysunadi',
+  html.includes(':root[data-theme="dark"] .bn-item.bn-armed,')
+  && html.includes(':root[data-theme="dark"] .bn-ghost.bn-armed{color:#FFFFFF;}'),
+  'qorong\'u rejimda oq');
+check('yorug\' rejimda yashil qoladi',
+  html.includes('.bn-item.bn-armed{color:var(--route);}'));
+
 /* "+" ga alohida qalinlik berilmasin: u faqat o'lchov farqini
    yashirish uchun qo'yilgandi. */
 check('"+" ga alohida chiziq qalinligi berilmagan',
   !/\.bn-item--primary \.bn-fab \.ic-svg\{[^}]*stroke-width/.test(html));
 
 /* ---------- Qorong'u rejimda yashil kamaytirildi ---------- */
-check('qorong\'uda tanlangan katak oq',
-  /\[data-theme="dark"\] \.bn-item\.active,[\s\S]{0,80}\.bn-ghost\.active\{color:#FFFFFF/.test(html));
+/* Qoida ichida nechta tanlagich borligi vaqt o'tib o'zgaradi
+   (keyinchalik `bn-armed` ham shu yerga qo'shildi), shuning uchun
+   ularning ketma-ketligi emas, OQ beradigan qoidada ikkalasi ham
+   borligi tekshiriladi. */
+check('qorong\'uda tanlangan katak oq', (() => {
+  const m = html.match(/((?::root\[data-theme="dark"\][^{};]*,\s*|\/\*[\s\S]*?\*\/\s*)*:root\[data-theme="dark"\][^{};]*)\{color:#FFFFFF;\}/);
+  if (!m) return false;
+  return m[1].includes('.bn-item.active') && m[1].includes('.bn-ghost.active');
+})(), 'oq beradigan qoidada ikkala tanlagich ham bor');
 /* Yorug' rejimda yashil qoladi — bu brendning rangi. */
 check('yorug\'da yashil joyida', /\.bn-item\.active,\.bn-ghost\.active\{color:var\(--route\);\}/.test(html));
 
