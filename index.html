@@ -4845,6 +4845,24 @@
   .profile-stat .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--ink);}
   .profile-stat .k{font-size:10px;color:var(--muted);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;}
 
+  /* YO'LDA xodimi yorlig'i. Odamning o'zi yozadigan matnlardan
+     (ism, bio) ko'rinishi bilan ajralib turadi: begona o'zini
+     administrator deb ko'rsatib qo'ya olmasligi kerak. Ro'yxatni
+     faqat super admin yuritadi — lib/staff.js. */
+  .staff-tag{
+    display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
+    font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
+    padding:3px 7px;border-radius:999px;white-space:nowrap;
+    background:rgba(9,134,75,0.10);color:var(--route-dark);
+    border:1px solid rgba(9,134,75,0.28);
+  }
+  /* Qorong'u rejimda to'q yashil matn ko'rinmaydi — yorug'rog'i. */
+  :root[data-theme="dark"] .staff-tag{
+    background:rgba(45,212,128,0.14);color:var(--route);
+    border-color:rgba(45,212,128,0.30);
+  }
+  .staff-tag svg{width:11px;height:11px;}
+
   .info-card{
     background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
     padding:var(--s4) var(--s5);margin-bottom:var(--s4);
@@ -15298,7 +15316,14 @@
             + escapeHtml((p.displayName || p.username || "?").charAt(0).toUpperCase()) + '</div>')
       + '<div><div style="font-size:17px;font-weight:700;display:flex;align-items:center;gap:6px;">'
       +   escapeHtml(p.displayName || p.username)
-      +   (p.verified ? icon("iconVerifiedBadge") : "") + '</div>'
+      +   (p.verified ? icon("iconVerifiedBadge") : "")
+      /* Xodim yorlig'i — ismning yonida, bir chetida. Matni
+         serverdan keladi: ro'yxatni super admin yuritadi, odam
+         o'zi emas. */
+      +   (p.staffRoleLabel
+            ? '<span class="staff-tag">' + icon("iconShield")
+              + escapeHtml(p.staffRoleLabel) + '</span>'
+            : "") + '</div>'
       +   '<div class="note" style="margin:2px 0 0;">@'+escapeHtml(p.username)+'</div></div>'
       + '</div>'
       + (stats.length

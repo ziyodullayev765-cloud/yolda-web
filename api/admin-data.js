@@ -23,6 +23,9 @@
  *   GET  /api/admin-data?resource=life
  *   POST /api/admin-data?action=save-life       { id?, kind, category, title, url, ... }
  *   POST /api/admin-data?action=delete-life     { id }
+ *   GET  /api/admin-data?resource=staff
+ *   POST /api/admin-data?action=save-staff      { identity, role, title? }
+ *   POST /api/admin-data?action=delete-staff    { identity }
  *
  * All of these require the signed cookie set by /api/admin-login, and each
  * one is gated on the caller's role — see READ_PERMISSIONS /
@@ -38,6 +41,8 @@ import { normalise as normaliseLife, sortItems as sortLifeItems } from '../lib/l
 import { uploadImage, keyFromUrl, deleteObject, storageConfigured, storageMissing } from '../lib/storage.js';
 import { fetchRemoteImage } from '../lib/remoteImage.js';
 import { normalizeIcons, iconUrl, iconIsPlain, iconEntry } from '../lib/icons.js';
+import { listStaff, saveStaff, removeStaff, countByRole, STAFF_ROLES, STAFF_ROLE_LABELS }
+  from '../lib/staff.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -939,6 +944,53 @@ const getUsage = async (res) => {
   });
 };
 
+/* ---------- Xodimlar ----------
+   Nima uchun bu ro'yxat panelga kirish huquqi EMAS — lib/staff.js
+   boshida batafsil yozilgan. Qisqasi: kirish hamon parol bilan,
+   bu yerdagi yozuv esa odamning profilida "Administrator" degan
+   yorliq chiqishi uchun. */
+const getStaff = async (res) => {
+  const staff = await listStaff();
+  return res.status(200).json({
+    ok: true,
+    staff,
+    counts: countByRole(staff),
+    roles: STAFF_ROLES,
+    roleLabels: STAFF_ROLE_LABELS,
+  });
+};
+
+const saveStaffMember = async (req, res, byRole) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = String(body.identity || body.email || '').trim();
+  if (!identity) return res.status(400).json({ error: 'Foydalanuvchi ko‘rsatilmagan' });
+
+  /* Mavjud bo'lmagan hisobni xodim qilib qo'yish — yozuv hech
+     kimga tegmaydigan joyda qolib ketishi. Shuning uchun profil
+     borligini tekshiramiz. */
+  const profileRaw = await kvGet(`profile:${identity}`);
+  if (!profileRaw) return res.status(404).json({ error: 'Bunday foydalanuvchi topilmadi' });
+
+  const result = await saveStaff(identity, {
+    role: String(body.role || ''),
+    title: body.title,
+    addedBy: byRole,
+  });
+  if (!result.ok) return res.status(400).json({ error: result.error });
+
+  const staff = await listStaff();
+  return res.status(200).json({ ok: true, staff, counts: countByRole(staff) });
+};
+
+const removeStaffMember = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = String(body.identity || '').trim();
+  if (!identity) return res.status(400).json({ error: 'Foydalanuvchi ko‘rsatilmagan' });
+  await removeStaff(identity);
+  const staff = await listStaff();
+  return res.status(200).json({ ok: true, staff, counts: countByRole(staff) });
+};
+
 const READ_PERMISSIONS = {
   usage: 'settings:read',
   orders: 'orders:read',
@@ -951,6 +1003,7 @@ const READ_PERMISSIONS = {
   verifydoc: 'users:read',
   life: 'life:read',
   icons: 'icons:read',
+  staff: 'staff:read',
 };
 
 /** Write permission required per POST action. */
@@ -969,6 +1022,9 @@ const WRITE_PERMISSIONS = {
   'icon-mode': 'icons:write',
   // Hech bir rolda yo'q — faqat SUPER_ADMIN dagi "*" qamrab oladi.
   'purge-orders': 'orders:purge',
+  // Bular ham faqat SUPER_ADMIN da — lib/adminAuth.js dagi izohga qarang.
+  'save-staff': 'staff:write',
+  'delete-staff': 'staff:write',
 };
 
 export default async function handler(req, res) {
@@ -993,6 +1049,7 @@ export default async function handler(req, res) {
     if (resource === 'verifydoc') return getVerifyDoc(req, res);
     if (resource === 'life') return getLife(res);
     if (resource === 'icons') return getIcons(res);
+    if (resource === 'staff') return getStaff(res);
   }
 
   if (req.method === 'POST') {
@@ -1002,7 +1059,8 @@ export default async function handler(req, res) {
       if (!requireAdmin(req, res)) return;
       return res.status(400).json({ error: 'Noto‘g‘ri action' });
     }
-    if (!requireAdmin(req, res, permission)) return;
+    const byRole = requireAdmin(req, res, permission);
+    if (!byRole) return;
 
     if (action === 'update-report') return updateReport(req, res);
     if (action === 'verify-driver') return verifyDriver(req, res);
@@ -1017,6 +1075,8 @@ export default async function handler(req, res) {
     if (action === 'delete-icon') return deleteIcon(req, res);
     if (action === 'icon-mode') return setIconMode(req, res);
     if (action === 'purge-orders') return purgeOrders(req, res);
+    if (action === 'save-staff') return saveStaffMember(req, res, byRole);
+    if (action === 'delete-staff') return removeStaffMember(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

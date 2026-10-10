@@ -12,6 +12,7 @@
  *   ADMIN_PASSWORD            → SUPER_ADMIN
  *   ADMIN_PASSWORD_ADMIN      → ADMIN
  *   ADMIN_PASSWORD_MODERATOR  → MODERATOR
+ *   ADMIN_PASSWORD_ACCOUNTANT → ACCOUNTANT  (Hisobchi)
  */
 import crypto from 'node:crypto';
 import { isAdminAuthed, makeSessionToken } from '../lib/adminAuth.js';
@@ -26,6 +27,7 @@ const ROLE_PASSWORDS = [
   ['SUPER_ADMIN', process.env.ADMIN_PASSWORD || ''],
   ['ADMIN', process.env.ADMIN_PASSWORD_ADMIN || ''],
   ['MODERATOR', process.env.ADMIN_PASSWORD_MODERATOR || ''],
+  ['ACCOUNTANT', process.env.ADMIN_PASSWORD_ACCOUNTANT || ''],
 ].filter(([, pw]) => pw);
 
 /** Constant-time compare so a password can't be probed character by character. */

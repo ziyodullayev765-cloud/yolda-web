@@ -37,6 +37,7 @@ import { deleteAccount, activeOrdersFor } from '../lib/deleteAccount.js';
 // bo'lishi kerak, aks holda ular hech qachon mos kelmasdi.
 import { CARGO } from '../lib/orderMessage.js';
 import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
+import { staffRecord, STAFF_ROLE_LABELS } from '../lib/staff.js';
 import {
   KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
   publicVerifications, canSubmit, docKey,
@@ -678,8 +679,14 @@ const listReviews = async (req, res) => {
    javob. Faqat ishonchga aloqador maydonlar chiqadi: telefon va
    email hech qachon. Ular aloqa boshlangandan keyin ochiladi.
    ============================================================ */
-const publicProfileShape = (identity, profile) => ({
+const publicProfileShape = (identity, profile, staff) => ({
   username: profile.username || '',
+  /* YO'LDA xodimi bo'lsa — yorliq. Odam o'ziga yozgan narsa emas,
+     shuning uchun profildagi boshqa matnlardan ajratib turiladi:
+     begona "men administratorman" deb yozib qo'ya olmaydi.
+     Ro'yxatni faqat super admin yuritadi (lib/staff.js). */
+  staffRole: staff && staff.role ? staff.role : '',
+  staffRoleLabel: staff && staff.role ? (STAFF_ROLE_LABELS[staff.role] || '') : '',
   displayName: profile.displayName || profile.username || '',
   avatarDataUrl: profile.avatarDataUrl || '',
   verified: Boolean(profile.verified),
@@ -732,8 +739,14 @@ const getPublicProfile = async (req, res) => {
       tags: (r.tags || []).filter((t) => CRITERIA_LABELS[t]),
     }));
 
+  const staff = await staffRecord(identity);
+
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
-  return res.status(200).json({ ok: true, profile: publicProfileShape(identity, profile), reviews });
+  return res.status(200).json({
+    ok: true,
+    profile: publicProfileShape(identity, profile, staff),
+    reviews,
+  });
 };
 
 /**
