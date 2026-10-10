@@ -627,6 +627,19 @@ const DEFAULT_SETTINGS = {
   commissionPercent: 0,
   maintenanceMode: false,
   maintenanceMessage: '',
+  /* Panel sarlavhasidagi belgi. Bo'sh bo'lsa harfdan yasalgan
+     belgi chiziladi — ya'ni logo majburiy emas. */
+  adminLogoUrl: '',
+  /* Kompaniya ma'lumotlari — hujjatlarda va yordam oynasida
+     ko'rinadi. Hech biri majburiy emas. */
+  companyLegalName: '',
+  companyAddress: '',
+  companyEmail: '',
+  /* Panelda ko'rinadigan ism. Panelga kirish parol bilan, ya'ni
+     hisob yo'q — shuning uchun ism shu yerda qo'lda yoziladi.
+     Bo'sh bo'lsa rol nomi ko'rinadi, o'ylab topilgan ism emas. */
+  adminDisplayName: '',
+  region: "O'zbekiston",
 };
 
 const readSettings = async () => {
@@ -652,6 +665,11 @@ const updateSettings = async (req, res) => {
   if (body.supportTelegram !== undefined) next.supportTelegram = String(body.supportTelegram).trim().replace(/^@/, '').slice(0, 40);
   if (body.maintenanceMessage !== undefined) next.maintenanceMessage = String(body.maintenanceMessage).trim().slice(0, 200);
   if (body.maintenanceMode !== undefined) next.maintenanceMode = Boolean(body.maintenanceMode);
+  if (body.companyLegalName !== undefined) next.companyLegalName = String(body.companyLegalName).trim().slice(0, 120);
+  if (body.companyAddress !== undefined) next.companyAddress = String(body.companyAddress).trim().slice(0, 200);
+  if (body.companyEmail !== undefined) next.companyEmail = String(body.companyEmail).trim().slice(0, 120);
+  if (body.adminDisplayName !== undefined) next.adminDisplayName = String(body.adminDisplayName).trim().slice(0, 60);
+  if (body.region !== undefined) next.region = String(body.region).trim().slice(0, 60) || DEFAULT_SETTINGS.region;
   if (body.commissionPercent !== undefined) {
     const pct = Number(body.commissionPercent);
     if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
@@ -814,6 +832,65 @@ const getIcons = async (res) => {
     // Faqat nomlari; qiymatlar hech qachon chiqarilmaydi.
     missing: storageMissing(),
   });
+};
+
+/**
+ * Panel belgisi (logo). Ikonkalardan farqi: bu ilovaning
+ * belgilaridan biri emas, faqat admin panelning sarlavhasida
+ * turadi — shuning uchun ikonkalar jadvaliga qo'shilmaydi,
+ * sozlamalarga yoziladi.
+ *
+ * Rasm ikki yo'l bilan keladi — tanlangan fayl (`dataUrl`) yoki
+ * Chrome'dan sudrab tashlangan manzil (`url`). Ikkinchisini
+ * server olib keladi, sababi saveIcon izohida yozilgan.
+ */
+const saveLogo = async (req, res) => {
+  if (!storageConfigured()) {
+    const missing = storageMissing();
+    return res.status(503).json({
+      error: `Fayl saqlash sozlanmagan. Yetishmayapti: ${missing.join(', ')}`,
+      missing,
+    });
+  }
+
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+
+  // Bo'shatish: belgi o'rniga yana harf chiziladi.
+  if (body.remove) {
+    const next = await readSettings();
+    const oldKey = keyFromUrl(next.adminLogoUrl);
+    next.adminLogoUrl = '';
+    if (!(await kvSet(SETTINGS_KEY, JSON.stringify(next)))) {
+      return res.status(500).json({ error: 'Saqlanmadi' });
+    }
+    if (oldKey) deleteObject(oldKey).catch(() => {});
+    return res.status(200).json({ ok: true, settings: next });
+  }
+
+  let source = body.dataUrl;
+  if (!source && body.url) {
+    const got = await fetchRemoteImage(body.url, MAX_ICON_BYTES);
+    if (got.error) return res.status(400).json({ error: got.error });
+    source = got.dataUrl;
+  }
+  if (!source) return res.status(400).json({ error: 'Rasm berilmadi' });
+
+  const uploaded = await uploadImage(source, 'logo', MAX_ICON_BYTES);
+  if (!uploaded || uploaded.error) {
+    return res.status(400).json({ error: (uploaded && uploaded.error) || 'Rasm yuklanmadi' });
+  }
+
+  const next = await readSettings();
+  const previousUrl = next.adminLogoUrl;
+  next.adminLogoUrl = uploaded.url;
+  if (!(await kvSet(SETTINGS_KEY, JSON.stringify(next)))) {
+    return res.status(500).json({ error: 'Saqlanmadi' });
+  }
+
+  const oldKey = keyFromUrl(previousUrl);
+  if (oldKey && previousUrl !== uploaded.url) deleteObject(oldKey).catch(() => {});
+
+  return res.status(200).json({ ok: true, settings: next });
 };
 
 const saveIcon = async (req, res) => {
@@ -1020,6 +1097,7 @@ const WRITE_PERMISSIONS = {
   'save-icon': 'icons:write',
   'delete-icon': 'icons:write',
   'icon-mode': 'icons:write',
+  'save-logo': 'settings:write',
   // Hech bir rolda yo'q — faqat SUPER_ADMIN dagi "*" qamrab oladi.
   'purge-orders': 'orders:purge',
   // Bular ham faqat SUPER_ADMIN da — lib/adminAuth.js dagi izohga qarang.
@@ -1074,6 +1152,7 @@ export default async function handler(req, res) {
     if (action === 'save-icon') return saveIcon(req, res);
     if (action === 'delete-icon') return deleteIcon(req, res);
     if (action === 'icon-mode') return setIconMode(req, res);
+    if (action === 'save-logo') return saveLogo(req, res);
     if (action === 'purge-orders') return purgeOrders(req, res);
     if (action === 'save-staff') return saveStaffMember(req, res, byRole);
     if (action === 'delete-staff') return removeStaffMember(req, res);

@@ -133,6 +133,51 @@
   .sb-logout:hover{background:var(--bad-soft);color:#FCA5A5;}
   .sb-logout svg{width:17px;height:17px;flex-shrink:0;}
 
+  /* Panel belgisi. Rasm bo'lmasa — nomning birinchi harfi, ya'ni
+     logo majburiy emas: sozlamalardan qo'yiladi (adminLogoUrl) va
+     istalgan payt almashtiriladi. */
+  .sb-logo{
+    width:30px;height:30px;border-radius:9px;flex-shrink:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent);color:var(--on-accent);
+    font-weight:800;font-size:14px;letter-spacing:-0.02em;
+  }
+  .sb-logo img{width:100%;height:100%;object-fit:contain;display:block;}
+
+  /* Bo'lim yonidagi son — nishon emas, shunchaki hisob. Qizil
+     nishon (.sb-badge) "ko'rib chiq" degani; bu esa "shuncha bor". */
+  .sb-count{
+    flex-shrink:0;font-size:11.5px;font-weight:600;color:var(--text-dim);
+    font-variant-numeric:tabular-nums;
+  }
+  .sb-item.active .sb-count{color:rgba(5,46,26,0.65);}
+
+  /* Yordam markazi — faqat super admindan boshqa xodimlarga.
+     Super adminning o'ziga o'z raqamini ko'rsatishdan ma'no yo'q. */
+  .sb-help{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    padding:10px 12px;margin-bottom:8px;border-radius:9px;
+    border:1px solid var(--line);background:rgba(255,255,255,0.03);
+    color:var(--text-soft);font-family:inherit;font-size:13px;font-weight:500;
+    cursor:pointer;white-space:nowrap;overflow:hidden;
+  }
+  .sb-help:hover{border-color:var(--accent);color:#fff;}
+  .sb-help svg{width:17px;height:17px;flex-shrink:0;color:var(--accent);}
+
+  .sb-status{
+    display:flex;align-items:center;gap:8px;padding:8px 12px 2px;
+    font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;
+  }
+  .sb-dot{
+    width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--ok);
+    box-shadow:0 0 0 3px rgba(34,197,94,0.18);
+  }
+  .sb-status.warn .sb-dot{background:var(--warn);box-shadow:0 0 0 3px rgba(245,158,11,0.18);}
+  .sb-ver{
+    padding:2px 12px 4px;font-size:10.5px;color:var(--text-dim);
+    white-space:nowrap;overflow:hidden;
+  }
+
   /* Collapsed rail — icons only. */
   .admin-shell.collapsed .admin-sidebar{width:var(--sidebar-w-collapsed);}
   .admin-shell.collapsed .sb-label,
@@ -140,8 +185,14 @@
   .admin-shell.collapsed .sb-brand,
   .admin-shell.collapsed .sb-group,
   .admin-shell.collapsed .sb-user-meta,
+  .admin-shell.collapsed .sb-count,
+  .admin-shell.collapsed .sb-help span,
+  .admin-shell.collapsed .sb-status span,
+  .admin-shell.collapsed .sb-ver,
   .admin-shell.collapsed .sb-logout span{display:none;}
   .admin-shell.collapsed .sb-item,
+  .admin-shell.collapsed .sb-help,
+  .admin-shell.collapsed .sb-status,
   .admin-shell.collapsed .sb-logout{justify-content:center;padding-left:0;padding-right:0;}
   .admin-shell.collapsed .sb-head{justify-content:center;padding:0 8px;}
   .admin-shell.collapsed .sb-collapse{margin-left:0;}
@@ -207,11 +258,51 @@
   .tb-res small{display:block;color:var(--text-dim);font-size:11.5px;margin-top:1px;}
   .tb-empty{padding:16px 14px;color:var(--text-dim);font-size:13px;}
 
-  .role-chip{
-    display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
-    padding:5px 10px;border-radius:999px;font-size:11.5px;font-weight:700;
-    background:var(--accent-soft);color:#7BE8AF;white-space:nowrap;
+  /* Qidiruv ichidagi klaviatura ishorasi. Faqat chizma emas —
+     ⌘K / Ctrl+K haqiqatan qidiruvni ochadi. */
+  .tb-kbd{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    display:flex;gap:3px;pointer-events:none;
   }
+  .tb-kbd kbd{
+    font-family:inherit;font-size:10.5px;font-weight:600;line-height:1;
+    padding:4px 5px;border-radius:5px;color:var(--text-dim);
+    background:rgba(255,255,255,0.06);border:1px solid var(--line);
+  }
+  .tb-search input:focus ~ .tb-kbd{opacity:0;}
+
+  .tb-region{
+    display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+    padding:6px 10px;border-radius:9px;font-size:12.5px;font-weight:500;
+    border:1px solid var(--line);background:var(--card2);color:var(--text-soft);
+    white-space:nowrap;
+  }
+  .tb-region svg{width:15px;height:15px;color:var(--text-dim);}
+
+  .tb-bell{
+    position:relative;width:34px;height:34px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);border-radius:9px;background:var(--card2);
+    color:var(--text-soft);cursor:pointer;
+  }
+  .tb-bell:hover{color:#fff;border-color:var(--line-2);}
+  .tb-bell svg{width:17px;height:17px;}
+  /* Nuqta faqat haqiqatan ko'rib chiqilmagan ish bo'lsa chiqadi —
+     doim turadigan qizil nuqta hech narsa anglatmaydi. */
+  .tb-bell-dot{
+    position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;
+    background:var(--bad);border:1.5px solid #080808;
+  }
+
+  .tb-me{display:flex;align-items:center;gap:9px;flex-shrink:0;min-width:0;}
+  .tb-me-av{
+    width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-soft);color:#7BE8AF;font-weight:700;font-size:12.5px;
+  }
+  .tb-me-meta{min-width:0;line-height:1.25;}
+  .tb-me-meta b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tb-me-meta small{display:block;color:var(--text-dim);font-size:11px;white-space:nowrap;}
 
   /* ---------- Main ---------- */
   .admin-main{padding:24px 24px 56px;max-width:1600px;}
@@ -260,6 +351,10 @@
     font-size:14px;font-weight:700;letter-spacing:-0.01em;
   }
   .card-title small{margin-left:auto;color:var(--text-dim);font-size:11.5px;font-weight:500;}
+  /* Sarlavhadagi belgi o'lchovsiz qolsa butun kartochkani egallab
+     oladi: `ico()` qaytargan <svg> da kenglik yo'q, u esa ota
+     elementga cho'ziladi. */
+  .card-title svg{width:16px;height:16px;flex-shrink:0;}
 
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:18px;}
   .stat{
@@ -280,6 +375,13 @@
   .stat-sub{font-size:12px;color:var(--text-dim);}
 
   .grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:18px;align-items:start;}
+  /* Katak ichidagi jadval kengaytirib yubormasligi uchun. Grid
+     kataklarining eng kichik kengligi sukut bo'yicha "auto", ya'ni
+     ichidagi jadval qanchalik keng bo'lsa katak ham shunchalik
+     kengayardi — natijada telefonda butun sahifa yonga suriladi.
+     `.table-scroll` ning o'zi faqat katak chegaralangandan keyin
+     ishlaydi. */
+  .grid-2 > *,.grid-2-even > *,.detail-grid > *{min-width:0;}
   .grid-2-even{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;align-items:start;}
 
   /* ---------- Charts ---------- */
@@ -434,6 +536,19 @@
   .modal-body{padding:18px 20px;overflow-y:auto;}
   .modal-foot{display:flex;gap:10px;padding:15px 20px;border-top:1px solid var(--line);flex-shrink:0;}
   .modal-foot .btn{flex:1;}
+  /* Yordam markazi oynasi. */
+  .help-row{
+    display:flex;align-items:center;gap:11px;text-decoration:none;
+    padding:11px 13px;margin-bottom:9px;border-radius:11px;
+    border:1px solid var(--line);background:var(--card-hi);color:var(--text);
+  }
+  .help-row:hover{border-color:var(--accent);}
+  .help-row svg{width:18px;height:18px;flex-shrink:0;color:var(--accent);}
+  .help-row b{display:block;font-size:14px;font-weight:600;}
+  .help-row small{display:block;color:var(--text-dim);font-size:11.5px;}
+  .help-note{margin:12px 0;color:var(--text-soft);font-size:12.5px;line-height:1.55;}
+  .help-err{color:#FCA5A5;font-size:12.5px;min-height:17px;}
+
   .field{margin-bottom:13px;}
   .field label{display:block;font-size:12px;color:var(--text-soft);font-weight:600;margin-bottom:5px;}
   .field input,.field select,.field textarea{
@@ -477,7 +592,10 @@
        always the full-width version, so undo the collapsed class here. */
     .admin-shell.collapsed .admin-sidebar{width:var(--sidebar-w);}
     .admin-shell.collapsed .sb-label,.admin-shell.collapsed .sb-badge,
+    .admin-shell.collapsed .sb-count,.admin-shell.collapsed .sb-help span,
+    .admin-shell.collapsed .sb-status span,.admin-shell.collapsed .sb-ver,
     .admin-shell.collapsed .sb-user-meta,.admin-shell.collapsed .sb-logout span{display:block;}
+    .admin-shell.collapsed .sb-help,.admin-shell.collapsed .sb-status{justify-content:flex-start;padding-left:12px;padding-right:12px;}
     .admin-shell.collapsed .sb-brand{display:block;}
     .admin-shell.collapsed .sb-group{display:block;}
     .admin-shell.collapsed .sb-item,.admin-shell.collapsed .sb-logout{justify-content:flex-start;padding-left:12px;padding-right:12px;}
@@ -490,8 +608,11 @@
     .admin-main{padding:18px 14px 48px;}
     .admin-topbar{padding:0 14px;gap:9px;}
     .tb-title{display:none;}
-    .tb-search{width:100%;}
-    .role-chip{display:none;}
+    /* `width:100%` edi: qolgan tugmalar (qo'ng'iroqcha, avatar)
+       bilan birga sarlavha ekranga sig'mas va butun sahifa yonga
+       suriladigan bo'lib qolardi. */
+    .tb-search{width:auto;flex:1 1 auto;min-width:0;}
+    .tb-region,.tb-kbd,.tb-me-meta{display:none;}
     .stat-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
     .kv{grid-template-columns:1fr;gap:2px 0;}
     .kv dt{margin-top:9px;font-size:11.5px;}
@@ -606,6 +727,7 @@
 
   <aside class="admin-sidebar">
     <div class="sb-head">
+      <div class="sb-logo" id="sbLogo">Y</div>
       <div class="sb-brand">YO'LDA <span>Admin</span></div>
       <button type="button" class="sb-collapse" id="sbCollapse" aria-label="Menyuni yig'ish">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -623,10 +745,15 @@
       <div class="tb-title" id="tbTitle"></div>
       <div class="tb-search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
-        <input type="search" id="globalSearch" placeholder="Qidirish: foydalanuvchi, buyurtma, e'lon…" autocomplete="off" aria-label="Umumiy qidiruv">
+        <input type="search" id="globalSearch" placeholder="Buyurtma, haydovchi yoki mijozni qidirish" autocomplete="off" aria-label="Umumiy qidiruv">
+        <span class="tb-kbd" id="tbKbd" aria-hidden="true"><kbd>⌘</kbd><kbd>K</kbd></span>
         <div class="tb-results" id="globalResults" hidden></div>
       </div>
-      <span class="role-chip" id="roleChip"></span>
+      <span class="tb-region" id="tbRegion" hidden></span>
+      <button type="button" class="tb-bell" id="tbBell" aria-label="Ko'rib chiqilmagan ishlar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </button>
+      <div class="tb-me" id="tbMe"></div>
     </header>
     <main class="admin-main" id="adminMain"></main>
   </div>
@@ -707,7 +834,15 @@
     }
     return false;
   }
-  function initials(s){ return (String(s || "?").trim().charAt(0) || "?").toUpperCase(); }
+  /* Ism-familiyadan ikki harf ("Aziz Karimov" → "AK"), bitta so'z
+     bo'lsa bitta harf. Avval faqat birinchi harf olinardi va ikki
+     xodim bir xil ko'rinib qolardi. */
+  function initials(s){
+    var parts = String(s || "?").trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return "?";
+    if(parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
   function pct(part, total){ return total > 0 ? Math.round((part / total) * 100) : 0; }
 
   /* ==========================================================
@@ -738,7 +873,13 @@
     pin: '<path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
     play: '<path d="M8 5.6 19 12 8 18.4Z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
-    edit: '<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M14.5 6.5 17.5 9.5"/>'
+    edit: '<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M14.5 6.5 17.5 9.5"/>',
+    wallet: '<rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="17" cy="14.5" r="1.2"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.2c-.8.5-1.2 1-1.2 1.8"/><path d="M12 17h.01"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/>',
+    phone: '<path d="M6.5 3h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16 16 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
+    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>'
   };
   function ico(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
@@ -807,7 +948,14 @@
     YENGIL:"Yengil avtomobil (eski)", MIKROAVTOBUS:"Mikroavtobus (eski)",
     AVTOBUS:"Avtobus (eski)", MOTOSIKL:"Motosikl (eski)"
   };
-  var ROLE_NAMES = { SUPER_ADMIN:"Super admin", ADMIN:"Admin", MODERATOR:"Moderator" };
+  /* Rol nomlari lib/staff.js dagi STAFF_ROLE_LABELS bilan bir xil:
+     xodimning profilida va panelda bitta so'z ko'rinishi kerak. */
+  var ROLE_NAMES = {
+    SUPER_ADMIN:"Super administrator", ADMIN:"Administrator",
+    MODERATOR:"Operator", ACCOUNTANT:"Hisobchi"
+  };
+  /* Pastdagi "YO'LDA boshqaruv · v…" yozuvi uchun. */
+  var PANEL_VERSION = "v2.4";
 
   /* Emoji o'rniga ishlatiladigan kichik belgilar — jadval kataklarida
      matn bilan bir qatorda turadi, shuning uchun o'lchami inline berilgan. */
@@ -893,6 +1041,21 @@
       });
     },
     session: function(){ return Api.request("/api/admin-login"); },
+    /* Ilovaning ochiq sozlamalari. Yordam markazidagi raqam shundan
+       olinadi — `resource=settings` ni har bir rol o'qiy olmaydi,
+       bu esa hammaga ochiq. */
+    config: function(){ return Api.request("/api/config"); },
+    /* Xodimning fikri odamlar murojaatlari bilan bitta joyga
+       tushadi (Murojaatlar bo'limi) — super admin o'qiydi.
+       Yangi serverless funksiya qo'shilmaydi: Vercel'da ularning
+       soni cheklangan. */
+    support: function(body){
+      return Api.request("/api/support", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      });
+    },
     login: function(password){
       return Api.request("/api/admin-login", {
         method: "POST",
@@ -928,12 +1091,17 @@
       "trucks:read","trucks:write","messages:read","analytics:read",
       "settings:read","settings:write",
       "life:read","life:write",
-      "icons:read","icons:write"
+      "icons:read","icons:write",
+      "payments:read"
     ],
     MODERATOR: [
       "orders:read","users:read","reports:read","reports:write",
       "trucks:read","trucks:write","messages:read","life:read",
       "icons:read"
+    ],
+    ACCOUNTANT: [
+      "orders:read","users:read","analytics:read","settings:read",
+      "payments:read"
     ]
   };
   var session = { role: null };
@@ -1347,24 +1515,104 @@
   }
 
   /* ==========================================================
+     11b. Yordam markazi — super admindan boshqa xodimlar uchun.
+     Ikki narsa beradi: bog'lanish uchun raqam va fikr yozib
+     qoldirish. Fikr Murojaatlar bo'limiga tushadi, ya'ni super
+     admin uni paneldan o'qiydi — yangi funksiya qo'shilmaydi.
+     ========================================================== */
+  var panelConfig = null;
+
+  function loadPanelConfig(){
+    return Api.config().then(function(body){
+      panelConfig = body || {};
+      render();
+    }).catch(function(){ /* raqam ko'rinmasa ham panel ishlaydi */ });
+  }
+
+  function openHelpCentre(){
+    var cfg = panelConfig || {};
+    var phone = cfg.supportPhone || "";
+    var tg = cfg.supportTelegram || "";
+    var roleName = ROLE_NAMES[session.role] || session.role || "";
+
+    var contact = "";
+    if(phone){
+      contact += '<a class="help-row" href="tel:' + esc(phone.replace(/[^+\d]/g, "")) + '">'
+        + ico("phone") + '<span><b>' + esc(phone) + '</b><small>Qo\'ng\'iroq qilish</small></span></a>';
+    }
+    if(tg){
+      contact += '<a class="help-row" href="https://t.me/' + esc(tg) + '" target="_blank" rel="noopener">'
+        + ico("mail") + '<span><b>@' + esc(tg) + '</b><small>Telegram</small></span></a>';
+    }
+    if(!contact){
+      contact = '<p class="help-note">Bog\'lanish raqami hali sozlamalarga yozilmagan.</p>';
+    }
+
+    openModal({
+      title: "Yordam markazi",
+      body: contact
+        + '<p class="help-note">Taklif yoki muammo bo\'lsa shu yerga yozing — u '
+        + 'Murojaatlar bo\'limiga tushadi va boshqaruvchi o\'qiydi.</p>'
+        + '<div class="field"><label for="helpText">Fikringiz</label>'
+        + '<textarea id="helpText" rows="5" maxlength="500" '
+        + 'placeholder="Nima ishlamadi yoki nimani qo\'shish kerak?"></textarea></div>'
+        + '<div class="help-err" id="helpErr"></div>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Yopish</button>'
+        + '<button type="button" class="btn primary" data-act="modal-save">Yuborish</button>',
+      onSave: function(){
+        var box = byId("helpText");
+        var text = (box.value || "").trim();
+        var err = byId("helpErr");
+        if(!text){ err.textContent = "Fikringizni yozing."; box.focus(); return false; }
+
+        err.textContent = "";
+        /* Kim yozganini bilish uchun rol qo'shiladi: paneldagi
+           hisob yo'q, shuning uchun bundan boshqa belgi yo'q. */
+        Api.support({
+          name: "Admin panel · " + roleName,
+          contact: "admin-panel",
+          message: text
+        }).then(function(){
+          closeModal();
+          toast("Fikringiz yuborildi. Rahmat!", "ok");
+        }).catch(function(e){
+          err.textContent = e.message || "Yuborilmadi";
+        });
+        return false;
+      }
+    });
+  }
+
+  /* ==========================================================
      12. Routes
      Function declarations hoist, so the view functions further down
      are already defined by the time this array is evaluated.
      ========================================================== */
+  /* Ikki guruh. BOSHQARUV — kundalik ish; QO'SHIMCHA — kamroq
+     ochiladigan, lekin kerakli bo'limlar. Ilgari beshta guruh
+     bor edi va har birida bir-ikki qator turardi: ro'yxat
+     uzun ko'rinardi, aslida esa kam narsa bor edi.
+
+     `count` — yonidagi son (shuncha bor), `badge` — qizil
+     nishon (ko'rib chiqish kerak). Ikkisi boshqa narsa. */
   var ROUTES = [
-    { name:"dashboard",     label:"Boshqaruv paneli", icon:"dashboard", group:"Umumiy",     perm:null,             view:viewDashboard },
-    { name:"loads",         label:"Yuk buyurtmalari", icon:"box",       group:"Operatsiya", perm:"orders:read",    view:viewLoads,    detail:viewLoadDetail },
-    { name:"trips",         label:"Safarlar",         icon:"route",     group:"Operatsiya", perm:"orders:read",    view:viewTrips },
-    { name:"trucks",        label:"Mashina e'lonlari",icon:"car",       group:"Operatsiya", perm:"trucks:read",    view:viewTrucks,   detail:viewTruckDetail, badge:pendingTrucksCount },
-    { name:"verifications", label:"Tasdiqlashlar",    icon:"shield",    group:"Moderatsiya",perm:"users:write",    view:viewVerifications, badge:pendingVerificationsCount },
-    { name:"reports",       label:"Shikoyatlar",      icon:"flag",      group:"Moderatsiya",perm:"reports:read",   view:viewReports,  badge:newReportsCount },
-    { name:"users",         label:"Foydalanuvchilar", icon:"users",     group:"Moderatsiya",perm:"users:read",     view:viewUsers,    detail:viewUserDetail },
-    { name:"messages",      label:"Murojaatlar",      icon:"mail",      group:"Moderatsiya",perm:"messages:read",  view:viewMessages },
-    { name:"analytics",     label:"Tahlil",           icon:"chart",     group:"Tizim",      perm:"analytics:read", view:viewAnalytics },
-    { name:"life",          label:"YO'LDA LIFE",      icon:"play",      group:"Mazmun",     perm:"life:read",      view:viewLife },
-    { name:"icons",         label:"Ikonkalar",        icon:"edit",      group:"Mazmun",     perm:"icons:read",     view:viewIcons },
-    { name:"usage",         label:"Baza yuklanishi",  icon:"chart",     group:"Tizim",      perm:"settings:read",  view:viewUsage },
-    { name:"settings",      label:"Sozlamalar",       icon:"gear",      group:"Tizim",      perm:"settings:read",  view:viewSettings }
+    { name:"dashboard",     label:"Umumiy ko'rinish", icon:"dashboard", group:"Boshqaruv", perm:null,             view:viewDashboard },
+    { name:"loads",         label:"Buyurtmalar",      icon:"box",       group:"Boshqaruv", perm:"orders:read",    view:viewLoads,    detail:viewLoadDetail, count:ordersCount },
+    { name:"listings",      label:"Yuklar",           icon:"file",      group:"Boshqaruv", perm:"orders:read",    view:viewListings, detail:viewLoadDetail, count:openLoadsCount },
+    { name:"drivers",       label:"Haydovchilar",     icon:"car",       group:"Boshqaruv", perm:"users:read",     view:viewDrivers,  detail:viewUserDetail, count:driversCount, badge:pendingVerificationsCount },
+    { name:"users",         label:"Foydalanuvchilar", icon:"users",     group:"Boshqaruv", perm:"users:read",     view:viewUsers,    detail:viewUserDetail, count:usersCount },
+    { name:"payments",      label:"To'lovlar",        icon:"wallet",    group:"Boshqaruv", perm:"payments:read",  view:viewPayments },
+    { name:"analytics",     label:"Hisobotlar",       icon:"chart",     group:"Boshqaruv", perm:"analytics:read", view:viewAnalytics },
+    { name:"settings",      label:"Sozlamalar",       icon:"gear",      group:"Boshqaruv", perm:"settings:read",  view:viewSettings },
+
+    { name:"trips",         label:"Safarlar",         icon:"route",     group:"Qo'shimcha", perm:"orders:read",    view:viewTrips },
+    { name:"trucks",        label:"Mashina e'lonlari",icon:"car",       group:"Qo'shimcha", perm:"trucks:read",    view:viewTrucks,   detail:viewTruckDetail, badge:pendingTrucksCount },
+    { name:"verifications", label:"Tasdiqlashlar",    icon:"shield",    group:"Qo'shimcha", perm:"users:write",    view:viewVerifications, badge:pendingVerificationsCount },
+    { name:"reports",       label:"Shikoyatlar",      icon:"flag",      group:"Qo'shimcha", perm:"reports:read",   view:viewReports,  badge:newReportsCount },
+    { name:"messages",      label:"Murojaatlar",      icon:"mail",      group:"Qo'shimcha", perm:"messages:read",  view:viewMessages },
+    { name:"life",          label:"YO'LDA LIFE",      icon:"play",      group:"Qo'shimcha", perm:"life:read",      view:viewLife },
+    { name:"icons",         label:"Ikonkalar",        icon:"edit",      group:"Qo'shimcha", perm:"icons:read",     view:viewIcons },
+    { name:"usage",         label:"Baza yuklanishi",  icon:"chart",     group:"Qo'shimcha", perm:"settings:read",  view:viewUsage }
   ];
   function routeByName(name){
     for(var i = 0; i < ROUTES.length; i++) if(ROUTES[i].name === name) return ROUTES[i];
@@ -1396,6 +1644,20 @@
       });
     });
     return n;
+  }
+
+  /* Yonidagi sonlar — ma'lumot kelmaguncha ko'rinmaydi. Nol
+     ko'rsatish "hech narsa yo'q" degan noto'g'ri xabar berardi,
+     aslida esa hali yuklanmagan bo'ladi. */
+  function ordersCount(){ return Store.state.orders === "ready" ? Store.list("orders").length : 0; }
+  function openLoadsCount(){
+    if(Store.state.orders !== "ready") return 0;
+    return Store.list("orders").filter(isOpenLoad).length;
+  }
+  function usersCount(){ return Store.state.users === "ready" ? Store.list("users").length : 0; }
+  function driversCount(){
+    if(Store.state.users !== "ready") return 0;
+    return Store.list("users").filter(isDriverUser).length;
   }
 
   /* ==========================================================
@@ -1450,30 +1712,89 @@
 
     byId("sbNav").innerHTML = groups.map(function(g){
       return '<div class="sb-group">' + esc(g.name) + '</div>' + g.items.map(function(r){
-        var count = r.badge ? r.badge() : 0;
+        var badge = r.badge ? r.badge() : 0;
+        /* Nishon bor bo'lsa son ko'rsatilmaydi: ikkitasi birga
+           turganda qaysi biri nimani anglatishi yo'qoladi. */
+        var count = (!badge && r.count) ? r.count() : 0;
         return '<button type="button" class="sb-item' + (current.name === r.name ? " active" : "") + '" '
           + 'data-act="nav" data-name="' + esc(r.name) + '" title="' + esc(r.label) + '">'
           + ico(r.icon)
           + '<span class="sb-label">' + esc(r.label) + '</span>'
-          + (count > 0 ? '<span class="sb-badge">' + count + '</span>' : "")
+          + (badge > 0 ? '<span class="sb-badge">' + badge + '</span>' : "")
+          + (count > 0 ? '<span class="sb-count">' + fmt(count) + '</span>' : "")
           + '</button>';
       }).join("");
     }).join("");
 
-    var roleName = ROLE_NAMES[session.role] || session.role || "";
+    byId("sbLogo").innerHTML = logoHtml();
+
+    /* Yordam markazi — super adminning o'ziga ko'rsatilmaydi: raqam
+       uning o'zining raqami. Boshqa xodimlar esa fikrini yozib
+       qoldirishi yoki qo'ng'iroq qilishi uchun shu yerda turadi. */
+    var help = "";
+    if(session.role && session.role !== "SUPER_ADMIN"){
+      help = '<button type="button" class="sb-help" data-act="help" title="Yordam markazi">'
+        + ico("help") + '<span>Yordam markazi</span></button>';
+    }
+
+    /* Yashil nuqta faqat tizim haqiqatan ishlayotganda. Ta'mirlash
+       rejimi yoqilgan bo'lsa — sariq: "barqaror" deb turish yolg'on
+       bo'lardi. */
+    var maint = Boolean((Store.data.settings || {}).maintenanceMode);
+    var statusText = maint ? "Ta'mirlash rejimi yoqilgan" : "Tizim barqaror ishlamoqda";
+
     byId("sbFoot").innerHTML =
-      '<div class="sb-user">'
-      + '<span class="sb-avatar">' + esc(initials(roleName)) + '</span>'
-      + '<span class="sb-user-meta"><b>' + esc(roleName) + '</b><small>Faol sessiya</small></span>'
-      + '</div>'
+      help
+      + '<div class="sb-status' + (maint ? " warn" : "") + '"><i class="sb-dot"></i>'
+      + '<span>' + esc(statusText) + '</span></div>'
+      + '<div class="sb-ver">' + esc(platformName()) + " boshqaruv · " + esc(PANEL_VERSION) + '</div>'
       + '<button type="button" class="sb-logout" data-act="logout">' + ico("logout") + '<span>Chiqish</span></button>';
+  }
+
+  /** Panel belgisi: sozlamalardagi rasm, yo'q bo'lsa nomning harfi. */
+  function logoHtml(){
+    var url = (Store.data.settings || {}).adminLogoUrl || "";
+    if(url) return '<img src="' + esc(url) + '" alt="">';
+    return esc(platformName().charAt(0).toUpperCase() || "Y");
+  }
+  function platformName(){
+    return (Store.data.settings || {}).platformName || "YO'LDA";
   }
 
   function renderTopbar(){
     var route = routeByName(current.name);
     byId("tbTitle").textContent = route ? route.label : "";
+
+    var settings = Store.data.settings || {};
     var roleName = ROLE_NAMES[session.role] || session.role || "";
-    byId("roleChip").innerHTML = ico("shield") + esc(roleName);
+    /* Panelga kirish parol bilan, ya'ni hisob yo'q — demak ism ham
+       yo'q. Sozlamalarda yozilgan bo'lsa shu ism, aks holda rol
+       nomi ko'rinadi. O'ylab topilgan ism yozilmaydi. */
+    var name = settings.adminDisplayName || roleName;
+
+    var region = byId("tbRegion");
+    if(settings.region){
+      region.innerHTML = ico("globe") + esc(settings.region);
+      region.hidden = false;
+    } else {
+      region.hidden = true;
+    }
+
+    /* Qo'ng'iroqchadagi nuqta — ko'rib chiqilmagan ishlar yig'indisi.
+       Hech narsa bo'lmasa nuqta ham bo'lmaydi. */
+    var waiting = pendingTrucksCount() + newReportsCount() + pendingVerificationsCount();
+    byId("tbBell").innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+      + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>'
+      + '<path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>'
+      + (waiting > 0 ? '<span class="tb-bell-dot"></span>' : "");
+    byId("tbBell").setAttribute("aria-label",
+      waiting > 0 ? waiting + " ta ko'rib chiqilmagan ish" : "Ko'rib chiqilmagan ish yo'q");
+
+    byId("tbMe").innerHTML =
+      '<span class="tb-me-av">' + esc(initials(name)) + '</span>'
+      + '<span class="tb-me-meta"><b>' + esc(name) + '</b><small>' + esc(roleName) + '</small></span>';
   }
 
   function render(){
@@ -1616,11 +1937,11 @@
       if(can(RESOURCES[n].perm)) need.push(n);
     });
     if(!need.length){
-      return pageHead("Boshqaruv paneli", "")
+      return pageHead("Umumiy ko'rinish", "")
         + stateBox("lock", "Ko'rsatadigan ma'lumot yo'q", "Rolingizga hech qanday bo'lim ochiq emas.");
     }
 
-    return pageHead("Boshqaruv paneli", "Platformaning bugungi holati", refreshBtn("all"))
+    return pageHead("Umumiy ko'rinish", "Platformaning bugungi holati", refreshBtn("all"))
       + withData(need, function(){
         var orders = Store.list("orders");
         var users = Store.list("users");
@@ -1822,7 +2143,7 @@
   }
 
   function viewLoads(){
-    return pageHead("Yuk buyurtmalari", "Saytdan kelgan barcha yuk buyurtmalari",
+    return pageHead("Buyurtmalar", "Saytdan kelgan barcha yuk buyurtmalari",
       purgeButton() + refreshBtn("orders"))
       + withData(["orders"], function(){
         var orders = Store.list("orders");
@@ -1882,7 +2203,7 @@
   }
 
   function viewLoadDetail(code){
-    return backLink("#/loads", "Yuk buyurtmalari")
+    return backLink("#/loads", "Buyurtmalar")
       + withData(["orders"], function(){
         var order = null;
         Store.list("orders").forEach(function(o){ if(o.code === code) order = o; });
@@ -2608,6 +2929,284 @@
   }
 
   /* ==========================================================
+     22b. Yuklar — hali haydovchi topmagan e'lonlar.
+     "Buyurtmalar" bilan bitta ro'yxatdan oziqlanadi, lekin boshqa
+     savolga javob beradi: u yerda "ish qanday ketyapti", bu yerda
+     "qaysi yuk hamon kutib turadi". Shu sababli alohida bo'lim —
+     navbatdagi ishni ko'rish uchun jadvalni saralash kerak emas.
+     ========================================================== */
+  function isOpenLoad(o){ return !isTrip(o) && (o.status || "NEW") === "NEW"; }
+
+  function viewListings(){
+    return pageHead("Yuklar", "E'lon qilingan yuklar — haydovchi kutayotganlari birinchi",
+      refreshBtn("orders"))
+      + withData(["orders"], function(){
+        var orders = Store.list("orders");
+        var open = orders.filter(isOpenLoad);
+        var dayAgo = Date.now() - 86400000;
+        var today = orders.filter(function(o){ return (o.createdAt || 0) >= dayAgo; });
+        var sum = open.reduce(function(a, o){ return a + (Number(o.amount) || 0); }, 0);
+        var tons = open.reduce(function(a, o){ return a + (Number(o.weightKg) || 0); }, 0) / 1000;
+
+        var cards = '<div class="stat-grid">'
+          + stat("E'lon qilingan yuklar", fmt(orders.length), "boshidan beri", "file")
+          + stat("Haydovchi kutayotgan", fmt(open.length),
+              pct(open.length, orders.length) + "% hamon bo'sh", "clock", open.length ? "warn" : "ok")
+          + stat("Bugun qo'shilgan", fmt(today.length), "so'nggi 24 soat", "plus")
+          + stat("Kutayotgan yuklar og'irligi", (Math.round(tons * 10) / 10).toLocaleString("ru-RU"),
+              "tonna · " + money(sum), "box")
+          + '</div>';
+
+        return cards + dataTable({
+          id: "listings",
+          /* Boshlang'ich saralash — navbatdagi ish. Bo'lim aynan
+             "qaysi yuk hamon kutib turadi" degan savol uchun, shu
+             sababli "Barchasi" emas. */
+          defaults: { sortKey:"createdAt", sortDir:"desc", filter:"OPEN" },
+          rows: orders,
+          unit: "yuk",
+          searchPlaceholder: "Kod, shahar, ism, telefon…",
+          search: orderSearch,
+          filters: [
+            { key:"OPEN", label:"Haydovchi kutyapti", count:open.length },
+            { key:"TAKEN", label:"Haydovchi topilgan", count:orders.filter(isTrip).length },
+            { key:"ALL", label:"Barchasi", count:orders.length }
+          ],
+          filterFn: function(o, f){
+            if(f === "OPEN") return isOpenLoad(o);
+            if(f === "TAKEN") return isTrip(o);
+            return true;
+          },
+          rowAttrs: function(o){
+            return 'class="clickable" data-act="go" data-hash="#/listings/' + esc(encodeURIComponent(o.code)) + '"';
+          },
+          emptyTitle: "Yuk e'loni yo'q",
+          emptyText: "Saytdan birinchi yuk e'lon qilinganda shu yerda ko'rinadi.",
+          columns: [
+            { key:"createdAt", label:"Qo'yilgan", sortable:true, cls:"dim",
+              value:function(o){ return o.createdAt || 0; },
+              render:function(o){ return esc(relTime(o.createdAt)); } },
+            { key:"code", label:"Kod", sortable:true,
+              value:function(o){ return o.code || ""; },
+              render:function(o){ return '<b>' + esc(o.code) + '</b>'; } },
+            { key:"route", label:"Yo'nalish", sortable:true,
+              value:function(o){ return (o.fromCity || "") + (o.toCity || ""); },
+              render:function(o){ return esc(o.fromCity) + ' → ' + esc(o.toCity); } },
+            { key:"cargo", label:"Yuk turi", sortable:true,
+              value:function(o){ return cargoLabel(o); },
+              render:function(o){ return esc(cargoLabel(o)); } },
+            { key:"weightKg", label:"Og'irlik", sortable:true, cls:"num",
+              value:function(o){ return Number(o.weightKg) || 0; },
+              render:function(o){ return fmt(o.weightKg) + ' kg'; } },
+            { key:"amount", label:"Narx", sortable:true, cls:"num",
+              value:function(o){ return Number(o.amount) || 0; },
+              render:function(o){ return esc(money(o.amount)); } },
+            { key:"name", label:"Yuk beruvchi", sortable:true,
+              value:function(o){ return o.name || ""; },
+              render:function(o){ return esc(o.name); } },
+            { key:"status", label:"Holat", sortable:true,
+              value:function(o){ return isOpenLoad(o) ? 0 : 1; },
+              render:function(o){
+                return isOpenLoad(o)
+                  ? pill("Haydovchi kutyapti", "pill-warn")
+                  : orderPill(o.status);
+              } }
+          ]
+        });
+      });
+  }
+
+  /* ==========================================================
+     22c. Haydovchilar — faqat haydovchi rolidagi profillar.
+     Foydalanuvchilar bo'limidan farqi: bu yerda mashina, reyslar
+     va hujjat holati birinchi o'rinda turadi, ya'ni "bu odamga
+     yuk ishonib bo'ladimi" degan savolga qaraydi.
+     ========================================================== */
+  function isDriverUser(u){ return u && (u.role === "DRIVER" || u.role === "BOTH"); }
+
+  /** Hujjatlar holati bitta so'zda: nechtasi tasdiqlangan. */
+  function docsSummary(u){
+    var ok = 0, pending = 0;
+    VERIFY_REVIEWED_KINDS.forEach(function(kind){
+      var st = verifyStateOf(u, kind).status;
+      if(st === "APPROVED") ok++;
+      else if(st === "PENDING") pending++;
+    });
+    if(pending) return pill(pending + " ta ko'rib chiqilmagan", "pill-warn");
+    if(ok === VERIFY_REVIEWED_KINDS.length) return pill("To'liq", "pill-ok");
+    if(ok) return pill(ok + "/" + VERIFY_REVIEWED_KINDS.length, "pill-blue");
+    return pill("Yo'q", "pill-dim");
+  }
+
+  function viewDrivers(){
+    return pageHead("Haydovchilar", "Haydovchi sifatida ro'yxatdan o'tgan profillar",
+      refreshBtn("users"))
+      + withData(["users"], function(){
+        var drivers = Store.list("users").filter(isDriverUser);
+        var verified = drivers.filter(function(u){ return u.verified; });
+        var pending = drivers.filter(function(u){
+          return VERIFY_REVIEWED_KINDS.some(function(k){ return verifyStateOf(u, k).status === "PENDING"; });
+        });
+        var banned = drivers.filter(function(u){ return u.banned; });
+        var trips = drivers.reduce(function(a, u){ return a + (Number(u.deliveredCount) || 0); }, 0);
+
+        var cards = '<div class="stat-grid">'
+          + stat("Haydovchilar", fmt(drivers.length), "jami profil", "car")
+          + stat("Tasdiqlangan", fmt(verified.length),
+              pct(verified.length, drivers.length) + "% profil tasdiqlangan", "shield", "ok")
+          + stat("Hujjat kutyapti", fmt(pending.length),
+              pending.length ? "ko'rib chiqish kerak" : "navbat bo'sh", "clock",
+              pending.length ? "warn" : "ok")
+          + stat("Yetkazilgan reyslar", fmt(trips), "haydovchilar hisobi bo'yicha", "check")
+          + '</div>';
+
+        return cards + dataTable({
+          id: "drivers",
+          defaults: { sortKey:"rating", sortDir:"desc" },
+          rows: drivers,
+          unit: "haydovchi",
+          searchPlaceholder: "Ism, username, shahar, telefon, raqam…",
+          search: function(u, q){
+            return matches([u.username, u.email, u.displayName, u.city, u.phone, u.plateNumber], q);
+          },
+          filters: [
+            { key:"ALL", label:"Barchasi", count:drivers.length },
+            { key:"PENDING", label:"Hujjat kutyapti", count:pending.length },
+            { key:"VERIFIED", label:"Tasdiqlangan", count:verified.length },
+            { key:"BANNED", label:"Bloklangan", count:banned.length }
+          ],
+          filterFn: function(u, f){
+            if(f === "PENDING") return VERIFY_REVIEWED_KINDS.some(function(k){ return verifyStateOf(u, k).status === "PENDING"; });
+            if(f === "VERIFIED") return Boolean(u.verified);
+            if(f === "BANNED") return Boolean(u.banned);
+            return true;
+          },
+          emptyTitle: "Haydovchi yo'q",
+          emptyText: "Profilida rol sifatida haydovchini tanlagan odam shu yerda ko'rinadi.",
+          columns: [
+            { key:"name", label:"Haydovchi", sortable:true,
+              value:function(u){ return (u.displayName || u.username || "").toLowerCase(); },
+              render:function(u){
+                return '<b>' + esc(u.displayName || (u.username ? "@" + u.username : "—")) + '</b>'
+                  + (u.username && u.displayName ? '<br><span style="color:var(--text-dim);font-size:11.5px;">@' + esc(u.username) + '</span>' : "")
+                  + (u.banned ? '<span class="tag tag-bad">Bloklangan</span>' : "");
+              } },
+            { key:"rating", label:"Reyting", sortable:true, cls:"num",
+              value:function(u){ return u.ratingCount ? u.ratingSum / u.ratingCount : 0; },
+              render:function(u){ return ratingText(u); } },
+            { key:"city", label:"Joylashuv", sortable:true,
+              value:function(u){ return u.city || ""; },
+              render:function(u){ return esc(u.city || "—"); } },
+            { key:"vehicleType", label:"Mashina", sortable:true,
+              value:function(u){ return VEHICLE_LABELS[u.vehicleType] || ""; },
+              render:function(u){
+                return esc(VEHICLE_LABELS[u.vehicleType] || "—")
+                  + (u.plateNumber ? '<br><span style="color:var(--text-dim);font-size:11.5px;">' + esc(u.plateNumber) + '</span>' : "");
+              } },
+            { key:"deliveredCount", label:"Reyslar", sortable:true, cls:"num",
+              value:function(u){ return Number(u.deliveredCount) || 0; },
+              render:function(u){ return fmt(u.deliveredCount || 0); } },
+            { key:"phone", label:"Telefon", cls:"dim",
+              render:function(u){ return esc(u.phone || "—"); } },
+            { key:"docs", label:"Hujjatlar",
+              render:function(u){ return docsSummary(u); } },
+            { key:"actions", label:"Amal",
+              render:function(u){
+                return '<div class="cell-actions">'
+                  + '<button type="button" class="btn sm" data-act="go" data-hash="#/drivers/'
+                  + esc(encodeURIComponent(u.email)) + '">Ko\'rish</button></div>';
+              } }
+          ]
+        });
+      });
+  }
+
+  /* ==========================================================
+     22d. To'lovlar — HALI ULANMAGAN.
+     Ilovada to'lov tizimi yo'q: pul haydovchi bilan yuk beruvchi
+     o'rtasida to'g'ridan o'tadi, platforma hech narsa ushlab
+     qolmaydi va hech qanday o'tkazma qilmaydi.
+     Shu sababli bu bo'lim ATAYLAB bo'sh "tayyorgarlik" ko'rinishida:
+     kelgusida to'lov ulansa, shu yerga tranzaksiyalar tushadi.
+     Bo'sh jadvalni "ishlayotgan to'lov tizimi" qilib ko'rsatish —
+     eng yomon variant: raqamlari yo'q hisobot ishonchli ko'rinardi.
+     Quyidagi raqamlar esa haqiqiy: ular buyurtmalardagi KELISHILGAN
+     summalar, ya'ni "platforma orqali o'tgan pul" emas.
+     ========================================================== */
+  function viewPayments(){
+    return pageHead("To'lovlar", "Kelishilgan summalar hisobi — to'lov tizimi hali ulanmagan",
+      refreshBtn("orders,settings"))
+      + withData(["orders","settings"], function(){
+        var orders = Store.list("orders");
+        var settings = Store.data.settings || {};
+        var delivered = orders.filter(function(o){ return o.status === "DELIVERED"; });
+        var onWay = orders.filter(function(o){
+          return isTrip(o) && o.status !== "DELIVERED" && o.status !== "CANCELLED";
+        });
+        var amountOf = function(o){ return Number(o.agreedAmount || o.amount) || 0; };
+        var deliveredSum = delivered.reduce(function(a, o){ return a + amountOf(o); }, 0);
+        var onWaySum = onWay.reduce(function(a, o){ return a + amountOf(o); }, 0);
+        var commission = Number(settings.commissionPercent) || 0;
+
+        var cards = '<div class="stat-grid">'
+          + stat("Yetkazilgan yuklar summasi", fmt(deliveredSum), "so'm — kelishilgan narxlar", "wallet", "ok")
+          + stat("Yo'ldagi yuklar summasi", fmt(onWaySum), "so'm — hali yetkazilmagan", "route")
+          + stat("Yetkazilgan yuklar", fmt(delivered.length),
+              pct(delivered.length, orders.length) + "% barcha buyurtmalardan", "check")
+          + stat("Komissiya", commission ? commission + "%" : "0%",
+              commission ? "sozlamalarda belgilangan" : "ushlanmaydi", "chart",
+              commission ? "" : "warn")
+          + '</div>';
+
+        var notice =
+          '<div class="card card-pad" style="border-color:rgba(245,158,11,0.45);background:var(--warn-soft);margin-bottom:18px;">'
+          + '<h2 class="card-title" style="color:#FCD34D;">' + ico("warn") + "To'lov tizimi ulanmagan</h2>"
+          + '<p style="margin:0 0 8px;color:var(--text);font-size:13.5px;line-height:1.55;">'
+          + "Pul hozir haydovchi bilan yuk beruvchi o'rtasida to'g'ridan o'tadi. Platforma "
+          + "hech qanday to'lovni qabul qilmaydi, ushlab qolmaydi va o'tkazmaydi — demak "
+          + "quyidagi jadval ham bo'sh.</p>"
+          + '<p style="margin:0;color:var(--text-soft);font-size:12.5px;line-height:1.55;">'
+          + "Yuqoridagi raqamlar buyurtmalardagi kelishilgan summalar yig'indisi, ya'ni "
+          + "<b>platforma orqali o'tgan pul emas</b>. Komissiya foizi sozlamalarda saqlanadi, "
+          + "lekin hozir hech qayerda ushlanmaydi.</p></div>";
+
+        /* Kelajakda to'lov ulanganda shu jadval to'ladi. Hozir u
+           ataylab bo'sh: ustunlari ko'rinib turadi, qatori yo'q. */
+        var table = card("Tranzaksiyalar",
+          '<div class="table-wrap"><div class="table-scroll"><table><thead><tr>'
+          + ["Sana","Buyurtma","Yuk beruvchi","Haydovchi","Summa","Komissiya","Holat"]
+              .map(function(h){ return '<th>' + esc(h) + '</th>'; }).join("")
+          + '</tr></thead><tbody><tr><td colspan="7" style="padding:26px;text-align:center;color:var(--text-dim);">'
+          + "To'lov tizimi ulanganidan keyin tranzaksiyalar shu yerda ko'rinadi."
+          + '</td></tr></tbody></table></div></div>',
+          "0 ta yozuv");
+
+        var ledger = card("Yetkazilgan yuklar bo'yicha hisob",
+          delivered.length
+            ? '<div class="table-wrap"><div class="table-scroll"><table><thead><tr>'
+              + ["Yetkazilgan","Kod","Yo'nalish","Haydovchi","Kelishilgan summa"]
+                  .map(function(h){ return '<th>' + esc(h) + '</th>'; }).join("")
+              + '</tr></thead><tbody>'
+              + delivered
+                  .slice()
+                  .sort(function(a, b){ return (b.deliveredAt || b.updatedAt || 0) - (a.deliveredAt || a.updatedAt || 0); })
+                  .slice(0, 50)
+                  .map(function(o){
+                    return '<tr><td class="dim">' + esc(dateOnly(o.deliveredAt || o.updatedAt)) + '</td>'
+                      + '<td><b>' + esc(o.code) + '</b></td>'
+                      + '<td>' + esc(o.fromCity) + ' → ' + esc(o.toCity) + '</td>'
+                      + '<td>' + esc((o.driver && o.driver.name) || "—") + '</td>'
+                      + '<td class="num">' + esc(money(amountOf(o))) + '</td></tr>';
+                  }).join("")
+              + '</tbody></table></div></div>'
+            : stateBox("empty", "Yetkazilgan yuk yo'q", "Birinchi yuk yetkazilganda shu yerda ko'rinadi."),
+          delivered.length > 50 ? "oxirgi 50 tasi" : delivered.length + " ta");
+
+        return cards + notice + table + '<div style="height:18px;"></div>' + ledger;
+      });
+  }
+
+  /* ==========================================================
      23. Shikoyatlar
      ========================================================== */
   function viewReports(){
@@ -2716,10 +3315,10 @@
       if(can(RESOURCES[n].perm)) need.push(n);
     });
     if(!need.length){
-      return pageHead("Tahlil", "") + stateBox("lock", "Ruxsat yo'q", "Bu bo'lim sizning rolingizga ochiq emas.");
+      return pageHead("Hisobotlar", "") + stateBox("lock", "Ruxsat yo'q", "Bu bo'lim sizning rolingizga ochiq emas.");
     }
 
-    return pageHead("Tahlil", "Platforma ma'lumotlari bo'yicha hisobot", refreshBtn("all"))
+    return pageHead("Hisobotlar", "Platforma ma'lumotlari bo'yicha hisobot", refreshBtn("all"))
       + withData(need, function(){
         var orders = Store.list("orders");
         var users = Store.list("users");
@@ -3886,6 +4485,7 @@
     var act = t.getAttribute("data-act");
 
     if(act === "nav"){ go("#/" + t.getAttribute("data-name")); return; }
+    if(act === "help"){ openHelpCentre(); return; }
     if(act === "go"){ closeGlobalSearch(); go(t.getAttribute("data-hash")); return; }
 
     if(act === "reload"){
@@ -4003,11 +4603,36 @@
   });
 
   document.addEventListener("keydown", function(e){
+    /* ⌘K / Ctrl+K — qidiruvga o'tish. Sarlavhadagi ishora shunchaki
+       chizma bo'lib qolmasligi kerak. */
+    if((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")){
+      if(session.role){
+        e.preventDefault();
+        openDrawerIfNeeded();
+        var box = byId("globalSearch");
+        box.focus();
+        box.select();
+      }
+      return;
+    }
     if(e.key !== "Escape") return;
     if(!byId("modalBackdrop").hidden){ closeModal(); return; }
     if(!byId("globalResults").hidden){ closeGlobalSearch(); return; }
     closeDrawer();
   });
+
+  /* Qidiruv maydoni yon menyu ichida emas, sarlavhada turadi —
+     ya'ni telefonda ham ko'rinadi va hech narsa ochish kerak emas.
+     Funksiya nomi kelajakda o'zgarsa ham chaqiruv joyi bitta. */
+  function openDrawerIfNeeded(){ /* sarlavha har doim ko'rinadi */ }
+
+  /* Mac'da ⌘, qolgan joyda Ctrl — yolg'on ishora ko'rsatmaslik uchun. */
+  (function(){
+    var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+    if(isMac) return;
+    var kbd = byId("tbKbd");
+    if(kbd) kbd.innerHTML = "<kbd>Ctrl</kbd><kbd>K</kbd>";
+  })();
 
   byId("modalBackdrop").addEventListener("click", function(e){
     if(e.target === this) closeModal();
@@ -4040,9 +4665,18 @@
       if(localStorage.getItem("yoldaAdminCollapsed") === "1") byId("adminShell").classList.add("collapsed");
     } catch(e){ /* private mode */ }
 
-    // Sidebar badges are real counts, so the resources behind them are
-    // fetched up front rather than only when you open the screen.
-    ["trucks","reports","users"].forEach(function(n){ if(can(RESOURCES[n].perm)) Store.load(n); });
+    /* Yon menyudagi sonlar haqiqiy hisob, shuning uchun ular ortidagi
+       ma'lumot bo'lim ochilishini kutmasdan olinadi. `settings` ham
+       shu yerda: paneldagi belgi, ism va tizim holati undan keladi —
+       aks holda ular birinchi ko'rinishda bo'sh turardi. */
+    ["trucks","reports","users","orders","settings"].forEach(function(n){
+      if(can(RESOURCES[n].perm)) Store.load(n);
+    });
+
+    /* Yordam markazidagi raqam ochiq sozlamalardan keladi. Faqat
+       u ko'rinadigan rollar uchun olinadi — super adminga keraksiz
+       so'rov bo'lardi. */
+    if(role !== "SUPER_ADMIN") loadPanelConfig();
 
     onHashChange();
     if(!current.name){
