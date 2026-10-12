@@ -6,19 +6,115 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#000000">
 <title>YO'LDA — Admin</title>
+<script>
+  /* Mavzu eng birinchi qaror. Agar u sahifa chizilgandan keyin
+     qo'yilsa, yorug' rejimni tanlagan odam har ochganda qora
+     ekranni bir lahza ko'rib turardi. */
+  (function(){
+    try{
+      var saved = localStorage.getItem("yoldaAdminTheme");
+      var theme = (saved === "light" || saved === "dark") ? saved
+        : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){ document.documentElement.setAttribute("data-theme", "dark"); }
+  })();
+</script>
 <style>
-  /* ---------- Kirish ekrani — panel bilan bir xil qora ---------- */
+  /* ============================================================
+     Mavzu (tungi / yorug')
+     ------------------------------------------------------------
+     Butun palitra shu yerda, `:root` da. Ilgari u uch joyda
+     takrorlangan edi (kirish ekrani, qobiq, oyna) va ulardan
+     biri o'zgarsa qolgani ortda qolardi.
+
+     Sukut bo'yicha tizimning o'zi tanlaydi. Odam qo'lda tanlasa,
+     tanlovi `data-theme` da turadi va tizimdan ustun bo'ladi —
+     chunki u ataylab bosilgan.
+
+     Matn ranglari ikkala mavzuda ham fonga nisbatan tekshirilgan:
+     yorug' mavzuda och yashil (var(--accent-ink)) oq fonda 1.6:1 bo'lib
+     o'qilmas edi, shuning uchun u yerda to'q variant ishlatiladi.
+     ============================================================ */
   :root{
-    /* Kirish ekrani ham panel bilan bir xil: ilgari u oq-ko'k edi va
-       parol kiritilgach ekran birdan qorayib ketardi. */
-    --ink:#F2F2F2; --ink-soft:#A8A8A8; --route:#2DD480;
-    --border:rgba(255,255,255,0.10); --paper:#000000; --card:#0E0E0E;
+    color-scheme:dark;
+
+    --bg:#000000; --panel:#0E0E0E; --card2:#141414; --card-hi:#1B1B1B;
+    --sidebar-bg:#080808; --topbar-bg:rgba(8,8,8,0.86);
+    --line:rgba(255,255,255,0.10); --line-2:rgba(255,255,255,0.16);
+    --text:#F2F2F2; --text-soft:#A8A8A8; --text-dim:#767676;
+    /* Eng kuchli matn — ustiga kelganda yoki tanlanganda. */
+    --strong:#FFFFFF;
+
+    --accent:#2DD480; --accent-dark:#22B368; --accent-soft:rgba(45,212,128,0.14);
+    /* Yashil fonda oq matn 1.94:1 — o'qib bo'lmaydi. To'q yashil
+       matn esa 7.89:1. Shu sababli aksent ustidagi yozuv shu rangda. */
     --on-accent:#052E1A;
+    --on-accent-wash:rgba(255,255,255,0.25);
+
+    --ok:#22C55E; --ok-soft:rgba(34,197,94,0.15); --ok-ink:var(--ok-ink);
+    --warn:#F59E0B; --warn-soft:rgba(245,158,11,0.15); --warn-ink:var(--warn-ink);
+    --bad:#EF4444; --bad-soft:rgba(239,68,68,0.15); --bad-ink:var(--bad-ink);
+    --accent-ink:var(--accent-ink);
+
+    /* Yuzalar: ustiga kelish, ko'tarilgan va botgan joylar. */
+    --hover:rgba(255,255,255,0.035);
+    --hover-2:rgba(255,255,255,0.06);
+    --raised:rgba(255,255,255,0.05);
+    --raised-soft:rgba(255,255,255,0.03);
+    --sunken:rgba(255,255,255,0.07);
+    --switch-off:rgba(255,255,255,0.14);
+    --switch-ring:rgba(255,255,255,0.06);
+    --skel-a:rgba(255,255,255,0.05); --skel-b:rgba(255,255,255,0.11);
+    --shadow-lg:0 24px 70px rgba(0,0,0,0.8);
+    --shadow-md:0 20px 50px rgba(0,0,0,0.55);
+    --scrim:rgba(0,0,0,0.72);
+
+    /* Kirish ekrani shu palitradan oziqlanadi. */
+    --ink:var(--text); --ink-soft:var(--text-soft); --route:var(--accent);
+    --border:var(--line); --paper:var(--bg); --card:var(--panel);
+
+    --sidebar-w:248px; --sidebar-w-collapsed:72px;
   }
+
+  :root[data-theme="light"]{
+    color-scheme:light;
+
+    --bg:#F5F6F7; --panel:#FFFFFF; --card2:#FFFFFF; --card-hi:#F1F3F4;
+    --sidebar-bg:#FFFFFF; --topbar-bg:rgba(255,255,255,0.88);
+    --line:rgba(17,17,17,0.10); --line-2:rgba(17,17,17,0.18);
+    /* #8A93A3 oq fonda 2.9:1 edi — kichik yozuvlar uchun kam. */
+    --text:#111827; --text-soft:#5B6472; --text-dim:#6E7682;
+    --strong:#0B0B0B;
+
+    /* Oq fonda yorqin yashil ko'rinmaydi — to'qrog'i olinadi. */
+    --accent:#09864B; --accent-dark:#077340; --accent-soft:rgba(9,134,75,0.12);
+    --on-accent:#FFFFFF;
+    --on-accent-wash:rgba(255,255,255,0.28);
+
+    --ok:#15803D; --ok-soft:rgba(21,128,61,0.12); --ok-ink:#15803D;
+    --warn:#B45309; --warn-soft:rgba(180,83,9,0.12); --warn-ink:#92610A;
+    --bad:#B91C1C; --bad-soft:rgba(185,28,28,0.10); --bad-ink:#B91C1C;
+    --accent-ink:#09864B;
+
+    --hover:rgba(17,17,17,0.04);
+    --hover-2:rgba(17,17,17,0.06);
+    --raised:rgba(17,17,17,0.05);
+    --raised-soft:rgba(17,17,17,0.03);
+    --sunken:rgba(17,17,17,0.06);
+    --switch-off:rgba(17,17,17,0.16);
+    --switch-ring:rgba(17,17,17,0.05);
+    --skel-a:rgba(17,17,17,0.05); --skel-b:rgba(17,17,17,0.10);
+    --shadow-lg:0 24px 70px rgba(17,17,17,0.18);
+    --shadow-md:0 18px 44px rgba(17,17,17,0.14);
+    --scrim:rgba(17,17,17,0.35);
+  }
+
   *{box-sizing:border-box;}
-  html,body{margin:0;background:#000000;}
-  :root{color-scheme:dark;}
-  body{font-family:-apple-system,'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
+  /* Yozuv tayoqchasi ilovaning rangida. Sukut bo'yicha u matn
+     rangini oladi va yorug' rejimda oq fonda ko'rinmay qolardi. */
+  input,textarea,select{caret-color:var(--accent);}
+  html,body{margin:0;background:var(--bg);}
+  body{font-family:-apple-system,'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);}
 
   .login-wrap{max-width:360px;margin:80px auto;padding:0 20px;}
   .login-wrap[hidden]{display:none;}
@@ -56,21 +152,8 @@
   .pw-toggle svg{width:19px;height:19px;}
 
   /* ---------- Admin shell ---------- */
+  /* Palitra `:root` da — bu yerda takrorlanmaydi. */
   .admin-shell{
-    /* Ilovaning tungi mavzusi bilan bir xil: sof qora yuza va yashil
-       aksent. Ilgari bu yerda ko'kimtir (#0B1220) palitra turardi va
-       panel saytdan butunlay boshqa ilovadek ko'rinardi. */
-    --bg:#000000; --panel:#0E0E0E; --card2:#141414; --card-hi:#1B1B1B;
-    --line:rgba(255,255,255,0.10); --line-2:rgba(255,255,255,0.16);
-    --text:#F2F2F2; --text-soft:#A8A8A8; --text-dim:#767676;
-    --accent:#2DD480; --accent-dark:#22B368; --accent-soft:rgba(45,212,128,0.14);
-    /* Yashil fonda oq matn 1.94:1 — o'qib bo'lmaydi. To'q yashil matn
-       esa 7.89:1. Shu sababli aksent ustidagi yozuv shu rangda. */
-    --on-accent:#052E1A;
-    --ok:#22C55E; --ok-soft:rgba(34,197,94,0.15);
-    --warn:#F59E0B; --warn-soft:rgba(245,158,11,0.15);
-    --bad:#EF4444; --bad-soft:rgba(239,68,68,0.15);
-    --sidebar-w:248px; --sidebar-w-collapsed:72px;
     display:block;min-height:100vh;background:var(--bg);color:var(--text);
     font-size:14px;line-height:1.45;
   }
@@ -79,7 +162,7 @@
 
   .admin-sidebar{
     position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);z-index:40;
-    background:#080808;border-right:1px solid var(--line);
+    background:var(--sidebar-bg);border-right:1px solid var(--line);
     display:flex;flex-direction:column;
     transition:width 0.18s ease, transform 0.22s ease;
   }
@@ -95,7 +178,7 @@
     border:1px solid var(--line);border-radius:8px;background:transparent;
     color:var(--text-soft);cursor:pointer;
   }
-  .sb-collapse:hover{color:#fff;border-color:var(--line-2);}
+  .sb-collapse:hover{color:var(--strong);border-color:var(--line-2);}
   .sb-collapse svg{width:16px;height:16px;transition:transform 0.18s ease;}
 
   .sb-nav{flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
@@ -111,20 +194,20 @@
     transition:background 0.14s ease, color 0.14s ease;
   }
   .sb-item svg{width:18px;height:18px;flex-shrink:0;}
-  .sb-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .sb-item:hover{background:var(--hover-2);color:var(--strong);}
   .sb-item.active{background:var(--accent);color:var(--on-accent);}
   .sb-label{flex:1;overflow:hidden;text-overflow:ellipsis;}
   .sb-badge{
-    background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;line-height:1;
+    background:var(--bad);color:var(--strong);font-size:10.5px;font-weight:700;line-height:1;
     padding:3px 6px;border-radius:999px;flex-shrink:0;
   }
-  .sb-item.active .sb-badge{background:rgba(255,255,255,0.25);}
+  .sb-item.active .sb-badge{background:var(--on-accent-wash);}
 
   .sb-foot{padding:12px 10px;border-top:1px solid var(--line);flex-shrink:0;}
   .sb-user{display:flex;align-items:center;gap:10px;padding:6px 8px 10px;overflow:hidden;}
   .sb-avatar{
     width:32px;height:32px;border-radius:9px;flex-shrink:0;
-    background:var(--accent-soft);color:#7BE8AF;
+    background:var(--accent-soft);color:var(--accent-ink);
     display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
   }
   .sb-user-meta{min-width:0;white-space:nowrap;overflow:hidden;}
@@ -133,10 +216,10 @@
   .sb-logout{
     display:flex;align-items:center;gap:10px;width:100%;
     padding:10px 12px;border:none;border-radius:9px;font-family:inherit;
-    background:rgba(255,255,255,0.05);color:var(--text-soft);
+    background:var(--raised);color:var(--text-soft);
     font-size:13.5px;font-weight:500;cursor:pointer;white-space:nowrap;overflow:hidden;
   }
-  .sb-logout:hover{background:var(--bad-soft);color:#FCA5A5;}
+  .sb-logout:hover{background:var(--bad-soft);color:var(--bad-ink);}
   .sb-logout svg{width:17px;height:17px;flex-shrink:0;}
 
   /* Panel belgisi. Rasm bo'lmasa — nomning birinchi harfi, ya'ni
@@ -164,11 +247,11 @@
   .sb-help{
     display:flex;align-items:center;gap:10px;width:100%;text-align:left;
     padding:10px 12px;margin-bottom:8px;border-radius:9px;
-    border:1px solid var(--line);background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);background:var(--raised-soft);
     color:var(--text-soft);font-family:inherit;font-size:13px;font-weight:500;
     cursor:pointer;white-space:nowrap;overflow:hidden;
   }
-  .sb-help:hover{border-color:var(--accent);color:#fff;}
+  .sb-help:hover{border-color:var(--accent);color:var(--strong);}
   .sb-help svg{width:17px;height:17px;flex-shrink:0;color:var(--accent);}
 
   .sb-status{
@@ -208,7 +291,7 @@
   .admin-shell.collapsed .admin-body{margin-left:var(--sidebar-w-collapsed);}
 
   .sb-scrim{
-    position:fixed;inset:0;z-index:35;background:rgba(0,0,0,0.66);
+    position:fixed;inset:0;z-index:35;background:var(--scrim);
     opacity:0;pointer-events:none;transition:opacity 0.2s ease;
   }
 
@@ -221,7 +304,7 @@
     /* Ilovadagi sarlavha kabi qora shisha. Ilgari bu yerda ko'kimtir
        rgba(11,18,32,.9) turardi — qolgani qoraygandan keyin ham u
        yolg'iz ko'k chiziq bo'lib ko'rinib qolardi. */
-    background:rgba(8,8,8,0.86);
+    background:var(--topbar-bg);
     -webkit-backdrop-filter:saturate(180%) blur(12px);
     backdrop-filter:saturate(180%) blur(12px);
     border-bottom:1px solid var(--line);
@@ -259,7 +342,7 @@
   .tb-results{
     position:absolute;top:calc(100% + 8px);right:0;width:min(420px,86vw);
     background:var(--panel);border:1px solid var(--line-2);border-radius:12px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.55);max-height:70vh;overflow-y:auto;
+    box-shadow:var(--shadow-md);max-height:70vh;overflow-y:auto;
   }
   .tb-results[hidden]{display:none;}
   .tb-res-group{
@@ -280,7 +363,7 @@
     position:absolute;right:7px;top:50%;transform:translateY(-50%);
     display:inline-flex;align-items:center;height:28px;padding:0 11px;
     border-radius:999px;pointer-events:none;
-    background:rgba(255,255,255,0.06);border:1px solid var(--line);
+    background:var(--hover-2);border:1px solid var(--line);
     font-size:11px;font-weight:600;letter-spacing:0.02em;color:var(--text-dim);
     transition:opacity 0.18s ease;
   }
@@ -297,26 +380,36 @@
   }
   .tb-region svg{width:15px;height:15px;color:var(--text-dim);}
 
+  /* Mavzu kaliti — qo'ng'iroqcha bilan bir xil ko'rinishda. */
+  .tb-theme{
+    width:34px;height:34px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);border-radius:9px;background:var(--card2);
+    color:var(--text-soft);cursor:pointer;
+  }
+  .tb-theme:hover{color:var(--strong);border-color:var(--line-2);}
+  .tb-theme svg{width:17px;height:17px;}
+
   .tb-bell{
     position:relative;width:34px;height:34px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
     border:1px solid var(--line);border-radius:9px;background:var(--card2);
     color:var(--text-soft);cursor:pointer;
   }
-  .tb-bell:hover{color:#fff;border-color:var(--line-2);}
+  .tb-bell:hover{color:var(--strong);border-color:var(--line-2);}
   .tb-bell svg{width:17px;height:17px;}
   /* Nuqta faqat haqiqatan ko'rib chiqilmagan ish bo'lsa chiqadi —
      doim turadigan qizil nuqta hech narsa anglatmaydi. */
   .tb-bell-dot{
     position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;
-    background:var(--bad);border:1.5px solid #080808;
+    background:var(--bad);border:1.5px solid var(--sidebar-bg);
   }
 
   .tb-me{display:flex;align-items:center;gap:9px;flex-shrink:0;min-width:0;}
   .tb-me-av{
     width:32px;height:32px;border-radius:9px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    background:var(--accent-soft);color:#7BE8AF;font-weight:700;font-size:12.5px;
+    background:var(--accent-soft);color:var(--accent-ink);font-weight:700;font-size:12.5px;
   }
   .tb-me-meta{min-width:0;line-height:1.25;}
   .tb-me-meta b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -349,11 +442,11 @@
   .btn svg{width:15px;height:15px;}
   .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
   .btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark);}
-  .btn.ok{border-color:rgba(34,197,94,0.45);color:#86EFAC;background:var(--ok-soft);}
+  .btn.ok{border-color:rgba(34,197,94,0.45);color:var(--ok-ink);background:var(--ok-soft);}
   .btn.ok:hover{background:rgba(34,197,94,0.24);}
-  .btn.warn{border-color:rgba(245,158,11,0.45);color:#FCD34D;background:var(--warn-soft);}
+  .btn.warn{border-color:rgba(245,158,11,0.45);color:var(--warn-ink);background:var(--warn-soft);}
   .btn.warn:hover{background:rgba(245,158,11,0.24);}
-  .btn.bad{border-color:rgba(239,68,68,0.45);color:#FCA5A5;background:var(--bad-soft);}
+  .btn.bad{border-color:rgba(239,68,68,0.45);color:var(--bad-ink);background:var(--bad-soft);}
   .btn.bad:hover{background:rgba(239,68,68,0.24);}
   .btn.sm{padding:6px 10px;font-size:12px;border-radius:7px;}
   .btn.sm svg{width:13px;height:13px;}
@@ -383,12 +476,12 @@
   .stat-ico{
     width:30px;height:30px;border-radius:9px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    background:var(--accent-soft);color:#7BE8AF;
+    background:var(--accent-soft);color:var(--accent-ink);
   }
   .stat-ico svg{width:16px;height:16px;}
-  .stat-ico.ok{background:var(--ok-soft);color:#86EFAC;}
-  .stat-ico.warn{background:var(--warn-soft);color:#FCD34D;}
-  .stat-ico.bad{background:var(--bad-soft);color:#FCA5A5;}
+  .stat-ico.ok{background:var(--ok-soft);color:var(--ok-ink);}
+  .stat-ico.warn{background:var(--warn-soft);color:var(--warn-ink);}
+  .stat-ico.bad{background:var(--bad-soft);color:var(--bad-ink);}
   .stat-val{font-size:25px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;}
   .stat-sub{font-size:12px;color:var(--text-dim);}
 
@@ -406,10 +499,15 @@
   .chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--text-soft);}
   .chart-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px;}
   .chart-svg{width:100%;height:auto;display:block;}
+  /* Diagramma ichidagi chiziq va yozuvlar mavzuga ergashsin.
+     SVG `stroke`/`fill` ATRIBUTLARI `var()` ni qabul qilmaydi,
+     shuning uchun ular sinf orqali beriladi. */
+  .chart-grid{stroke:var(--line);stroke-width:1;fill:none;}
+  .chart-tick{fill:var(--text-dim);}
   .hbars{display:flex;flex-direction:column;gap:11px;}
   .hbar-row{display:grid;grid-template-columns:minmax(72px,110px) 1fr 46px;gap:10px;align-items:center;font-size:12.5px;}
   .hbar-label{color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .hbar-track{display:block;height:8px;border-radius:999px;background:rgba(255,255,255,0.06);overflow:hidden;}
+  .hbar-track{display:block;height:8px;border-radius:999px;background:var(--hover-2);overflow:hidden;}
   /* Both are spans; without display:block the fill stays inline and its
      width/height are ignored, leaving only the empty track visible. */
   .hbar-fill{display:block;height:100%;border-radius:999px;background:var(--accent);}
@@ -431,7 +529,7 @@
     border:none;background:none;color:var(--text-soft);font-family:inherit;
     font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:7px;cursor:pointer;white-space:nowrap;
   }
-  .seg button:hover{color:#fff;}
+  .seg button:hover{color:var(--strong);}
   .seg button.on{background:var(--accent);color:var(--on-accent);}
 
   .table-wrap{border:1px solid var(--line);border-radius:14px;background:var(--card2);overflow:hidden;}
@@ -440,14 +538,14 @@
   th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle;}
   tbody tr:last-child td{border-bottom:none;}
   tbody tr{transition:background 0.1s ease;}
-  tbody tr:hover{background:rgba(255,255,255,0.035);}
+  tbody tr:hover{background:var(--hover);}
   tbody tr.clickable{cursor:pointer;}
   th{
     color:var(--text-soft);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;
     background:var(--panel);user-select:none;
   }
   th.sortable{cursor:pointer;}
-  th.sortable:hover{color:#fff;}
+  th.sortable:hover{color:var(--strong);}
   th .sort-ar{display:inline-block;opacity:0.3;margin-left:4px;line-height:0;vertical-align:-1px;transition:transform 0.15s ease;}
   th .sort-ar svg{width:10px;height:10px;}
   th .sort-ar.up{transform:rotate(180deg);}
@@ -468,7 +566,7 @@
     border:1px solid var(--line);background:var(--card2);color:var(--text-soft);
     font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
   }
-  .pager button:hover:not(:disabled){color:#fff;border-color:var(--line-2);}
+  .pager button:hover:not(:disabled){color:var(--strong);border-color:var(--line-2);}
   .pager button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
   .pager button:disabled{opacity:0.35;cursor:not-allowed;}
 
@@ -482,7 +580,7 @@
     font-size:13.5px;font-weight:600;color:var(--text-soft);cursor:pointer;
     border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;
   }
-  .tab:hover{color:#fff;}
+  .tab:hover{color:var(--strong);}
   .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
 
   /* ---------- Xodimlar ---------- */
@@ -494,7 +592,7 @@
   .staff-av{
     width:34px;height:34px;border-radius:10px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    background:var(--accent-soft);color:#7BE8AF;font-weight:700;font-size:13px;
+    background:var(--accent-soft);color:var(--accent-ink);font-weight:700;font-size:13px;
   }
   /* Belgi o'lchovsiz qolsa butun qatorni egallab oladi: `ico()`
      qaytargan <svg> da kenglik yo'q. */
@@ -536,17 +634,17 @@
     display:inline-block;padding:4px 9px;border-radius:999px;
     font-size:11px;font-weight:700;white-space:nowrap;
   }
-  .pill-blue{background:var(--accent-soft);color:#7BE8AF;}
-  .pill-ok{background:var(--ok-soft);color:#86EFAC;}
-  .pill-warn{background:var(--warn-soft);color:#FCD34D;}
-  .pill-bad{background:var(--bad-soft);color:#FCA5A5;}
-  .pill-dim{background:rgba(255,255,255,0.07);color:var(--text-soft);}
+  .pill-blue{background:var(--accent-soft);color:var(--accent-ink);}
+  .pill-ok{background:var(--ok-soft);color:var(--ok-ink);}
+  .pill-warn{background:var(--warn-soft);color:var(--warn-ink);}
+  .pill-bad{background:var(--bad-soft);color:var(--bad-ink);}
+  .pill-dim{background:var(--sunken);color:var(--text-soft);}
   .tag{
     display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;
     border-radius:999px;margin-left:6px;vertical-align:1px;
   }
-  .tag-bad{color:#FCA5A5;background:var(--bad-soft);}
-  .tag-blue{color:#7BE8AF;background:var(--accent-soft);}
+  .tag-bad{color:var(--bad-ink);background:var(--bad-soft);}
+  .tag-blue{color:var(--accent-ink);background:var(--accent-soft);}
 
   select.inline{
     padding:6px 8px;border-radius:7px;border:1px solid var(--line);
@@ -564,7 +662,7 @@
   .state p{margin:0;color:var(--text-soft);font-size:13.5px;max-width:440px;}
   .skel{
     height:12px;border-radius:6px;
-    background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.11) 37%, rgba(255,255,255,0.05) 63%);
+    background:linear-gradient(90deg, var(--skel-a) 25%, var(--skel-b) 37%, var(--skel-a) 63%);
     background-size:400% 100%;animation:shimmer 1.3s ease-in-out infinite;
   }
   @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
@@ -579,23 +677,21 @@
   .photo-strip img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--panel);}
   .avatar-lg{
     width:56px;height:56px;border-radius:14px;object-fit:cover;flex-shrink:0;
-    background:var(--accent-soft);color:#7BE8AF;
+    background:var(--accent-soft);color:var(--accent-ink);
     display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;
   }
 
   /* ---------- Modal ---------- */
   .modal-backdrop{
-    position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.72);
+    position:fixed;inset:0;z-index:100;background:var(--scrim);
     display:flex;align-items:center;justify-content:center;padding:18px;
   }
   .modal-backdrop[hidden]{display:none;}
   .modal{
     width:100%;max-width:580px;max-height:88vh;display:flex;flex-direction:column;
     background:var(--panel);border:1px solid var(--line-2);border-radius:16px;
-    box-shadow:0 24px 70px rgba(0,0,0,0.8);color:var(--text);
+    box-shadow:var(--shadow-lg);color:var(--text);
     font-family:-apple-system,'Inter',system-ui,sans-serif;
-    --line:rgba(255,255,255,0.10); --card2:#141414; --text:#F2F2F2;
-    --text-soft:#A8A8A8; --text-dim:#767676; --accent:#2DD480; --accent-dark:#22B368;
   }
   .modal-head{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -609,7 +705,7 @@
   }
   .modal-x{display:flex;align-items:center;justify-content:center;}
   .modal-x svg{width:14px;height:14px;}
-  .modal-x:hover{color:#fff;}
+  .modal-x:hover{color:var(--strong);}
   .modal-body{padding:18px 20px;overflow-y:auto;}
   .modal-foot{display:flex;gap:10px;padding:15px 20px;border-top:1px solid var(--line);flex-shrink:0;}
   .modal-foot .btn{flex:1;}
@@ -624,7 +720,7 @@
   .help-row b{display:block;font-size:14px;font-weight:600;}
   .help-row small{display:block;color:var(--text-dim);font-size:11.5px;}
   .help-note{margin:12px 0;color:var(--text-soft);font-size:12.5px;line-height:1.55;}
-  .help-err{color:#FCA5A5;font-size:12.5px;min-height:17px;}
+  .help-err{color:var(--bad-ink);font-size:12.5px;min-height:17px;}
 
   .field{margin-bottom:13px;}
   .field label{display:block;font-size:12px;color:var(--text-soft);font-weight:600;margin-bottom:5px;}
@@ -646,8 +742,8 @@
     appearance:none;-webkit-appearance:none;
     position:relative;width:46px;height:28px;flex-shrink:0;
     border:none;border-radius:999px;margin:0;cursor:pointer;
-    background:rgba(255,255,255,0.14);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
+    background:var(--switch-off);
+    box-shadow:inset 0 0 0 1px var(--switch-ring);
     transition:background 0.22s ease;
   }
   .check input[type="checkbox"]::after{
@@ -671,7 +767,7 @@
   /* Manfiy yuqori chekka maydon ostida turishi uchun. Boshqa
      narsadan keyin kelsa esa u ustki qatorga kirib ketardi. */
   .staff-row + .hint,.kv + .hint,.hint + .hint{margin-top:14px;}
-  .form-err{color:#FCA5A5;font-size:12.5px;min-height:17px;margin:2px 0 0;}
+  .form-err{color:var(--bad-ink);font-size:12.5px;min-height:17px;margin:2px 0 0;}
 
   /* ---------- Toasts ---------- */
   .toast-stack{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;flex-direction:column;gap:9px;align-items:flex-end;}
@@ -684,8 +780,8 @@
     animation:toastIn 0.2s ease;
   }
   .toast svg{width:16px;height:16px;flex-shrink:0;}
-  .toast.ok{border-color:rgba(34,197,94,0.5);} .toast.ok svg{color:#86EFAC;}
-  .toast.bad{border-color:rgba(239,68,68,0.5);} .toast.bad svg{color:#FCA5A5;}
+  .toast.ok{border-color:rgba(34,197,94,0.5);} .toast.ok svg{color:var(--ok-ink);}
+  .toast.bad{border-color:rgba(239,68,68,0.5);} .toast.bad svg{color:var(--bad-ink);}
   @keyframes toastIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 
   /* ---------- Responsive ---------- */
@@ -860,6 +956,7 @@
         <div class="tb-results" id="globalResults" hidden></div>
       </div>
       <span class="tb-region" id="tbRegion" hidden></span>
+      <button type="button" class="tb-theme" id="tbTheme" aria-label="Mavzuni almashtirish"></button>
       <button type="button" class="tb-bell" id="tbBell" aria-label="Ko'rib chiqilmagan ishlar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       </button>
@@ -892,6 +989,61 @@
      1. Utilities
      ========================================================== */
   function byId(id){ return document.getElementById(id); }
+
+  /* ----------------------------------------------------------
+     Mavzu (tungi / yorug')
+     ----------------------------------------------------------
+     Sukut bo'yicha tizim qanday bo'lsa — shunday. Odam qo'lda
+     tanlasa, tanlovi saqlanadi va tizimdan ustun bo'ladi:
+     u ataylab bosilgan.
+
+     Tanlov saqlanmagan bo'lsa, tizim mavzusi o'zgarganda panel
+     ham darhol ergashadi (masalan telefon kechqurun qorong'uga
+     o'tganda).
+     ---------------------------------------------------------- */
+  var THEME_KEY = "yoldaAdminTheme";
+  var systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function storedTheme(){
+    try { return localStorage.getItem(THEME_KEY); } catch(e){ return null; }
+  }
+  function activeTheme(){
+    var saved = storedTheme();
+    if(saved === "light" || saved === "dark") return saved;
+    return (systemDark && systemDark.matches === false) ? "light" : "dark";
+  }
+  function applyTheme(){
+    var theme = activeTheme();
+    document.documentElement.setAttribute("data-theme", theme);
+    var btn = byId("tbTheme");
+    if(btn){
+      /* Tugmada KEYINGI holat ko'rsatiladi: qorong'uda quyosh
+         ("yorug'ga o'tish"), yorug'da oy. */
+      btn.innerHTML = ico(theme === "dark" ? "sun" : "moon");
+      btn.setAttribute("aria-label",
+        theme === "dark" ? "Yorug' rejimga o'tish" : "Tungi rejimga o'tish");
+      btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+    }
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", theme === "dark" ? "#000000" : "#FFFFFF");
+  }
+  function toggleTheme(){
+    var next = activeTheme() === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_KEY, next); } catch(e){ /* private mode */ }
+    applyTheme();
+  }
+  if(systemDark && systemDark.addEventListener){
+    systemDark.addEventListener("change", function(){
+      // Faqat odam o'zi tanlamagan bo'lsa ergashamiz.
+      if(!storedTheme()) applyTheme();
+    });
+  }
+  /* `applyTheme()` bu yerda CHAQIRILMAYDI: u `ico()` ga tayanadi,
+     `ico` esa belgilar jadvaliga — u quyiroqda e'lon qilingan va
+     shu nuqtada hali bo'sh. Mavzuning o'zi sahifa boshidagi
+     kichik skript bilan allaqachon qo'yilgan, bu yerda esa
+     faqat tugmaning ko'rinishi qoladi — u yuklash oxirida
+     chaqiriladi. */
 
   function esc(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(m){
@@ -989,7 +1141,9 @@
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/>',
     phone: '<path d="M6.5 3h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16 16 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
-    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>'
+    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>',
+    moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
   };
   function ico(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
@@ -1034,7 +1188,7 @@
     if(!p || typeof p.lat !== "number" || typeof p.lng !== "number") return "—";
     var q = p.lat + "," + p.lng;
     return '<a href="https://maps.google.com/?q=' + esc(q) + '" target="_blank" rel="noopener" '
-      + 'style="color:#7BE8AF;">' + esc(q) + '</a>';
+      + 'style="color:var(--accent-ink);">' + esc(q) + '</a>';
   }
 
   /* Joy sonining birligi — lib/orderMessage.js dagi ro'yxat bilan bir xil. */
@@ -1520,9 +1674,9 @@
     for(var g = 0; g <= 4; g++){
       var y = padT + plotH - (plotH * g / 4);
       svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1)
-        + '" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>'
+        + '" class="chart-grid"/>'
         + '<text x="' + (padL - 7) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" '
-        + 'font-size="9.5" fill="#767676">' + Math.round(niceMax * g / 4) + '</text>';
+        + 'font-size="9.5" class="chart-tick">' + Math.round(niceMax * g / 4) + '</text>';
     }
     labels.forEach(function(lab, i){
       var groupX = padL + slot * i + (slot - barW * series.length) / 2;
@@ -1538,7 +1692,7 @@
       // Every other label on a 14-day axis, so they never collide.
       if(labels.length <= 8 || i % 2 === 1){
         svg += '<text x="' + (padL + slot * i + slot / 2).toFixed(1) + '" y="' + (H - 8)
-          + '" text-anchor="middle" font-size="9.5" fill="#767676">' + esc(lab) + '</text>';
+          + '" text-anchor="middle" font-size="9.5" class="chart-tick">' + esc(lab) + '</text>';
       }
     });
     svg += '</svg>';
@@ -2374,7 +2528,7 @@
         var contact = card("Yuk beruvchi",
           '<dl class="kv">'
           + kvRow("Ism", esc(order.name))
-          + kvRow("Telefon", order.phone ? '<a href="tel:' + esc(order.phone) + '" style="color:#7BE8AF;">' + esc(order.phone) + '</a>' : "—")
+          + kvRow("Telefon", order.phone ? '<a href="tel:' + esc(order.phone) + '" style="color:var(--accent-ink);">' + esc(order.phone) + '</a>' : "—")
           + kvRow("Google", esc(order.googleEmail) || "—")
           + '</dl>'
           + (order.googleEmail && can("users:read")
@@ -2386,7 +2540,7 @@
         var driverCard = card("Haydovchi", driver
           ? '<dl class="kv">'
             + kvRow("Ism", esc(driver.name) + (driver.verified ? ' <span class="tag tag-blue">Tasdiqlangan</span>' : ""))
-            + kvRow("Telefon", driver.phone ? '<a href="tel:' + esc(driver.phone) + '" style="color:#7BE8AF;">' + esc(driver.phone) + '</a>' : "—")
+            + kvRow("Telefon", driver.phone ? '<a href="tel:' + esc(driver.phone) + '" style="color:var(--accent-ink);">' + esc(driver.phone) + '</a>' : "—")
             + (driver.vehicleType ? kvRow("Mashina", esc(VEHICLE_LABELS[driver.vehicleType] || driver.vehicleType)) : "")
             + (driver.plateNumber ? kvRow("Davlat raqami", esc(driver.plateNumber)) : "")
             + (driver.takenAt ? kvRow("Olingan vaqt", esc(dt(driver.takenAt))) : "")
@@ -2515,7 +2669,7 @@
               render:function(t){
                 return '<b>' + esc(t.brand) + '</b>'
                   + (t.verified ? '<span class="tag tag-blue">' + CHECK_MARK + '</span>' : "")
-                  + (t.promoted ? '<span class="tag" style="color:#FCD34D;background:rgba(245,158,11,0.15);">TOP</span>' : "");
+                  + (t.promoted ? '<span class="tag" style="color:var(--warn-ink);background:var(--warn-soft);">TOP</span>' : "");
               } },
             { key:"category", label:"Turkum", sortable:true, cls:"dim",
               value:function(t){ return TRUCK_CAT_LABELS[t.category] || t.category || ""; },
@@ -2605,7 +2759,7 @@
       '<dl class="kv">'
       + kvRow("Ism", esc(t.sellerName))
       + kvRow("Username", t.sellerUsername ? "@" + esc(t.sellerUsername) : "—")
-      + kvRow("Telefon", t.phone ? '<a href="tel:' + esc(t.phone) + '" style="color:#7BE8AF;">' + esc(t.phone) + '</a>' : "—")
+      + kvRow("Telefon", t.phone ? '<a href="tel:' + esc(t.phone) + '" style="color:var(--accent-ink);">' + esc(t.phone) + '</a>' : "—")
       + kvRow("Identifikator", '<code style="font-size:12px;">' + esc(t.sellerIdentity) + '</code>')
       + '</dl>'
       + (t.sellerIdentity && can("users:read")
@@ -2997,7 +3151,7 @@
         + kvRow("Email / ID", esc(user.email))
         + kvRow("Rol", esc(ROLE_LABELS[user.role] || "—"))
         + kvRow("Shahar", esc(user.city || "—"))
-        + kvRow("Telefon", user.phone ? '<a href="tel:' + esc(user.phone) + '" style="color:#7BE8AF;">' + esc(user.phone) + '</a>' : "—")
+        + kvRow("Telefon", user.phone ? '<a href="tel:' + esc(user.phone) + '" style="color:var(--accent-ink);">' + esc(user.phone) + '</a>' : "—")
         + kvRow("Telegram", user.telegramUsername ? "@" + esc(user.telegramUsername) : "—")
         + kvRow("Mashina", esc(VEHICLE_LABELS[user.vehicleType] || "—"))
         + kvRow("Davlat raqami", esc(user.plateNumber || "—"))
@@ -3283,8 +3437,8 @@
           + '</div>';
 
         var notice =
-          '<div class="card card-pad" style="border-color:rgba(245,158,11,0.45);background:var(--warn-soft);margin-bottom:18px;">'
-          + '<h2 class="card-title" style="color:#FCD34D;">' + ico("warn") + "To'lov tizimi ulanmagan</h2>"
+          '<div class="card card-pad" style="border-color:var(--warn);background:var(--warn-soft);margin-bottom:18px;">'
+          + '<h2 class="card-title" style="color:var(--warn-ink);">' + ico("warn") + "To'lov tizimi ulanmagan</h2>"
           + '<p style="margin:0 0 8px;color:var(--text);font-size:13.5px;line-height:1.55;">'
           + "Pul hozir haydovchi bilan yuk beruvchi o'rtasida to'g'ridan o'tadi. Platforma "
           + "hech qanday to'lovni qabul qilmaydi, ushlab qolmaydi va o'tkazmaydi — demak "
@@ -3417,7 +3571,7 @@
               render:function(m){
                 var c = String(m.contact || "");
                 if(/^[+\d][\d\s-]{6,}$/.test(c)){
-                  return '<a href="tel:' + esc(c.replace(/[^\d+]/g, "")) + '" style="color:#7BE8AF;">' + esc(c) + '</a>';
+                  return '<a href="tel:' + esc(c.replace(/[^\d+]/g, "")) + '" style="color:var(--accent-ink);">' + esc(c) + '</a>';
                 }
                 return esc(c || "—");
               } },
@@ -5164,6 +5318,7 @@
     if(e.target === this) closeModal();
   });
   byId("modalX").addEventListener("click", closeModal);
+  byId("tbTheme").addEventListener("click", toggleTheme);
   byId("sbCollapse").addEventListener("click", toggleCollapse);
   byId("tbBurger").addEventListener("click", toggleDrawer);
   byId("sbScrim").addEventListener("click", closeDrawer);
@@ -5288,6 +5443,7 @@
      kartochkalar keyin qayta chizilsa ham ishlayveradi. */
   initIconDrop();
   initLogoDrop();
+  applyTheme();
 
   checkSession();
 })();
