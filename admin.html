@@ -454,6 +454,62 @@
   .pager button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
   .pager button:disabled{opacity:0.35;cursor:not-allowed;}
 
+  /* ---------- Varaqlar ---------- */
+  .tabs{
+    display:flex;gap:4px;overflow-x:auto;margin-bottom:18px;padding-bottom:0;
+    border-bottom:1px solid var(--line);
+  }
+  .tab{
+    flex-shrink:0;padding:10px 14px;border:none;background:none;font-family:inherit;
+    font-size:13.5px;font-weight:600;color:var(--text-soft);cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;
+  }
+  .tab:hover{color:#fff;}
+  .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
+
+  /* ---------- Xodimlar ---------- */
+  .staff-row{
+    display:flex;align-items:center;gap:12px;padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .staff-row:last-child{border-bottom:none;}
+  .staff-av{
+    width:34px;height:34px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-soft);color:#7BE8AF;font-weight:700;font-size:13px;
+  }
+  /* Belgi o'lchovsiz qolsa butun qatorni egallab oladi: `ico()`
+     qaytargan <svg> da kenglik yo'q. */
+  .staff-av svg{width:17px;height:17px;}
+  .staff-meta{flex:1;min-width:0;}
+  .staff-meta b{
+    display:block;font-size:13.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .staff-meta small{
+    display:block;color:var(--text-dim);font-size:11.5px;line-height:1.45;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .staff-row .cell-actions{flex-shrink:0;}
+
+  /* Panel belgisini tanlash. Ikonkalar bo'limidagi kabi sudrab
+     tashlash ham ishlaydi. */
+  .logo-pick{
+    display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;
+    border:1px dashed var(--line-2);background:var(--card-hi);
+  }
+  .logo-pick.drop-on{border-color:var(--accent);background:var(--accent-soft);}
+  .logo-pick.drop-on > *{pointer-events:none;}
+  .logo-pick.busy{opacity:0.55;}
+  .logo-prev{
+    width:56px;height:56px;border-radius:14px;flex-shrink:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent);color:var(--on-accent);font-weight:800;font-size:22px;
+  }
+  .logo-prev img{width:100%;height:100%;object-fit:contain;display:block;}
+  .logo-pick-meta{flex:1;min-width:0;}
+  .logo-pick-meta p{margin:0 0 8px;font-size:12.5px;color:var(--text-soft);line-height:1.5;}
+
   /* ---------- Pills ---------- */
   .pill{
     display:inline-block;padding:4px 9px;border-radius:999px;
@@ -1128,7 +1184,9 @@
     // Store.data.icons o'qiladi.
     icons:    { query:"resource=icons",    perm:"icons:read",    key:"icons" },
     // Bu ham ro'yxat emas — Store.raw.usage o'qiladi.
-    usage:    { query:"resource=usage",    perm:"settings:read", key:"usage" }
+    usage:    { query:"resource=usage",    perm:"settings:read", key:"usage" },
+    // Xodimlar ro'yxati — faqat super admin. lib/staff.js ga qarang.
+    staff:    { query:"resource=staff",    perm:"staff:read",    key:"staff" }
   };
   var Store = {
     data: {},
@@ -4153,70 +4211,293 @@
     });
   }
 
+  /* Sozlamalar beshta varaqqa bo'lingan. Ilgari hammasi bitta
+     uzun ustunda turardi va "komissiya qayerda edi?" degan savol
+     har safar aylantirib qidirishga olib kelardi. */
+  var SETTINGS_TABS = [
+    { key:"company",  label:"Kompaniya va profil" },
+    { key:"notify",   label:"Bildirishnomalar" },
+    { key:"money",    label:"Komissiya va to'lovlar" },
+    { key:"roles",    label:"Rollar va ruxsatlar", perm:"staff:read" },
+    { key:"security", label:"Xavfsizlik" }
+  ];
+  var settingsTab = "company";
+
+  function allowedSettingsTabs(){
+    return SETTINGS_TABS.filter(function(t){ return !t.perm || can(t.perm); });
+  }
+
   function viewSettings(){
-    var writable = can("settings:write");
-    return pageHead("Sozlamalar", "Platforma sozlamalari", refreshBtn("settings"))
-      + withData(["settings"], function(){
+    var tabs = allowedSettingsTabs();
+    var names = tabs.map(function(t){ return t.key; });
+    if(names.indexOf(settingsTab) === -1) settingsTab = names[0];
+
+    var need = ["settings"];
+    if(settingsTab === "roles" && can("staff:read")) need.push("staff");
+
+    return pageHead("Sozlamalar", "Platforma sozlamalari", refreshBtn(need.join(",")))
+      + '<div class="tabs">' + tabs.map(function(t){
+          return '<button type="button" class="tab' + (t.key === settingsTab ? " on" : "") + '" '
+            + 'data-act="settings-tab" data-tab="' + esc(t.key) + '">' + esc(t.label) + '</button>';
+        }).join("") + '</div>'
+      + withData(need, function(){
         var s = Store.data.settings || {};
-        var form = card("Umumiy",
-          '<div class="field"><label for="setName">Platforma nomi</label>'
-          + '<input type="text" id="setName" maxlength="60" value="' + esc(s.platformName || "") + '"'
-          + (writable ? "" : " disabled") + '></div>'
-          + '<div class="row2">'
-          + '<div class="field"><label for="setPhone">Qo\'llab-quvvatlash telefoni</label>'
-          + '<input type="text" id="setPhone" placeholder="+998901234567" value="' + esc(s.supportPhone || "") + '"'
-          + (writable ? "" : " disabled") + '></div>'
-          + '<div class="field"><label for="setTg">Telegram username</label>'
-          + '<input type="text" id="setTg" placeholder="username" value="' + esc(s.supportTelegram || "") + '"'
-          + (writable ? "" : " disabled") + '></div>'
-          + '</div>'
-          + '<p class="hint">Bo\'sh qoldirsangiz saytdagi hozirgi aloqa ma\'lumotlari o\'zgarmaydi.</p>'
-          + '<div class="field"><label for="setCommission">Komissiya (%)</label>'
+        if(settingsTab === "company")  return settingsCompany(s);
+        if(settingsTab === "notify")   return settingsNotify(s);
+        if(settingsTab === "money")    return settingsMoney(s);
+        if(settingsTab === "roles")    return settingsRoles();
+        return settingsSecurity(s);
+      });
+  }
+
+  /** Yozuv maydoni — ruxsat bo'lmasa o'chirilgan holda chiqadi. */
+  function fieldText(id, label, value, opts){
+    var o = opts || {};
+    return '<div class="field"><label for="' + esc(id) + '">' + esc(label) + '</label>'
+      + '<input type="' + esc(o.type || "text") + '" id="' + esc(id) + '" '
+      + (o.max ? 'maxlength="' + o.max + '" ' : "")
+      + (o.placeholder ? 'placeholder="' + esc(o.placeholder) + '" ' : "")
+      + (o.attrs || "")
+      + 'value="' + esc(value == null ? "" : value) + '"'
+      + (can("settings:write") ? "" : " disabled") + '></div>';
+  }
+
+  function saveBar(){
+    return can("settings:write")
+      ? '<button type="button" class="btn primary" data-act="settings-save" style="width:100%;margin-top:4px;">Saqlash</button>'
+      : '<p style="color:var(--text-dim);font-size:12.5px;margin:0;">Sozlamalarni o\'zgartirish uchun ruxsatingiz yo\'q.</p>';
+  }
+
+  /* ---------- 1. Kompaniya va profil ---------- */
+  function settingsCompany(s){
+    var logoUrl = s.adminLogoUrl || "";
+    var company = card("Kompaniya",
+      fieldText("setName", "Platforma nomi", s.platformName, { max:60 })
+      + fieldText("setLegal", "To'liq (yuridik) nomi", s.companyLegalName, { max:120, placeholder:"MChJ “YO‘LDA”" })
+      + fieldText("setAddr", "Manzil", s.companyAddress, { max:200 })
+      + '<div class="row2">'
+      + fieldText("setEmail", "Email", s.companyEmail, { max:120, placeholder:"info@yolda.uz" })
+      + fieldText("setRegion", "Hudud", s.region, { max:60, placeholder:"O‘zbekiston" })
+      + '</div>'
+      + '<div class="row2">'
+      + fieldText("setPhone", "Qo'llab-quvvatlash telefoni", s.supportPhone, { max:30, placeholder:"+998901234567" })
+      + fieldText("setTg", "Telegram username", s.supportTelegram, { max:40, placeholder:"username" })
+      + '</div>'
+      + '<p class="hint">Telefon va Telegram ilovadagi “Aloqa” bo\'limida hamda paneldagi '
+      + 'yordam markazida ko\'rinadi.</p>');
+
+    /* Belgi — sudrab tashlash ham, fayl tanlash ham ishlaydi.
+       Rasm serverga yuklanadi, sozlamalarga esa havolasi yoziladi. */
+    var logo = card("Panel belgisi",
+      '<div class="logo-pick" id="logoPick">'
+      + '<span class="logo-prev">' + (logoUrl
+          ? '<img src="' + esc(logoUrl) + '" alt="">'
+          : esc((s.platformName || "Y").charAt(0).toUpperCase())) + '</span>'
+      + '<div class="logo-pick-meta">'
+      + '<p>Rasmni shu yerga sudrab tashlang yoki tanlang. PNG, JPG yoki WEBP, 200 KB gacha. '
+      + 'Belgi qo\'yilmasa nomning birinchi harfi chiziladi.</p>'
+      + (can("settings:write")
+          ? '<div class="cell-actions">'
+            + '<button type="button" class="btn sm" data-act="logo-pick">' + ico("edit") + 'Rasm tanlash</button>'
+            + (logoUrl ? '<button type="button" class="btn sm bad" data-act="logo-remove">O\'chirish</button>' : "")
+            + '</div>'
+            + '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>'
+          : "")
+      + '</div></div>');
+
+    /* Paneldagi ism. Hisob yo'q, shuning uchun u shu yerda qo'lda
+       yoziladi — va bo'sh qolsa rol nomi ko'rinadi. */
+    var me = card("Admin profili",
+      fieldText("setAdminName", "Panelda ko'rinadigan ism", s.adminDisplayName, { max:60, placeholder:"Ism Familiya" })
+      + '<p class="hint">Panelga kirish parol bilan, ya\'ni alohida hisob yo\'q. Bu ism faqat '
+      + 'sarlavhada ko\'rinadi; bo\'sh qoldirsangiz rol nomi chiqadi.</p>'
+      + '<dl class="kv">' + kvRow("Hozirgi rol", esc(ROLE_NAMES[session.role] || session.role)) + '</dl>'
+      + saveBar());
+
+    return '<div class="detail-grid">' + company
+      + '<div style="display:grid;gap:16px;">' + logo + me + '</div></div>';
+  }
+
+  /* ---------- 2. Bildirishnomalar ----------
+     Bu yerda yoqib-o'chiradigan tugmalar yo'q: ular bo'lsa, lekin
+     hech narsani o'zgartirmasa — yolg'on bo'lardi. Buning o'rniga
+     qaysi kanal haqiqatan ishlayotgani ko'rsatiladi. */
+  function settingsNotify(s){
+    var tgOn = Boolean((panelConfig || {}).telegramBot || (panelConfig || {}).botUsername) || null;
+    var rows = [
+      { name:"Telegram bot", on:true,
+        note:"Yuk, taklif va yozishma xabarlari botdan yuboriladi. Odam botni ochmagan bo'lsa, unga xabar bormaydi." },
+      { name:"Ilova ichidagi bildirishnomalar", on:true,
+        note:"Qo'ng'iroqcha ostidagi ro'yxat. Har doim ishlaydi." },
+      { name:"Push bildirishnoma", on:false,
+        note:"Hali ulanmagan: brauzer push kalitlari (VAPID) server sozlamalarida yo'q." },
+      { name:"SMS", on:false,
+        note:"Ulanmagan. Tasdiqlash kodlari ham Telegram orqali yuboriladi." }
+    ];
+    return card("Xabar yuborish kanallari",
+      rows.map(function(r){
+        return '<div class="staff-row">'
+          + '<span class="staff-av">' + ico(r.on ? "check" : "lock") + '</span>'
+          + '<div class="staff-meta"><b>' + esc(r.name) + '</b><small style="white-space:normal;">'
+          + esc(r.note) + '</small></div>'
+          + (r.on ? pill("Ishlayapti", "pill-ok") : pill("Ulanmagan", "pill-dim"))
+          + '</div>';
+      }).join("")
+      + '<p class="hint">Har bir foydalanuvchi qaysi turdagi xabarni olishini o\'z profilida '
+      + 'tanlaydi — bu yerdan majburlab yoqib bo\'lmaydi.</p>')
+      + '<div style="height:16px;"></div>'
+      + card("Ta'mirlash e'loni",
+        '<label class="check"><input type="checkbox" id="setMaint"' + (s.maintenanceMode ? " checked" : "")
+        + (can("settings:write") ? "" : " disabled") + '> Saytda ogohlantirish bannerini ko\'rsatish</label>'
+        + '<div class="field"><label for="setMaintMsg">Banner matni</label>'
+        + '<textarea id="setMaintMsg" maxlength="200"' + (can("settings:write") ? "" : " disabled") + '>'
+        + esc(s.maintenanceMessage || "") + '</textarea></div>'
+        + '<p class="hint">Yoqilganda banner saytning tepasida ko\'rinadi va yon menyudagi '
+        + 'holat nuqtasi sariq bo\'ladi. Matn bo\'sh bo\'lsa standart matn chiqadi.</p>'
+        + saveBar());
+  }
+
+  /* ---------- 3. Komissiya va to'lovlar ---------- */
+  function settingsMoney(s){
+    return '<div class="detail-grid">'
+      + card("Komissiya",
+          '<div class="field"><label for="setCommission">Komissiya (%)</label>'
           + '<input type="number" id="setCommission" min="0" max="100" step="0.1" value="'
           + esc(s.commissionPercent === undefined ? 0 : s.commissionPercent) + '"'
-          + (writable ? "" : " disabled") + '></div>'
-          + '<p class="hint">Hisob-kitob uchun saqlanadi. Saytda to\'lov tizimi ulanmagan, shuning uchun bu '
-          + 'raqam hozircha hech qanday to\'lovni o\'zgartirmaydi.</p>');
+          + (can("settings:write") ? "" : " disabled") + '></div>'
+          + '<p class="hint">Raqam saqlanadi va To\'lovlar bo\'limida ko\'rsatiladi, lekin hozir '
+          + 'hech qanday summadan ushlanmaydi — buning uchun to\'lov tizimi kerak.</p>'
+          + saveBar())
+      + card("To'lov tizimi",
+          '<div class="staff-row"><span class="staff-av">' + ico("lock") + '</span>'
+          + '<div class="staff-meta"><b>Ulanmagan</b><small style="white-space:normal;">'
+          + 'Pul haydovchi bilan yuk beruvchi o\'rtasida to\'g\'ridan o\'tadi. Platforma '
+          + 'to\'lovni qabul qilmaydi, ushlab qolmaydi va o\'tkazmaydi.</small></div>'
+          + pill("Yo'q", "pill-dim") + '</div>'
+          + '<p class="hint">To\'lovlar bo\'limi shunga tayyorlab qo\'yilgan: tizim ulangan kuni '
+          + 'tranzaksiyalar o\'sha jadvalga tushadi va bu yerda provayder sozlamalari paydo bo\'ladi.</p>')
+      + '</div>';
+  }
 
-        var maintenance = card("Texnik ishlar rejimi",
-          '<label class="check"><input type="checkbox" id="setMaint"' + (s.maintenanceMode ? " checked" : "")
-          + (writable ? "" : " disabled") + '> Saytda ogohlantirish bannerini ko\'rsatish</label>'
-          + '<div class="field"><label for="setMaintMsg">Banner matni</label>'
-          + '<textarea id="setMaintMsg" maxlength="200"' + (writable ? "" : " disabled") + '>'
-          + esc(s.maintenanceMessage || "") + '</textarea></div>'
-          + '<p class="hint">Yoqilganda banner asosiy saytning tepasida ko\'rinadi. '
-          + 'Matnni bo\'sh qoldirsangiz standart matn chiqadi.</p>'
-          + (writable
-              ? '<button type="button" class="btn primary" data-act="settings-save" style="width:100%;">Saqlash</button>'
-              : '<p style="color:var(--text-dim);font-size:12.5px;margin:0;">Sozlamalarni o\'zgartirish uchun ruxsatingiz yo\'q.</p>'));
+  /* ---------- 4. Rollar va ruxsatlar ----------
+     Eng muhim gap shu sahifada ochiq yozilgan: bu ro'yxat panelga
+     KIRISH huquqi emas. Kirish hamon parol bilan — lib/staff.js. */
+  function settingsRoles(){
+    var staff = Store.list("staff");
+    var byRole = {};
+    staff.forEach(function(m){ byRole[m.role] = (byRole[m.role] || 0) + 1; });
 
-        var sessionCard = card("Sessiya",
+    var summary = ["SUPER_ADMIN","ADMIN","MODERATOR","ACCOUNTANT"].map(function(r){
+      return '<div class="staff-row">'
+        + '<span class="staff-av">' + ico("shield") + '</span>'
+        + '<div class="staff-meta"><b>' + esc(ROLE_NAMES[r]) + '</b><small>'
+        + esc(r === "SUPER_ADMIN" ? "Barcha ruxsatlar" : (PERMISSIONS[r] || []).length + " ta ruxsat")
+        + '</small></div>'
+        + '<span class="sb-count">' + (byRole[r] || 0) + ' ta</span></div>';
+    }).join("");
+
+    var list = staff.length
+      ? staff.map(function(m){
+          return '<div class="staff-row">'
+            + '<span class="staff-av">' + esc(initials(m.identity)) + '</span>'
+            + '<div class="staff-meta"><b>' + esc(m.identity) + '</b><small>'
+            + esc(ROLE_NAMES[m.role] || m.role) + (m.title ? " · " + esc(m.title) : "")
+            + '</small></div>'
+            + '<div class="cell-actions">'
+            + '<button type="button" class="btn sm" data-act="staff-edit" data-id="' + esc(m.identity) + '">Tahrirlash</button>'
+            + '<button type="button" class="btn sm bad" data-act="staff-remove" data-id="' + esc(m.identity) + '">O\'chirish</button>'
+            + '</div></div>';
+        }).join("")
+      : stateBox("empty", "Xodim qo'shilmagan",
+          "Xodim qo'shilsa, uning ilovadagi profilida rol yorlig'i ko'rinadi.");
+
+    return '<div class="detail-grid">'
+      + card("Xodimlar",
+          list
+          + '<button type="button" class="btn primary" style="width:100%;margin-top:14px;" '
+          + 'data-act="staff-add">' + ico("plus") + 'Xodimni qo\'shish</button>',
+          staff.length + " ta")
+      + '<div style="display:grid;gap:16px;">'
+      + card("Rollar", summary)
+      + card("Bu ro'yxat nima qiladi",
+          '<p class="hint" style="margin-top:0;">Xodim qo\'shilsa, uning <b>ilovadagi ochiq profilida</b> '
+          + '“Administrator” yoki “Operator” yorlig\'i chiqadi — odamlar kim bilan '
+          + 'gaplashayotganini bilishi uchun.</p>'
+          + '<p class="hint"><b>Bu panelga kirish huquqi emas.</b> Panelga kirish faqat parol bilan '
+          + 'tekshiriladi. Ro\'yxatdan o\'chirish odamni paneldan chiqarib tashlamaydi — buning uchun '
+          + 'parolni almashtirish kerak (ADMIN_PASSWORD... server sozlamalari).</p>')
+      + '</div></div>';
+  }
+
+  /* ---------- 5. Xavfsizlik ---------- */
+  function settingsSecurity(s){
+    return '<div class="detail-grid">'
+      + card("Sessiya",
           '<dl class="kv">'
           + kvRow("Rol", esc(ROLE_NAMES[session.role] || session.role))
           + kvRow("Ruxsatlar", esc(session.role === "SUPER_ADMIN"
               ? "Barchasi" : (PERMISSIONS[session.role] || []).length + " ta"))
+          + kvRow("Sessiya muddati", "7 kun")
           + '</dl>'
-          + '<button type="button" class="btn bad" style="width:100%;margin-top:14px;" data-act="logout">'
-          + ico("logout") + 'Chiqish</button>');
-
-        return '<div class="detail-grid">' + form
-          + '<div style="display:grid;gap:16px;">' + maintenance + sessionCard + '</div></div>';
-      });
+          + '<p class="hint">Sessiya imzolangan cookie\'da saqlanadi va uni faqat server '
+          + 'o\'qiy oladi (HttpOnly). Rol cookie ichida imzolangan — uni tahrirlab yuqoriroq '
+          + 'rolga o\'tib bo\'lmaydi.</p>'
+          + '<button type="button" class="btn bad" style="width:100%;margin-top:4px;" data-act="logout">'
+          + ico("logout") + 'Chiqish</button>')
+      + '<div style="display:grid;gap:16px;">'
+      + card("Parollar",
+          '<p class="hint" style="margin-top:0;">Har bir rolning o\'z paroli bor va ular server '
+          + 'sozlamalarida (environment variables) turadi — bu yerdan ham, boshqa hech qayerdan '
+          + 'ham ko\'rib bo\'lmaydi.</p>'
+          + '<dl class="kv">'
+          + kvRow("Super administrator", "ADMIN_PASSWORD")
+          + kvRow("Administrator", "ADMIN_PASSWORD_ADMIN")
+          + kvRow("Operator", "ADMIN_PASSWORD_MODERATOR")
+          + kvRow("Hisobchi", "ADMIN_PASSWORD_ACCOUNTANT")
+          + '</dl>'
+          + '<p class="hint">Parolni almashtirish uchun Vercel sozlamalaridagi o\'sha qiymatni '
+          + 'o\'zgartirish kifoya. Eski sessiyalar muddati tugaguncha ishlaydi.</p>')
+      + card("Himoya choralari",
+          '<dl class="kv">'
+          + kvRow("Parol tanlash urinishi", "Bir daqiqada 5 marta")
+          + kvRow("Cookie", "HttpOnly · Secure · SameSite=Lax")
+          + kvRow("Ruxsat tekshiruvi", "Har bir so'rovda, serverda")
+          + '</dl>'
+          + '<p class="hint">Paneldagi tugmani yashirish ruxsat emas: ruxsat har doim serverda '
+          + 'tekshiriladi, shuning uchun sahifani tahrirlab amal bajarib bo\'lmaydi.</p>')
+      + '</div></div>';
   }
 
+  /* Faqat ekranda turgan maydonlar yuboriladi: sozlamalar endi
+     varaqlarga bo'lingan, ya'ni boshqa varaqdagi maydon DOM'da
+     yo'q. Hammasini o'qishga urinilsa, ko'rinmagan maydonlar
+     bo'sh qiymat bilan ustidan yozib yuborilardi. */
   function saveSettings(){
-    var payload = {
-      platformName: byId("setName").value.trim(),
-      supportPhone: byId("setPhone").value.trim(),
-      supportTelegram: byId("setTg").value.trim(),
-      commissionPercent: Number(byId("setCommission").value),
-      maintenanceMode: byId("setMaint").checked,
-      maintenanceMessage: byId("setMaintMsg").value.trim()
+    var payload = {};
+    var put = function(id, key, map){
+      var el = byId(id);
+      if(!el) return;
+      payload[key] = map ? map(el) : el.value.trim();
     };
-    if(!isFinite(payload.commissionPercent) || payload.commissionPercent < 0 || payload.commissionPercent > 100){
+
+    put("setName", "platformName");
+    put("setLegal", "companyLegalName");
+    put("setAddr", "companyAddress");
+    put("setEmail", "companyEmail");
+    put("setRegion", "region");
+    put("setPhone", "supportPhone");
+    put("setTg", "supportTelegram");
+    put("setAdminName", "adminDisplayName");
+    put("setMaintMsg", "maintenanceMessage");
+    put("setMaint", "maintenanceMode", function(el){ return el.checked; });
+    put("setCommission", "commissionPercent", function(el){ return Number(el.value); });
+
+    if(payload.commissionPercent !== undefined
+       && (!isFinite(payload.commissionPercent) || payload.commissionPercent < 0 || payload.commissionPercent > 100)){
       toast("Komissiya 0–100 oralig'ida bo'lishi kerak", "bad");
       return;
     }
+
     Api.post("update-settings", payload).then(function(body){
       Store.data.settings = body.settings;
       Store.state.settings = "ready";
@@ -4225,6 +4506,140 @@
     }).catch(function(err){
       if(handleApiError(err)) return;
       toast(err.message, "bad");
+    });
+  }
+
+  /* ---------- Panel belgisi ----------
+     Ikonkalar bo'limidagi bilan bir xil yo'l: fayl tanlash,
+     nusxalash yoki to'g'ridan sudrab tashlash. Rasmni server
+     yuklaydi va sozlamalarga havolasini yozadi. */
+  function saveLogoPayload(payload, okMsg){
+    var box = byId("logoPick");
+    if(box) box.classList.add("busy");
+    Api.post("save-logo", payload).then(function(body){
+      Store.data.settings = body.settings;
+      Store.state.settings = "ready";
+      toast(okMsg || "Belgi saqlandi");
+      render();
+    }).catch(function(err){
+      if(handleApiError(err)) return;
+      toast(err.message, "bad");
+      render();
+    });
+  }
+
+  function logoFromFile(file){
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){ saveLogoPayload({ dataUrl: String(reader.result) }); };
+    reader.onerror = function(){ toast("Fayl o'qilmadi", "bad"); };
+    reader.readAsDataURL(file);
+  }
+
+  /* Sudrab tashlash `document` ga ulanadi, maydonning o'ziga
+     emas — maydon har qayta chizilganda yo'qoladi. */
+  function initLogoDrop(){
+    var over = function(e){
+      var box = e.target.closest ? e.target.closest("#logoPick") : null;
+      if(!box || !can("settings:write")) return;
+      e.preventDefault();
+      box.classList.add("drop-on");
+    };
+    document.addEventListener("dragover", over);
+    document.addEventListener("dragleave", function(e){
+      var box = e.target.closest ? e.target.closest("#logoPick") : null;
+      if(box) box.classList.remove("drop-on");
+    });
+    document.addEventListener("drop", function(e){
+      var box = e.target.closest ? e.target.closest("#logoPick") : null;
+      if(!box || !can("settings:write")) return;
+      e.preventDefault();
+      box.classList.remove("drop-on");
+
+      var dt = e.dataTransfer;
+      if(dt.files && dt.files.length){ logoFromFile(dt.files[0]); return; }
+      /* Chrome'dan to'g'ridan sudralganda fayl emas, manzil
+         keladi — uni server olib keladi (lib/remoteImage.js). */
+      var url = imageUrlFromDrop(dt);
+      if(url){ saveLogoPayload({ url: url }); return; }
+      toast("Rasm topilmadi", "bad");
+    });
+  }
+
+  /* ---------- Xodimlar ----------
+     Qo'shish uchun odamning hisobi (email yoki ichki shaxs) kerak:
+     server mavjud bo'lmagan hisobni qabul qilmaydi, aks holda
+     yozuv hech kimga tegmaydigan joyda qolib ketardi. */
+  function staffModal(existing){
+    var roles = ["ADMIN","MODERATOR","ACCOUNTANT","SUPER_ADMIN"];
+    var picked = existing ? existing.role : "ADMIN";
+
+    openModal({
+      title: existing ? "Xodim rolini o'zgartirish" : "Xodimni qo'shish",
+      body: '<div class="field"><label for="stId">Foydalanuvchi (email yoki ID)</label>'
+        + '<input type="text" id="stId" maxlength="200" value="' + esc(existing ? existing.identity : "")
+        + '"' + (existing ? " disabled" : "") + ' placeholder="aziz@example.com"></div>'
+        + (existing ? "" : '<p class="hint" style="margin-top:-6px;">Foydalanuvchilar bo\'limidagi '
+            + '“Email / ID” ustunidagi qiymatni nusxalang.</p>')
+        + '<div class="field"><label for="stRole">Rol</label><select id="stRole">'
+        + roles.map(function(r){
+            return '<option value="' + esc(r) + '"' + (r === picked ? " selected" : "") + '>'
+              + esc(ROLE_NAMES[r]) + '</option>';
+          }).join("")
+        + '</select></div>'
+        + '<div class="field"><label for="stTitle">Lavozim (ixtiyoriy)</label>'
+        + '<input type="text" id="stTitle" maxlength="60" value="' + esc(existing ? (existing.title || "") : "")
+        + '" placeholder="Operatsiya bo\'limi"></div>'
+        + '<p class="hint">Bu rol odamning ilovadagi profilida yorliq bo\'lib ko\'rinadi. '
+        + 'Panelga kirish huquqi bermaydi — kirish parol bilan.</p>'
+        + '<div class="help-err" id="stErr"></div>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
+        + '<button type="button" class="btn primary" data-act="modal-save">Saqlash</button>',
+      onSave: function(){
+        var id = (existing ? existing.identity : byId("stId").value.trim());
+        var err = byId("stErr");
+        if(!id){ err.textContent = "Foydalanuvchini kiriting."; return; }
+        err.textContent = "";
+        Api.post("save-staff", {
+          identity: id,
+          role: byId("stRole").value,
+          title: byId("stTitle").value.trim()
+        }).then(function(body){
+          Store.data.staff = body.staff;
+          Store.state.staff = "ready";
+          closeModal();
+          toast(existing ? "Rol o'zgartirildi" : "Xodim qo'shildi");
+          render();
+        }).catch(function(e){
+          if(handleApiError(e)) return;
+          err.textContent = e.message || "Saqlanmadi";
+        });
+      }
+    });
+  }
+
+  function removeStaffMember(identity){
+    openModal({
+      title: "Xodimni ro'yxatdan chiqarish",
+      body: '<p style="margin:0;color:var(--text-soft);font-size:13.5px;line-height:1.55;">'
+        + '<b>' + esc(identity) + '</b> profilidagi rol yorlig\'i olib tashlanadi.</p>'
+        + '<p class="hint">Diqqat: bu uni paneldan chiqarib tashlamaydi. Panelga kirish parol '
+        + 'bilan tekshiriladi — kirishni to\'xtatish uchun o\'sha rolning parolini '
+        + 'almashtirish kerak.</p>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
+        + '<button type="button" class="btn bad" data-act="modal-save">Chiqarish</button>',
+      onSave: function(){
+        Api.post("delete-staff", { identity: identity }).then(function(body){
+          Store.data.staff = body.staff;
+          Store.state.staff = "ready";
+          closeModal();
+          toast("Xodim ro'yxatdan chiqarildi");
+          render();
+        }).catch(function(e){
+          if(handleApiError(e)) return;
+          toast(e.message, "bad");
+        });
+      }
     });
   }
 
@@ -4486,6 +4901,17 @@
 
     if(act === "nav"){ go("#/" + t.getAttribute("data-name")); return; }
     if(act === "help"){ openHelpCentre(); return; }
+    if(act === "settings-tab"){ settingsTab = t.getAttribute("data-tab"); render(); return; }
+    if(act === "logo-pick"){ byId("logoFile").click(); return; }
+    if(act === "logo-remove"){ saveLogoPayload({ remove:true }, "Belgi o'chirildi"); return; }
+    if(act === "staff-add"){ staffModal(null); return; }
+    if(act === "staff-edit"){
+      var sid = t.getAttribute("data-id"), srec = null;
+      Store.list("staff").forEach(function(m){ if(m.identity === sid) srec = m; });
+      staffModal(srec);
+      return;
+    }
+    if(act === "staff-remove"){ removeStaffMember(t.getAttribute("data-id")); return; }
     if(act === "go"){ closeGlobalSearch(); go(t.getAttribute("data-hash")); return; }
 
     if(act === "reload"){
@@ -4559,6 +4985,12 @@
   });
 
   document.addEventListener("change", function(e){
+    // Panel belgisi uchun fayl tanlandi.
+    if(e.target.id === "logoFile"){
+      logoFromFile(e.target.files && e.target.files[0]);
+      e.target.value = "";   // bir xil faylni qayta tanlash ham ishlasin
+      return;
+    }
     // Ikonka uchun rasm tanlandi. `[data-act]` emas, alohida belgi —
     // bu <input type="file">, uning o'z "amali" yo'q.
     var picker = e.target.closest("[data-icon-file]");
@@ -4759,6 +5191,7 @@
      emas — shuning uchun bir marta, boshida ulansa kifoya;
      kartochkalar keyin qayta chizilsa ham ishlayveradi. */
   initIconDrop();
+  initLogoDrop();
 
   checkSession();
 })();
