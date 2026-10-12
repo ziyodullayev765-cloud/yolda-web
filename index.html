@@ -2950,6 +2950,10 @@
     aspect-ratio:4/3;max-height:40vh;margin-bottom:26px;flex:none;
   }
   .au-hero svg{display:block;width:100%;height:100%;}
+  /* Admin paneldan qo'yilgan rasm chizmaning o'rnini oladi.
+     `cover` — rasm har qanday nisbatda bo'lsa ham maydonni
+     to'ldiradi va cho'zilmaydi. */
+  .au-hero img{display:block;width:100%;height:100%;object-fit:cover;}
 
   .au-back{
     width:38px;height:38px;flex:none;margin:0 0 20px;
@@ -10715,6 +10719,28 @@
     fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
       TELEGRAM_BOT_USERNAME = cfg.telegramBotUsername || "";
       applyIconOverrides(cfg.icons, cfg.iconsPlain);
+
+      /* Kirish ekranidagi rasm admin paneldan almashtiriladi.
+         Qo'yilmagan bo'lsa ilovaning o'z chizmasi qoladi — shuning
+         uchun bu yerda faqat ALMASHTIRISH bor, "bo'shatish" yo'q.
+
+         Rasm yuklanmasa (tarmoq, o'chirilgan fayl) chizma qaytib
+         keladi: kirish ekrani — ilovaning birinchi ekrani, u yerda
+         bo'sh to'rtburchak turishi mumkin emas. */
+      if(cfg.welcomeImageUrl){
+        var hero = document.querySelector(".au-hero");
+        if(hero){
+          var fallback = hero.innerHTML;
+          var img = new Image();
+          img.onload = function(){
+            hero.innerHTML = "";
+            img.alt = "";
+            hero.appendChild(img);
+          };
+          img.onerror = function(){ hero.innerHTML = fallback; };
+          img.src = cfg.welcomeImageUrl;
+        }
+      }
 
       // Platform settings an admin can change from /admin → Sozlamalar.
       // Each one falls back to the value already in the markup, so an

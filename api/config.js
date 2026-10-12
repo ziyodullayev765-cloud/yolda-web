@@ -29,6 +29,7 @@ const FALLBACK = {
   supportTelegram: '',
   maintenanceMode: false,
   maintenanceMessage: '',
+  welcomeImageUrl: '',
 };
 
 /**
@@ -95,6 +96,9 @@ export default async function handler(req, res) {
     icons,
     iconsPlain,
     platformName: settings.platformName,
+    /* Kirish ekranidagi rasm — admin paneldan almashtiriladi.
+       Bo'sh bo'lsa ilovaning o'z chizmasi qoladi. */
+    welcomeImageUrl: settings.welcomeImageUrl || '',
     supportPhone: settings.supportPhone,
     supportTelegram: settings.supportTelegram,
     maintenanceMode: Boolean(settings.maintenanceMode),

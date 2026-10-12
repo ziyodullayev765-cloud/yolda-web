@@ -630,6 +630,9 @@ const DEFAULT_SETTINGS = {
   /* Panel sarlavhasidagi belgi. Bo'sh bo'lsa harfdan yasalgan
      belgi chiziladi — ya'ni logo majburiy emas. */
   adminLogoUrl: '',
+  /* Kirish ekranidagi rasm. Bo'sh bo'lsa ilovaning o'z chizmasi
+     qoladi — ya'ni rasm majburiy emas. */
+  welcomeImageUrl: '',
   /* Kompaniya ma'lumotlari — hujjatlarda va yordam oynasida
      ko'rinadi. Hech biri majburiy emas. */
   companyLegalName: '',
@@ -809,6 +812,10 @@ const purgeOrders = async (req, res) => {
 const ICONS_KEY = 'icon_overrides';
 const ICON_ID_RE = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
 const MAX_ICON_BYTES = 200 * 1024;
+/* Kirish ekranidagi rasm — butun ekran kengligida, shuning uchun
+   chegarasi kattaroq. Lekin baribir chegarasi bor: u ilovaning
+   eng birinchi ekranida yuklanadi. */
+const MAX_WELCOME_BYTES = 600 * 1024;
 const MAX_ICONS = 200;
 
 const readIcons = async () => {
@@ -844,6 +851,13 @@ const getIcons = async (res) => {
  * Chrome'dan sudrab tashlangan manzil (`url`). Ikkinchisini
  * server olib keladi, sababi saveIcon izohida yozilgan.
  */
+/* Qaysi rasm almashtirilyapti. Ikkalasi ham bir xil yo'l bilan
+   yuklanadi, faqat sozlamalardagi kaliti boshqa. */
+const LOGO_SLOTS = {
+  logo: { key: 'adminLogoUrl', folder: 'logo' },
+  welcome: { key: 'welcomeImageUrl', folder: 'welcome' },
+};
+
 const saveLogo = async (req, res) => {
   if (!storageConfigured()) {
     const missing = storageMissing();
@@ -854,12 +868,14 @@ const saveLogo = async (req, res) => {
   }
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const slot = LOGO_SLOTS[String(body.slot || 'logo')];
+  if (!slot) return res.status(400).json({ error: 'Noto‘g‘ri rasm turi' });
 
-  // Bo'shatish: belgi o'rniga yana harf chiziladi.
+  // Bo'shatish: o'rniga ilovaning o'z rasmi qaytadi.
   if (body.remove) {
     const next = await readSettings();
-    const oldKey = keyFromUrl(next.adminLogoUrl);
-    next.adminLogoUrl = '';
+    const oldKey = keyFromUrl(next[slot.key]);
+    next[slot.key] = '';
     if (!(await kvSet(SETTINGS_KEY, JSON.stringify(next)))) {
       return res.status(500).json({ error: 'Saqlanmadi' });
     }
@@ -869,20 +885,24 @@ const saveLogo = async (req, res) => {
 
   let source = body.dataUrl;
   if (!source && body.url) {
-    const got = await fetchRemoteImage(body.url, MAX_ICON_BYTES);
+    const got = await fetchRemoteImage(body.url,
+      String(body.slot || 'logo') === 'welcome' ? MAX_WELCOME_BYTES : MAX_ICON_BYTES);
     if (got.error) return res.status(400).json({ error: got.error });
     source = got.dataUrl;
   }
   if (!source) return res.status(400).json({ error: 'Rasm berilmadi' });
 
-  const uploaded = await uploadImage(source, 'logo', MAX_ICON_BYTES);
+  /* Kirish ekranidagi rasm belgidan ancha katta bo'lishi tabiiy —
+     u butun ekran kengligida turadi. */
+  const limit = slot.folder === 'welcome' ? MAX_WELCOME_BYTES : MAX_ICON_BYTES;
+  const uploaded = await uploadImage(source, slot.folder, limit);
   if (!uploaded || uploaded.error) {
     return res.status(400).json({ error: (uploaded && uploaded.error) || 'Rasm yuklanmadi' });
   }
 
   const next = await readSettings();
-  const previousUrl = next.adminLogoUrl;
-  next.adminLogoUrl = uploaded.url;
+  const previousUrl = next[slot.key];
+  next[slot.key] = uploaded.url;
   if (!(await kvSet(SETTINGS_KEY, JSON.stringify(next)))) {
     return res.status(500).json({ error: 'Saqlanmadi' });
   }

@@ -4352,24 +4352,38 @@
       + '<p class="hint">Telefon va Telegram ilovadagi “Aloqa” bo\'limida hamda paneldagi '
       + 'yordam markazida ko\'rinadi.</p>');
 
-    /* Belgi — sudrab tashlash ham, fayl tanlash ham ishlaydi.
-       Rasm serverga yuklanadi, sozlamalarga esa havolasi yoziladi. */
+    /* Rasm maydoni — sudrab tashlash ham, fayl tanlash ham
+       ishlaydi. Rasm serverga yuklanadi, sozlamalarga esa
+       havolasi yoziladi. Ikki joyda ishlatiladi, shuning uchun
+       `slot` bilan ajratiladi. */
+    var picker = function(slot, url, preview, hint){
+      return '<div class="logo-pick" data-logo-slot="' + esc(slot) + '">'
+        + '<span class="logo-prev">' + (url ? '<img src="' + esc(url) + '" alt="">' : preview) + '</span>'
+        + '<div class="logo-pick-meta"><p>' + hint + '</p>'
+        + (can("settings:write")
+            ? '<div class="cell-actions">'
+              + '<button type="button" class="btn sm" data-act="logo-pick" data-slot="' + esc(slot) + '">'
+              +   ico("edit") + 'Rasm tanlash</button>'
+              + (url ? '<button type="button" class="btn sm bad" data-act="logo-remove" '
+                  + 'data-slot="' + esc(slot) + '">O\'chirish</button>' : "")
+              + '</div>'
+            : "")
+        + '</div></div>';
+    };
+
     var logo = card("Panel belgisi",
-      '<div class="logo-pick" id="logoPick">'
-      + '<span class="logo-prev">' + (logoUrl
-          ? '<img src="' + esc(logoUrl) + '" alt="">'
-          : PANEL_LOGO) + '</span>'
-      + '<div class="logo-pick-meta">'
-      + '<p>Rasmni shu yerga sudrab tashlang yoki tanlang. PNG, JPG yoki WEBP, 200 KB gacha. '
-      + 'Belgi qo\'yilmasa nomning birinchi harfi chiziladi.</p>'
-      + (can("settings:write")
-          ? '<div class="cell-actions">'
-            + '<button type="button" class="btn sm" data-act="logo-pick">' + ico("edit") + 'Rasm tanlash</button>'
-            + (logoUrl ? '<button type="button" class="btn sm bad" data-act="logo-remove">O\'chirish</button>' : "")
-            + '</div>'
-            + '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>'
-          : "")
-      + '</div></div>');
+      picker("logo", logoUrl, PANEL_LOGO,
+        "Rasmni shu yerga sudrab tashlang yoki tanlang. PNG, JPG yoki WEBP, 200 KB gacha. "
+        + "Belgi qo'yilmasa YO'LDA belgisi chiziladi."));
+
+    /* Kirish ekranidagi rasm — ilovaning eng birinchi ekrani.
+       Shu sababli u ham shu yerdan almashtiriladi. */
+    var welcome = card("Kirish ekranidagi rasm",
+      picker("welcome", s.welcomeImageUrl || "",
+        '<span style="font-size:11px;color:var(--text-dim);text-align:center;line-height:1.3;">Ilova<br>chizmasi</span>',
+        "Ilovaning kirish ekranida ko'rinadi. PNG, JPG yoki WEBP, 600 KB gacha. "
+        + "Qo'yilmasa ilovaning o'z chizmasi qoladi.")
+      + '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>');
 
     /* Paneldagi ism. Hisob yo'q, shuning uchun u shu yerda qo'lda
        yoziladi — va bo'sh qolsa rol nomi ko'rinadi. */
@@ -4381,7 +4395,7 @@
       + saveBar());
 
     return '<div class="detail-grid">' + company
-      + '<div style="display:grid;gap:16px;">' + logo + me + '</div></div>';
+      + '<div style="display:grid;gap:16px;">' + logo + welcome + me + '</div></div>';
   }
 
   /* ---------- 2. Bildirishnomalar ----------
@@ -4579,13 +4593,15 @@
      Ikonkalar bo'limidagi bilan bir xil yo'l: fayl tanlash,
      nusxalash yoki to'g'ridan sudrab tashlash. Rasmni server
      yuklaydi va sozlamalarga havolasini yozadi. */
+  /* Qaysi maydon uchun fayl tanlanyapti. `<input type="file">`
+     bitta — uni ikkita tugma ham bosadi. */
+  var pendingLogoSlot = "logo";
+
   function saveLogoPayload(payload, okMsg){
-    var box = byId("logoPick");
-    if(box) box.classList.add("busy");
     Api.post("save-logo", payload).then(function(body){
       Store.data.settings = body.settings;
       Store.state.settings = "ready";
-      toast(okMsg || "Belgi saqlandi");
+      toast(okMsg || "Rasm saqlandi");
       render();
     }).catch(function(err){
       if(handleApiError(err)) return;
@@ -4594,10 +4610,12 @@
     });
   }
 
-  function logoFromFile(file){
+  function logoFromFile(file, slot){
     if(!file) return;
     var reader = new FileReader();
-    reader.onload = function(){ saveLogoPayload({ dataUrl: String(reader.result) }); };
+    reader.onload = function(){
+      saveLogoPayload({ slot: slot || "logo", dataUrl: String(reader.result) });
+    };
     reader.onerror = function(){ toast("Fayl o'qilmadi", "bad"); };
     reader.readAsDataURL(file);
   }
@@ -4605,29 +4623,32 @@
   /* Sudrab tashlash `document` ga ulanadi, maydonning o'ziga
      emas — maydon har qayta chizilganda yo'qoladi. */
   function initLogoDrop(){
-    var over = function(e){
-      var box = e.target.closest ? e.target.closest("#logoPick") : null;
+    var pick = function(e){
+      return e.target.closest ? e.target.closest("[data-logo-slot]") : null;
+    };
+    document.addEventListener("dragover", function(e){
+      var box = pick(e);
       if(!box || !can("settings:write")) return;
       e.preventDefault();
       box.classList.add("drop-on");
-    };
-    document.addEventListener("dragover", over);
+    });
     document.addEventListener("dragleave", function(e){
-      var box = e.target.closest ? e.target.closest("#logoPick") : null;
+      var box = pick(e);
       if(box) box.classList.remove("drop-on");
     });
     document.addEventListener("drop", function(e){
-      var box = e.target.closest ? e.target.closest("#logoPick") : null;
+      var box = pick(e);
       if(!box || !can("settings:write")) return;
       e.preventDefault();
       box.classList.remove("drop-on");
+      var slot = box.getAttribute("data-logo-slot") || "logo";
 
       var dt = e.dataTransfer;
-      if(dt.files && dt.files.length){ logoFromFile(dt.files[0]); return; }
+      if(dt.files && dt.files.length){ logoFromFile(dt.files[0], slot); return; }
       /* Chrome'dan to'g'ridan sudralganda fayl emas, manzil
          keladi — uni server olib keladi (lib/remoteImage.js). */
       var url = imageUrlFromDrop(dt);
-      if(url){ saveLogoPayload({ url: url }); return; }
+      if(url){ saveLogoPayload({ slot: slot, url: url }); return; }
       toast("Rasm topilmadi", "bad");
     });
   }
@@ -4968,8 +4989,15 @@
     if(act === "nav"){ go("#/" + t.getAttribute("data-name")); return; }
     if(act === "help"){ openHelpCentre(); return; }
     if(act === "settings-tab"){ settingsTab = t.getAttribute("data-tab"); render(); return; }
-    if(act === "logo-pick"){ byId("logoFile").click(); return; }
-    if(act === "logo-remove"){ saveLogoPayload({ remove:true }, "Belgi o'chirildi"); return; }
+    if(act === "logo-pick"){
+      pendingLogoSlot = t.getAttribute("data-slot") || "logo";
+      byId("logoFile").click();
+      return;
+    }
+    if(act === "logo-remove"){
+      saveLogoPayload({ slot: t.getAttribute("data-slot") || "logo", remove:true }, "Rasm o'chirildi");
+      return;
+    }
     if(act === "staff-add"){ staffModal(null); return; }
     if(act === "staff-edit"){
       var sid = t.getAttribute("data-id"), srec = null;
@@ -5053,7 +5081,7 @@
   document.addEventListener("change", function(e){
     // Panel belgisi uchun fayl tanlandi.
     if(e.target.id === "logoFile"){
-      logoFromFile(e.target.files && e.target.files[0]);
+      logoFromFile(e.target.files && e.target.files[0], pendingLogoSlot);
       e.target.value = "";   // bir xil faylni qayta tanlash ham ishlasin
       return;
     }
