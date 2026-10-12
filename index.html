@@ -5273,7 +5273,14 @@
     font-family:inherit;font-size:14px;font-weight:600;
   }
   .rcpt-bar .rcpt-print{background:#09864B;color:#FFFFFF;}
-  .rcpt-bar .rcpt-close{background:rgba(255,255,255,0.92);color:#111111;}
+  .rcpt-bar .rcpt-close,.rcpt-bar .rcpt-plain{background:rgba(255,255,255,0.92);color:#111111;}
+  .rcpt-bar button:disabled{opacity:0.5;}
+  /* Uchta tugma tor ekranga ham sig'sin. */
+  .rcpt-bar .rcpt-close{flex:0 0 auto;padding:0 14px;}
+  @media(max-width:420px){
+    .rcpt-bar button{font-size:13px;gap:5px;}
+    .rcpt-bar .rcpt-close span{display:none;}
+  }
   .rcpt-bar button .ic-svg{font-size:17px;}
 
   .rcpt{
@@ -6901,7 +6908,7 @@
       "rcpt.settle": "To'lov yuk beruvchi bilan haydovchi o'rtasida to'g'ridan-to'g'ri amalga oshiriladi. YO'LDA platformasi to'lovni qabul qilmaydi, ushlab qolmaydi va hech qanday ulush olmaydi. Bu hujjat to'lov cheki emas — u tashuv shartlarini va kelishilgan summani qayd etadi.",
       "rcpt.verify": "Tekshirish uchun kod",
       "rcpt.verifyNote": "QR ni skanerlang yoki kodni ilovaning \u201CKuzatish\u201D bo'limiga kiriting.",
-      "rcpt.print": "Chop etish / PDF", "rcpt.close": "Yopish",
+      "rcpt.print": "Chop etish", "rcpt.share": "Yuborish / Saqlash", "rcpt.close": "Yopish",
       "loadgrp.empty": "Hozircha yuk joylamagansiz.", "loadgrp.emptyBtn": "Yuk joylash",
       "rev.ratings": "baho", "rev.asOwner": "Yuk beruvchi sifatida",
       "rev.comments": "Sharhlar", "rev.empty": "Hozircha sharh yo'q.",
@@ -7464,7 +7471,7 @@
       "rcpt.settle": "Оплата происходит напрямую между грузоотправителем и водителем. Платформа YO'LDA не принимает платежи, не удерживает их и не берёт комиссию. Это не кассовый чек — документ фиксирует условия перевозки и согласованную сумму.",
       "rcpt.verify": "Код для проверки",
       "rcpt.verifyNote": "Отсканируйте QR или введите код в разделе \u00ABОтслеживание\u00BB.",
-      "rcpt.print": "Печать / PDF", "rcpt.close": "Закрыть",
+      "rcpt.print": "Печать", "rcpt.share": "Отправить / Сохранить", "rcpt.close": "Закрыть",
       "loadgrp.empty": "Вы пока не размещали грузы.", "loadgrp.emptyBtn": "Разместить груз",
       "rev.ratings": "оценок", "rev.asOwner": "Как заказчик",
       "rev.comments": "Отзывы", "rev.empty": "Отзывов пока нет.",
@@ -8023,7 +8030,7 @@
       "rcpt.settle": "Payment is made directly between the shipper and the driver. The YO'LDA platform does not accept, hold or take a share of any payment. This is not a payment receipt — it records the terms of the trip and the agreed amount.",
       "rcpt.verify": "Verification code",
       "rcpt.verifyNote": "Scan the QR code or enter the code in the app's \u201CTracking\u201D section.",
-      "rcpt.print": "Print / PDF", "rcpt.close": "Close",
+      "rcpt.print": "Print", "rcpt.share": "Send / Save", "rcpt.close": "Close",
       "loadgrp.empty": "You have not posted any loads yet.", "loadgrp.emptyBtn": "Post a load",
       "rev.ratings": "ratings", "rev.asOwner": "As a shipper",
       "rev.comments": "Reviews", "rev.empty": "No reviews yet.",
@@ -16716,6 +16723,348 @@
       + '</div>';
   }
 
+  /* ------------------------------------------------------------
+     Kvitansiyani rasm qilib berish
+     ------------------------------------------------------------
+     Chop etish hamma joyda ham qulay emas: telefonda printer
+     yo'q, Telegram ichida esa chop etish oynasi umuman
+     ochilmaydi. Shuning uchun asosiy amal — RASM: uni ulashish
+     oynasiga berib, Telegram'ga yuborish yoki galereyaga saqlash
+     mumkin.
+
+     NEGA KUTUBXONA EMAS, O'ZIMIZ CHIZAMIZ. Sahifani rasmga
+     aylantiradigan kutubxonalar (html2canvas va shunga
+     o'xshashlar) 200 KB dan ortiq va baribir har narsani
+     to'g'ri chiza olmaydi: bu yerdagi belgi sahifadagi
+     `<use href="#...">` ga tayanadi va serializatsiyada
+     yo'qoladi. Hujjatning tuzilishi esa oddiy va o'zgarmas —
+     shuning uchun u to'g'ridan canvas'ga chiziladi. Natija
+     aniq o'lchamli, aniq ranglarda va hech narsaga bog'liq
+     emas.
+     ------------------------------------------------------------ */
+  var RCPT_W = 560;          // mantiqiy kenglik
+  var RCPT_PAD = 28;
+  var RCPT_SCALE = 2;        // retina uchun
+
+  function rcptFont(weight, size){
+    return weight + " " + size + "px -apple-system, 'Inter', system-ui, sans-serif";
+  }
+
+  /** Matnni berilgan kenglikka sig'dirib, qatorlarga bo'ladi. */
+  function rcptWrap(ctx, str, maxW){
+    var words = String(str == null ? "" : str).split(/\s+/).filter(Boolean);
+    var lines = [];
+    var line = "";
+    words.forEach(function(w){
+      var next = line ? line + " " + w : w;
+      if(ctx.measureText(next).width <= maxW || !line) line = next;
+      else { lines.push(line); line = w; }
+    });
+    if(line) lines.push(line);
+    return lines.length ? lines : [""];
+  }
+
+  /** YO'LDA belgisi — #logoMarkFlat ning canvas'dagi ayni o'zi. */
+  function rcptLogo(ctx, x, y, size){
+    var k = size / 100;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = "#0A9F5B";
+    var r = 26 * k;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(0, 0, size, size, r);
+    else ctx.rect(0, 0, size, size);
+    ctx.fill();
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.moveTo(18 * k, 86 * k);
+    ctx.lineTo(42 * k, 24 * k);
+    ctx.lineTo(58 * k, 24 * k);
+    ctx.lineTo(82 * k, 86 * k);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#0A9F5B";
+    [[46.4, 68, 7.2, 11], [47.2, 49, 5.6, 9], [47.8, 33, 4.4, 7]].forEach(function(b){
+      ctx.fillRect(b[0] * k, b[1] * k, b[2] * k, b[3] * k);
+    });
+    ctx.restore();
+  }
+
+  /**
+   * Kvitansiyani canvas'ga chizadi.
+   *
+   * Hujjatdagi bilan AYNAN bir xil matnlar — ikkalasi ham
+   * serverdan kelgan bitta `r` dan oziqlanadi, ya'ni rasm bilan
+   * ekrandagi hujjat hech qachon ajralib ketmaydi.
+   */
+  function receiptCanvas(r, qrModules){
+    var c = document.createElement("canvas");
+    var ctx = c.getContext("2d");
+    var W = RCPT_W, P = RCPT_PAD, inner = W - P * 2;
+
+    /* Balandlik oldindan ma'lum emas (manzil ikki qatorga
+       tushishi mumkin), shuning uchun avval o'lchab chiqamiz. */
+    var pass = function(draw){
+      var y = 0;
+      var put = function(str, x, size, weight, color, align, maxW){
+        ctx.font = rcptFont(weight, size);
+        var lines = maxW ? rcptWrap(ctx, str, maxW) : [String(str == null ? "" : str)];
+        lines.forEach(function(ln, i){
+          if(draw){
+            ctx.fillStyle = color;
+            ctx.textAlign = align || "left";
+            ctx.fillText(ln, x, y + size * (i + 1));
+          }
+        });
+        y += size * 1.32 * lines.length;
+      };
+      var gap = function(n){ y += n; };
+      var rule = function(color, thick){
+        if(draw){
+          ctx.fillStyle = color;
+          ctx.fillRect(P, y, inner, thick || 1);
+        }
+        y += (thick || 1);
+      };
+
+      /* --- Sarlavha --- */
+      gap(26);
+      if(draw) rcptLogo(ctx, W / 2 - 62, y, 34);
+      if(draw){
+        ctx.font = rcptFont(800, 26);
+        ctx.fillStyle = "#111111";
+        ctx.textAlign = "left";
+        ctx.fillText("YO'LDA", W / 2 - 20, y + 27);
+      }
+      gap(34);
+      gap(12);
+      put(t("rcpt.title") || "Yuk tashish kvitansiyasi", W / 2, 14, 800, "#111111", "center");
+      gap(10);
+      rule("#111111", 2);
+      gap(10);
+
+      /* --- Meta --- */
+      ctx.textAlign = "left";
+      put((t("rcpt.no") || "Kvitansiya №") + ": " + r.code + "    "
+        + (t("rcpt.delivered") || "Yetkazilgan") + ": " + rcptDateTime(r.deliveredAt),
+        P, 11.5, 500, "#444444", "left", inner);
+      put((t("rcpt.printed") || "Chop etilgan") + ": " + rcptDateTime(Date.now()),
+        P, 11.5, 500, "#444444", "left", inner);
+      gap(8);
+      rule("#D4D4D4", 1);
+
+      /* --- Bo'limlar --- */
+      var section = function(n, title){
+        gap(14);
+        if(draw){
+          ctx.fillStyle = "#111111";
+          ctx.beginPath();
+          if(ctx.roundRect) ctx.roundRect(P, y, 17, 17, 5);
+          else ctx.rect(P, y, 17, 17);
+          ctx.fill();
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = rcptFont(700, 11);
+          ctx.textAlign = "center";
+          ctx.fillText(String(n), P + 8.5, y + 12.5);
+          ctx.fillStyle = "#111111";
+          ctx.font = rcptFont(800, 12);
+          ctx.textAlign = "left";
+          ctx.fillText(String(title).toUpperCase(), P + 25, y + 12.5);
+        }
+        gap(26);
+      };
+      var kv = function(k, v){
+        put(String(k).toUpperCase(), P, 10, 700, "#777777");
+        put(v, P, 13, 500, "#111111", "left", inner);
+        gap(6);
+      };
+
+      section(1, t("rcpt.secRoute") || "Marshrut");
+      kv(t("rcpt.from") || "Jo'natish",
+        r.fromCity + (r.fromAddress ? ", " + r.fromAddress : ""));
+      kv(t("rcpt.to") || "Yetkazish",
+        r.toCity + (r.toAddress ? ", " + r.toAddress : ""));
+      if(r.distanceKm) kv(t("rcpt.distance") || "Umumiy masofa", formatNum(r.distanceKm) + " km");
+
+      rule("#E5E5E5", 1);
+      section(2, t("rcpt.secCargo") || "Yuk haqida");
+      kv(t("rcpt.cargoType") || "Yuk turi", r.cargoLabel || "—");
+      kv(t("rcpt.weight") || "Og'irligi", r.weightKg ? formatNum(r.weightKg) + " kg" : "—");
+      if(r.volumeM3) kv(t("rcpt.volume") || "Hajmi", formatNum(r.volumeM3) + " m³");
+      if(r.truckType) kv(t("rcpt.truck") || "Transport turi",
+        VEHICLE_LABELS_PUBLIC[r.truckType] || r.truckType);
+
+      rule("#E5E5E5", 1);
+      section(3, t("rcpt.secParties") || "Ishtirokchilar");
+      var party = function(label, who){
+        if(!who){ kv(label, "—"); return; }
+        var extra = [who.username ? "@" + who.username : "", who.phone || "",
+          [VEHICLE_LABELS_PUBLIC[who.vehicleType] || who.vehicleType || "",
+           who.plateNumber || ""].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
+        kv(label, (who.name || "—") + (extra ? "\n" : ""));
+        if(extra) put(extra, P, 11.5, 500, "#555555", "left", inner);
+        gap(6);
+      };
+      party(t("rcpt.owner") || "Yuk beruvchi", r.owner);
+      party(t("rcpt.driver") || "Haydovchi", r.driver);
+
+      rule("#E5E5E5", 1);
+      section(4, t("rcpt.secMoney") || "Hisob");
+      var money = function(label, value, big){
+        if(draw){
+          ctx.font = rcptFont(big ? 800 : 500, big ? 15 : 13);
+          ctx.fillStyle = "#111111";
+          ctx.textAlign = "left";
+          ctx.fillText(label, P, y + (big ? 15 : 13));
+          ctx.textAlign = "right";
+          ctx.fillText(value, W - P, y + (big ? 15 : 13));
+        }
+        y += (big ? 15 : 13) * 1.6;
+      };
+      money(r.agreed ? (t("rcpt.agreed") || "Kelishilgan summa") : (t("rcpt.listed") || "E'londagi narx"),
+        formatNum(r.amount) + " so'm");
+      rule("#EEEEEE", 1);
+      money(t("rcpt.fee") || "Platforma ulushi", "0 so'm");
+      gap(4);
+      rule("#111111", 2);
+      gap(6);
+      money(t("rcpt.total") || "Jami", formatNum(r.amount) + " so'm", true);
+      rule("#111111", 2);
+
+      /* --- Izoh --- */
+      gap(12);
+      var note = t("rcpt.settle")
+        || "To'lov yuk beruvchi bilan haydovchi o'rtasida to'g'ridan-to'g'ri amalga oshiriladi. "
+           + "YO'LDA platformasi to'lovni qabul qilmaydi, ushlab qolmaydi va hech qanday ulush olmaydi. "
+           + "Bu hujjat to'lov cheki emas.";
+      ctx.font = rcptFont(500, 11.5);
+      var noteLines = rcptWrap(ctx, note, inner - 24);
+      var noteH = noteLines.length * 11.5 * 1.45 + 20;
+      if(draw){
+        ctx.fillStyle = "#F4F4F4";
+        ctx.fillRect(P, y, inner, noteH);
+        ctx.fillStyle = "#09864B";
+        ctx.fillRect(P, y, 3, noteH);
+        ctx.fillStyle = "#333333";
+        ctx.textAlign = "left";
+        noteLines.forEach(function(ln, i){
+          ctx.fillText(ln, P + 14, y + 14 + i * 11.5 * 1.45 + 2);
+        });
+      }
+      y += noteH;
+
+      /* --- QR va kod --- */
+      gap(16);
+      var qrSize = 92;
+      if(draw && qrModules){
+        var n = qrModules.length;
+        var cell = qrSize / n;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(P, y, qrSize, qrSize);
+        ctx.fillStyle = "#111111";
+        for(var qy = 0; qy < n; qy++){
+          for(var qx = 0; qx < n; qx++){
+            if(qrModules[qy][qx]){
+              ctx.fillRect(P + qx * cell, y + qy * cell, Math.ceil(cell), Math.ceil(cell));
+            }
+          }
+        }
+      }
+      if(draw){
+        ctx.textAlign = "left";
+        ctx.font = rcptFont(700, 10);
+        ctx.fillStyle = "#777777";
+        ctx.fillText(String(t("rcpt.verify") || "Tekshirish uchun kod").toUpperCase(), P + qrSize + 16, y + 14);
+        ctx.font = rcptFont(700, 17);
+        ctx.fillStyle = "#111111";
+        ctx.fillText(r.code, P + qrSize + 16, y + 38);
+        ctx.font = rcptFont(500, 11);
+        ctx.fillStyle = "#555555";
+        rcptWrap(ctx, RECEIPT_URL_BASE + r.code, inner - qrSize - 16).forEach(function(ln, i){
+          ctx.fillText(ln, P + qrSize + 16, y + 58 + i * 15);
+        });
+      }
+      y += qrSize;
+
+      gap(16);
+      rule("#E5E5E5", 1);
+      gap(8);
+      put("© " + new Date().getFullYear() + " YO'LDA", W / 2, 10.5, 500, "#777777", "center");
+      gap(18);
+      return y;
+    };
+
+    // 1-o'tish: balandlikni o'lchaymiz. 2-o'tish: chizamiz.
+    var H = Math.ceil(pass(false));
+    c.width = W * RCPT_SCALE;
+    c.height = H * RCPT_SCALE;
+    ctx.scale(RCPT_SCALE, RCPT_SCALE);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = "alphabetic";
+    pass(true);
+    return c;
+  }
+
+  /** QR modullarini jadval ko'rinishida — canvas uchun. */
+  function qrMatrix(text){
+    if(!window.qrcode) return null;
+    var q = window.qrcode(0, "M");
+    q.addData(text);
+    q.make();
+    var n = q.getModuleCount();
+    var out = [];
+    for(var r = 0; r < n; r++){
+      var row = [];
+      for(var c = 0; c < n; c++) row.push(q.isDark(r, c));
+      out.push(row);
+    }
+    return out;
+  }
+
+  /**
+   * Kvitansiyani rasm qilib ulashadi yoki yuklab oladi.
+   *
+   * Ulashish oynasi bor bo'lsa — o'sha (Telegram, galereyaga
+   * saqlash, pochta: ro'yxatni tizimning o'zi beradi). Yo'q
+   * bo'lsa — oddiy yuklab olish. Ikkalasi ham bo'lmasa rasm
+   * yangi oynada ochiladi, ya'ni odam baribir saqlab oladi.
+   */
+  function shareReceipt(r){
+    return loadQrLib().catch(function(){ return null; }).then(function(){
+      var canvas = receiptCanvas(r, qrMatrix(RECEIPT_URL_BASE + r.code));
+      return new Promise(function(resolve){
+        canvas.toBlob(function(blob){ resolve({ blob: blob, canvas: canvas }); }, "image/png");
+      });
+    }).then(function(out){
+      var name = "YOLDA-" + String(r.code).replace(/[^A-Za-z0-9_-]/g, "") + ".png";
+      var blob = out.blob;
+      if(!blob) throw new Error("rasm");
+
+      var file = null;
+      try { file = new File([blob], name, { type: "image/png" }); } catch(e){ file = null; }
+
+      if(file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+        return navigator.share({ files: [file], title: "YO'LDA — " + r.code })
+          .catch(function(){ /* odam bekor qildi — xato emas */ });
+      }
+
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      /* Yuklab olish boshlanishi uchun biroz vaqt kerak —
+         darhol bo'shatilsa, ba'zi brauzerlarda fayl bo'sh
+         bo'lib qoladi. */
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 20000);
+    });
+  }
+
   var rcptOverlay = null;
 
   function closeReceipt(){
@@ -16742,8 +17091,13 @@
     overlay.innerHTML = '<div class="rcpt-bar">'
       + '<button type="button" class="rcpt-close" data-rcpt-close>' + icon("iconClose")
       +   '<span data-i18n="rcpt.close">Yopish</span></button>'
-      + '<button type="button" class="rcpt-print" data-rcpt-print disabled>' + icon("iconDownload")
-      +   '<span data-i18n="rcpt.print">Chop etish / PDF</span></button>'
+      /* Chop etish ikkinchi darajali: telefonda printer yo'q va
+         Telegram ichida chop etish oynasi umuman ochilmaydi.
+         Asosiy amal — rasm qilib ulashish yoki saqlash. */
+      + '<button type="button" class="rcpt-plain" data-rcpt-print disabled>' + icon("iconReceipt")
+      +   '<span data-i18n="rcpt.print">Chop etish</span></button>'
+      + '<button type="button" class="rcpt-print" data-rcpt-share disabled>' + icon("iconShare")
+      +   '<span data-i18n="rcpt.share">Yuborish / Saqlash</span></button>'
       + '</div>'
       + '<div class="rcpt" style="text-align:center;padding:40px 20px;">'
       +   '<span data-i18n="common.loading">Yuklanmoqda…</span></div>';
@@ -16754,9 +17108,19 @@
     document.body.style.overflow = "hidden";
     rcptOverlay = overlay;
 
+    var shared = null;   // serverdan kelgan kvitansiya
+
     overlay.addEventListener("click", function(e){
       if(e.target === overlay || e.target.closest("[data-rcpt-close]")){ closeReceipt(); return; }
-      if(e.target.closest("[data-rcpt-print]")) window.print();
+      if(e.target.closest("[data-rcpt-print]")){ window.print(); return; }
+
+      var shareBtn = e.target.closest("[data-rcpt-share]");
+      if(shareBtn && shared){
+        shareBtn.disabled = true;
+        shareReceipt(shared).catch(function(){
+          toast("Rasm tayyorlanmadi", "", "error");
+        }).then(function(){ shareBtn.disabled = false; });
+      }
     });
 
     fetch(q)
@@ -16764,9 +17128,11 @@
       .then(function(res){
         if(!res.ok) throw new Error(res.body.error || "Kvitansiya ochilmadi");
         var r = res.body.receipt;
+        shared = r;
         overlay.querySelector(".rcpt").outerHTML = receiptHtml(r);
-        var printBtn = overlay.querySelector("[data-rcpt-print]");
-        if(printBtn) printBtn.disabled = false;
+        overlay.querySelectorAll("[data-rcpt-print],[data-rcpt-share]").forEach(function(b){
+          b.disabled = false;
+        });
         applyLang();
 
         /* QR oxirida: u bo'lmasa ham hujjat to'liq va o'qiladi. */
