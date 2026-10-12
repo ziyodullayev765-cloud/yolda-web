@@ -1537,6 +1537,115 @@ const getEarnings = async (req, res) => {
 };
 
 /**
+ * GET ?action=receipt&code=... — yetkazilgan yuk kvitansiyasi.
+ *
+ * NEGA ALOHIDA. Yetkazilgandan keyin buyurtma na `my-load` da
+ * (u faqat JARAYONDAGI yukni qaytaradi), na `my-loads` da
+ * (u qisqa ro'yxat) to'liq ko'rinadi. Kvitansiya uchun esa
+ * hammasi kerak: manzillar, mashina raqami, ikkala tomon.
+ *
+ * KIMGA. Faqat shu tashuvning ikki tomoniga: yuk beruvchiga va
+ * yukni eltgan haydovchiga. Boshqa birov kodni bilsa ham
+ * ko'rmaydi — kvitansiyada ikkala tomonning telefoni turadi.
+ * Hisobga kirmagan yuk beruvchi uchun ikkinchi yo'l bor: kod
+ * va buyurtmadagi telefon raqami (kuzatuv bilan bir xil qoida).
+ *
+ * FAQAT YETKAZILGANIGA. Yakunlanmagan tashuvga kvitansiya
+ * berish — bo'lmagan ishni bo'lgan qilib ko'rsatish.
+ *
+ * SUMMA. Ilovada to'lov tizimi yo'q: pul tomonlar o'rtasida
+ * to'g'ridan o'tadi va platforma hech narsa ushlamaydi.
+ * Shuning uchun kvitansiyada "to'landi" deb yozilmaydi —
+ * kelishilgan summa va u kimdan kimga tegishli ekani yoziladi.
+ * `settlement` maydoni shuni ochiq aytadi.
+ */
+const getReceipt = async (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase();
+  if (!code) return res.status(400).json({ error: 'Buyurtma kodi kerak' });
+
+  const order = await readJson(`order:${code}`, null);
+  if (!order) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  const ownerKey = order.ownerIdentity || order.googleEmail;
+  const driverKey = order.driver ? order.driver.identity : null;
+
+  const identity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
+  });
+
+  let role = null;
+  if (identity && ownerKey && identity === ownerKey) role = 'owner';
+  else if (identity && driverKey && identity === driverKey) role = 'driver';
+  else if (req.query.phone && normalisePhone(req.query.phone) === order.phone) role = 'owner';
+
+  /* Topilmadi deyiladi, "ruxsat yo'q" emas: aks holda kod
+     to'g'riligini begona odam ham bilib olardi. */
+  if (!role) return res.status(404).json({ error: 'Topilmadi. Kod yoki telefon raqamini tekshiring' });
+
+  if ((order.status || 'NEW') !== 'DELIVERED') {
+    return res.status(409).json({ error: 'Kvitansiya yuk yetkazilgandan keyin beriladi' });
+  }
+
+  const cargo = CARGO[order.cargoType] || CARGO.OTHER;
+  const cargoLabel = order.cargoType === 'OTHER' && order.customCargoLabel
+    ? order.customCargoLabel
+    : cargo.label;
+
+  const ownerProfile = ownerKey ? await readJson(`profile:${ownerKey}`, null) : null;
+  const driverProfile = driverKey ? await readJson(`profile:${driverKey}`, null) : null;
+
+  return res.status(200).json({
+    ok: true,
+    role,
+    receipt: {
+      code: order.code,
+      createdAt: order.createdAt || null,
+      deliveredAt: order.deliveredAt || order.updatedAt || null,
+
+      fromCity: order.fromCity || '',
+      toCity: order.toCity || '',
+      fromAddress: order.fromAddress || '',
+      toAddress: order.toAddress || '',
+      // Masofa faqat hisoblangan bo'lsa. Taxmin yozilmaydi.
+      distanceKm: Number(order.distanceKm) || null,
+
+      cargoLabel,
+      weightKg: Number(order.weightKg) || 0,
+      volumeM3: order.volumeM3 || null,
+      quantity: order.quantity || null,
+      quantityUnit: order.quantityUnit || '',
+      truckType: order.truckType || '',
+
+      owner: {
+        name: (ownerProfile && ownerProfile.displayName) || order.name || '',
+        phone: order.phone || (ownerProfile && ownerProfile.phone) || '',
+        username: (ownerProfile && ownerProfile.username) || null,
+      },
+      driver: order.driver ? {
+        name: order.driver.name || '',
+        phone: order.driver.phone || (driverProfile && driverProfile.phone) || '',
+        username: (driverProfile && driverProfile.username) || null,
+        verified: Boolean(order.driver.verified),
+        vehicleType: (driverProfile && driverProfile.vehicleType) || '',
+        plateNumber: (driverProfile && driverProfile.plateNumber) || '',
+      } : null,
+
+      amount: Number(order.agreedAmount || order.amount) || 0,
+      // Narx kelishilganmi yoki e'londagi narx o'z holicha qolganmi.
+      agreed: Boolean(order.agreedAmount),
+      /* Platforma pulga tegmaydi — kvitansiyada shu ochiq
+         yozilishi kerak, aks holda u "to'lov cheki" deb
+         tushunilardi. */
+      settlement: {
+        throughPlatform: false,
+        platformFee: 0,
+      },
+    },
+  });
+};
+
+/**
  * POST ?action=advance — biriktirilgan haydovchi buyurtmani bir bosqich
  * oldinga suradi.
  *
@@ -1997,6 +2106,7 @@ export default async function handler(req, res) {
     if (action === 'my-loads') return listMyLoads(req, res);
     if (action === 'stats') return getHomeStats(req, res);
     if (action === 'earnings') return getEarnings(req, res);
+    if (action === 'receipt') return getReceipt(req, res);
     return getOrderStatus(req, res);
   }
   if (req.method === 'POST') {

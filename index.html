@@ -2507,10 +2507,14 @@
   }
 
   .earn-list{display:flex;flex-direction:column;}
+  /* Endi bu <button>: har bir yozuv kvitansiyani ochadi.
+     Shuning uchun tugmaning standart ko'rinishi olib tashlanadi. */
   .earn-item{
-    display:flex;align-items:center;gap:var(--s3);
-    padding:12px 0;border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    padding:12px 0;border:none;border-top:1px solid var(--border);
+    background:none;font-family:inherit;cursor:pointer;
   }
+  .earn-item:active{opacity:0.6;}
   .earn-list .earn-item:first-child{border-top:none;}
   .earn-item-main{flex:1;min-width:0;}
   .earn-item-route{font-size:14px;font-weight:600;color:var(--ink);word-break:break-word;}
@@ -5228,6 +5232,156 @@
   :root[data-theme="dark"] .tc-status.PENDING{color:#FCD34D;}
   :root[data-theme="dark"] .tc-status.REJECTED{color:#FCA5A5;}
   :root[data-theme="dark"] .tc-status.ACTIVE{color:#86EFAC;}
+
+  /* ============================================================
+     Yuk tashish kvitansiyasi
+     ------------------------------------------------------------
+     Bu — hujjat, ilovaning ekrani emas. Shuning uchun ikkita
+     qoida boshqacha:
+
+       1. U DOIM oq qog'ozda qora yozuv. Tungi rejimda ham: ekranda
+          oq ko'ringan hujjat chop etilganda ham o'sha bo'ladi, va
+          odam nimani bosayotganini oldindan ko'radi.
+       2. O'lchovlar `rem`/`px` da, ilovaning `--s*` o'zgaruvchilari
+          emas: hujjat A4 ga chiqadi va u yerda ilovaning bo'shliq
+          shkalasi ma'noga ega emas.
+     ============================================================ */
+  .rcpt-overlay{
+    /* Varaqlardan (1600) ham yuqorida: kvitansiya profil varag'i
+       ichidagi ro'yxatdan ochiladi va u varaqning ostida qolib
+       ketmasligi kerak. Kirish ekrani (2000) va kutish ekrani
+       esa baribir yuqorida — ular ilovadan ham muhimroq. */
+    position:fixed;inset:0;z-index:1700;overflow-y:auto;
+    background:rgba(17,17,17,0.72);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    padding:16px 12px 24px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+  }
+  .rcpt-overlay[hidden]{display:none;}
+
+  .rcpt-bar{
+    display:flex;gap:8px;width:100%;max-width:720px;
+    position:sticky;top:0;z-index:2;
+  }
+  .rcpt-bar button{
+    flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    height:44px;border-radius:12px;border:none;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:600;
+  }
+  .rcpt-bar .rcpt-print{background:#09864B;color:#FFFFFF;}
+  .rcpt-bar .rcpt-close{background:rgba(255,255,255,0.92);color:#111111;}
+  .rcpt-bar button .ic-svg{font-size:17px;}
+
+  .rcpt{
+    width:100%;max-width:720px;background:#FFFFFF;color:#111111;
+    border-radius:14px;padding:26px 24px 20px;
+    font-size:13px;line-height:1.5;
+    box-shadow:0 24px 60px rgba(0,0,0,0.35);
+  }
+  .rcpt b,.rcpt strong{color:#111111;}
+
+  .rcpt-head{text-align:center;border-bottom:2px solid #111111;padding-bottom:14px;}
+  .rcpt-brand{
+    display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;
+  }
+  .rcpt-brand svg{width:34px;height:34px;fill:#09864B;}
+  .rcpt-brand span{font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#111111;}
+  .rcpt-title{font-size:15px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;}
+
+  .rcpt-meta{
+    display:flex;flex-wrap:wrap;gap:4px 18px;justify-content:space-between;
+    padding:10px 0;border-bottom:1px solid #D4D4D4;font-size:12px;color:#444444;
+  }
+  .rcpt-meta b{font-weight:700;}
+
+  .rcpt-sec{padding:14px 0 2px;}
+  .rcpt-sec + .rcpt-sec{border-top:1px solid #E5E5E5;}
+  .rcpt-sec-h{
+    display:flex;align-items:center;gap:8px;margin-bottom:9px;
+    font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;
+  }
+  .rcpt-n{
+    width:18px;height:18px;border-radius:5px;flex-shrink:0;
+    background:#111111;color:#FFFFFF;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;
+  }
+
+  .rcpt-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;}
+  .rcpt-k{font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#777777;}
+  .rcpt-v{font-size:13px;color:#111111;overflow-wrap:anywhere;}
+  .rcpt-v.big{font-size:14.5px;font-weight:700;}
+
+  /* Yo'nalish: ikki nuqta va orasidagi chiziq. Chiziq shunchaki
+     bezak emas — u "qayerdan qayerga" ekanini bir qarashda beradi. */
+  .rcpt-route{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;}
+  .rcpt-dash{
+    align-self:center;min-width:34px;height:0;
+    border-top:2px dashed #BBBBBB;margin-top:10px;
+  }
+  .rcpt-route .rcpt-to{text-align:right;}
+
+  .rcpt-money{margin-top:4px;}
+  .rcpt-money-row{
+    display:flex;justify-content:space-between;gap:16px;
+    padding:7px 0;border-bottom:1px solid #EEEEEE;
+  }
+  .rcpt-money-row.total{
+    border-top:2px solid #111111;border-bottom:2px solid #111111;
+    margin-top:6px;padding:10px 0;font-size:15px;font-weight:800;
+  }
+  .rcpt-money-row .num{font-variant-numeric:tabular-nums;white-space:nowrap;}
+
+  /* Eng muhim qator. Ilovada to'lov tizimi yo'q, shuning uchun
+     kvitansiya "to'landi" demaydi — nima bo'lgani aynan yoziladi. */
+  .rcpt-settle{
+    margin-top:12px;padding:11px 13px;border-radius:9px;
+    background:#F4F4F4;border-left:3px solid #09864B;
+    font-size:11.5px;line-height:1.55;color:#333333;
+  }
+
+  .rcpt-verify{
+    display:flex;align-items:center;gap:14px;margin-top:16px;
+    padding-top:14px;border-top:1px solid #E5E5E5;
+  }
+  .rcpt-qr{width:92px;height:92px;flex-shrink:0;}
+  .rcpt-qr svg,.rcpt-qr img{width:100%;height:100%;display:block;}
+  .rcpt-verify-meta{min-width:0;}
+  .rcpt-code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:17px;font-weight:700;letter-spacing:0.08em;margin-top:2px;
+  }
+
+  .rcpt-foot{
+    margin-top:14px;padding-top:10px;border-top:1px solid #E5E5E5;
+    font-size:10.5px;color:#777777;text-align:center;line-height:1.6;
+  }
+
+  @media(max-width:520px){
+    .rcpt{padding:20px 16px 16px;font-size:12.5px;}
+    .rcpt-cols{grid-template-columns:1fr;}
+    .rcpt-route{grid-template-columns:1fr;}
+    .rcpt-dash{display:none;}
+    .rcpt-route .rcpt-to{text-align:left;}
+  }
+
+  /* Chop etish. Sahifaning qolgani butunlay yashiriladi — aks
+     holda printerga ilovaning paneli, tugmalari va foni ham
+     chiqib ketardi. */
+  @media print{
+    body > *{display:none !important;}
+    body > .rcpt-overlay{
+      display:block !important;position:static;background:none;padding:0;
+      -webkit-backdrop-filter:none;backdrop-filter:none;
+    }
+    .rcpt-bar{display:none !important;}
+    .rcpt{
+      max-width:none;box-shadow:none;border-radius:0;padding:0;
+      font-size:11.5pt;color:#000000;
+    }
+    .rcpt-sec{break-inside:avoid;}
+    @page{margin:14mm;}
+  }
 </style>
 </head>
 <body>
@@ -6727,6 +6881,22 @@
       "drv.cargo": "Tashiydigan yuklar", "drv.docs": "Hujjatlar", "drv.edit": "O'zgartirish",
       "loadgrp.active": "Faol", "loadgrp.inProgress": "Jarayonda",
       "loadgrp.delivered": "Yakunlangan", "loadgrp.cancelled": "Bekor qilingan",
+      /* Yuk tashish kvitansiyasi â yetkazilgandan keyingi hujjat. */
+      "rcpt.open": "Kvitansiya",
+      "rcpt.title": "Yuk tashish kvitansiyasi",
+      "rcpt.no": "Kvitansiya №", "rcpt.delivered": "Yetkazilgan", "rcpt.printed": "Chop etilgan",
+      "rcpt.secRoute": "Marshrut", "rcpt.secCargo": "Yuk haqida",
+      "rcpt.secParties": "Ishtirokchilar", "rcpt.secMoney": "Hisob",
+      "rcpt.from": "Jo'natish", "rcpt.to": "Yetkazish", "rcpt.distance": "Umumiy masofa",
+      "rcpt.cargoType": "Yuk turi", "rcpt.weight": "Og'irligi", "rcpt.volume": "Hajmi",
+      "rcpt.truck": "Transport turi",
+      "rcpt.owner": "Yuk beruvchi", "rcpt.driver": "Haydovchi",
+      "rcpt.agreed": "Kelishilgan summa", "rcpt.listed": "E'londagi narx",
+      "rcpt.fee": "Platforma ulushi", "rcpt.total": "Jami",
+      "rcpt.settle": "To'lov yuk beruvchi bilan haydovchi o'rtasida to'g'ridan-to'g'ri amalga oshiriladi. YO'LDA platformasi to'lovni qabul qilmaydi, ushlab qolmaydi va hech qanday ulush olmaydi. Bu hujjat to'lov cheki emas — u tashuv shartlarini va kelishilgan summani qayd etadi.",
+      "rcpt.verify": "Tekshirish uchun kod",
+      "rcpt.verifyNote": "QR ni skanerlang yoki kodni ilovaning \u201CKuzatish\u201D bo'limiga kiriting.",
+      "rcpt.print": "Chop etish / PDF", "rcpt.close": "Yopish",
       "loadgrp.empty": "Hozircha yuk joylamagansiz.", "loadgrp.emptyBtn": "Yuk joylash",
       "rev.ratings": "baho", "rev.asOwner": "Yuk beruvchi sifatida",
       "rev.comments": "Sharhlar", "rev.empty": "Hozircha sharh yo'q.",
@@ -7273,6 +7443,22 @@
       "drv.cargo": "Виды грузов", "drv.docs": "Документы", "drv.edit": "Изменить",
       "loadgrp.active": "Активные", "loadgrp.inProgress": "В процессе",
       "loadgrp.delivered": "Завершённые", "loadgrp.cancelled": "Отменённые",
+      /* Квитанция о перевозке. */
+      "rcpt.open": "Квитанция",
+      "rcpt.title": "Квитанция о перевозке груза",
+      "rcpt.no": "Квитанция №", "rcpt.delivered": "Доставлено", "rcpt.printed": "Напечатано",
+      "rcpt.secRoute": "Маршрут", "rcpt.secCargo": "О грузе",
+      "rcpt.secParties": "Участники", "rcpt.secMoney": "Расчёт",
+      "rcpt.from": "Отправка", "rcpt.to": "Доставка", "rcpt.distance": "Общее расстояние",
+      "rcpt.cargoType": "Тип груза", "rcpt.weight": "Вес", "rcpt.volume": "Объём",
+      "rcpt.truck": "Тип транспорта",
+      "rcpt.owner": "Грузоотправитель", "rcpt.driver": "Водитель",
+      "rcpt.agreed": "Согласованная сумма", "rcpt.listed": "Цена из объявления",
+      "rcpt.fee": "Доля платформы", "rcpt.total": "Итого",
+      "rcpt.settle": "Оплата происходит напрямую между грузоотправителем и водителем. Платформа YO'LDA не принимает платежи, не удерживает их и не берёт комиссию. Это не кассовый чек — документ фиксирует условия перевозки и согласованную сумму.",
+      "rcpt.verify": "Код для проверки",
+      "rcpt.verifyNote": "Отсканируйте QR или введите код в разделе \u00ABОтслеживание\u00BB.",
+      "rcpt.print": "Печать / PDF", "rcpt.close": "Закрыть",
       "loadgrp.empty": "Вы пока не размещали грузы.", "loadgrp.emptyBtn": "Разместить груз",
       "rev.ratings": "оценок", "rev.asOwner": "Как заказчик",
       "rev.comments": "Отзывы", "rev.empty": "Отзывов пока нет.",
@@ -7815,6 +8001,22 @@
       "drv.cargo": "Cargo types", "drv.docs": "Documents", "drv.edit": "Edit",
       "loadgrp.active": "Active", "loadgrp.inProgress": "In progress",
       "loadgrp.delivered": "Completed", "loadgrp.cancelled": "Cancelled",
+      /* Delivery receipt. */
+      "rcpt.open": "Receipt",
+      "rcpt.title": "Freight delivery receipt",
+      "rcpt.no": "Receipt No.", "rcpt.delivered": "Delivered", "rcpt.printed": "Printed",
+      "rcpt.secRoute": "Route", "rcpt.secCargo": "Cargo",
+      "rcpt.secParties": "Parties", "rcpt.secMoney": "Settlement",
+      "rcpt.from": "Pickup", "rcpt.to": "Delivery", "rcpt.distance": "Total distance",
+      "rcpt.cargoType": "Cargo type", "rcpt.weight": "Weight", "rcpt.volume": "Volume",
+      "rcpt.truck": "Vehicle type",
+      "rcpt.owner": "Shipper", "rcpt.driver": "Driver",
+      "rcpt.agreed": "Agreed amount", "rcpt.listed": "Listed price",
+      "rcpt.fee": "Platform share", "rcpt.total": "Total",
+      "rcpt.settle": "Payment is made directly between the shipper and the driver. The YO'LDA platform does not accept, hold or take a share of any payment. This is not a payment receipt — it records the terms of the trip and the agreed amount.",
+      "rcpt.verify": "Verification code",
+      "rcpt.verifyNote": "Scan the QR code or enter the code in the app's \u201CTracking\u201D section.",
+      "rcpt.print": "Print / PDF", "rcpt.close": "Close",
       "loadgrp.empty": "You have not posted any loads yet.", "loadgrp.emptyBtn": "Post a load",
       "rev.ratings": "ratings", "rev.asOwner": "As a shipper",
       "rev.comments": "Reviews", "rev.empty": "No reviews yet.",
@@ -11721,7 +11923,10 @@
           + (owner ? "Hamma yuklar" : "Hamma tashuvlar")+'</h4>'
           + '<div class="earn-list">'
           + entries.map(function(e){
-              return '<div class="earn-item">'
+              /* Har bir yozuv bosiladigan: u yakunlangan tashuv,
+                 ya'ni unga kvitansiya bor. */
+              return '<button type="button" class="earn-item" data-rcpt-code="'
+                + escapeHtml(e.code) + '">'
                 + '<div class="earn-item-main">'
                 +   '<div class="earn-item-route">'+escapeHtml(e.fromCity)+' → '+escapeHtml(e.toCity)+'</div>'
                 +   '<div class="earn-item-sub">'+escapeHtml(earningDate(e.deliveredAt))
@@ -11730,13 +11935,18 @@
                 +     ' · ' + escapeHtml(e.code) + '</div>'
                 + '</div>'
                 + '<div class="earn-item-amt">'+formatNum(e.amount)+'</div>'
-                + '</div>';
+                + '</button>';
             }).join("")
           + '</div>'
           + '<p class="note earn-note" data-i18n="earn.note">Summalar — kelishilgan narxlar. '
           + 'Ilova hech qanday ulush ushlamaydi.</p>';
 
         body.innerHTML = html;
+        body.querySelectorAll("[data-rcpt-code]").forEach(function(b){
+          b.addEventListener("click", function(){
+            openReceipt(b.getAttribute("data-rcpt-code"));
+          });
+        });
         applyLang();
       });
   }
@@ -16299,6 +16509,252 @@
     });
   }
 
+  /* ============================================================
+     Yuk tashish kvitansiyasi
+     ------------------------------------------------------------
+     Yuk yetkazilgandan keyin ikkala tomon ham oladigan hujjat:
+     yo'nalish, yuk, ishtirokchilar va kelishilgan summa.
+
+     ENG MUHIM QOIDA. Bu TO'LOV CHEKI EMAS. Ilovada to'lov tizimi
+     yo'q — pul tomonlar o'rtasida to'g'ridan o'tadi va platforma
+     hech narsa ushlamaydi. Shuning uchun hujjatda "to'landi",
+     "to'lov usuli" yoki "platforma haqi" degan qatorlar yo'q va
+     bo'lmasligi ham kerak: ular bo'lmagan ishni bo'lgan qilib
+     ko'rsatardi. Buning o'rniga nima bo'lgani aniq yoziladi.
+
+     Hamma raqam serverdan keladi (api/order.js, ?action=receipt)
+     va hech biri bu yerda hisoblanmaydi.
+     ============================================================ */
+  var RECEIPT_URL_BASE = "https://yolda.uz/?track=";
+
+  function rcptDateTime(ms){
+    if(!ms) return "—";
+    var d = new Date(Number(ms));
+    if(isNaN(d.getTime())) return "—";
+    var two = function(n){ return (n < 10 ? "0" : "") + n; };
+    return two(d.getDate()) + "." + two(d.getMonth() + 1) + "." + d.getFullYear()
+      + " " + two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+
+  /** Bir qator: ustida kichik sarlavha, ostida qiymat. */
+  function rcptCell(key, fallback, value, big){
+    return '<div><div class="rcpt-k" data-i18n="' + key + '">' + escapeHtml(fallback) + '</div>'
+      + '<div class="rcpt-v' + (big ? " big" : "") + '">' + value + '</div></div>';
+  }
+
+  /* QR kutubxonasi faqat kvitansiya ochilganda yuklanadi: u 56 KB
+     va ilovaning har bir ochilishiga qo'shilishi noto'g'ri bo'lardi.
+     Yuklanmasa ham kvitansiya ishlaydi — QR o'rniga kod qoladi. */
+  var qrLoading = null;
+  function loadQrLib(){
+    if(window.qrcode) return Promise.resolve(window.qrcode);
+    if(qrLoading) return qrLoading;
+    qrLoading = new Promise(function(resolve, reject){
+      var el = document.createElement("script");
+      el.src = "/vendor/qrcode.js";
+      el.onload = function(){ resolve(window.qrcode); };
+      el.onerror = function(){ qrLoading = null; reject(new Error("qr")); };
+      document.head.appendChild(el);
+    });
+    return qrLoading;
+  }
+
+  /** QR ni SVG qilib chizadi — chop etilganda ham aniq chiqadi. */
+  function qrSvg(text){
+    var q = window.qrcode(0, "M");
+    q.addData(text);
+    q.make();
+    var n = q.getModuleCount();
+    var rects = "";
+    for(var r = 0; r < n; r++){
+      for(var c = 0; c < n; c++){
+        if(q.isDark(r, c)) rects += '<rect x="' + c + '" y="' + r + '" width="1" height="1"/>';
+      }
+    }
+    return '<svg viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges" '
+      + 'role="img" aria-label="QR">'
+      + '<rect width="' + n + '" height="' + n + '" fill="#FFFFFF"/>'
+      + '<g fill="#111111">' + rects + '</g></svg>';
+  }
+
+  function receiptHtml(r){
+    var num = function(v){ return escapeHtml(formatNum(v)); };
+    var txt = function(v){ return v ? escapeHtml(v) : "—"; };
+
+    /* 1. Marshrut */
+    var route = '<div class="rcpt-route">'
+      + '<div>' + rcptCell("rcpt.from", "Jo'natish", escapeHtml(r.fromCity)
+          + (r.fromAddress ? '<br><span style="color:#555;">' + escapeHtml(r.fromAddress) + '</span>' : ""), true) + '</div>'
+      + '<span class="rcpt-dash"></span>'
+      + '<div class="rcpt-to">' + rcptCell("rcpt.to", "Yetkazish", escapeHtml(r.toCity)
+          + (r.toAddress ? '<br><span style="color:#555;">' + escapeHtml(r.toAddress) + '</span>' : ""), true) + '</div>'
+      + '</div>'
+      /* Masofa faqat hisoblangan bo'lsa. Taxminiy raqam yozilsa, u
+         hujjatda haqiqat kabi ko'rinib qolardi. */
+      + (r.distanceKm
+          ? '<div style="margin-top:10px;">'
+            + rcptCell("rcpt.distance", "Umumiy masofa", num(r.distanceKm) + ' km') + '</div>'
+          : "");
+
+    /* 2. Yuk */
+    var cargo = '<div class="rcpt-cols">'
+      + rcptCell("rcpt.cargoType", "Yuk turi", txt(r.cargoLabel))
+      + rcptCell("rcpt.weight", "Og'irligi", r.weightKg ? num(r.weightKg) + ' kg' : "—")
+      + (r.volumeM3 ? rcptCell("rcpt.volume", "Hajmi", num(r.volumeM3) + ' m³') : "")
+      + (r.truckType ? rcptCell("rcpt.truck", "Transport turi",
+          escapeHtml(VEHICLE_LABELS_PUBLIC[r.truckType] || r.truckType)) : "")
+      + '</div>';
+
+    /* 3. Ishtirokchilar */
+    var party = function(who, titleKey, titleFallback){
+      if(!who) return '<div><div class="rcpt-k" data-i18n="' + titleKey + '">'
+        + escapeHtml(titleFallback) + '</div><div class="rcpt-v">—</div></div>';
+      return '<div>'
+        + '<div class="rcpt-k" data-i18n="' + titleKey + '">' + escapeHtml(titleFallback) + '</div>'
+        + '<div class="rcpt-v big">' + txt(who.name)
+        +   (who.verified ? ' <span style="color:#0A9F5B;">✓</span>' : "") + '</div>'
+        + (who.username ? '<div class="rcpt-v" style="color:#555;">@' + escapeHtml(who.username) + '</div>' : "")
+        + '<div class="rcpt-v" style="color:#555;">' + txt(who.phone) + '</div>'
+        + (who.plateNumber || who.vehicleType
+            ? '<div class="rcpt-v" style="color:#555;">'
+              + escapeHtml(VEHICLE_LABELS_PUBLIC[who.vehicleType] || who.vehicleType || "")
+              + (who.plateNumber ? ' · ' + escapeHtml(who.plateNumber) : "") + '</div>'
+            : "")
+        + '</div>';
+    };
+    var parties = '<div class="rcpt-cols">'
+      + party(r.owner, "rcpt.owner", "Yuk beruvchi")
+      + party(r.driver, "rcpt.driver", "Haydovchi")
+      + '</div>';
+
+    /* 4. Hisob */
+    var amountKey = r.agreed ? "rcpt.agreed" : "rcpt.listed";
+    var amountLabel = r.agreed ? "Kelishilgan summa" : "E'londagi narx";
+    var money = '<div class="rcpt-money">'
+      + '<div class="rcpt-money-row"><span data-i18n="' + amountKey + '">'
+      +   escapeHtml(amountLabel) + '</span><span class="num">' + num(r.amount) + ' '
+      +   '<span data-i18n="loads.sum">so\'m</span></span></div>'
+      /* Platforma ulushi nol. Qator ataylab turadi: "ushlanmadi"
+         deb yozilgani "hech narsa yozilmagani"dan ko'ra aniqroq. */
+      + '<div class="rcpt-money-row"><span data-i18n="rcpt.fee">Platforma ulushi</span>'
+      +   '<span class="num">0 <span data-i18n="loads.sum">so\'m</span></span></div>'
+      + '<div class="rcpt-money-row total"><span data-i18n="rcpt.total">Jami</span>'
+      +   '<span class="num">' + num(r.amount) + ' <span data-i18n="loads.sum">so\'m</span></span></div>'
+      + '</div>'
+      + '<div class="rcpt-settle" data-i18n="rcpt.settle">'
+      + "To'lov yuk beruvchi bilan haydovchi o'rtasida to'g'ridan-to'g'ri amalga oshiriladi. "
+      + "YO'LDA platformasi to'lovni qabul qilmaydi, ushlab qolmaydi va hech qanday ulush olmaydi. "
+      + "Bu hujjat to'lov cheki emas — u tashuv shartlarini va kelishilgan summani qayd etadi."
+      + '</div>';
+
+    var link = RECEIPT_URL_BASE + encodeURIComponent(r.code);
+
+    return '<div class="rcpt" id="rcptDoc">'
+      + '<div class="rcpt-head">'
+      +   '<div class="rcpt-brand"><svg aria-hidden="true"><use href="#logoMarkFlat"></use></svg>'
+      +     '<span>YO\'LDA</span></div>'
+      +   '<div class="rcpt-title" data-i18n="rcpt.title">Yuk tashish kvitansiyasi</div>'
+      + '</div>'
+      + '<div class="rcpt-meta">'
+      +   '<span><span data-i18n="rcpt.no">Kvitansiya №</span>: <b>' + escapeHtml(r.code) + '</b></span>'
+      +   '<span><span data-i18n="rcpt.delivered">Yetkazilgan</span>: <b>'
+      +     escapeHtml(rcptDateTime(r.deliveredAt)) + '</b></span>'
+      +   '<span><span data-i18n="rcpt.printed">Chop etilgan</span>: <b>'
+      +     escapeHtml(rcptDateTime(Date.now())) + '</b></span>'
+      + '</div>'
+
+      + '<div class="rcpt-sec"><div class="rcpt-sec-h"><span class="rcpt-n">1</span>'
+      +   '<span data-i18n="rcpt.secRoute">Marshrut</span></div>' + route + '</div>'
+      + '<div class="rcpt-sec"><div class="rcpt-sec-h"><span class="rcpt-n">2</span>'
+      +   '<span data-i18n="rcpt.secCargo">Yuk haqida</span></div>' + cargo + '</div>'
+      + '<div class="rcpt-sec"><div class="rcpt-sec-h"><span class="rcpt-n">3</span>'
+      +   '<span data-i18n="rcpt.secParties">Ishtirokchilar</span></div>' + parties + '</div>'
+      + '<div class="rcpt-sec"><div class="rcpt-sec-h"><span class="rcpt-n">4</span>'
+      +   '<span data-i18n="rcpt.secMoney">Hisob</span></div>' + money + '</div>'
+
+      + '<div class="rcpt-verify">'
+      +   '<div class="rcpt-qr" id="rcptQr"></div>'
+      +   '<div class="rcpt-verify-meta">'
+      +     '<div class="rcpt-k" data-i18n="rcpt.verify">Tekshirish uchun kod</div>'
+      +     '<div class="rcpt-code">' + escapeHtml(r.code) + '</div>'
+      +     '<div class="rcpt-v" style="color:#555;font-size:11.5px;" data-i18n="rcpt.verifyNote">'
+      +       'QR ni skanerlang yoki kodni ilovaning "Kuzatish" bo\'limiga kiriting.</div>'
+      +   '</div>'
+      + '</div>'
+
+      + '<div class="rcpt-foot">' + escapeHtml(link) + '<br>'
+      + '© ' + new Date().getFullYear() + " YO'LDA</div>"
+      + '</div>';
+  }
+
+  var rcptOverlay = null;
+
+  function closeReceipt(){
+    if(!rcptOverlay) return;
+    rcptOverlay.remove();
+    rcptOverlay = null;
+    document.body.style.overflow = "";
+  }
+
+  /**
+   * Kvitansiyani ochadi.
+   *
+   * @param {string} code
+   * @param {string} [phone] hisobga kirmagan yuk beruvchi uchun —
+   *                 kuzatuv ekranidagi bilan bir xil qoida.
+   */
+  function openReceipt(code, phone){
+    var q = "/api/order?action=receipt&code=" + encodeURIComponent(code)
+      + (phone ? "&phone=" + encodeURIComponent(phone) : "")
+      + "&" + profileApiQuery();
+
+    var overlay = document.createElement("div");
+    overlay.className = "rcpt-overlay";
+    overlay.innerHTML = '<div class="rcpt-bar">'
+      + '<button type="button" class="rcpt-close" data-rcpt-close>' + icon("iconClose")
+      +   '<span data-i18n="rcpt.close">Yopish</span></button>'
+      + '<button type="button" class="rcpt-print" data-rcpt-print disabled>' + icon("iconDownload")
+      +   '<span data-i18n="rcpt.print">Chop etish / PDF</span></button>'
+      + '</div>'
+      + '<div class="rcpt" style="text-align:center;padding:40px 20px;">'
+      +   '<span data-i18n="common.loading">Yuklanmoqda…</span></div>';
+    /* Avval eskisini yopamiz: aks holda `closeReceipt` yangisining
+       `overflow:hidden` ini bekor qilib qo'yardi. */
+    closeReceipt();
+    document.body.appendChild(overlay);
+    document.body.style.overflow = "hidden";
+    rcptOverlay = overlay;
+
+    overlay.addEventListener("click", function(e){
+      if(e.target === overlay || e.target.closest("[data-rcpt-close]")){ closeReceipt(); return; }
+      if(e.target.closest("[data-rcpt-print]")) window.print();
+    });
+
+    fetch(q)
+      .then(function(res){ return res.json().then(function(b){ return { ok: res.ok, body: b }; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.body.error || "Kvitansiya ochilmadi");
+        var r = res.body.receipt;
+        overlay.querySelector(".rcpt").outerHTML = receiptHtml(r);
+        var printBtn = overlay.querySelector("[data-rcpt-print]");
+        if(printBtn) printBtn.disabled = false;
+        applyLang();
+
+        /* QR oxirida: u bo'lmasa ham hujjat to'liq va o'qiladi. */
+        loadQrLib().then(function(){
+          var box = overlay.querySelector("#rcptQr");
+          if(box) box.innerHTML = qrSvg(RECEIPT_URL_BASE + encodeURIComponent(r.code));
+        }).catch(function(){
+          var box = overlay.querySelector("#rcptQr");
+          if(box) box.remove();
+        });
+      })
+      .catch(function(err){
+        overlay.querySelector(".rcpt").innerHTML =
+          '<p style="margin:0;color:#B91C1C;text-align:center;">' + escapeHtml(err.message) + '</p>';
+      });
+  }
+
   /** Berilgan bahoni ko'rsatish (yulduzlar + tanlangan mezonlar). */
   function ratingSummaryHtml(rating, labelKey, labelFallback){
     if(!rating) return "";
@@ -18077,9 +18533,27 @@
         + 'Bu buyurtma bekor qilingan.</p>'
       : '';
 
+    /* Kvitansiya faqat yetkazilgandan keyin. Kuzatuv ekrani kod va
+       telefon bilan ochiladi, ya'ni hisobga kirmagan yuk beruvchi
+       ham oladi — kvitansiya so'rovi ham xuddi shu qoida bilan
+       tekshiriladi. */
+    var receiptHtmlBtn = data.status === "DELIVERED"
+      ? '<button type="button" class="btn ghost" data-track-receipt '
+        + 'style="margin-top:var(--s4);">' + icon("iconDownload")
+        + ' <span data-i18n="rcpt.open">Kvitansiya</span></button>'
+      : '';
+
     document.getElementById("trackResult").innerHTML =
       (data.status === "CANCELLED" ? "" : '<div class="track-steps">'+parts.join("")+'</div>')
-      + cancelledHtml + driverHtml + ratingHtml + ownerActionsHtml;
+      + cancelledHtml + driverHtml + ratingHtml + receiptHtmlBtn + ownerActionsHtml;
+
+    var rcptBtn = document.querySelector("[data-track-receipt]");
+    if(rcptBtn){
+      rcptBtn.addEventListener("click", function(){
+        var phoneEl = document.getElementById("fTrackPhone");
+        openReceipt(data.code, phoneEl ? normalisePhone(phoneEl.value) : "");
+      });
+    }
 
     document.querySelectorAll("[data-track-action]").forEach(function(b){
       b.addEventListener("click", function(){
@@ -19968,8 +20442,26 @@
     return true;
   }
 
+  /* Manzildagi ?track=<kod> — kvitansiyadagi QR shu yerga olib
+     keladi. Kod kuzatuv maydoniga yoziladi va bo'lim ochiladi;
+     telefon raqami odamning o'zidan so'raladi, chunki kod yolg'iz
+     o'zi hech kimni tasdiqlamaydi. */
+  function openTrackFromUrl(){
+    var m = /[?&]track=([A-Za-z0-9_-]{1,24})/.exec(location.search);
+    if(!m) return false;
+    switchTab("track");
+    var input = document.getElementById("fTrackCode");
+    if(input){
+      input.value = m[1];
+      var phone = document.getElementById("fTrackPhone");
+      if(phone && !phone.value) phone.focus();
+    }
+    return true;
+  }
+
   function openTabFromUrl(){
     if(openLoadFromUrl()) return;
+    if(openTrackFromUrl()) return;
     var match = /[?&]tab=([a-z]+)/.exec(location.search);
     var wanted = match ? match[1] : "home";
     if(TABS.indexOf(wanted) === -1) wanted = "home";
