@@ -22,6 +22,12 @@
 
   .login-wrap{max-width:360px;margin:80px auto;padding:0 20px;}
   .login-wrap[hidden]{display:none;}
+  .login-logo{
+    width:46px;height:46px;border-radius:13px;background:#FFFFFF;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 0 16px;overflow:hidden;
+  }
+  .login-logo svg{width:100%;height:100%;display:block;fill:#09864B;}
   .login-wrap h1{font-size:20px;margin:0 0 6px;letter-spacing:-0.01em;}
   .login-wrap .sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 20px;}
   .login-wrap .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;}
@@ -139,8 +145,9 @@
   .sb-logo{
     width:30px;height:30px;border-radius:9px;flex-shrink:0;overflow:hidden;
     display:flex;align-items:center;justify-content:center;
-    background:var(--accent);color:var(--on-accent);
-    font-weight:800;font-size:14px;letter-spacing:-0.02em;
+    /* Belgi oq maydonda turadi — yashil qanotlar qora fonda
+       ham, oq fonda ham bir xil ko'rinsin. */
+    background:#FFFFFF;
   }
   .sb-logo img{width:100%;height:100%;object-fit:contain;display:block;}
 
@@ -228,18 +235,27 @@
   .tb-burger svg{width:18px;height:18px;}
   .tb-title{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-  .tb-search{position:relative;margin-left:auto;width:min(340px,42vw);flex-shrink:1;}
+  .tb-search{position:relative;margin-left:auto;width:min(360px,42vw);flex-shrink:1;}
   .tb-search > svg{
-    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    position:absolute;left:16px;top:50%;transform:translateY(-50%);
     width:16px;height:16px;color:var(--text-dim);pointer-events:none;
   }
+  /* O'ng tomondagi ichki bo'shliq ⌘K yorlig'i uchun: ilgari
+     yozuv yorliq ostiga kirib ketardi. */
   .tb-search input{
-    width:100%;padding:9px 12px 9px 36px;border-radius:9px;
+    width:100%;height:42px;padding:0 78px 0 42px;border-radius:999px;
     border:1px solid var(--line);background:var(--card2);color:var(--text);
     font-size:13.5px;font-family:inherit;
+    box-shadow:0 1px 1px rgba(0,0,0,0.25),0 14px 30px -22px rgba(0,0,0,0.9);
+    transition:border-color 0.22s cubic-bezier(0.22,1,0.36,1),
+               box-shadow 0.22s cubic-bezier(0.22,1,0.36,1);
   }
   .tb-search input::placeholder{color:var(--text-dim);}
-  .tb-search input:focus{outline:none;border-color:var(--accent);background:var(--card-hi);}
+  .tb-search input::-webkit-search-cancel-button{display:none;}
+  .tb-search input:focus{
+    outline:none;border-color:var(--accent);background:var(--card-hi);
+    box-shadow:0 0 0 3px var(--accent-soft),0 14px 30px -22px rgba(0,0,0,0.9);
+  }
   .tb-results{
     position:absolute;top:calc(100% + 8px);right:0;width:min(420px,86vw);
     background:var(--panel);border:1px solid var(--line-2);border-radius:12px;
@@ -261,14 +277,16 @@
   /* Qidiruv ichidagi klaviatura ishorasi. Faqat chizma emas —
      ⌘K / Ctrl+K haqiqatan qidiruvni ochadi. */
   .tb-kbd{
-    position:absolute;right:8px;top:50%;transform:translateY(-50%);
-    display:flex;gap:3px;pointer-events:none;
-  }
-  .tb-kbd kbd{
-    font-family:inherit;font-size:10.5px;font-weight:600;line-height:1;
-    padding:4px 5px;border-radius:5px;color:var(--text-dim);
+    position:absolute;right:7px;top:50%;transform:translateY(-50%);
+    display:inline-flex;align-items:center;height:28px;padding:0 11px;
+    border-radius:999px;pointer-events:none;
     background:rgba(255,255,255,0.06);border:1px solid var(--line);
+    font-size:11px;font-weight:600;letter-spacing:0.02em;color:var(--text-dim);
+    transition:opacity 0.18s ease;
   }
+  .tb-kbd kbd{font-family:inherit;font-size:inherit;font-weight:inherit;}
+  .tb-kbd kbd + kbd{margin-left:3px;}
+  /* Yozila boshlagach yorliq kerak emas. */
   .tb-search input:focus ~ .tb-kbd{opacity:0;}
 
   .tb-region{
@@ -503,12 +521,15 @@
   .logo-pick.busy{opacity:0.55;}
   .logo-prev{
     width:56px;height:56px;border-radius:14px;flex-shrink:0;overflow:hidden;
-    display:flex;align-items:center;justify-content:center;
-    background:var(--accent);color:var(--on-accent);font-weight:800;font-size:22px;
+    display:flex;align-items:center;justify-content:center;background:#FFFFFF;
   }
   .logo-prev img{width:100%;height:100%;object-fit:contain;display:block;}
   .logo-pick-meta{flex:1;min-width:0;}
   .logo-pick-meta p{margin:0 0 8px;font-size:12.5px;color:var(--text-soft);line-height:1.5;}
+
+  /* YO'LDA belgisi — oq maydonda yashil qanotlar. Ikkala o'lchovda
+     ham bir xil chiziladi, faqat katakning o'lchovi boshqa. */
+  .logo-mark{width:100%;height:100%;display:block;fill:var(--accent);}
 
   /* ---------- Pills ---------- */
   .pill{
@@ -615,9 +636,41 @@
   .field input:disabled{opacity:0.6;}
   .field textarea{resize:vertical;min-height:64px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .check{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;margin-bottom:9px;}
+  .check{display:flex;align-items:center;gap:11px;font-size:13.5px;cursor:pointer;margin-bottom:9px;}
   .check input{width:auto;margin:0;}
+  /* iOS uslubidagi kalit. Belgisi o'zgardi, HTML emas: `.check`
+     olti joyda ishlatiladi va hammasi bir xil ko'rinishi kerak.
+     `appearance:none` standart katakchani olib tashlaydi, qolgani
+     esa ::after bilan chiziladi. */
+  .check input[type="checkbox"]{
+    appearance:none;-webkit-appearance:none;
+    position:relative;width:46px;height:28px;flex-shrink:0;
+    border:none;border-radius:999px;margin:0;cursor:pointer;
+    background:rgba(255,255,255,0.14);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
+    transition:background 0.22s ease;
+  }
+  .check input[type="checkbox"]::after{
+    content:"";position:absolute;top:3px;left:3px;
+    width:22px;height:22px;border-radius:999px;background:#FFFFFF;
+    box-shadow:0 2px 6px rgba(0,0,0,0.45),0 1px 1px rgba(0,0,0,0.25);
+    transition:left 0.22s cubic-bezier(0.2,0.8,0.3,1),width 0.18s ease;
+  }
+  .check input[type="checkbox"]:checked{background:var(--accent);}
+  .check input[type="checkbox"]:checked::after{left:21px;}
+  /* Bosib turilganda dumaloq cho'ziladi — iOS dagidek. */
+  .check input[type="checkbox"]:active::after{width:28px;}
+  .check input[type="checkbox"]:checked:active::after{left:15px;}
+  .check input[type="checkbox"]:disabled{opacity:0.45;cursor:not-allowed;}
+  .check input[type="checkbox"]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  @media (prefers-reduced-motion: reduce){
+    .check input[type="checkbox"],
+    .check input[type="checkbox"]::after{transition:none;}
+  }
   .hint{font-size:11.5px;color:var(--text-dim);margin:-7px 0 13px;}
+  /* Manfiy yuqori chekka maydon ostida turishi uchun. Boshqa
+     narsadan keyin kelsa esa u ustki qatorga kirib ketardi. */
+  .staff-row + .hint,.kv + .hint,.hint + .hint{margin-top:14px;}
   .form-err{color:#FCA5A5;font-size:12.5px;min-height:17px;margin:2px 0 0;}
 
   /* ---------- Toasts ---------- */
@@ -764,6 +817,7 @@
 <body>
 
 <div class="login-wrap" id="loginBox" hidden>
+  <div class="login-logo" id="loginLogo"></div>
   <h1>YO'LDA — Admin panel</h1>
   <p class="sub">Davom etish uchun parolingizni kiriting.</p>
   <div class="card">
@@ -1809,11 +1863,23 @@
       + '<button type="button" class="sb-logout" data-act="logout">' + ico("logout") + '<span>Chiqish</span></button>';
   }
 
-  /** Panel belgisi: sozlamalardagi rasm, yo'q bo'lsa nomning harfi. */
+  /* YO'LDA belgisi — ikkita yashil qanot. O'zgarmas: u ilovaning
+     belgisi, sozlama emas. Sozlamalardagi rasm faqat uni
+     ALMASHTIRISH uchun (belgi fayli yangilansa, qayta chizish
+     shart bo'lmasin). */
+  var PANEL_LOGO =
+    '<svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true">'
+    + '<path d="M18 11h19.6c2.1 0 3.3 2.3 2.1 4l-2.4 3.4a2.6 2.6 0 0 1-2.1 1.1H15.6'
+    +   'c-2.1 0-3.3-2.3-2.1-4l2.4-3.4A2.6 2.6 0 0 1 18 11Z"/>'
+    + '<path d="M12.6 24h24.2c2.3 0 3.6 2.6 2.2 4.4-3.9 5.1-9.4 8.7-15.7 10.2'
+    +   '-2.4.6-4.3-1.9-3.2-4.1l1.4-2.8-10-3.6c-2.3-.8-1.7-4.1.7-4.1Z"/>'
+    + '</svg>';
+
+  /** Panel belgisi: sozlamalardagi rasm bo'lsa u, aks holda belgi. */
   function logoHtml(){
     var url = (Store.data.settings || {}).adminLogoUrl || "";
     if(url) return '<img src="' + esc(url) + '" alt="">';
-    return esc(platformName().charAt(0).toUpperCase() || "Y");
+    return PANEL_LOGO;
   }
   function platformName(){
     return (Store.data.settings || {}).platformName || "YO'LDA";
@@ -4292,7 +4358,7 @@
       '<div class="logo-pick" id="logoPick">'
       + '<span class="logo-prev">' + (logoUrl
           ? '<img src="' + esc(logoUrl) + '" alt="">'
-          : esc((s.platformName || "Y").charAt(0).toUpperCase())) + '</span>'
+          : PANEL_LOGO) + '</span>'
       + '<div class="logo-pick-meta">'
       + '<p>Rasmni shu yerga sudrab tashlang yoki tanlang. PNG, JPG yoki WEBP, 200 KB gacha. '
       + 'Belgi qo\'yilmasa nomning birinchi harfi chiziladi.</p>'
@@ -5171,6 +5237,8 @@
   /* ==========================================================
      30. Boot
      ========================================================== */
+  byId("loginLogo").innerHTML = PANEL_LOGO;
+
   function checkSession(){
     return Api.session().then(function(body){
       if(body.authed && body.role) startSession(body.role);
