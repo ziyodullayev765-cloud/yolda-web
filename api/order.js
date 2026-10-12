@@ -877,6 +877,37 @@ const getLoadDetail = async (req, res) => {
     }
   }
 
+  /* Haydovchining aloqasi — FAQAT yukning egasiga.
+     Ilgari bu yerda telefon umuman qaytmasdi va natijada yuk
+     beruvchi o'z yukini olgan haydovchiga ilovadan qo'ng'iroq
+     qila olmasdi: yagona yo'l Telegram orqali yozish edi.
+     Teskarisi (haydovchi -> yuk beruvchi) allaqachon bor edi,
+     `?action=my-load` da.
+     Begona odamga qaytarilmaydi: kodni bilgan har kim haydovchi
+     raqamini yig'ib olardi. */
+  let driverContact = null;
+  if (order.driver && order.driver.identity) {
+    const viewer = await resolveEmail({
+      googleIdToken: req.query.googleIdToken,
+      telegramInitData: req.query.telegramInitData,
+      phoneToken: req.query.phoneToken,
+    });
+    if (viewer && ownerKey && viewer === ownerKey) {
+      const dp = await readJson(`profile:${order.driver.identity}`, null);
+      driverContact = {
+        name: order.driver.name || (dp && dp.displayName) || '',
+        /* Ro'yxatdan o'tgan raqam birinchi: odam ilovaga aynan
+           shu raqam bilan kirgan va u tasdiqlangan. Taklifdagi
+           nusxa eskirgan bo'lishi mumkin. */
+        phone: (dp && dp.phone) || order.driver.phone || '',
+        username: (dp && dp.username) || order.driver.telegramUsername || null,
+        verified: Boolean(order.driver.verified),
+        vehicleType: (dp && dp.vehicleType) || '',
+        plateNumber: (dp && dp.plateNumber) || '',
+      };
+    }
+  }
+
   return res.status(200).json({
     ok: true,
     code: order.code,
@@ -902,6 +933,7 @@ const getLoadDetail = async (req, res) => {
     createdAt: order.createdAt,
     name: order.name,
     ownerUsername,
+    driverContact,
   });
 };
 
@@ -1074,7 +1106,7 @@ const rateOrder = async (req, res) => {
     await notifyUser(target, {
       category: 'orders',
       text: `<b>Sizga baho qoldirildi</b>\n\n`
-        + `<b>${esc(code)}</b>\n${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
+        + `<code>${esc(code)}</code>\n${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
         + `${'★'.repeat(value.stars)}${'☆'.repeat(5 - value.stars)}`
         + (value.comment ? `\n\n«${esc(value.comment)}»` : ''),
     });
@@ -1197,7 +1229,7 @@ const submitOffer = async (req, res) => {
   await notifyUser(ownerKey, {
     category: 'offers',
     text: `<b>Yangi taklif</b>\n\n`
-      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `Buyurtma: <code>${esc(code)}</code>\n`
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
       + `${driverLine}\n`
       + (contactLines ? `${contactLines}\n` : '')
@@ -1377,7 +1409,10 @@ const getMyLoad = async (req, res) => {
     if (profile) {
       owner = {
         name: profile.displayName || order.name || '',
-        phone: order.phone || profile.phone || '',
+        /* Ro'yxatdan o'tgan raqam birinchi: odam ilovaga aynan shu
+           raqam bilan kirgan. E'londagi raqam eskirgan yoki
+           boshqa odamniki (masalan kotibning) bo'lishi mumkin. */
+        phone: profile.phone || order.phone || '',
         username: profile.username || null,
         verified: Boolean(profile.verified),
       };
@@ -1706,7 +1741,7 @@ const advanceOrder = async (req, res) => {
   await notifyUser(order.ownerIdentity || order.googleEmail, {
     category: 'orders',
     text: `<b>${esc(STATUS_LABELS[next] || next)}</b>\n\n`
-      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `Buyurtma: <code>${esc(code)}</code>\n`
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
       + `Haydovchi: ${esc(order.driver.name)}`
       + (next === 'DELIVERED'
@@ -1755,7 +1790,7 @@ const decideOfferCore = async (identity, offerId, accept) => {
     }
     await notifyUser(offer.driverIdentity, {
       category: 'offers',
-      text: `<b>Taklifingiz rad etildi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
+      text: `<b>Taklifingiz rad etildi</b>\n\n<code>${esc(offer.orderCode)}</code>\n`
         + `${esc(order.fromCity)} → ${esc(order.toCity)}`,
     });
     return { status: 200, body: { ok: true, offer: publicOfferShape(rejected) } };
@@ -1811,14 +1846,14 @@ const decideOfferCore = async (identity, offerId, accept) => {
     await kvSet(offerKey(other.id), JSON.stringify({ ...other, status: 'REJECTED', updatedAt: Date.now() }));
     await notifyUser(other.driverIdentity, {
       category: 'offers',
-      text: `<b>Yuk boshqa haydovchiga berildi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
+      text: `<b>Yuk boshqa haydovchiga berildi</b>\n\n<code>${esc(offer.orderCode)}</code>\n`
         + `${esc(order.fromCity)} → ${esc(order.toCity)}`,
     });
   }
 
   await notifyUser(offer.driverIdentity, {
     category: 'offers',
-    text: `<b>Taklifingiz qabul qilindi</b>\n\n<b>${esc(offer.orderCode)}</b>\n`
+    text: `<b>Taklifingiz qabul qilindi</b>\n\n<code>${esc(offer.orderCode)}</code>\n`
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n`
       + `<b>${esc(formatNum(offer.price))} so'm</b>\n\n`
       + (order.phone ? `Mijoz: ${esc(order.phone)}\n\n` : '')
@@ -1970,7 +2005,7 @@ const cancelOrder = async (req, res) => {
   if (hadDriver && hadDriver.telegramId) {
     await notifyUser(`tg:${hadDriver.telegramId}`, {
       category: 'orders',
-      text: `<b>Buyurtma bekor qilindi</b>\n\n<b>${esc(code)}</b>\n`
+      text: `<b>Buyurtma bekor qilindi</b>\n\n<code>${esc(code)}</code>\n`
         + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
         + `Yuk beruvchi buyurtmani bekor qildi.`
         + (reason ? `\n\nSabab: ${esc(reason)}` : ''),
@@ -2013,7 +2048,7 @@ const releaseDriver = async (req, res) => {
   if (previousDriver && previousDriver.telegramId) {
     await notifyUser(`tg:${previousDriver.telegramId}`, {
       category: 'orders',
-      text: `<b>Buyurtma sizdan olindi</b>\n\n<b>${esc(code)}</b>\n`
+      text: `<b>Buyurtma sizdan olindi</b>\n\n<code>${esc(code)}</code>\n`
         + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
         + `Yuk beruvchi buyurtmani boshqa haydovchiga ochdi.`
         + (reason ? `\n\nSabab: ${esc(reason)}` : ''),
@@ -2081,7 +2116,7 @@ const giveUpOrder = async (req, res) => {
   await notifyUser(order.ownerIdentity || order.googleEmail, {
     category: 'orders',
     text: `<b>Haydovchi voz kechdi</b>\n\n`
-      + `Buyurtma: <b>${esc(code)}</b>\n`
+      + `Buyurtma: <code>${esc(code)}</code>\n`
       + `${esc(order.fromCity)} → ${esc(order.toCity)}\n\n`
       + `${esc(previousDriver.name || 'Haydovchi')} yukdan voz kechdi. `
       + `Yuk yana ochiq — boshqa haydovchi taklif yuborishi mumkin.`

@@ -161,15 +161,28 @@ flow('3. Yuk sahifasi');
 flow('4. Maxfiylik');
 {
   /* Server ochiq e'lon uchun raqam bermaydi — avval shuni
-     tasdiqlaymiz, aks holda quyidagi tekshiruvlar bo'sh gap. */
+     tasdiqlaymiz, aks holda quyidagi tekshiruvlar bo'sh gap.
+
+     Bitta istisno bor va u ataylab: yukning EGASI o'z yukini
+     olgan haydovchining raqamini ko'radi (`driverContact`).
+     Shuning uchun tekshiruv "raqam yo'q" emas, "raqam faqat
+     egalik tekshiruvidan keyin" degan qoidaga qaraydi —
+     test/driverCall.test.mjs buni ishlab ham tasdiqlaydi. */
   const detailApi = (() => {
     const at = api.indexOf('const getLoadDetail = async (req, res) => {');
     return api.slice(at, api.indexOf('\n};', at));
   })();
-  check('server raqam bermaydi', !/\bphone\b/.test(detailApi), 'api/order.js getLoadDetail');
+  const ownerGate = detailApi.indexOf('viewer === ownerKey');
+  check('egalik tekshiruvi bor', ownerGate !== -1, 'api/order.js getLoadDetail');
+  const publicPart = ownerGate === -1 ? detailApi : detailApi.slice(0, ownerGate);
+  check('tekshiruvgacha raqam yo‘q', !/\bphone\b/.test(publicPart), 'api/order.js getLoadDetail');
+  /* Javobning o'zida ham faqat `driverContact` orqali: boshqa
+     maydon orqali sizib chiqmasin. */
+  const responsePart = detailApi.slice(detailApi.indexOf('return res.status(200)'));
+  check('javobda alohida raqam maydoni yo‘q', !/\bphone\b/.test(responsePart), responsePart.slice(0, 120));
   check('server izohni ham bermaydi', !/\bnote\b/.test(detailApi));
 
-  // Sahifa ham raqam chizmaydi va so'ramaydi.
+  // Sahifa ochiq e'londa raqam chizmaydi va so'ramaydi.
   check('sahifa raqam chizmaydi', !/d\.phone/.test(detailFn));
   check('sahifa izoh chizmaydi', !/d\.note/.test(detailFn));
   /* Aloqa ilova ichidagi yozishuv orqali — bu yo'l allaqachon

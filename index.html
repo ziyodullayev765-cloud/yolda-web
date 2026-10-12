@@ -6671,6 +6671,7 @@
 
       "myload.title": "Mening yukim", "myload.back": "Orqaga",
       "myload.call": "Qo'ng'iroq", "myload.message": "Xabar",
+      "loads.driverTitle": "Haydovchi",
       "myload.empty": "Hozir olingan yukingiz yo'q.",
       "myload.browse": "Yuklarni ko'rish",
       "privacy.publicLink": "Bu sahifani brauzerda ochish",
@@ -7233,6 +7234,7 @@
 
       "myload.title": "Мой груз", "myload.back": "Назад",
       "myload.call": "Позвонить", "myload.message": "Сообщение",
+      "loads.driverTitle": "Водитель",
       "myload.empty": "Сейчас у вас нет взятого груза.",
       "myload.browse": "Смотреть грузы",
       "privacy.publicLink": "Открыть эту страницу в браузере",
@@ -7791,6 +7793,7 @@
 
       "myload.title": "My load", "myload.back": "Back",
       "myload.call": "Call", "myload.message": "Message",
+      "loads.driverTitle": "Driver",
       "myload.empty": "You have no load in hand right now.",
       "myload.browse": "Browse loads",
       "privacy.publicLink": "Open this page in a browser",
@@ -17366,7 +17369,10 @@
       + '<div class="skeleton sk-line" style="width:80%;margin-top:14px;"></div>'
       + '<div class="skeleton sk-card" style="margin-top:14px;height:120px;"></div>';
 
-    fetch("/api/order?action=detail&code=" + encodeURIComponent(code))
+    /* Shaxs ham yuboriladi: yuk EGASI uchun server haydovchining
+       aloqasini qo'shib qaytaradi (begonaga emas). */
+    fetch("/api/order?action=detail&code=" + encodeURIComponent(code)
+      + "&" + profileApiQuery())
       .then(function(r){ return r.json().then(function(b){ return {ok: r.ok, body: b}; }); })
       .then(function(res){
         if(!res.ok){ detailView.innerHTML = '<p class="note">Topilmadi.</p>'; return; }
@@ -17391,6 +17397,39 @@
     var chips = document.getElementById("loadsCityChips");
     if(chips && !chips.innerHTML) chips.hidden = true;
     loadBackhaul();
+  }
+
+  /**
+   * Haydovchining aloqasi: qo'ng'iroq va xabar.
+   *
+   * Raqam yo'q bo'lsa tugma ham chizilmaydi — bosilganda hech
+   * narsa qilmaydigan tugma eng yomon variant.
+   */
+  function driverContactHtml(dc){
+    if(!dc) return "";
+    var dial = String(dc.phone || "").replace(/[^\d+]/g, "");
+    var sub = [dc.vehicleType ? (VEHICLE_LABELS_PUBLIC[dc.vehicleType] || dc.vehicleType) : "",
+               dc.plateNumber || ""].filter(Boolean).join(" · ");
+
+    return '<h3 class="ld-sec-title" data-i18n="loads.driverTitle">Haydovchi</h3>'
+      + '<div class="ld-row">' + icon("iconTruck")
+      +   '<div class="ld-row-main">'
+      +     '<div class="ld-row-k">' + escapeHtml(dc.name || "—")
+      +       (dc.verified ? ' ' + icon("iconVerifiedBadge") : "") + '</div>'
+      +     '<div class="ld-row-v">' + escapeHtml(dial || sub || "—")
+      +       (dial && sub ? ' · ' + escapeHtml(sub) : "") + '</div>'
+      +   '</div></div>'
+      + '<div class="ml-contact' + ((dial && dc.username) ? "" : " one") + '" style="margin-top:var(--s3);">'
+      +   (dial
+          ? '<a class="btn" href="tel:' + escapeHtml(dial) + '">' + icon("iconPhone")
+            + ' <span data-i18n="myload.call">Qo\'ng\'iroq</span></a>'
+          : "")
+      +   (dc.username
+          ? '<button type="button" class="btn ghost" data-message-user="'
+            + escapeHtml(dc.username) + '">' + icon("iconChat")
+            + ' <span data-i18n="myload.message">Xabar</span></button>'
+          : "")
+      + '</div>';
   }
 
   function renderLoadDetail(d){
@@ -17504,6 +17543,12 @@
               +   '<div class="ld-row-k" data-i18n="loads.contact">Aloqa</div>'
               +   '<div class="ld-row-v">'+escapeHtml(d.name || "—")+'</div>'
               + '</div></div>')
+
+      /* Haydovchining aloqasi — faqat yuk egasiga va faqat
+         haydovchi biriktirilganda. Raqam odamning ro'yxatdan
+         o'tgan raqami, ya'ni u ilovaga aynan shu raqam bilan
+         kirgan. */
+      +   driverContactHtml(d.driverContact)
 
       +   '<h3 class="ld-sec-title" data-i18n="loads.detailsTitle">Tafsilotlar</h3>'
       +   '<div class="detail-grid">'
