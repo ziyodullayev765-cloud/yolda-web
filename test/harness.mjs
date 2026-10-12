@@ -58,7 +58,16 @@ const db = globalThis.__db;
 export const kvConfigured = true;
 export const kvGet = async (k) => (db.strings.has(k) ? db.strings.get(k) : null);
 export const kvSet = async (k, v) => { db.strings.set(k, String(v)); return true; };
-export const kvDel = async (k) => { db.strings.delete(k); return true; };
+/* Haqiqiy DEL kalitni TURIDAN QAT'I NAZAR o'chiradi. Bu yerda
+   esa faqat satrlar o'chirilardi — ya'ni ro'yxat yoki to'plamni
+   o'chiradigan kod testda "ishlagandek" ko'rinib, aslida hech
+   narsa qilmasdi. */
+export const kvDel = async (k) => {
+  db.strings.delete(k);
+  db.lists.delete(k);
+  db.sets.delete(k);
+  return true;
+};
 export const kvIncr = async (k) => {
   const n = Number(db.strings.get(k) || 0) + 1;
   db.strings.set(k, String(n));

@@ -1352,7 +1352,7 @@
     SUPER_ADMIN: ["*"],
     ADMIN: [
       "orders:read","users:read","users:write","reports:read","reports:write",
-      "trucks:read","trucks:write","messages:read","analytics:read",
+      "trucks:read","trucks:write","messages:read","messages:write","analytics:read",
       "settings:read","settings:write",
       "life:read","life:write",
       "icons:read","icons:write",
@@ -2487,6 +2487,12 @@
         Store.list("orders").forEach(function(o){ if(o.code === code) order = o; });
         if(!order) return stateBox("empty", "Buyurtma topilmadi", "Kod: " + code);
 
+        var removeBar = can("orders:purge")
+          ? '<div style="display:flex;justify-content:flex-end;margin-bottom:14px;">'
+            + '<button type="button" class="btn sm bad" data-act="order-delete" '
+            + 'data-code="' + esc(order.code) + '">' + ico("trash") + 'Buyurtmani o\'chirish</button></div>'
+          : "";
+
         var driver = order.driver || null;
         var main = card("Buyurtma ma'lumotlari",
           '<dl class="kv">'
@@ -2547,7 +2553,8 @@
             + '</dl>'
           : '<p style="color:var(--text-dim);font-size:13px;margin:0;">Bu buyurtmani hali hech kim olmagan.</p>');
 
-        return '<div class="detail-grid">' + main + '<div style="display:grid;gap:16px;">' + contact + driverCard + '</div></div>';
+        return removeBar
+          + '<div class="detail-grid">' + main + '<div style="display:grid;gap:16px;">' + contact + driverCard + '</div></div>';
       });
   }
   function kvRow(k, v){ return '<dt>' + esc(k) + '</dt><dd>' + v + '</dd>'; }
@@ -3166,6 +3173,12 @@
               + '<button type="button" class="btn sm ' + (user.verified ? "bad" : "ok") + '" data-act="verify" '
                 + 'data-email="' + esc(user.email) + '" data-on="' + (user.verified ? "0" : "1") + '">'
                 + (user.verified ? "Tasdiqni bekor qilish" : "Tasdiqlash") + '</button>'
+              /* Hisobni o'chirish — qaytarib bo'lmaydi, shuning
+                 uchun faqat super adminda va tasdiq oynasi bilan. */
+              + (can("users:purge")
+                  ? '<button type="button" class="btn sm bad" data-act="user-delete" '
+                    + 'data-email="' + esc(user.email) + '">' + ico("trash") + 'Hisobni o\'chirish</button>'
+                  : "")
               + '</div>'
             : ""));
 
@@ -3489,7 +3502,8 @@
      ========================================================== */
   function viewReports(){
     var writable = can("reports:write");
-    return pageHead("Shikoyatlar", "Foydalanuvchilardan kelgan shikoyatlar", refreshBtn("reports"))
+    return pageHead("Shikoyatlar", "Foydalanuvchilardan kelgan shikoyatlar",
+      purgeButtonFor("reports") + refreshBtn("reports"))
       + withData(["reports"], function(){
         var reports = Store.list("reports").slice().sort(function(a, b){
           return (b.createdAt || 0) - (a.createdAt || 0);
@@ -3537,6 +3551,12 @@
                       return '<option value="' + s + '"' + ((r.status || "NEW") === s ? " selected" : "") + '>'
                         + esc(REPORT_LABELS[s]) + '</option>';
                     }).join("") + '</select>';
+              } },
+            { key:"remove", label:"",
+              render:function(r){
+                if(!writable) return "";
+                return '<button type="button" class="btn sm bad" data-act="report-delete" '
+                  + 'data-id="' + esc(r.id) + '">O\'chirish</button>';
               } }
           ]
         });
@@ -3547,7 +3567,8 @@
      24. Murojaatlar (support inbox)
      ========================================================== */
   function viewMessages(){
-    return pageHead("Murojaatlar", "Bog'lanish formasidan kelgan xabarlar", refreshBtn("messages"))
+    return pageHead("Murojaatlar", "Bog'lanish formasidan kelgan xabarlar",
+      purgeButtonFor("messages") + refreshBtn("messages"))
       + withData(["messages"], function(){
         var messages = Store.list("messages");
         return dataTable({
@@ -3577,9 +3598,29 @@
               } },
             { key:"message", label:"Xabar", cls:"dim wrap",
               render:function(m){ return esc(m.message || ""); } }
-          ]
+          ].concat(can("messages:write") ? [
+            { key:"actions", label:"Amal",
+              render:function(m){
+                /* O'rni ham yuboriladi: ro'yxatda id yo'q.
+                   Server vaqt bilan solishtiradi, ya'ni ro'yxat
+                   o'zgargan bo'lsa boshqa yozuv o'chmaydi. */
+                return '<div class="cell-actions">'
+                  + '<button type="button" class="btn sm bad" data-act="msg-delete" '
+                  + 'data-index="' + messages.indexOf(m) + '" '
+                  + 'data-at="' + esc(String(m.createdAt || 0)) + '">O\'chirish</button></div>';
+              } }
+          ] : [])
         });
       });
+  }
+
+  /* "Hammasini o'chirish" — faqat super adminda. Qaytarib
+     bo'lmaydigan ish, shuning uchun tugma ham alohida turadi. */
+  function purgeButtonFor(what){
+    var perm = { messages:"messages:purge", reports:"reports:purge" }[what];
+    if(!can(perm)) return "";
+    return '<button type="button" class="btn bad" data-act="purge" data-what="' + esc(what) + '">'
+      + ico("trash") + 'Hammasini o\'chirish</button>';
   }
 
   /* ==========================================================
@@ -4884,6 +4925,138 @@
     });
   }
 
+  /* ----------------------------------------------------------
+     O'chirish
+     ----------------------------------------------------------
+     Hammasi bitta yo'ldan o'tadi: tasdiq oynasi -> server ->
+     ro'yxatni qaytadan olish. Shunda "o'chirdim shekilli" degan
+     holat bo'lmaydi — ekranda ko'ringan narsa serverdagi narsa.
+
+     Tasdiq oynasi nima bo'lishini ANIQ yozadi va qaytarib
+     bo'lmasligini aytadi. "Ishonchingiz komilmi?" degan savol
+     hech narsa tushuntirmaydi.
+     ---------------------------------------------------------- */
+  function confirmDelete(opts){
+    openModal({
+      title: opts.title,
+      body: '<p style="margin:0;color:var(--text);font-size:13.5px;line-height:1.55;">'
+        + opts.body + '</p>'
+        + '<p class="hint" style="margin-top:12px;">' + (opts.note || '') + '</p>'
+        + '<div class="help-err" id="delErr"></div>',
+      foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
+        + '<button type="button" class="btn bad" data-act="modal-save">' + esc(opts.button || "O'chirish") + '</button>',
+      onSave: function(){ opts.run(byId("delErr")); }
+    });
+  }
+
+  /** So'rovni yuboradi, javobni ro'yxatga qaytaradi. */
+  function runDelete(action, payload, resource, okMsg, errBox){
+    Api.post(action, payload).then(function(body){
+      closeModal();
+      toast(okMsg + (body && body.removed > 1 ? " (" + body.removed + " ta)" : ""));
+      if(resource) Store.load(resource, true);
+      else Store.reloadAll();
+      render();
+    }).catch(function(err){
+      if(handleApiError(err)) return;
+      /* 409 — "yo'ldagi yuk" kabi holat: server nima uchun
+         rad etganini aytadi va odam ataylab davom ettirishi
+         mumkin. Shuning uchun oyna yopilmaydi. */
+      if(errBox){ errBox.innerHTML = esc(err.message); }
+      else toast(err.message, "bad");
+    });
+  }
+
+  function deleteMessageAt(index, createdAt){
+    confirmDelete({
+      title: "Murojaatni o'chirish",
+      body: "Bu murojaat ro'yxatdan butunlay olib tashlanadi.",
+      note: "Qaytarib bo'lmaydi. Yuborgan odamga hech qanday xabar bormaydi.",
+      run: function(errBox){
+        runDelete("delete-message", { index: index, createdAt: createdAt },
+          "messages", "Murojaat o'chirildi", errBox);
+      }
+    });
+  }
+
+  function deleteReportById(id){
+    confirmDelete({
+      title: "Shikoyatni o'chirish",
+      body: "Bu shikoyat ro'yxatdan butunlay olib tashlanadi.",
+      note: "Qaytarib bo'lmaydi. Shikoyat qilingan odamning profiliga ta'sir qilmaydi.",
+      run: function(errBox){
+        runDelete("delete-report", { id: id }, "reports", "Shikoyat o'chirildi", errBox);
+      }
+    });
+  }
+
+  function purgeAll(what){
+    var meta = {
+      messages: { title:"Hamma murojaatlarni o'chirish", res:"messages",
+                  body:"Bog'lanish formasidan kelgan BARCHA xabarlar o'chiriladi." },
+      reports:  { title:"Hamma shikoyatlarni o'chirish", res:"reports",
+                  body:"BARCHA shikoyatlar o'chiriladi — ko'rib chiqilmaganlari ham." }
+    }[what];
+    if(!meta) return;
+    confirmDelete({
+      title: meta.title,
+      body: meta.body,
+      note: "Qaytarib bo'lmaydi va nusxasi saqlanmaydi.",
+      button: "Hammasini o'chirish",
+      run: function(errBox){
+        runDelete("purge-" + what, { confirm: true }, meta.res, "O'chirildi", errBox);
+      }
+    });
+  }
+
+  function deleteOrderByCode(code, force){
+    confirmDelete({
+      title: "Buyurtmani o'chirish",
+      body: "<b>" + esc(code) + "</b> buyurtmasi bazadan butunlay olib tashlanadi.",
+      note: force
+        ? "Bu yuk hozir yo'lda. Baribir o'chirilsa, haydovchi va yuk beruvchi uchun u shunchaki yo'qoladi."
+        : "Qaytarib bo'lmaydi. Yetkazilgan yuklar hisobidagi yozuv esa o'z joyida qoladi.",
+      run: function(errBox){
+        runDelete("delete-order", { code: code, confirm: true, force: Boolean(force) },
+          "orders", "Buyurtma o'chirildi", errBox);
+        /* Rad etilsa (yo'ldagi yuk), tugma "baribir o'chirish"ga
+           aylanadi — odam nima qilayotganini bilib turadi. */
+        if(!force){
+          setTimeout(function(){
+            var box = byId("delErr");
+            if(box && box.innerHTML){
+              box.innerHTML += ' <button type="button" class="btn sm bad" '
+                + 'data-act="order-delete-force" data-code="' + esc(code) + '">Baribir o\'chirish</button>';
+            }
+          }, 350);
+        }
+      }
+    });
+  }
+
+  function deleteUserByEmail(email, force){
+    confirmDelete({
+      title: "Hisobni o'chirish",
+      body: "<b>" + esc(email) + "</b> hisobi o'chiriladi.",
+      note: "Odamning o'zi o'chirgandagi bilan bir xil yo'l: shaxsiy ma'lumot "
+        + "(profil, hujjatlar, saqlangan qidiruvlar) o'chadi, buyurtma va e'lonlar esa "
+        + "ANONIM bo'ladi — ular ikkinchi tomonga ham tegishli. Qaytarib bo'lmaydi.",
+      run: function(errBox){
+        runDelete("delete-user", { email: email, confirm: true, force: Boolean(force) },
+          "users", "Hisob o'chirildi", errBox);
+        if(!force){
+          setTimeout(function(){
+            var box = byId("delErr");
+            if(box && box.innerHTML){
+              box.innerHTML += ' <button type="button" class="btn sm bad" '
+                + 'data-act="user-delete-force" data-email="' + esc(email) + '">Baribir o\'chirish</button>';
+            }
+          }, 350);
+        }
+      }
+    });
+  }
+
   /* ==========================================================
      27. Mutations
      Each one waits for the server, reports what really happened,
@@ -5160,6 +5333,17 @@
       return;
     }
     if(act === "staff-remove"){ removeStaffMember(t.getAttribute("data-id")); return; }
+
+    if(act === "msg-delete"){
+      deleteMessageAt(Number(t.getAttribute("data-index")), Number(t.getAttribute("data-at")));
+      return;
+    }
+    if(act === "report-delete"){ deleteReportById(t.getAttribute("data-id")); return; }
+    if(act === "purge"){ purgeAll(t.getAttribute("data-what")); return; }
+    if(act === "order-delete"){ deleteOrderByCode(t.getAttribute("data-code"), false); return; }
+    if(act === "order-delete-force"){ deleteOrderByCode(t.getAttribute("data-code"), true); return; }
+    if(act === "user-delete"){ deleteUserByEmail(t.getAttribute("data-email"), false); return; }
+    if(act === "user-delete-force"){ deleteUserByEmail(t.getAttribute("data-email"), true); return; }
     if(act === "go"){ closeGlobalSearch(); go(t.getAttribute("data-hash")); return; }
 
     if(act === "reload"){

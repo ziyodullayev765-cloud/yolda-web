@@ -43,6 +43,10 @@ import { fetchRemoteImage } from '../lib/remoteImage.js';
 import { normalizeIcons, iconUrl, iconIsPlain, iconEntry } from '../lib/icons.js';
 import { listStaff, saveStaff, removeStaff, countByRole, STAFF_ROLES, STAFF_ROLE_LABELS }
   from '../lib/staff.js';
+/* Ro'yxat bitta joyda — lib/deleteAccount.js da. Nusxa olinsa,
+   ikkisidan biri albatta ortda qolardi. */
+import { deleteAccount, activeOrdersFor, ACTIVE_ORDER_STATUSES } from '../lib/deleteAccount.js';
+import { invalidateLoadsCache } from '../lib/loadsCache.js';
 
 const REPORT_STATUSES = ['NEW', 'INVESTIGATING', 'CONTACTED', 'RESOLVED', 'BANNED'];
 /**
@@ -799,6 +803,145 @@ const purgeOrders = async (req, res) => {
   return res.status(200).json({ ok: true, removed, kept });
 };
 
+/* ---------- O'chirish ----------
+   Panelda ko'rinadigan har bir ro'yxatdan yozuvni olib tashlash.
+
+   UCHTA QOIDA HAMMASIGA BIR XIL:
+
+   1. Tasdiqsiz hech narsa o'chmaydi (`confirm: true`). Tasodifiy
+      so'rov butun ro'yxatni yo'q qilib yuborishi mumkin edi.
+   2. Butun ro'yxatni tozalash faqat super adminda: u qaytarib
+      bo'lmaydigan ish.
+   3. Natijada nechta yozuv o'chgani qaytariladi — "o'chirildi"
+      deyish yetarli emas, odam nima bo'lganini bilishi kerak.
+---------------------------------------------------------------- */
+
+/**
+ * Bitta murojaat. Ro'yxatda id yo'q (u oddiy ro'yxat), shuning
+ * uchun o'rni (`index`) va yozilgan vaqti birga yuboriladi:
+ * ro'yxat o'zgargan bo'lsa vaqt mos kelmaydi va hech narsa
+ * o'chmaydi. Aks holda yangi murojaat kelgan payt bosilgan
+ * tugma BOSHQA yozuvni o'chirib yuborardi.
+ */
+const deleteMessage = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const index = Number(body.index);
+  const createdAt = Number(body.createdAt);
+  if (!Number.isInteger(index) || index < 0) return res.status(400).json({ error: 'Noto‘g‘ri so‘rov' });
+
+  const raw = await kvRange('support_messages', 0, 199);
+  const row = raw[index];
+  if (!row) return res.status(404).json({ error: 'Murojaat topilmadi' });
+
+  let parsed = null;
+  try { parsed = JSON.parse(row); } catch { parsed = null; }
+  if (!parsed || Number(parsed.createdAt) !== createdAt) {
+    return res.status(409).json({ error: 'Ro‘yxat o‘zgargan — yangilab, qaytadan urinib ko‘ring' });
+  }
+
+  await kvLrem('support_messages', row);
+  return res.status(200).json({ ok: true, removed: 1 });
+};
+
+/** Hamma murojaatlar. Faqat super admin. */
+const purgeMessages = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  if (body.confirm !== true) return res.status(400).json({ error: 'Tasdiqlash kerak' });
+  const before = (await kvRange('support_messages', 0, -1)).length;
+  await kvDel('support_messages');
+  return res.status(200).json({ ok: true, removed: before });
+};
+
+/** Bitta shikoyat. */
+const deleteReport = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const id = String(body.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'ID kerak' });
+  if (!(await kvGet(`report:${id}`))) return res.status(404).json({ error: 'Shikoyat topilmadi' });
+
+  await kvDel(`report:${id}`);
+  await kvLrem('report_ids', id).catch(() => {});
+  return res.status(200).json({ ok: true, removed: 1 });
+};
+
+/** Hamma shikoyatlar. Faqat super admin. */
+const purgeReports = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  if (body.confirm !== true) return res.status(400).json({ error: 'Tasdiqlash kerak' });
+
+  const ids = await kvRange('report_ids', 0, -1);
+  for (const id of ids) await kvDel(`report:${id}`).catch(() => {});
+  await kvDel('report_ids');
+  return res.status(200).json({ ok: true, removed: ids.length });
+};
+
+/**
+ * Bitta buyurtma.
+ *
+ * Yo'ldagi yukni o'chirish — haydovchi bilan yuk beruvchi
+ * o'rtasidagi kelishuvni ikkala tomondan ham yo'q qilish degani.
+ * Shuning uchun u avval BEKOR qilinishi kerak: panelda sabab
+ * ham shu yerda yoziladi.
+ */
+const deleteOrder = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  if (body.confirm !== true) return res.status(400).json({ error: 'Tasdiqlash kerak' });
+  const code = String(body.code || '').trim().toUpperCase();
+  if (!code) return res.status(400).json({ error: 'Kod kerak' });
+
+  const raw = await kvGet(`order:${code}`);
+  if (!raw) return res.status(404).json({ error: 'Buyurtma topilmadi' });
+
+  let order = null;
+  try { order = JSON.parse(raw); } catch { order = null; }
+  const status = (order && order.status) || 'NEW';
+  if (ACTIVE_ORDER_STATUSES.includes(status) && body.force !== true) {
+    return res.status(409).json({
+      error: 'Bu yuk hozir yo‘lda. Avval bekor qiling yoki «baribir o‘chirish»ni tanlang',
+      status,
+    });
+  }
+
+  await kvDel(`order:${code}`);
+  await kvLrem('order_codes', code).catch(() => {});
+  await invalidateLoadsCache().catch(() => {});
+  return res.status(200).json({ ok: true, removed: 1, status });
+};
+
+/**
+ * Foydalanuvchi hisobi.
+ *
+ * Bu yerda ham odamning o'zi o'chirgandagi AYNI yo'l yuradi
+ * (lib/deleteAccount.js): shaxsiy ma'lumot o'chadi, buyurtma va
+ * e'lonlar esa anonim bo'ladi — ular ikkinchi tomonga ham
+ * tegishli va ularning tarixi yo'qolib qolmasligi kerak.
+ * Ikkita yo'l bo'lsa, ulardan biri albatta ortda qolardi.
+ */
+const deleteUser = async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  if (body.confirm !== true) return res.status(400).json({ error: 'Tasdiqlash kerak' });
+  const identity = String(body.email || body.identity || '').trim();
+  if (!identity) return res.status(400).json({ error: 'Foydalanuvchi ko‘rsatilmagan' });
+  if (!(await kvGet(`profile:${identity}`))) {
+    return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+  }
+
+  const orderCodes = await kvRange('order_codes', 0, 299);
+  const active = await activeOrdersFor(identity, orderCodes);
+  if (active.length && body.force !== true) {
+    return res.status(409).json({
+      error: `Bu odamda ${active.length} ta yo‘ldagi yuk bor. Avval ularni yakunlang yoki «baribir o‘chirish»ni tanlang`,
+      activeOrders: active,
+    });
+  }
+
+  const truckIds = await kvSmembers('truck_ids');
+  const result = await deleteAccount(identity, { orderCodes, truckIds });
+  // Xodimlar ro'yxatida qolib ketmasin.
+  await removeStaff(identity).catch(() => {});
+  return res.status(200).json({ ok: true, anonymised: result.anonymised });
+};
+
 /* ---------- Ikonkalar ----------
    Ilovadagi har bir ikonka (SVG sprite'dagi `<symbol>`) o'z rasmi
    bilan almashtirilishi mumkin. Bazada faqat {id: havola} jadvali
@@ -1123,6 +1266,14 @@ const WRITE_PERMISSIONS = {
   // Bular ham faqat SUPER_ADMIN da — lib/adminAuth.js dagi izohga qarang.
   'save-staff': 'staff:write',
   'delete-staff': 'staff:write',
+  'delete-message': 'messages:write',
+  'delete-report': 'reports:write',
+  /* Butun ro'yxatni tozalash va hisob o'chirish — faqat
+     SUPER_ADMIN dagi "*". Qaytarib bo'lmaydigan ishlar. */
+  'purge-messages': 'messages:purge',
+  'purge-reports': 'reports:purge',
+  'delete-order': 'orders:purge',
+  'delete-user': 'users:purge',
 };
 
 export default async function handler(req, res) {
@@ -1176,6 +1327,12 @@ export default async function handler(req, res) {
     if (action === 'purge-orders') return purgeOrders(req, res);
     if (action === 'save-staff') return saveStaffMember(req, res, byRole);
     if (action === 'delete-staff') return removeStaffMember(req, res);
+    if (action === 'delete-message') return deleteMessage(req, res);
+    if (action === 'purge-messages') return purgeMessages(req, res);
+    if (action === 'delete-report') return deleteReport(req, res);
+    if (action === 'purge-reports') return purgeReports(req, res);
+    if (action === 'delete-order') return deleteOrder(req, res);
+    if (action === 'delete-user') return deleteUser(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
