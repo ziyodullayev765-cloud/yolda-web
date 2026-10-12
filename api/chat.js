@@ -13,6 +13,8 @@
  *   POST /api/chat?action=edit    { googleIdToken|telegramInitData, id, text }
  *   POST /api/chat?action=delete  { googleIdToken|telegramInitData, id }
  *   POST /api/chat?action=react   { googleIdToken|telegramInitData, id, emoji }
+ *   POST /api/chat?action=pin     { googleIdToken|telegramInitData, withEmail, on }
+ *   POST /api/chat?action=hide    { googleIdToken|telegramInitData, withEmail }
  *
  * Each message is its own key (`msg:<id>`), not just an entry appended to a
  * list — that's what makes editing/deleting/reacting to one specific
@@ -26,7 +28,7 @@
  * /api/order already makes for phone numbers — acceptable at this app's
  * scale, and verified server-side on every call regardless.
  */
-import { kvGet, kvSet, kvDel, kvIncr, kvPush, kvRange, kvSadd, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvIncr, kvPush, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { resolveEmail } from '../lib/identity.js';
 
@@ -129,6 +131,7 @@ const getInbox = async (req, res) => {
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const others = await kvSmembers(`inbox:${myEmail}`);
+  const pins = await readPins(myEmail);
   const conversations = (
     await Promise.all(
       others.map(async (otherEmail) => {
@@ -155,12 +158,105 @@ const getInbox = async (req, res) => {
           lastAt: lastMsg ? lastMsg.at : 0,
           lastFromMe: lastMsg ? lastMsg.from === myEmail : false,
           unread,
+          pinned: pins.includes(otherEmail),
         };
       }),
     )
-  ).sort((a, b) => b.lastAt - a.lastAt);
+  ).sort((a, b) => {
+    // Qadalganlari doim yuqorida; ichida esa oxirgi xabar bo'yicha.
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.lastAt - a.lastAt;
+  });
 
-  return res.status(200).json({ conversations });
+  return res.status(200).json({ conversations, pinned: pins, maxPins: MAX_PINS });
+};
+
+/* ----------------------------------------------------------
+   Qadab qo'yilgan yozishmalar
+   ----------------------------------------------------------
+   Har bir odamning o'z ro'yxati: `chatPins:<identity>`. Suhbat
+   ikki tomonli, qadash esa bir tomonli — men kimnidir yuqoriga
+   qadaganim unga ko'rinmasligi kerak.
+
+   To'rttadan ko'p emas: beshinchisi qadalsa, ro'yxatning ma'nosi
+   yo'qoladi — "eng muhimlari" degani "hammasi" bo'lib qoladi.
+---------------------------------------------------------- */
+const MAX_PINS = 4;
+const pinsKey = (identity) => `chatPins:${identity}`;
+
+const readPins = async (identity) => {
+  try {
+    const raw = await kvGet(pinsKey(identity));
+    const list = JSON.parse(raw || '[]');
+    return Array.isArray(list) ? list.filter((x) => typeof x === 'string').slice(0, MAX_PINS) : [];
+  } catch {
+    return [];
+  }
+};
+
+const setPin = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const myEmail = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const other = String(body.withEmail || '').trim();
+  if (!other || other === myEmail) return res.status(400).json({ error: 'Suhbat ko‘rsatilmagan' });
+
+  /* Faqat o'z ro'yxatimdagi suhbatni qadash mumkin: aks holda
+     begona odamni ro'yxatga yozib qo'yib bo'lardi. */
+  if (!(await kvSismember(`inbox:${myEmail}`, other))) {
+    return res.status(404).json({ error: 'Suhbat topilmadi' });
+  }
+
+  const pins = await readPins(myEmail);
+  const on = body.on !== false;
+  let next;
+  if (on) {
+    if (pins.includes(other)) next = pins;
+    else if (pins.length >= MAX_PINS) {
+      return res.status(409).json({ error: `Ko‘pi bilan ${MAX_PINS} ta suhbat qadaladi`, max: MAX_PINS });
+    } else next = pins.concat([other]);
+  } else {
+    next = pins.filter((x) => x !== other);
+  }
+
+  await kvSet(pinsKey(myEmail), JSON.stringify(next));
+  return res.status(200).json({ ok: true, pinned: next, max: MAX_PINS });
+};
+
+/**
+ * POST ?action=hide — yozishmani O'Z ro'yxatimdan olib tashlash.
+ *
+ * Xabarlarning o'zi o'chmaydi va suhbatdoshning ro'yxatidan ham
+ * yo'qolmaydi: yozishma ikki kishiniki, bir tomon ikkinchisining
+ * yozishmasini o'chira olmasligi kerak. U yana yozsa, suhbat
+ * ro'yxatga qaytadi — ilovada shu ochiq aytiladi.
+ */
+const hideConversation = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const myEmail = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const other = String(body.withEmail || '').trim();
+  if (!other) return res.status(400).json({ error: 'Suhbat ko‘rsatilmagan' });
+  if (!(await kvSismember(`inbox:${myEmail}`, other))) {
+    return res.status(404).json({ error: 'Suhbat topilmadi' });
+  }
+
+  await kvSrem(`inbox:${myEmail}`, other);
+  await kvDel(unreadKey(myEmail, other)).catch(() => {});
+
+  // Qadalgan bo'lsa, ro'yxatdan ham chiqadi.
+  const pins = await readPins(myEmail);
+  if (pins.includes(other)) {
+    await kvSet(pinsKey(myEmail), JSON.stringify(pins.filter((x) => x !== other)));
+  }
+
+  return res.status(200).json({ ok: true });
 };
 
 const getThread = async (req, res) => {
@@ -389,6 +485,8 @@ export default async function handler(req, res) {
     if (action === 'edit') return editMessage(req, res);
     if (action === 'delete') return deleteMessage(req, res);
     if (action === 'react') return reactToMessage(req, res);
+    if (action === 'pin') return setPin(req, res);
+    if (action === 'hide') return hideConversation(req, res);
     return res.status(400).json({ error: 'Noto‘g‘ri action' });
   }
   return res.status(405).json({ error: 'Method not allowed' });
