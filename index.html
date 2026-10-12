@@ -2568,7 +2568,55 @@
      uzluksiz ko'rinadi — aks holda har bosqich orasida bo'shliq qoladi. */
   .track-line{width:2px;height:19px;background:var(--border);margin:-2px 0 -2px 5px;}
   .track-line--done{background:var(--route);}
-  .star-btn{background:none;border:none;font-size:26px;line-height:0;cursor:pointer;color:#F59E0B;padding:2px;}
+  /* Baholash yulduzlari. Yuk yetkazilgandan keyin chiqadi va bu
+     ilovadagi kam sonli "quvonchli" lahzalardan biri — shuning
+     uchun bosilganda jonli javob beradi.
+
+     Barcha bezak `transform` va `filter` da: ular sahifani qayta
+     joylashtirmaydi, ya'ni animatsiya telefonda ham silliq. */
+  .star-btn{
+    background:none;border:none;font-size:30px;line-height:0;cursor:pointer;
+    color:var(--border);padding:2px;position:relative;
+    transition:transform 0.25s ease,color 0.25s ease,filter 0.25s ease;
+  }
+  .star-btn.on{
+    color:#FF9E0B;
+    filter:drop-shadow(0 0 10px rgba(255,158,11,0.55));
+  }
+  /* Tanlangan yulduz — eng o'ngdagisi — biroz kattaroq va
+     "nafas oladi": tanlov qaysi yulduzda to'xtagani ko'rinib
+     tursin. */
+  .star-btn.picked{animation:star-pulse 0.85s ease-in-out infinite alternate;}
+  /* Bosilgan paytdagi portlash: ikkita nuqta ikki tomonga. */
+  .star-btn::before,.star-btn::after{
+    content:"";position:absolute;left:50%;width:6px;height:6px;
+    border-radius:50%;background:#FF9E0B;opacity:0;
+    transform:translateX(-50%) scale(0);pointer-events:none;
+  }
+  .star-btn::before{top:-10px;}
+  .star-btn::after{bottom:-10px;}
+  .star-btn.burst::before,.star-btn.burst::after{animation:star-spark 0.6s ease-out;}
+  @media (hover: hover) and (pointer: fine){
+    .star-btn:hover{transform:scale(1.18);}
+  }
+  .star-btn:active{transform:scale(0.94);}
+  .star-btn:focus-visible{outline:2px solid var(--route);outline-offset:3px;border-radius:8px;}
+  @keyframes star-pulse{
+    from{transform:scale(1);}
+    to{transform:scale(1.12);}
+  }
+  @keyframes star-spark{
+    0%{opacity:0;transform:translateX(-50%) scale(0.4);}
+    45%{opacity:1;transform:translateX(-50%) scale(1.5);}
+    100%{opacity:0;transform:translateX(-50%) scale(0.4);}
+  }
+  /* Harakatni kamaytirish yoqilgan bo'lsa — faqat rang. */
+  @media (prefers-reduced-motion: reduce){
+    .star-btn,.star-btn.picked,.star-btn::before,.star-btn::after{
+      transition:none;animation:none;
+    }
+    .star-btn:hover,.star-btn:active{transform:none;}
+  }
 
   /* Baholash: yulduzlar + mezon chiplari. Bitta widget ikki joyda
      ishlatiladi (yuk beruvchi haydovchini, haydovchi yuk beruvchini),
@@ -16167,8 +16215,10 @@
       + '<p class="note" style="margin:0 0 8px;" data-i18n="'+titleKey+'">'+titleFallback+'</p>'
       + '<div class="star-picker" id="'+p+'Stars">'
       +   [1,2,3,4,5].map(function(n){
+            /* `aria-label` da faqat raqam turardi — ekran o'quvchisi
+               "1" deb o'qirdi, nimaning biri ekani noma'lum. */
             return '<button type="button" class="star-btn" data-star="'+n+'" '
-              + 'aria-label="'+n+'">'+icon("iconStar")+'</button>';
+              + 'aria-label="'+n+' yulduz" aria-pressed="false">'+icon("iconStar")+'</button>';
           }).join("")
       + '</div>'
       + (tags ? '<div class="crit-chips" id="'+p+'Tags">'+tags+'</div>' : "")
@@ -16187,16 +16237,45 @@
 
     var chosen = 0;
     var starBtns = starsBox.querySelectorAll(".star-btn");
+
+    /* Yulduzlarni `upto` gacha yoqadi. Tanlov va sichqoncha
+       ostidagi ko'rinish bitta funksiyadan o'tadi — aks holda
+       sichqoncha ketganda ekran tanlovdan chetga og'ib qolardi. */
+    function paint(upto){
+      starBtns.forEach(function(sb){
+        var n = parseInt(sb.getAttribute("data-star"), 10);
+        var on = n <= upto;
+        /* Belgining O'ZI almashtirilmaydi, faqat sinfi.
+           Ilgari bu yerda `innerHTML` qayta yozilardi va
+           sichqoncha bilan bosish umuman ishlamasdi: ustiga
+           kelganda ichidagi <svg> yangisiga almashar, bosish
+           boshlangan tugun esa uzilib qolardi — brauzer bunday
+           holatda `click` hodisasini umuman yubormaydi. */
+        var mark = sb.querySelector(".ic-svg");
+        if(mark) mark.classList.toggle("filled", on);
+        sb.classList.toggle("on", on);
+        // "Nafas olish" faqat tanlangan yulduzda, ko'rsatuvda emas.
+        sb.classList.toggle("picked", chosen > 0 && n === chosen && upto === chosen);
+        sb.setAttribute("aria-pressed", n <= chosen ? "true" : "false");
+      });
+    }
+
     starBtns.forEach(function(b){
+      var n = parseInt(b.getAttribute("data-star"), 10);
+      b.addEventListener("mouseenter", function(){ paint(Math.max(n, 0)); });
       b.addEventListener("click", function(){
-        chosen = parseInt(b.getAttribute("data-star"), 10);
-        starBtns.forEach(function(sb){
-          sb.innerHTML = icon("iconStar",
-            parseInt(sb.getAttribute("data-star"), 10) <= chosen ? "filled" : "");
-        });
+        chosen = n;
+        paint(chosen);
+        /* Portlash sinfi har bosishda qaytadan qo'yilishi uchun
+           avval olib tashlanadi: bir xil sinf turgan joyida
+           animatsiya qayta boshlanmaydi. */
+        b.classList.remove("burst");
+        void b.offsetWidth;
+        b.classList.add("burst");
         submitBtn.disabled = false;
       });
     });
+    starsBox.addEventListener("mouseleave", function(){ paint(chosen); });
 
     var tagsBox = document.getElementById(p + "Tags");
     if(tagsBox){
