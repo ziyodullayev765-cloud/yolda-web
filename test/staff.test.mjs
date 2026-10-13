@@ -237,4 +237,63 @@ flow('Chegara');
   check('mavjud xodim hamon tahrirlanadi', edit.ok === true, edit);
 }
 
+flow('Odam yozgan har qanday shaklda topiladi');
+{
+  /* Ilgari faqat ichki identifikator qabul qilinardi: super admin
+     "@aziz" yoki telefon raqamini yozsa "foydalanuvchi topilmadi"
+     chiqardi, holbuki odam bor edi. Xodim qo'shib bo'lmagani
+     shundan. */
+  const add = async (value) => {
+    reset();
+    seedUser('aziz@example.com', 'aziz');
+    db.strings.set('phoneOwner:+998901112233', 'aziz@example.com');
+    return call(adminData, 'POST', { action: 'save-staff' },
+      { identity: value, role: 'ADMIN' }, 'SUPER_ADMIN');
+  };
+
+  for (const [what, value] of [
+    ['email', 'aziz@example.com'],
+    ['@username', '@aziz'],
+    ['username', 'aziz'],
+    ['katta harf bilan', '@AZIZ'],
+    ['telefon', '+998901112233'],
+    ['telefon, bo\'sh joy bilan', '+998 90 111 22 33'],
+    ['telefon, oxirgi 9 raqami', '901112233'],
+  ]) {
+    const res = await add(value);
+    check('topildi: ' + what, res.statusCode === 200, { value, code: res.statusCode, body: res.payload });
+    if (res.statusCode === 200) {
+      check('to\'g\'ri odamga yozildi: ' + what,
+        res.payload.staff.some((m) => m.identity === 'aziz@example.com'), res.payload.staff);
+    }
+  }
+
+  /* Telegram orqali kirgan odam ham. */
+  reset();
+  db.strings.set('profile:tg:5551234', JSON.stringify({ username: 'ali', displayName: 'Ali' }));
+  db.strings.set('username:ali', 'tg:5551234');
+  const tg = await call(adminData, 'POST', { action: 'save-staff' },
+    { identity: '@ali', role: 'MODERATOR' }, 'SUPER_ADMIN');
+  check('Telegram hisobi ham topildi', tg.statusCode === 200, tg.payload);
+  check('identifikator tg: ko\'rinishida saqlandi',
+    tg.statusCode === 200 && tg.payload.staff[0].identity === 'tg:5551234', tg.payload);
+
+  /* Yo'q odam baribir qo'shilmaydi — va sababi tushunarli. */
+  reset();
+  seedUser('aziz@example.com', 'aziz');
+  const yoq = await call(adminData, 'POST', { action: 'save-staff' },
+    { identity: '@begona', role: 'ADMIN' }, 'SUPER_ADMIN');
+  check('yo\'q odam qo\'shilmadi', yoq.statusCode === 404, yoq.statusCode);
+  check('nima yozish kerakligi aytilgan',
+    String(yoq.payload.error).includes('@username'), yoq.payload);
+
+  /* Begona username boshqa odamga ulanib ketmasin. */
+  reset();
+  seedUser('aziz@example.com', 'aziz');
+  db.strings.set('username:ketgan', 'ketgan@example.com');   // profili yo'q
+  const chala = await call(adminData, 'POST', { action: 'save-staff' },
+    { identity: '@ketgan', role: 'ADMIN' }, 'SUPER_ADMIN');
+  check('profilsiz yozuv qabul qilinmadi', chala.statusCode === 404, chala.statusCode);
+}
+
 t.done();

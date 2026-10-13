@@ -1209,6 +1209,45 @@ const getStaff = async (res) => {
   });
 };
 
+/**
+ * Yozilgan qiymatdan haqiqiy identifikatorni topadi.
+ *
+ * Qabul qilinadi:
+ *   - identifikatorning o'zi (email yoki `tg:<id>`);
+ *   - `@username` yoki shunchaki username;
+ *   - telefon raqami (+998... yoki faqat raqamlar).
+ *
+ * Topilmasa `null`.
+ */
+const resolveStaffIdentity = async (raw) => {
+  const value = String(raw || '').trim();
+  if (!value) return null;
+
+  if (await kvGet(`profile:${value}`)) return value;
+
+  /* @username — ilovada odamlar bir-birini shu nom bilan biladi. */
+  const uname = value.replace(/^@/, '').toLowerCase();
+  if (uname && uname !== value.toLowerCase()) {
+    const byAt = await kvGet(`username:${uname}`);
+    if (byAt && await kvGet(`profile:${byAt}`)) return byAt;
+  }
+  if (/^[a-z0-9_]{2,32}$/.test(uname)) {
+    const byName = await kvGet(`username:${uname}`);
+    if (byName && await kvGet(`profile:${byName}`)) return byName;
+  }
+
+  /* Telefon raqami — bo'sh joy, qavs va chiziqlari bilan
+     yozilgan bo'lishi mumkin. */
+  const digits = value.replace(/[^0-9]/g, '');
+  if (digits.length >= 9) {
+    for (const form of [`+${digits}`, digits, `+998${digits.slice(-9)}`]) {
+      const owner = await kvGet(`phoneOwner:${form}`);
+      if (owner && await kvGet(`profile:${owner}`)) return owner;
+    }
+  }
+  return null;
+};
+
 const saveStaffMember = async (req, res, byRole) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
   const identity = String(body.identity || body.email || '').trim();
@@ -1216,11 +1255,20 @@ const saveStaffMember = async (req, res, byRole) => {
 
   /* Mavjud bo'lmagan hisobni xodim qilib qo'yish — yozuv hech
      kimga tegmaydigan joyda qolib ketishi. Shuning uchun profil
-     borligini tekshiramiz. */
-  const profileRaw = await kvGet(`profile:${identity}`);
-  if (!profileRaw) return res.status(404).json({ error: 'Bunday foydalanuvchi topilmadi' });
+     borligini tekshiramiz.
 
-  const result = await saveStaff(identity, {
+     ODAM ESLAB QOLGAN NARSANI YOZADI. Ilgari faqat ichki
+     identifikator qabul qilinardi va "@ali" yoki telefon raqami
+     yozilsa "foydalanuvchi topilmadi" chiqardi — holbuki odam
+     bor edi. Endi uchchala shakl ham tanib olinadi. */
+  const who = await resolveStaffIdentity(identity);
+  if (!who) {
+    return res.status(404).json({
+      error: 'Bunday foydalanuvchi topilmadi. Email, @username yoki telefon raqamini kiriting.',
+    });
+  }
+
+  const result = await saveStaff(who, {
     role: String(body.role || ''),
     title: body.title,
     addedBy: byRole,

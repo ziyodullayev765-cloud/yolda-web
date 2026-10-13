@@ -767,6 +767,16 @@
   /* Manfiy yuqori chekka maydon ostida turishi uchun. Boshqa
      narsadan keyin kelsa esa u ustki qatorga kirib ketardi. */
   .staff-row + .hint,.kv + .hint,.hint + .hint{margin-top:14px;}
+  /* Xodim qo'shishda odam ro'yxatdan tanlanadi. */
+  .staff-pick{display:flex;flex-direction:column;gap:6px;margin:-6px 0 12px;}
+  .staff-pick-row{
+    display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;
+    border:1px solid var(--line);border-radius:10px;background:var(--raised);
+    padding:9px 12px;cursor:pointer;font:inherit;color:var(--text);
+  }
+  .staff-pick-row:hover{border-color:var(--accent);background:var(--hover);}
+  .staff-pick-row b{font-size:13.5px;font-weight:600;}
+  .staff-pick-row small{font-size:11.5px;color:var(--text-dim);}
   .form-err{color:var(--bad-ink);font-size:12.5px;min-height:17px;margin:2px 0 0;}
 
   /* ---------- Toasts ---------- */
@@ -1772,6 +1782,9 @@
          + '<button type="button" class="btn primary" data-act="modal-save">Saqlash</button>';
     modalOnSave = opts.onSave || null;
     byId("modalBackdrop").hidden = false;
+    /* Oyna chizilgandan KEYIN chaqiriladi: ichidagi maydonlarga
+       hodisa ulash uchun ular allaqachon joyida bo'lishi kerak. */
+    if(opts.onOpen){ try{ opts.onOpen(byId("modalBody")); }catch(e){} }
     var first = byId("modalBody").querySelector("input,select,textarea");
     if(first) first.focus();
   }
@@ -4494,7 +4507,10 @@
     if(names.indexOf(settingsTab) === -1) settingsTab = names[0];
 
     var need = ["settings"];
+    /* Xodim qo'shishda odamni ro'yxatdan tanlaymiz — shuning
+       uchun foydalanuvchilar ham kerak. */
     if(settingsTab === "roles" && can("staff:read")) need.push("staff");
+    if(settingsTab === "roles" && can("users:read")) need.push("users");
 
     return pageHead("Sozlamalar", "Platforma sozlamalari", refreshBtn(need.join(",")))
       + '<div class="tabs">' + tabs.map(function(t){
@@ -4867,11 +4883,13 @@
 
     openModal({
       title: existing ? "Xodim rolini o'zgartirish" : "Xodimni qo'shish",
-      body: '<div class="field"><label for="stId">Foydalanuvchi (email yoki ID)</label>'
+      body: '<div class="field"><label for="stId">Foydalanuvchi</label>'
         + '<input type="text" id="stId" maxlength="200" value="' + esc(existing ? existing.identity : "")
-        + '"' + (existing ? " disabled" : "") + ' placeholder="aziz@example.com"></div>'
-        + (existing ? "" : '<p class="hint" style="margin-top:-6px;">Foydalanuvchilar bo\'limidagi '
-            + '“Email / ID” ustunidagi qiymatni nusxalang.</p>')
+        + '"' + (existing ? " disabled" : "")
+        + ' placeholder="Ism, @username, email yoki telefon" autocomplete="off"></div>'
+        + (existing ? "" : '<div id="stFound" class="staff-pick"></div>'
+            + '<p class="hint" style="margin-top:-2px;">Yozib qidiring va ro\'yxatdan tanlang. '
+            + 'Ism, @username, email yoki telefon raqami bo\'yicha topiladi.</p>')
         + '<div class="field"><label for="stRole">Rol</label><select id="stRole">'
         + roles.map(function(r){
             return '<option value="' + esc(r) + '"' + (r === picked ? " selected" : "") + '>'
@@ -4886,6 +4904,40 @@
         + '<div class="help-err" id="stErr"></div>',
       foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
         + '<button type="button" class="btn primary" data-act="modal-save">Saqlash</button>',
+      onOpen: function(){
+        if(existing) return;
+        var input = byId("stId");
+        var box = byId("stFound");
+        if(!input || !box) return;
+
+        /* Qidiruv ro'yxatning O'ZIDAN — panel foydalanuvchilarni
+           allaqachon yuklagan, ya'ni har harfda so'rov ketmaydi. */
+        var paint = function(){
+          var q = input.value.trim().toLowerCase().replace(/^@/, "");
+          if(q.length < 2){ box.innerHTML = ""; return; }
+          var hits = Store.list("users").filter(function(u){
+            return [u.email, u.username, u.name, u.displayName, u.phone]
+              .some(function(v){ return v && String(v).toLowerCase().indexOf(q) >= 0; });
+          }).slice(0, 6);
+          if(!hits.length){
+            box.innerHTML = '<p class="hint" style="margin:0;">Topilmadi.</p>';
+            return;
+          }
+          box.innerHTML = hits.map(function(u){
+            var name = u.displayName || u.name || u.username || u.email;
+            var sub = [u.username ? "@" + u.username : "", u.email].filter(Boolean).join(" · ");
+            return '<button type="button" class="staff-pick-row" data-pick="' + esc(u.email) + '">'
+              + '<b>' + esc(name) + '</b><small>' + esc(sub) + '</small></button>';
+          }).join("");
+        };
+        input.addEventListener("input", paint);
+        box.addEventListener("click", function(e){
+          var row = e.target.closest("[data-pick]");
+          if(!row) return;
+          input.value = row.getAttribute("data-pick");
+          box.innerHTML = "";
+        });
+      },
       onSave: function(){
         var id = (existing ? existing.identity : byId("stId").value.trim());
         var err = byId("stErr");
