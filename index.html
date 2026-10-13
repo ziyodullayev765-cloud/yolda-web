@@ -2469,9 +2469,28 @@
   .set-card .set-row:first-child{border-top:none;}
   .set-row > .ic-svg{font-size:20px;color:var(--ink-soft);flex:none;}
   .set-row-main{flex:1;min-width:0;}
-  .set-row-title{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3;}
-  .set-row-sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35;word-break:break-word;}
+  /* `span` o'z-o'zidan bir qatorga tiziladi: sarlavha bilan izoh
+     yonma-yon yopishib, "Yuqoriga qadashKo'pi bilan..." bo'lib
+     o'qilmay qolardi. Ular alohida qatorda turishi kerak. */
+  .set-row-title{
+    display:block;font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3;
+  }
+  .set-row-sub{
+    display:block;font-size:12px;color:var(--muted);margin-top:3px;
+    line-height:1.35;word-break:break-word;
+  }
   .set-row-chev{font-size:17px;color:var(--muted);flex:none;}
+  /* Yozishma menyusi. Belgilar turli o'lchamdagi rasmlar bo'lishi
+     mumkin (ular admin paneldan almashtiriladi), shuning uchun
+     har biri bir xil katakchaga joylanadi — biri ikkinchisidan
+     katta bo'lib ko'rinmasin. */
+  .set-row-ico{
+    width:34px;height:34px;border-radius:11px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--route-soft, rgba(10,159,91,0.10));color:var(--route);
+  }
+  .set-row-ico .ic-svg{font-size:17px;}
+  .set-row.danger .set-row-ico{background:rgba(220,38,38,0.10);color:#DC2626;}
   /* Xavfli amal — qizil. Faqat matn va belgi, fon emas: ro'yxat
      ichida qizil to'rtburchak ortiqcha ogohlantirish bo'lardi. */
   .set-row.danger .set-row-title{color:#DC2626;}
@@ -5813,6 +5832,13 @@
      ekranning o'zi, va ustida turib yuborish tugmasini yopib
      qo'yardi. */
   :root[data-ai-open] .mascot{display:none;}
+  /* Xabarlar RO'YXATIDA yordamchi ko'rinmaydi: u yerda uning o'z
+     qatori bor ("YO'LDA bot"), ikkinchi marta ekranda osilib
+     turishi sarlavhani yopib qo'yardi.
+
+     YOZISHMA ICHIDA esa qoladi — u yerda yuborilgan xabarga
+     kayfiyat bildiradi, ya'ni ishi bor. */
+  :root[data-tab="chat"]:not([data-chat-open="1"]) .mascot{display:none;}
   /* Odam uni ko'chirgan bo'lsa, o'rni `left/top` bilan beriladi —
      shuning uchun burchakka bog'lab turgan qoidalar bekor
      qilinadi. */
@@ -14934,19 +14960,17 @@
     Sheet.open({
       title: title,
       html: '<button type="button" class="set-row" id="btnChatPin">'
-        + icon("iconPin")
+        + '<span class="set-row-ico">' + icon("iconPin") + '</span>'
         + '<span class="set-row-main"><span class="set-row-title">'
         +   (c.pinned ? "Qadashni bekor qilish" : "Yuqoriga qadash")
         + '</span><span class="set-row-sub">'
-        +   (c.pinned
-              ? "Ro'yxatdagi odatiy o'rniga qaytadi"
-              : "Ko'pi bilan " + CHAT_MAX_PINS + " ta suhbat ("
-                + pinnedCount + "/" + CHAT_MAX_PINS + " band)")
+        +   (c.pinned ? "Odatiy o'rniga qaytadi"
+                      : pinnedCount + "/" + CHAT_MAX_PINS + " band")
         + '</span></span></button>'
         + '<button type="button" class="set-row danger" id="btnChatHide">'
-        + icon("iconTrash")
+        + '<span class="set-row-ico">' + icon("iconTrash") + '</span>'
         + '<span class="set-row-main"><span class="set-row-title">Yozishmani o\'chirish</span>'
-        + '<span class="set-row-sub">Ro\'yxatdan olib tashlanadi</span></span></button>'
+        + '<span class="set-row-sub">Faqat sizning ro\'yxatingizdan</span></span></button>'
         + '<p class="note" id="chatMenuNote" style="margin-top:var(--s3);"></p>',
       onOpen: function(container){
         var find = function(id){
@@ -21034,6 +21058,9 @@
        katagini bosib turganda ochiladi. Shuning uchun u ochiq turganda
        ham "Yuklar" yorqin qoladi: aks holda tomchi hech qayerda
        turmasdi va odam qayerda ekanini bilmasdi. */
+    /* Ochiq bo'lim ildizda ham belgilanadi: ba'zi narsalar
+       (masalan yordamchi) ayrim bo'limda ko'rinmasligi kerak. */
+    document.documentElement.setAttribute("data-tab", name);
     var navName = name === "myload" ? "loads" : name;
     document.querySelectorAll(".bn-item").forEach(function(b){
       b.classList.toggle("active", b.getAttribute("data-tab-link") === navName);
