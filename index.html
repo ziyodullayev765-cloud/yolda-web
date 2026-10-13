@@ -2429,6 +2429,16 @@
     overflow:hidden;
   }
   /* Yozishma qatoridagi amallar tugmasi va qadalgani belgisi. */
+  /* Yashil AI qatori — odamlar bilan yozishmalardan ajralib
+     tursin, lekin ko'zga urilmasin. */
+  .chat-row.ai-entry{
+    border:1px solid var(--border);border-radius:var(--r-lg);
+    margin-bottom:var(--s3);background:var(--card);
+  }
+  .chat-row.ai-entry .ai-entry-av{background:var(--route);color:#FFFFFF;}
+  .chat-row.ai-entry .ai-entry-av .ic-svg{font-size:20px;}
+  .chat-row.ai-entry .chat-row-time{font-size:10px;font-weight:700;color:var(--route);letter-spacing:0.04em;}
+
   .chat-row-more{
     flex:none;width:34px;height:34px;border-radius:50%;border:none;background:none;
     display:flex;align-items:center;justify-content:center;cursor:pointer;
@@ -3732,9 +3742,15 @@
   .chat-under .chat-row:last-child::after{display:none;}
 
   /* Suhbat ochiq turganda ilovaning o'z yo'laklari chalg'itmasin. */
+  /* Suhbat va AI ekrani butun ekranni egallaydi: sayt sarlavhasi
+     ham, pastki panel ham yashiriladi. AI ning o'z paneli bor —
+     ikkitasi ustma-ust tursa, pastdagisiga bosib bo'lmasdi. */
   :root[data-chat-open="1"] .nav,
-  :root[data-chat-open="1"] .bottom-nav{display:none !important;}
-  :root[data-chat-open="1"] body{padding-bottom:0;}
+  :root[data-chat-open="1"] .bottom-nav,
+  :root[data-ai-open] .nav,
+  :root[data-ai-open] .bottom-nav{display:none !important;}
+  :root[data-chat-open="1"] body,
+  :root[data-ai-open] body{padding-bottom:0;}
 
   .chat-thread-head{
     display:flex;align-items:center;gap:10px;flex:none;
@@ -5269,6 +5285,253 @@
   :root[data-theme="dark"] .tc-status.ACTIVE{color:#86EFAC;}
 
   /* ============================================================
+     Yashil AI
+     ------------------------------------------------------------
+     Butun ekranni egallaydigan alohida bo'lim: o'z sarlavhasi,
+     o'z pastki paneli. Xabarlar bo'limidan ochiladi.
+
+     DIQQAT — HOZIRCHA JAVOB YO'Q. AI xizmatiga ulanish hali
+     qo'shilmagan. Shuning uchun savol yuborilganda o'ylab
+     topilgan javob CHIQMAYDI: ekranda nima bo'layotgani aniq
+     yoziladi. Soxta javob ko'rsatish — odamni ishontirib,
+     keyin aldash bo'lardi.
+     ============================================================ */
+  .ai-screen{
+    position:fixed;inset:0;z-index:1450;display:flex;flex-direction:column;
+    background:var(--paper);color:var(--ink);
+  }
+  .ai-screen[hidden]{display:none;}
+
+  .ai-top{
+    flex-shrink:0;display:flex;align-items:center;gap:var(--s3);
+    padding:calc(env(safe-area-inset-top, 0px) + var(--s3)) var(--s4) var(--s3);
+    border-bottom:1px solid var(--border);background:var(--card);
+  }
+  .ai-badge{
+    width:34px;height:34px;border-radius:11px;flex:none;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;background:var(--route);
+  }
+  .ai-badge svg{width:22px;height:22px;}
+  .ai-top-title{flex:1;min-width:0;}
+  .ai-top-title b{display:block;font-size:16px;font-weight:700;letter-spacing:-0.01em;}
+  .ai-top-title small{display:block;font-size:11.5px;color:var(--muted);}
+  .ai-plan{
+    flex:none;font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:var(--r-pill);
+    background:var(--route-soft, rgba(10,159,91,0.10));color:var(--route);border:none;
+    cursor:pointer;font-family:inherit;
+  }
+  .ai-icon-btn{
+    width:36px;height:36px;border-radius:50%;flex:none;border:1px solid var(--border);
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--ink-soft);
+  }
+  .ai-icon-btn .ic-svg{font-size:17px;}
+  .ai-icon-btn.back .ic-svg{transform:rotate(180deg);}
+
+  .ai-body{flex:1;min-height:0;overflow-y:auto;padding:var(--s5) var(--s4) var(--s4);}
+
+  .ai-hello{font-size:14px;color:var(--route);font-weight:600;margin:0 0 var(--s2);}
+  .ai-q{
+    margin:0 0 var(--s2);font-family:'Space Grotesk',sans-serif;
+    font-size:27px;line-height:1.2;font-weight:700;letter-spacing:-0.025em;
+  }
+  .ai-sub{margin:0 0 var(--s6);font-size:13.5px;color:var(--muted);}
+  .ai-sec-title{font-size:15px;font-weight:700;margin:0 0 var(--s3);}
+
+  .ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
+  .ai-card{
+    text-align:left;background:var(--card);border:1px solid var(--border);
+    border-radius:var(--r-lg);padding:var(--s4);cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;gap:6px;position:relative;
+    transition:border-color 0.18s var(--ease), transform 0.18s var(--ease);
+  }
+  .ai-card:active{transform:scale(0.985);}
+  .ai-card:hover{border-color:var(--route);}
+  .ai-card .ic-svg{font-size:20px;color:var(--route);}
+  .ai-card b{font-size:14px;font-weight:700;line-height:1.3;}
+  .ai-card small{font-size:12px;color:var(--muted);line-height:1.4;}
+  .ai-card .ai-card-go{position:absolute;top:var(--s4);right:var(--s4);color:var(--muted);font-size:13px;}
+
+  /* Vositalar bo'limidagi yashil kartochka. */
+  .ai-hero{
+    border-radius:var(--r-lg);padding:var(--s5);margin-bottom:var(--s5);
+    background:linear-gradient(140deg,#1C6B43,#0E4A2C);color:#FFFFFF;
+  }
+  .ai-hero-k{
+    font-size:10.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+    opacity:0.85;display:flex;align-items:center;gap:6px;margin-bottom:10px;
+  }
+  .ai-hero h3{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;}
+  .ai-hero p{margin:0;font-size:13px;line-height:1.5;opacity:0.9;}
+
+  /* ---------- Suhbat ---------- */
+  .ai-day{text-align:center;font-size:11.5px;color:var(--muted);margin:var(--s3) 0;}
+  .ai-msg{display:flex;margin-bottom:var(--s4);}
+  .ai-msg.me{justify-content:flex-end;}
+  .ai-bubble{
+    max-width:84%;padding:12px 14px;border-radius:18px;font-size:14px;line-height:1.5;
+    background:var(--route-soft, rgba(10,159,91,0.10));border:1px solid var(--border);
+  }
+  .ai-msg.me .ai-bubble{border-bottom-right-radius:6px;}
+  .ai-time{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;text-align:right;}
+  .ai-who{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:700;}
+  .ai-who small{font-weight:500;color:var(--muted);font-size:11.5px;}
+  .ai-answer{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s4);font-size:14px;line-height:1.55;
+  }
+  .ai-steps{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s3);}
+  .ai-step{display:flex;gap:11px;}
+  .ai-step-n{
+    width:22px;height:22px;border-radius:50%;flex:none;
+    background:var(--route-soft, rgba(10,159,91,0.12));color:var(--route);
+    display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;
+  }
+  .ai-step b{display:block;font-size:13.5px;font-weight:700;}
+  .ai-step span{display:block;font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:2px;}
+  .ai-acts{display:flex;gap:var(--s3);margin-top:var(--s3);color:var(--muted);}
+  .ai-acts button{
+    border:none;background:none;padding:4px;cursor:pointer;color:inherit;
+    display:flex;align-items:center;
+  }
+  .ai-acts .ic-svg{font-size:16px;}
+  .ai-followup{
+    display:inline-flex;align-items:center;gap:7px;margin-top:var(--s3);
+    border:1px solid var(--border);background:var(--card);border-radius:var(--r-pill);
+    padding:8px 14px;font-size:12.5px;font-family:inherit;cursor:pointer;color:var(--ink);
+  }
+
+  /* AI hali ulanmagani — ochiq yozuv. */
+  .ai-notready{
+    border:1px dashed var(--border);border-radius:var(--r-lg);
+    padding:var(--s4);background:var(--paper-dark);
+  }
+  .ai-notready b{display:block;font-size:14px;margin-bottom:4px;}
+  .ai-notready p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  /* ---------- Yozish qatori ---------- */
+  .ai-compose{
+    flex-shrink:0;padding:var(--s3) var(--s4)
+      calc(env(safe-area-inset-bottom, 0px) + var(--s3));
+    border-top:1px solid var(--border);background:var(--card);
+  }
+  .ai-compose-row{
+    display:flex;align-items:center;gap:var(--s2);
+    border:1px solid var(--border);border-radius:var(--r-pill);
+    padding:5px 5px 5px var(--s3);background:var(--paper);
+  }
+  .ai-compose-row:focus-within{border-color:var(--route);}
+  .ai-plus{
+    border:none;background:none;padding:4px;cursor:pointer;color:var(--muted);
+    display:flex;align-items:center;
+  }
+  .ai-compose input{
+    flex:1;min-width:0;border:none;background:none;outline:none;
+    font-family:inherit;font-size:14px;color:var(--ink);padding:8px 0;
+  }
+  .ai-send{
+    width:40px;height:40px;border-radius:50%;flex:none;border:none;cursor:pointer;
+    background:var(--route);color:#FFFFFF;display:flex;align-items:center;justify-content:center;
+  }
+  .ai-send[disabled]{opacity:0.45;cursor:default;}
+  .ai-send .ic-svg{font-size:18px;transform:rotate(-90deg);}
+  .ai-note{margin:8px 0 0;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.4;}
+
+  /* ---------- Pastki panel ---------- */
+  .ai-tabs{
+    flex-shrink:0;display:flex;border-top:1px solid var(--border);background:var(--card);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  /* `display:flex` brauzerning o'z `[hidden]{display:none}` ini
+     yengib ketadi (muallif uslubi har doim ustun), shuning uchun
+     uni aniq yozish kerak. Ilgari panel "yashirilgan" deb
+     belgilanar, lekin ekranda turaverardi. */
+  .ai-tabs[hidden]{display:none;}
+  .ai-tab{
+    flex:1;border:none;background:none;cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:9px 0 7px;color:var(--muted);font-size:11px;font-weight:600;
+  }
+  .ai-tab .ai-tab-ico{
+    width:40px;height:26px;border-radius:var(--r-pill);
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.18s var(--ease);
+  }
+  .ai-tab .ic-svg{font-size:19px;}
+  .ai-tab.active{color:var(--route);}
+  .ai-tab.active .ai-tab-ico{background:var(--route-soft, rgba(10,159,91,0.12));}
+
+  /* ---------- Tarix ---------- */
+  .ai-search{
+    display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s4);
+    border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:11px var(--s3);background:var(--card);color:var(--muted);
+  }
+  .ai-search input{
+    flex:1;min-width:0;border:none;background:none;outline:none;
+    font-family:inherit;font-size:13.5px;color:var(--ink);
+  }
+  .ai-chips{display:flex;gap:var(--s2);margin-bottom:var(--s5);}
+  .ai-chip{
+    border:1px solid var(--border);background:var(--card);color:var(--ink-soft);
+    border-radius:var(--r-pill);padding:8px 16px;font-size:13px;font-weight:600;
+    font-family:inherit;cursor:pointer;
+  }
+  .ai-chip.active{background:var(--route);border-color:var(--route);color:#FFFFFF;}
+  .ai-group{
+    font-size:10.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+    color:var(--muted);margin:var(--s4) 0 var(--s2);
+  }
+  .ai-row{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s3) var(--s4);margin-bottom:var(--s2);
+    font-family:inherit;cursor:pointer;color:inherit;
+  }
+  .ai-row-ico{
+    width:36px;height:36px;border-radius:11px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--paper-dark);color:var(--route);
+  }
+  .ai-row-main{flex:1;min-width:0;}
+  .ai-row-main b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ai-row-main small{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ai-row-time{flex:none;font-size:11.5px;color:var(--muted);}
+
+  /* ---------- Rejalar ---------- */
+  .ai-seg{
+    display:flex;background:var(--paper-dark);border-radius:var(--r-pill);
+    padding:4px;margin-bottom:var(--s5);
+  }
+  .ai-seg button{
+    flex:1;border:none;background:none;border-radius:var(--r-pill);
+    padding:11px 0;font-family:inherit;font-size:13.5px;font-weight:700;
+    color:var(--muted);cursor:pointer;
+  }
+  .ai-seg button.active{background:var(--card);color:var(--ink);box-shadow:var(--sh-1);}
+  .ai-plan-card{
+    border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--s5);margin-bottom:var(--s3);background:var(--card);
+  }
+  .ai-plan-card.on{border-color:var(--route);border-width:1.5px;}
+  .ai-plan-head{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s2);}
+  .ai-plan-head b{font-size:17px;font-weight:700;}
+  .ai-plan-tag{
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--r-pill);
+    background:var(--route-soft, rgba(10,159,91,0.12));color:var(--route);
+  }
+  .ai-plan-now{margin-left:auto;font-size:11.5px;color:var(--muted);}
+  .ai-price{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;letter-spacing:-0.02em;}
+  .ai-price span{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;}
+  .ai-feats{list-style:none;margin:var(--s3) 0 0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .ai-feats li{display:flex;align-items:center;gap:9px;font-size:13.5px;}
+  .ai-feats .ic-svg{font-size:15px;color:var(--route);flex:none;}
+
+  @media(min-width:720px){
+    .ai-screen{max-width:560px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+  }
+
+  /* ============================================================
      YO'LDA yordamchisi (mascot)
      ------------------------------------------------------------
      Belgi SVG bilan chiziladi, harakatlar esa CSS da.
@@ -5294,6 +5557,10 @@
     transition:transform 0.34s cubic-bezier(0.2,0.9,0.3,1), opacity 0.28s ease;
   }
   .mascot[hidden]{display:none;}
+  /* AI ekrani ochiq bo'lsa yordamchi ko'rinmaydi: u o'sha
+     ekranning o'zi, va ustida turib yuborish tugmasini yopib
+     qo'yardi. */
+  :root[data-ai-open] .mascot{display:none;}
   .mascot:active{cursor:grabbing;}
   /* Surib yuborilganda chetga uchib ketadi. */
   .mascot.gone{opacity:0;transform:translateX(150px) scale(0.6) rotate(16deg);pointer-events:none;}
@@ -9569,6 +9836,10 @@
 
     var avatar = profileAvatarUrl(p);
     var name = p.displayName || p.name || (t("profile.noName") || "Ismsiz");
+    /* Yashil AI ekrani alohida skriptda — unga ism shu yerdan
+       beriladi. DOM dan o'qish mo'rt bo'lardi: sarlavha sinfi
+       o'zgarsa, salomlashish jimgina yo'qolib qolardi. */
+    window.YoldaMe = { name: p.displayName || p.name || "" };
     var sub = p.username ? ("@" + p.username) : (p.city || "");
 
     var dark = (document.documentElement.getAttribute("data-theme") || "light") === "dark";
@@ -14261,6 +14532,31 @@
   var chatInbox = [];
   var chatFilter = "all";
 
+  /** Yozishmalar ro'yxatining tepasidagi Yashil AI qatori. */
+  function aiRowHtml(){
+    return '<button type="button" class="chat-row ai-entry" data-open-ai>'
+      + '<span class="chat-avatar ai-entry-av">'
+      +   '<svg class="ic-svg" aria-hidden="true"><use href="#logoMarkFlat"/></svg></span>'
+      + '<div class="chat-row-txt">'
+      +   '<span class="chat-row-top">'
+      +     '<span class="u">Yashil AI</span>'
+      +     '<span class="chat-row-time">YO\'LDA</span>'
+      +   '</span>'
+      +   '<span class="chat-row-bottom">'
+      +     '<span class="preview">Savol bering — yuk, yo\'nalish va hujjat bo\'yicha</span>'
+      +   '</span>'
+      + '</div></button>';
+  }
+
+  /* AI qatori yozishma emas — uning o'z tinglovchisi bor.
+     `[data-email]` tinglovchisi unga tegmasligi kerak. */
+  function bindAiEntry(list){
+    var row = list.querySelector("[data-open-ai]");
+    if(row) row.addEventListener("click", function(){
+      if(window.YoldaAi) window.YoldaAi.open("chat");
+    });
+  }
+
   function chatRowHtml(c){
     // Ro'yxatda username emas, ism turadi. Ism yo'q bo'lsa
     // username zaxira bo'ladi — bo'sh qator chiqmasin.
@@ -14432,14 +14728,20 @@
       ? chatInbox.filter(function(c){ return Number(c.unread) > 0; })
       : chatInbox;
 
+    /* Yashil AI — ro'yxatning eng tepasida va HAR DOIM: u odam
+       emas, shuning uchun yozishmalar bo'lmasa ham turadi.
+       Ilgari bo'sh ro'yxatda u ham yo'qolib ketardi. */
     if(!rows.length){
-      list.innerHTML = chatInbox.length
-        ? '<p class="note" style="margin:var(--s4) 0;">'+escapeHtml(t("chat.noUnread") || "O'qilmagan xabar yo'q")+'</p>'
-        : "";
+      list.innerHTML = aiRowHtml()
+        + (chatInbox.length
+            ? '<p class="note" style="margin:var(--s4) 0;">'+escapeHtml(t("chat.noUnread") || "O'qilmagan xabar yo'q")+'</p>'
+            : "");
+      bindAiEntry(list);
       return;
     }
 
-    list.innerHTML = rows.map(chatRowHtml).join("");
+    list.innerHTML = aiRowHtml() + rows.map(chatRowHtml).join("");
+    bindAiEntry(list);
     list.querySelectorAll("[data-email]").forEach(function(row){
       row.addEventListener("click", function(e){
         // Amallar tugmasi suhbatni ochmaydi.
@@ -21414,6 +21716,17 @@
 </script>
 
 <!-- ============================================================
+     Yashil AI — ekranning o'zi JS da chiziladi, chunki to'rtta
+     ko'rinish bitta joyda almashadi.
+     ============================================================ -->
+<section class="ai-screen" id="aiScreen" hidden aria-label="Yashil AI">
+  <header class="ai-top" id="aiTop"></header>
+  <div class="ai-body" id="aiBody"></div>
+  <div id="aiCompose"></div>
+  <nav class="ai-tabs" id="aiTabs"></nav>
+</section>
+
+<!-- ============================================================
      YO'LDA yordamchisi
      ------------------------------------------------------------
      Belgi sahifaga chizib qo'yilgan: hech qanday tashqi fayl va
@@ -21477,6 +21790,322 @@
     </g>
   </svg>
 </button>
+
+<script>
+/* ============================================================
+   Yashil AI — ekranlar
+   ------------------------------------------------------------
+   HOZIRCHA JAVOB YO'Q. AI xizmatiga ulanish qo'shilmagan.
+   Shuning uchun savol yuborilganda o'ylab topilgan javob
+   CHIQMAYDI: suhbatda nima bo'layotgani ochiq yoziladi.
+   Soxta javob ko'rsatish odamni ishontirib, keyin aldash
+   bo'lardi — va u AIga bergan savoliga kelgan javobni haqiqat
+   deb o'ylab, unga qarab ish qilishi mumkin edi.
+
+   Xizmat ulangan kuni o'zgarishi kerak bo'lgan YAGONA joy —
+   `askAi()`. Qolgan hamma narsa tayyor turadi.
+   ============================================================ */
+(function(){
+  var screenEl = document.getElementById("aiScreen");
+  if(!screenEl) return;
+
+  var topEl = document.getElementById("aiTop");
+  var bodyEl = document.getElementById("aiBody");
+  var composeEl = document.getElementById("aiCompose");
+  var tabsEl = document.getElementById("aiTabs");
+
+  var esc = function(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function(m){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[m];
+    });
+  };
+  var ico = function(id){
+    return '<svg class="ic-svg" aria-hidden="true"><use href="#' + id + '"></use></svg>';
+  };
+
+  var view = "chat";     // chat | history | tools | plans
+  var thread = null;     // ochilgan suhbat: { title, items:[...] }
+  var planCycle = "month";
+
+  /* Boshlash uchun takliflar. Yuk tashish ilovasi bo'lgani uchun
+     ular shu ishga tegishli — umumiy "menga she'r yoz" emas. */
+  var IDEAS = [
+    { ic:"iconBox",   t:"Yuk topish",        s:"Yo'nalishimga mos yuk qidir" },
+    { ic:"iconRoute", t:"Yo'lni rejalash",   s:"To'xtash va yoqilg'i bo'yicha maslahat" },
+    { ic:"iconChart", t:"Narx maslahati",    s:"Bu yo'nalish odatda qancha turadi" },
+    { ic:"iconClipboard", t:"Hujjat yozish", s:"Shartnoma yoki xat matnini tayyorla" }
+  ];
+
+  var TOOLS = [
+    { ic:"iconBox",       t:"Yuk qidirish",     s:"Yo'nalish va mashinaga mos yuk" },
+    { ic:"iconRoute",     t:"Yo'nalish",        s:"To'xtash joylari va masofa" },
+    { ic:"iconChart",     t:"Narx tahlili",     s:"Haqiqiy buyurtmalar bo'yicha" },
+    { ic:"iconClipboard", t:"Hujjat",           s:"Shartnoma va xat matnlari" },
+    { ic:"iconWrench",    t:"Nosozlik",         s:"Mashina muammosini tushuntir" },
+    { ic:"iconInfo",      t:"Qoidalar",         s:"Yuk tashish qoidalari haqida" }
+  ];
+
+  /* Ism ilovaning o'zidan keladi (window.YoldaMe). Profil hali
+     o'qilmagan bo'lsa — bo'sh, va salomlashish qatori umuman
+     chiqmaydi: "Salom, Ismsiz" deb yozishdan ko'ra yaxshiroq. */
+  function userName(){
+    var me = window.YoldaMe;
+    if(!me || !me.name) return "";
+    return String(me.name).trim().split(/\s+/)[0] || "";
+  }
+
+  /* ---------- Sarlavha ---------- */
+  function renderTop(){
+    if(thread){
+      topEl.innerHTML =
+        '<button type="button" class="ai-icon-btn back" data-ai="back" aria-label="Orqaga">'
+        + ico("iconArrowRight") + '</button>'
+        + '<div class="ai-top-title"><b>' + esc(thread.title) + '</b>'
+        + '<small>Yashil AI bilan suhbat</small></div>'
+        + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
+        + ico("iconClose") + '</button>';
+      return;
+    }
+    if(view === "plans"){
+      topEl.innerHTML =
+        '<button type="button" class="ai-icon-btn back" data-ai="back" aria-label="Orqaga">'
+        + ico("iconArrowRight") + '</button>'
+        + '<div class="ai-top-title"><b>Obuna rejalari</b></div>'
+        + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
+        + ico("iconClose") + '</button>';
+      return;
+    }
+    topEl.innerHTML =
+      '<span class="ai-badge">' + ico("logoMarkFlat") + '</span>'
+      + '<div class="ai-top-title"><b>Yashil AI</b><small>YO\'LDA yordamchisi</small></div>'
+      + '<button type="button" class="ai-plan" data-ai="plans">Bepul reja</button>'
+      + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
+      + ico("iconClose") + '</button>';
+  }
+
+  /* ---------- Pastki panel ---------- */
+  var TABS = [
+    { k:"chat",    ic:"iconChat",      t:"Suhbat" },
+    { k:"history", ic:"iconClock",     t:"Tarix" },
+    { k:"tools",   ic:"iconSliders",   t:"Vositalar" },
+    { k:"profile", ic:"iconUser",      t:"Profil" }
+  ];
+  function renderTabs(){
+    // Suhbat ichida va rejalarda pastki panel ko'rinmaydi.
+    var show = !thread && view !== "plans";
+    tabsEl.hidden = !show;
+    if(!show) return;
+    tabsEl.innerHTML = TABS.map(function(tb){
+      return '<button type="button" class="ai-tab' + (tb.k === view ? " active" : "") + '" '
+        + 'data-ai-tab="' + tb.k + '">'
+        + '<span class="ai-tab-ico">' + ico(tb.ic) + '</span>'
+        + '<span>' + esc(tb.t) + '</span></button>';
+    }).join("");
+  }
+
+  /* ---------- Yozish qatori ---------- */
+  function renderCompose(){
+    var show = view === "chat";
+    composeEl.innerHTML = show
+      ? '<div class="ai-compose">'
+        + '<div class="ai-compose-row">'
+        +   '<button type="button" class="ai-plus" aria-label="Qo\'shish">' + ico("iconPlus") + '</button>'
+        +   '<input type="text" id="aiInput" maxlength="1000" '
+        +     'placeholder="' + (thread ? "Davom ettirish uchun yozing..." : "Savolingizni yozing...") + '">'
+        +   '<button type="button" class="ai-send" id="aiSend" aria-label="Yuborish">'
+        +     ico("iconArrowRight") + '</button>'
+        + '</div>'
+        + '<p class="ai-note">AI xato qilishi mumkin. Muhim ma\'lumotni tekshiring.</p>'
+        + '</div>'
+      : "";
+  }
+
+  /* ---------- Ko'rinishlar ---------- */
+  function viewChatStart(){
+    var name = userName();
+    return (name ? '<p class="ai-hello">Salom, ' + esc(name) + '</p>' : "")
+      + '<h2 class="ai-q">Bugun nimani<br>birga hal qilamiz?</h2>'
+      + '<p class="ai-sub">Savol bering yoki quyidagilardan boshlang.</p>'
+      + '<h3 class="ai-sec-title">Boshlash uchun</h3>'
+      + '<div class="ai-grid">' + IDEAS.map(function(c){
+          return '<button type="button" class="ai-card" data-ai-idea="' + esc(c.t) + '">'
+            + ico(c.ic) + '<b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></button>';
+        }).join("") + '</div>';
+  }
+
+  function viewThread(){
+    return thread.items.map(function(m){
+      if(m.from === "me"){
+        return '<div class="ai-msg me"><div class="ai-bubble">' + esc(m.text)
+          + '<span class="ai-time">' + esc(m.at) + '</span></div></div>';
+      }
+      return '<div class="ai-msg"><div style="width:100%;">'
+        + '<div class="ai-who"><span class="ai-badge" style="width:24px;height:24px;border-radius:8px;">'
+        +   ico("logoMarkFlat") + '</span>Yashil AI <small>' + esc(m.at) + '</small></div>'
+        + '<div class="ai-answer">' + m.html + '</div>'
+        + '</div></div>';
+    }).join("");
+  }
+
+  function viewHistory(){
+    /* Tarix hali bo'sh: suhbatlar faqat AI ulangandan keyin
+       paydo bo'ladi. Bo'sh ro'yxatni to'ldirib ko'rsatish —
+       bo'lmagan ishni bo'lgan qilib ko'rsatish. */
+    return '<div class="ai-search">' + ico("iconSearch")
+      + '<input type="search" placeholder="Suhbatlardan qidirish" disabled></div>'
+      + '<div class="ai-chips">'
+      +   '<button type="button" class="ai-chip active">Hammasi</button>'
+      +   '<button type="button" class="ai-chip">Saqlangan</button>'
+      + '</div>'
+      + '<div class="ai-notready"><b>Hozircha suhbat yo\'q</b>'
+      + '<p>Yashil AI hali ulanmagan. Ulangach, har bir suhbat shu yerda '
+      + 'saqlanadi va qidirish ham ishlaydi.</p></div>';
+  }
+
+  function viewTools(){
+    return '<div class="ai-hero">'
+      + '<div class="ai-hero-k">' + ico("iconBolt") + 'Bir yordamchi. Ko\'p imkoniyat.</div>'
+      + '<h3>G\'oyadan natijagacha.</h3>'
+      + '<p>Vazifangizga mos vositani tanlang. Yashil AI bilan birga boshlang.</p>'
+      + '</div>'
+      + '<h3 class="ai-sec-title">Sizga qanday yordam beramiz?</h3>'
+      + '<div class="ai-grid">' + TOOLS.map(function(c){
+          return '<button type="button" class="ai-card" data-ai-idea="' + esc(c.t) + '">'
+            + '<span class="ai-card-go">&#8599;</span>'
+            + ico(c.ic) + '<b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></button>';
+        }).join("") + '</div>'
+      + '<p class="ai-note" style="margin-top:var(--s4);">Har bir vosita yangi suhbatni boshlaydi.</p>';
+  }
+
+  function viewPlans(){
+    var yearly = planCycle === "year";
+    return '<h2 class="ai-q">Imkoniyatlar<br>kengayadi.</h2>'
+      + '<p class="ai-sub">O\'zingizga mos rejani tanlang.</p>'
+      + '<div class="ai-seg">'
+      +   '<button type="button" class="' + (yearly ? "" : "active") + '" data-ai-cycle="month">Oylik</button>'
+      +   '<button type="button" class="' + (yearly ? "active" : "") + '" data-ai-cycle="year">Yillik</button>'
+      + '</div>'
+      + '<div class="ai-plan-card">'
+      +   '<div class="ai-plan-head"><b>Bepul</b><span class="ai-plan-now">Hozirgi rejangiz</span></div>'
+      +   '<div class="ai-price">0 <span>so\'m / ' + (yearly ? "yil" : "oy") + '</span></div>'
+      +   '<ul class="ai-feats"><li>' + ico("iconCheck") + 'Asosiy vositalar</li></ul>'
+      + '</div>'
+      + '<div class="ai-plan-card on">'
+      +   '<div class="ai-plan-head"><b>Plus</b><span class="ai-plan-tag">Tavsiya etiladi</span></div>'
+      +   '<div class="ai-price">' + (yearly ? "—" : "—") + ' <span>narx belgilanmagan</span></div>'
+      +   '<ul class="ai-feats">'
+      +     '<li>' + ico("iconCheck") + 'Kuniga ko\'proq so\'rov</li>'
+      +     '<li>' + ico("iconCheck") + 'Batafsil va uzunroq javoblar</li>'
+      +     '<li>' + ico("iconCheck") + 'Barcha AI vositalari</li>'
+      +   '</ul>'
+      + '</div>'
+      /* To'lov tizimi ilovada yo'q va AI ham ulanmagan: shuning
+         uchun bu yerda ishlaydigan "sotib olish" tugmasi ham,
+         o'ylab topilgan narx ham yo'q. */
+      + '<div class="ai-notready" style="margin-top:var(--s4);">'
+      +   '<b>Obuna hali ochilmagan</b>'
+      +   '<p>Yashil AI ulanmagan va ilovada to\'lov tizimi yo\'q. Reja va narxlar '
+      +   'ular tayyor bo\'lganda e\'lon qilinadi — bu ekran shunga tayyorlab qo\'yilgan.</p>'
+      + '</div>';
+  }
+
+  function render(){
+    renderTop();
+    renderTabs();
+    renderCompose();
+    if(thread) bodyEl.innerHTML = viewThread();
+    else if(view === "history") bodyEl.innerHTML = viewHistory();
+    else if(view === "tools") bodyEl.innerHTML = viewTools();
+    else if(view === "plans") bodyEl.innerHTML = viewPlans();
+    else bodyEl.innerHTML = viewChatStart();
+    bodyEl.scrollTop = thread ? bodyEl.scrollHeight : 0;
+  }
+
+  function hhmm(){
+    var d = new Date();
+    var two = function(n){ return (n < 10 ? "0" : "") + n; };
+    return two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+
+  /**
+   * Savol yuborish.
+   *
+   * AI xizmati ulanganda O'ZGARTIRILADIGAN YAGONA JOY shu.
+   * Hozir u javob o'ylab topmaydi — nima bo'layotganini aytadi.
+   */
+  function askAi(text){
+    if(!thread) thread = { title: text.slice(0, 40), items: [] };
+    thread.items.push({ from:"me", text:text, at:hhmm() });
+    thread.items.push({
+      from:"ai", at:hhmm(),
+      html:'<div class="ai-notready"><b>Yashil AI hali ulanmagan</b>'
+        + '<p>Savolingiz saqlanmadi va hech qayerga yuborilmadi. Xizmat ulangach, '
+        + 'javob aynan shu yerda chiqadi.</p></div>'
+    });
+    if(window.Mascot) window.Mascot.fire("showError");
+    render();
+  }
+
+  /* ---------- Ochish va yopish ---------- */
+  function open(which){
+    view = which || "chat";
+    thread = null;
+    screenEl.hidden = false;
+    document.documentElement.setAttribute("data-ai-open", "1");
+    if(window.Mascot) window.Mascot.fire("greet");
+    render();
+  }
+  function close(){
+    screenEl.hidden = true;
+    document.documentElement.removeAttribute("data-ai-open");
+  }
+
+  screenEl.addEventListener("click", function(e){
+    var act = e.target.closest("[data-ai]");
+    if(act){
+      var a = act.getAttribute("data-ai");
+      if(a === "close"){ close(); return; }
+      if(a === "plans"){ view = "plans"; thread = null; render(); return; }
+      if(a === "back"){
+        if(thread){ thread = null; view = "chat"; }
+        else view = "chat";
+        render();
+        return;
+      }
+    }
+    var tab = e.target.closest("[data-ai-tab]");
+    if(tab){
+      var k = tab.getAttribute("data-ai-tab");
+      if(k === "profile"){ close(); return; }   // profil ilovaning o'zida
+      view = k; thread = null; render();
+      return;
+    }
+    var idea = e.target.closest("[data-ai-idea]");
+    if(idea){ askAi(idea.getAttribute("data-ai-idea")); return; }
+    var cycle = e.target.closest("[data-ai-cycle]");
+    if(cycle){ planCycle = cycle.getAttribute("data-ai-cycle"); render(); return; }
+    if(e.target.closest("#aiSend")){
+      var input = document.getElementById("aiInput");
+      var txt = input && input.value.trim();
+      if(txt){ input.value = ""; askAi(txt); }
+    }
+  });
+
+  screenEl.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && e.target && e.target.id === "aiInput"){
+      var txt = e.target.value.trim();
+      if(txt){ e.target.value = ""; askAi(txt); }
+    }
+  });
+
+  /* Yordamchini bosganda shu ekran ochiladi — u AI ning yuzi. */
+  document.addEventListener("click", function(e){
+    if(e.target.closest("[data-open-ai]")){ open("chat"); return; }
+  });
+
+  window.YoldaAi = { open: open, close: close };
+})();
+</script>
 
 <script>
 
@@ -21623,7 +22252,13 @@
     var far = Math.abs(d.dx) > 70;
     var fling = Math.abs(d.dx) > 30 && (Date.now() - d.t) < 260;
     if(d.moved && (far || fling)){ dismiss(); return; }
-    if(!d.moved) fire("tapReaction");
+    if(!d.moved){
+      fire("tapReaction");
+      /* Yordamchi — AI ning yuzi: bosilganda uning ekrani
+         ochiladi. Surish esa yashirish uchun, shuning uchun
+         faqat SURILMAGAN bosish hisobga olinadi. */
+      if(window.YoldaAi) setTimeout(function(){ window.YoldaAi.open("chat"); }, 220);
+    }
   }
   el.addEventListener("pointerup", endDrag);
   el.addEventListener("pointercancel", endDrag);
