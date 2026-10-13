@@ -51,10 +51,14 @@
     --on-accent:#052E1A;
     --on-accent-wash:rgba(255,255,255,0.25);
 
-    --ok:#22C55E; --ok-soft:rgba(34,197,94,0.15); --ok-ink:var(--ok-ink);
-    --warn:#F59E0B; --warn-soft:rgba(245,158,11,0.15); --warn-ink:var(--warn-ink);
-    --bad:#EF4444; --bad-soft:rgba(239,68,68,0.15); --bad-ink:var(--bad-ink);
-    --accent-ink:var(--accent-ink);
+    /* Bu to'rttasi ilgari o'ziga o'zi havola qilardi
+       (`--ok-ink:var(--ok-ink)`), ya'ni qiymati umuman yo'q edi:
+       tungi rejimda yorliq va tugma yozuvlari o'z rangini olmay,
+       atrofdagi matn rangida chiqardi. */
+    --ok:#22C55E; --ok-soft:rgba(34,197,94,0.15); --ok-ink:#4ADE80;
+    --warn:#F59E0B; --warn-soft:rgba(245,158,11,0.15); --warn-ink:#FBBF24;
+    --bad:#EF4444; --bad-soft:rgba(239,68,68,0.15); --bad-ink:#F87171;
+    --accent-ink:#4ADE93;
 
     /* Yuzalar: ustiga kelish, ko'tarilgan va botgan joylar. */
     --hover:rgba(255,255,255,0.035);
@@ -645,6 +649,8 @@
   }
   .tag-bad{color:var(--bad-ink);background:var(--bad-soft);}
   .tag-blue{color:var(--accent-ink);background:var(--accent-soft);}
+  /* Xodimlik roli — ro'yxatda darhol ko'rinib tursin. */
+  .tag-staff{color:var(--ok-ink);background:var(--ok-soft);}
 
   select.inline{
     padding:6px 8px;border-radius:7px;border:1px solid var(--line);
@@ -3055,8 +3061,11 @@
   }
 
   function viewUsers(){
+    /* Xodimlik yorlig'ini ko'rsatish uchun ularning ro'yxati ham
+       kerak — super admin uchun. */
+    var need = can("staff:read") ? ["users", "staff"] : ["users"];
     return pageHead("Foydalanuvchilar", "Ro'yxatdan o'tgan barcha profillar", refreshBtn("users"))
-      + withData(["users"], function(){
+      + withData(need, function(){
         var users = Store.list("users");
         var banned = users.filter(function(u){ return u.banned; }).length;
         return dataTable({
@@ -3091,7 +3100,11 @@
             { key:"username", label:"Username", sortable:true,
               value:function(u){ return (u.username || u.email || "").toLowerCase(); },
               render:function(u){
+                var staffRole = staffRoleOf(u.email);
                 return '<b>' + esc(u.username ? "@" + u.username : "—") + '</b>'
+                  + (staffRole
+                      ? '<span class="tag tag-staff">' + esc(ROLE_NAMES[staffRole] || staffRole) + '</span>'
+                      : "")
                   + (u.banned ? '<span class="tag tag-bad">Bloklangan</span>' : "")
                   + (!u.verified && u.verificationRequestedAt ? '<span class="tag tag-blue">So\'rov</span>' : "");
               } },
@@ -3123,6 +3136,14 @@
                 if(can("users:write")){
                   out += '<button type="button" class="btn sm" data-act="user-edit" data-email="'
                     + esc(u.email) + '">Tahrirlash</button>';
+                }
+                /* Odamni shu yerning o'zida xodim qilish. Ilgari
+                   buning uchun identifikatorni nusxalab, Sozlamalar
+                   bo'limiga o'tish kerak edi. */
+                if(can("staff:write")){
+                  var srole = staffRoleOf(u.email);
+                  out += '<button type="button" class="btn sm" data-act="staff-make" data-email="'
+                    + esc(u.email) + '">' + (srole ? "Rolni o'zgartirish" : "Admin qilish") + '</button>';
                 }
                 return out + '</div>';
               } }
@@ -4877,14 +4898,29 @@
      Qo'shish uchun odamning hisobi (email yoki ichki shaxs) kerak:
      server mavjud bo'lmagan hisobni qabul qilmaydi, aks holda
      yozuv hech kimga tegmaydigan joyda qolib ketardi. */
-  function staffModal(existing){
+  /** Odamning xodimlik roli (bo'lmasa — bo'sh satr). */
+  function staffRoleOf(identity){
+    var role = "";
+    if(Store.state.staff !== "ready") return role;
+    Store.list("staff").forEach(function(m){ if(m.identity === identity) role = m.role; });
+    return role;
+  }
+
+  /**
+   * `existing` — mavjud xodim (rolini o'zgartirish).
+   * `preset`  — Foydalanuvchilar ro'yxatidan tanlangan odam:
+   *             maydon to'ldirilgan holda ochiladi, lekin uni
+   *             o'zgartirsa ham bo'ladi.
+   */
+  function staffModal(existing, preset){
     var roles = ["ADMIN","MODERATOR","ACCOUNTANT","SUPER_ADMIN"];
     var picked = existing ? existing.role : "ADMIN";
 
     openModal({
       title: existing ? "Xodim rolini o'zgartirish" : "Xodimni qo'shish",
       body: '<div class="field"><label for="stId">Foydalanuvchi</label>'
-        + '<input type="text" id="stId" maxlength="200" value="' + esc(existing ? existing.identity : "")
+        + '<input type="text" id="stId" maxlength="200" value="'
+        + esc(existing ? existing.identity : ((preset && preset.identity) || ""))
         + '"' + (existing ? " disabled" : "")
         + ' placeholder="Ism, @username, email yoki telefon" autocomplete="off"></div>'
         + (existing ? "" : '<div id="stFound" class="staff-pick"></div>'
@@ -4914,11 +4950,15 @@
            allaqachon yuklagan, ya'ni har harfda so'rov ketmaydi. */
         var paint = function(){
           var q = input.value.trim().toLowerCase().replace(/^@/, "");
-          if(q.length < 2){ box.innerHTML = ""; return; }
-          var hits = Store.list("users").filter(function(u){
-            return [u.email, u.username, u.name, u.displayName, u.phone]
-              .some(function(v){ return v && String(v).toLowerCase().indexOf(q) >= 0; });
-          }).slice(0, 6);
+          var all = Store.list("users");
+          /* Bo'sh maydonda ham bir nechtasi ko'rinadi: odam nima
+             yozishni bilmasa, shunchaki tanlay olsin. */
+          var hits = q.length < 2
+            ? all.slice(0, 6)
+            : all.filter(function(u){
+                return [u.email, u.username, u.name, u.displayName, u.phone]
+                  .some(function(v){ return v && String(v).toLowerCase().indexOf(q) >= 0; });
+              }).slice(0, 6);
           if(!hits.length){
             box.innerHTML = '<p class="hint" style="margin:0;">Topilmadi.</p>';
             return;
@@ -4931,6 +4971,8 @@
           }).join("");
         };
         input.addEventListener("input", paint);
+        input.addEventListener("focus", paint);
+        if(!input.value) paint();
         box.addEventListener("click", function(e){
           var row = e.target.closest("[data-pick]");
           if(!row) return;
@@ -5394,6 +5436,12 @@
       return;
     }
     if(act === "staff-remove"){ removeStaffMember(t.getAttribute("data-id")); return; }
+    if(act === "staff-make"){
+      var mid = t.getAttribute("data-email"), mrec = null;
+      Store.list("staff").forEach(function(m){ if(m.identity === mid) mrec = m; });
+      staffModal(mrec, { identity: mid });
+      return;
+    }
 
     if(act === "msg-delete"){
       deleteMessageAt(Number(t.getAttribute("data-index")), Number(t.getAttribute("data-at")));
