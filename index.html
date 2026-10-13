@@ -619,6 +619,19 @@
      ("Close") logotipni yopib qo'ygan xato shundan edi. */
   :root[data-tg="1"] .au-screen{padding-top:calc(26px + var(--tg-top));}
   :root[data-tg="1"] .sheet{padding-bottom:calc(var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
+  /* Butun ekranni egallaydigan bo'limlar (yozishma va Yashil AI)
+     ham shunday: ularning pastki qatorlari Telegram panelining
+     ostida qolmasligi kerak. Yuqori chekkasi esa har birining
+     o'z qoidasida (`.chat-thread-head`, `.ai-top`) hisoblanadi. */
+  :root[data-tg="1"] .ai-compose{
+    padding-bottom:calc(var(--tg-bottom) + env(safe-area-inset-bottom, 0px) + var(--s3));
+  }
+  :root[data-tg="1"] .ai-tabs{
+    padding-bottom:calc(var(--tg-bottom) + env(safe-area-inset-bottom, 0px));
+  }
+  :root[data-tg="1"] .chat-input-row{
+    padding-bottom:calc(8px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));
+  }
 
   .nav{
     position:sticky;top:0;z-index:50;
@@ -5304,7 +5317,12 @@
 
   .ai-top{
     flex-shrink:0;display:flex;align-items:center;gap:var(--s3);
-    padding:calc(env(safe-area-inset-top, 0px) + var(--s3)) var(--s4) var(--s3);
+    /* Telegram o'z yo'lagini ("Close", "⌄", "···") sahifaning
+       USTIDAN chizadi, telefonning holat qatori ham shu yerda.
+       Shuning uchun `--tg-top` ham qo'shiladi — busiz sarlavha
+       o'sha yo'lak ostida qolib, vaqt ustiga chiqib ketardi. */
+    padding:calc(env(safe-area-inset-top, 0px) + var(--tg-top, 0px) + var(--s3))
+      var(--s4) var(--s3);
     border-bottom:1px solid var(--border);background:var(--card);
   }
   .ai-badge{
