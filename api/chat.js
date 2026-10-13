@@ -16,6 +16,10 @@
  *   POST /api/chat?action=pin     { googleIdToken|telegramInitData, withEmail, on }
  *   POST /api/chat?action=hide    { googleIdToken|telegramInitData, withEmail }
  *   POST /api/chat?action=ask     { googleIdToken|telegramInitData, text, history }
+ *   GET  /api/chat?action=ai-list&googleIdToken=...
+ *   GET  /api/chat?action=ai-thread&id=...&googleIdToken=...
+ *   POST /api/chat?action=ai-save   { googleIdToken|telegramInitData, id, title, items }
+ *   POST /api/chat?action=ai-del    { googleIdToken|telegramInitData, id }
  *
  * Each message is its own key (`msg:<id>`), not just an entry appended to a
  * list — that's what makes editing/deleting/reacting to one specific
@@ -29,7 +33,7 @@
  * /api/order already makes for phone numbers — acceptable at this app's
  * scale, and verified server-side on every call regardless.
  */
-import { kvGet, kvSet, kvDel, kvIncr, kvExpire, kvPush, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvIncr, kvExpire, kvPush, kvLrem, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { resolveEmail } from '../lib/identity.js';
 
@@ -355,6 +359,126 @@ const askAi = async (req, res) => {
   return res.status(200).json({ text: answer, used, limit: AI_DAILY_LIMIT });
 };
 
+
+/* ============================================================
+   YO'LDA bot — suhbatlar saqlanishi
+   ------------------------------------------------------------
+   Suhbat SERVERDA saqlanadi, brauzerda emas: telefon
+   almashtirilsa ham, ilova o'chirilib qayta o'rnatilsa ham
+   yozishganlar joyida qoladi.
+
+   KALIT EGASI BILAN BIRGA. Har bir suhbatning kaliti ichida
+   egasining o'zi bor (`aiThread:<kim>:<id>`), shuning uchun
+   boshqa odamning suhbatini id ni bilgan bilan ham ochib
+   bo'lmaydi — kalit boshqa chiqadi.
+   ============================================================ */
+const AI_LIST_KEY = (email) => `aiThreads:${email}`;
+const AI_THREAD_KEY = (email, id) => `aiThread:${email}:${id}`;
+const MAX_AI_THREADS = 40;
+const MAX_AI_ITEMS = 80;
+const MAX_AI_ITEM_TEXT = 4000;
+
+/* Id ni SERVER beradi. Mijoz bergan id bilan boshqa birovning
+   yozuvini bosib ketib bo'lmasligi uchun — garchi kalit allaqachon
+   egasiga bog'langan bo'lsa ham, ikki qavat qulf ortiqcha emas. */
+const newAiId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+const aiListThreads = async (req, res) => {
+  const email = await resolveEmail({
+    googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData,
+    phoneToken: req.query.phoneToken,
+  });
+  if (!email) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const ids = await kvRange(AI_LIST_KEY(email), 0, MAX_AI_THREADS - 1);
+  const threads = [];
+  for (const id of ids) {
+    const raw = await kvGet(AI_THREAD_KEY(email, id));
+    if (!raw) continue;
+    try {
+      const t = JSON.parse(raw);
+      threads.push({ id: t.id, title: t.title, at: t.at });
+    } catch { /* buzilgan yozuv ro'yxatni to'xtatmasin */ }
+  }
+  return res.status(200).json({ threads });
+};
+
+const aiGetThread = async (req, res) => {
+  const email = await resolveEmail({
+    googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData,
+    phoneToken: req.query.phoneToken,
+  });
+  if (!email) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const id = String(req.query.id || '');
+  const raw = id && await kvGet(AI_THREAD_KEY(email, id));
+  if (!raw) return res.status(404).json({ error: 'Suhbat topilmadi' });
+  return res.status(200).json({ thread: JSON.parse(raw) });
+};
+
+const aiSaveThread = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const email = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!email) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const items = (Array.isArray(body.items) ? body.items : [])
+    .slice(-MAX_AI_ITEMS)
+    .map((m) => ({
+      from: m && m.from === 'ai' ? 'ai' : 'me',
+      text: String((m && m.text) || '').slice(0, MAX_AI_ITEM_TEXT),
+      at: String((m && m.at) || '').slice(0, 5),
+    }))
+    .filter((m) => m.text);
+  if (!items.length) return res.status(400).json({ error: 'Suhbat bo‘sh' });
+
+  /* Mavjud suhbatni yangilash — faqat O'ZINIKINI: kalit egasiga
+     bog'langani uchun begonaniki umuman topilmaydi. */
+  let id = String(body.id || '');
+  let fresh = false;
+  if (id) {
+    if (!(await kvGet(AI_THREAD_KEY(email, id)))) { id = ''; }
+  }
+  if (!id) { id = newAiId(); fresh = true; }
+
+  const thread = {
+    id,
+    title: String(body.title || items[0].text).slice(0, 80),
+    at: Date.now(),
+    items,
+  };
+  const saved = await kvSet(AI_THREAD_KEY(email, id), JSON.stringify(thread));
+  if (!saved) return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+
+  if (fresh) {
+    await kvPush(AI_LIST_KEY(email), id);
+    /* Ro'yxat cheksiz o'smasin: eng eskisi o'chiriladi. */
+    const ids = await kvRange(AI_LIST_KEY(email), 0, -1);
+    for (const old of ids.slice(MAX_AI_THREADS)) {
+      await kvLrem(AI_LIST_KEY(email), old);
+      await kvDel(AI_THREAD_KEY(email, old));
+    }
+  }
+  return res.status(200).json({ ok: true, id, at: thread.at, title: thread.title });
+};
+
+const aiDeleteThread = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const email = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!email) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const id = String(body.id || '');
+  if (!id || !(await kvGet(AI_THREAD_KEY(email, id)))) {
+    return res.status(404).json({ error: 'Suhbat topilmadi' });
+  }
+  await kvDel(AI_THREAD_KEY(email, id));
+  await kvLrem(AI_LIST_KEY(email), id);
+  return res.status(200).json({ ok: true });
+};
+
 /**
  * POST ?action=hide — yozishmani O'Z ro'yxatimdan olib tashlash.
  *
@@ -607,6 +731,8 @@ export default async function handler(req, res) {
     if (action === 'search') return searchUsers(req, res);
     if (action === 'inbox') return getInbox(req, res);
     if (action === 'thread') return getThread(req, res);
+    if (action === 'ai-list') return aiListThreads(req, res);
+    if (action === 'ai-thread') return aiGetThread(req, res);
     return res.status(400).json({ error: 'Noto‘g‘ri action' });
   }
   if (req.method === 'POST') {
@@ -617,6 +743,8 @@ export default async function handler(req, res) {
     if (action === 'pin') return setPin(req, res);
     if (action === 'hide') return hideConversation(req, res);
     if (action === 'ask') return askAi(req, res);
+    if (action === 'ai-save') return aiSaveThread(req, res);
+    if (action === 'ai-del') return aiDeleteThread(req, res);
     return res.status(400).json({ error: 'Noto‘g‘ri action' });
   }
   return res.status(405).json({ error: 'Method not allowed' });

@@ -204,6 +204,76 @@ flow('Telefon orqali kirgan odam ham yubora oladi');
   }
 }
 
+flow('Suhbatlar saqlanadi');
+{
+  seed();
+  const get = async (action, query) => {
+    const res = makeRes();
+    await chat({ method: 'GET', query: { action, ...(query || {}) }, body: {}, headers: {} }, res);
+    return res;
+  };
+  const save = async (body) => {
+    const res = makeRes();
+    await chat({ method: 'POST', query: { action: 'ai-save' }, body, headers: {} }, res);
+    return res;
+  };
+
+  const r1 = await save({
+    googleIdToken: ME, title: 'Masofa',
+    items: [{ from: 'me', text: 'Necha km?', at: '09:10' }, { from: 'ai', text: '280 km', at: '09:10' }],
+  });
+  check('saqlandi', r1.statusCode === 200, r1.payload);
+  const id = r1.payload.id;
+  check('id berildi', typeof id === 'string' && id.length > 4, id);
+
+  const list = await get('ai-list', { googleIdToken: ME });
+  check('ro\'yxatda ko\'rindi', list.payload.threads.length === 1, list.payload);
+  check('sarlavha joyida', list.payload.threads[0].title === 'Masofa', list.payload.threads[0]);
+  check('ro\'yxatda butun matn yo\'q', !('items' in list.payload.threads[0]), list.payload.threads[0]);
+
+  const one = await get('ai-thread', { googleIdToken: ME, id });
+  check('to\'liq suhbat o\'qildi', one.payload.thread.items.length === 2, one.payload);
+
+  /* ENG MUHIM: begona odam id ni bilsa ham ocholmaydi. */
+  const begona = await get('ai-thread', { googleIdToken: 'begona@example.com', id });
+  check('BEGONA SUHBATNI OCHOLMADI', begona.statusCode === 404, begona.statusCode);
+  const begonaDel = makeRes();
+  await chat({ method: 'POST', query: { action: 'ai-del' }, body: { googleIdToken: 'begona@example.com', id }, headers: {} }, begonaDel);
+  check('BEGONA O\'CHIRA OLMADI', begonaDel.statusCode === 404, begonaDel.statusCode);
+  check('suhbat joyida', (await get('ai-thread', { googleIdToken: ME, id })).statusCode === 200);
+
+  const anon = await get('ai-list', {});
+  check('kirmagan odam ro\'yxatni ko\'rmaydi', anon.statusCode === 401, anon.statusCode);
+
+  /* Yangilanish yangi yozuv yaratmaydi. */
+  const r2 = await save({
+    googleIdToken: ME, id, title: 'Masofa',
+    items: [{ from: 'me', text: 'Necha km?', at: '09:10' }, { from: 'ai', text: '280 km', at: '09:10' },
+            { from: 'me', text: 'Yana?', at: '09:11' }],
+  });
+  check('o\'sha id qaytdi', r2.payload.id === id, r2.payload);
+  check('ro\'yxat o\'smadi', (await get('ai-list', { googleIdToken: ME })).payload.threads.length === 1);
+  check('yangi xabar qo\'shildi',
+    (await get('ai-thread', { googleIdToken: ME, id })).payload.thread.items.length === 3);
+
+  /* Begonaning id si bilan yozib bo'lmaydi — yangisi ochiladi. */
+  const chet = await save({ googleIdToken: 'boshqa@example.com', id, title: 'Urinish',
+    items: [{ from: 'me', text: 'salom', at: '09:12' }] });
+  check('begona id bosib ketilmadi', chet.payload.id !== id, chet.payload);
+  check('asl suhbat tegilmadi',
+    (await get('ai-thread', { googleIdToken: ME, id })).payload.thread.title === 'Masofa');
+
+  /* O'chirish. */
+  const del = makeRes();
+  await chat({ method: 'POST', query: { action: 'ai-del' }, body: { googleIdToken: ME, id }, headers: {} }, del);
+  check('o\'chirildi', del.statusCode === 200, del.payload);
+  check('ro\'yxatdan ketdi', (await get('ai-list', { googleIdToken: ME })).payload.threads.length === 0);
+  check('o\'qib ham bo\'lmaydi', (await get('ai-thread', { googleIdToken: ME, id })).statusCode === 404);
+
+  const bosh = await save({ googleIdToken: ME, title: 'x', items: [] });
+  check('bo\'sh suhbat saqlanmadi', bosh.statusCode === 400, bosh.statusCode);
+}
+
 flow('Kalit omborga ham, sahifaga ham yozilmagan');
 {
   const { readFileSync, readdirSync } = await import('fs');
