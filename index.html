@@ -5561,6 +5561,16 @@
      ekranning o'zi, va ustida turib yuborish tugmasini yopib
      qo'yardi. */
   :root[data-ai-open] .mascot{display:none;}
+  /* Odam uni ko'chirgan bo'lsa, o'rni `left/top` bilan beriladi —
+     shuning uchun burchakka bog'lab turgan qoidalar bekor
+     qilinadi. */
+  .mascot.placed{right:auto;bottom:auto;}
+  /* Sudrab turganda silliqlash o'chadi: aks holda belgi
+     barmoqdan orqada sudralib kelardi. */
+  .mascot.dragging{transition:none;}
+  /* Yozishma ochiq bo'lsa yordamchi yozuv qatorining ustida
+     turmasin. */
+  :root[data-chat-open="1"] .mascot{z-index:1500;}
   .mascot:active{cursor:grabbing;}
   /* Surib yuborilganda chetga uchib ketadi. */
   .mascot.gone{opacity:0;transform:translateX(150px) scale(0.6) rotate(16deg);pointer-events:none;}
@@ -14855,6 +14865,18 @@
     });
     initChatSwipeBack(chatCard);
     document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
+
+    /* Odam yozayotganda yordamchi tinglab turadi. Har bosishda
+       emas — biroz jim turgandan keyin o'chadi, aks holda u
+       titrab turardi. */
+    var typingOff = null;
+    var msgInput = document.getElementById("fChatMessage");
+    if(msgInput) msgInput.addEventListener("input", function(){
+      if(!window.Mascot) return;
+      window.Mascot.set("isListening", true);
+      if(typingOff) clearTimeout(typingOff);
+      typingOff = setTimeout(function(){ window.Mascot.set("isListening", false); }, 1800);
+    });
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
 
     var whoBtn = document.getElementById("btnChatWho");
@@ -15214,6 +15236,12 @@
           // Yangi xabar bor — suhbat jonli, tez rejimni uzaytiramiz.
           if(chatLastSeenId !== null) markChatActivity();
           if(!scrollDown && chatLastSeenId !== null && !last.fromMe) playNotifSound();
+          /* Suhbatdoshdan kelgan xabarga ham javob beradi.
+             Birinchi ochilishda emas (chatLastSeenId hali null) —
+             aks holda eski xabarga reaksiya chiqardi. */
+          if(chatLastSeenId !== null && !last.fromMe && !last.deleted){
+            try{ if(window.Mascot) window.Mascot.react(last.text, false); }catch(e){}
+          }
         }
         chatLastSeenId = last.id;
       }
@@ -15584,6 +15612,7 @@
     if(chatCard) chatCard.classList.remove("chat-fullscreen");
     reattachChatCard();
     document.documentElement.removeAttribute("data-chat-open");
+    try{ if(window.Mascot) window.Mascot.set("isListening", false); }catch(e){}
     syncTelegramBackButton();
   }
 
@@ -15653,6 +15682,11 @@
         if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
         return;
       }
+      /* Yordamchi yuborilgan xabarga kayfiyat bilan javob
+         beradi. Matnni tushunmaydi — faqat bir nechta belgiga
+         qaraydi (lib: Mascot.react). */
+      try{ if(window.Mascot) window.Mascot.react(text, true); }catch(e){}
+
       input.value = "";
       saveChatDraft(chatWithUsername, "");
       if(isEdit) cancelChatEdit();
@@ -22135,6 +22169,7 @@
   if(!el) return;
 
   var HIDE_KEY = "yolda_mascot_hidden";
+  var POS_KEY = "yolda_mascot_pos";
   var TAPS_TO_RETURN = 4;      // ekranning istalgan joyiga shuncha bosish
   var TAP_WINDOW_MS = 1200;    // bosishlar orasidagi eng uzun tanaffus
   var SLEEP_AFTER_MS = 90000;  // shuncha jimlikdan keyin uxlaydi
@@ -22212,6 +22247,7 @@
     try{ localStorage.removeItem(HIDE_KEY); }catch(e){}
     el.hidden = false;
     el.classList.remove("gone");
+    applyPos();
     if(animate){
       el.classList.remove("pop");
       void el.offsetWidth;
@@ -22225,40 +22261,97 @@
     setTimeout(function(){ if(el.classList.contains("gone")) el.hidden = true; }, 360);
   }
 
-  /* --- Sudrash: yonga surib yuborish --- */
+  /* ----------------------------------------------------------
+     Joylashuv
+     ----------------------------------------------------------
+     Yordamchini istalgan joyga qo'yish mumkin va o'rni
+     saqlanadi. O'rin PIKSELDA emas, ekran kengligiga nisbatan
+     (0..1) saqlanadi: aks holda telefon burilganda yoki boshqa
+     ekranda u ko'rinmaydigan joyga tushib qolardi.
+     ---------------------------------------------------------- */
+  function readPos(){
+    try{
+      var v = JSON.parse(localStorage.getItem(POS_KEY) || "null");
+      if(v && typeof v.fx === "number" && typeof v.fy === "number") return v;
+    }catch(e){}
+    return null;
+  }
+  function savePos(fx, fy){
+    try{ localStorage.setItem(POS_KEY, JSON.stringify({ fx:fx, fy:fy })); }catch(e){}
+  }
+  /** Ekrandan chiqib ketmasin. */
+  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+
+  function applyPos(){
+    var pos = readPos();
+    if(!pos){ el.classList.remove("placed"); el.style.left = el.style.top = ""; return; }
+    var w = el.offsetWidth || 84, h = el.offsetHeight || 84;
+    var maxX = Math.max(0, window.innerWidth - w);
+    var maxY = Math.max(0, window.innerHeight - h);
+    el.classList.add("placed");
+    el.style.left = clamp(pos.fx * window.innerWidth, 4, maxX - 4) + "px";
+    el.style.top = clamp(pos.fy * window.innerHeight, 4, maxY - 4) + "px";
+  }
+  window.addEventListener("resize", applyPos);
+  window.addEventListener("orientationchange", function(){ setTimeout(applyPos, 250); });
+
+  /* --- Sudrash: ko'chirish, chetga chiqarsa — yashirish --- */
   var drag = null;
   el.addEventListener("pointerdown", function(e){
-    drag = { x:e.clientX, y:e.clientY, dx:0, dy:0, moved:false, t:Date.now() };
+    var r = el.getBoundingClientRect();
+    drag = {
+      x:e.clientX, y:e.clientY, ox:r.left, oy:r.top,
+      w:r.width, h:r.height, moved:false, t:Date.now()
+    };
     el.setPointerCapture(e.pointerId);
-    el.style.transition = "none";
+    el.classList.add("dragging");
   });
   el.addEventListener("pointermove", function(e){
     if(!drag) return;
-    drag.dx = e.clientX - drag.x;
-    drag.dy = e.clientY - drag.y;
-    if(Math.abs(drag.dx) > 6 || Math.abs(drag.dy) > 6) drag.moved = true;
-    el.style.transform = "translate(" + drag.dx + "px," + drag.dy + "px)";
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if(Math.abs(dx) > 6 || Math.abs(dy) > 6) drag.moved = true;
+    if(!drag.moved) return;
+    el.classList.add("placed");
+    el.style.left = (drag.ox + dx) + "px";
+    el.style.top = (drag.oy + dy) + "px";
   });
   function endDrag(e){
     if(!drag) return;
     var d = drag;
     drag = null;
-    el.style.transition = "";
-    el.style.transform = "";
+    el.classList.remove("dragging");
     try{ el.releasePointerCapture(e.pointerId); }catch(err){}
 
-    /* Yetarlicha uzoqqa surilgan yoki tez irg'itilgan bo'lsa —
-       ketadi. Aks holda joyiga qaytadi. */
-    var far = Math.abs(d.dx) > 70;
-    var fling = Math.abs(d.dx) > 30 && (Date.now() - d.t) < 260;
-    if(d.moved && (far || fling)){ dismiss(); return; }
     if(!d.moved){
       fire("tapReaction");
       /* Yordamchi — AI ning yuzi: bosilganda uning ekrani
-         ochiladi. Surish esa yashirish uchun, shuning uchun
+         ochiladi. Ko'chirish esa boshqa ish, shuning uchun
          faqat SURILMAGAN bosish hisobga olinadi. */
       if(window.YoldaAi) setTimeout(function(){ window.YoldaAi.open("chat"); }, 220);
+      return;
     }
+
+    var r = el.getBoundingClientRect();
+
+    /* Qachon YASHIRILADI, qachon shunchaki KO'CHIRILADI.
+
+       Barmoq ekrandan tashqariga chiqa olmaydi — ya'ni "yarmi
+       chiqib ketsa yashir" degan qoida telefonda hech qachon
+       ishlamasdi. Shuning uchun asosiy belgi — IRG'ITISH: tez
+       va chetga qarab. Sekin ko'chirish esa ko'chirish bo'lib
+       qolaveradi. */
+    var ms = Date.now() - d.t;
+    var dx = r.left - d.ox, dy = r.top - d.oy;
+    var fling = ms < 320 && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy);
+    var toEdge = dx > 0
+      ? (r.right > window.innerWidth - 12)
+      : (r.left < 12);
+    var mostlyOut = r.right < d.w * 0.5 || r.left > window.innerWidth - d.w * 0.5
+      || r.bottom < d.h * 0.5 || r.top > window.innerHeight - d.h * 0.5;
+    if(mostlyOut || (fling && toEdge)){ dismiss(); return; }
+
+    savePos(r.left / window.innerWidth, r.top / window.innerHeight);
+    applyPos();
   }
   el.addEventListener("pointerup", endDrag);
   el.addEventListener("pointercancel", endDrag);
@@ -22280,6 +22373,37 @@
     }
   }, { passive: true });
 
+  /* ----------------------------------------------------------
+     Xabarga his-tuyg'u bilan javob
+     ----------------------------------------------------------
+     Yozishmada xabar yuborilganda yoki kelganda yordamchi
+     unga mos holatga o'tadi.
+
+     Bu MATNNI TUSHUNISH emas — bir nechta oddiy belgiga
+     qarash: savol belgisi, minnatdorchilik so'zlari, muammo
+     haqidagi so'zlar. Shuning uchun u hech qachon javob
+     yozmaydi va hech narsani tasdiqlamaydi, faqat kayfiyat
+     bildiradi. Tushunmasa — oddiygina bosh irg'aydi.
+     ---------------------------------------------------------- */
+  var GOOD = /(rahmat|raxmat|zo'r|zor\b|yaxshi|ajoyib|kelishdik|ok\b|xop|bo'ldi|tayyor|👍|❤️|😊|🙏|😁|🎉)/i;
+  var BAD = /(muammo|xato|nosoz|kechik|kech qold|uzr|kechir|bekor|yo'q\b|yomon|😢|😠|😡|😔)/i;
+  var ASK = /[?؟]/;
+
+  function react(text, mine){
+    var t = String(text || "");
+    if(!t) return;
+    if(BAD.test(t)){ fire("showError"); return; }
+    if(GOOD.test(t)){ fire("celebrate"); return; }
+    /* Savol kelgan bo'lsa — o'ylaydi; savolni O'ZI bergan
+       bo'lsa — javobni kutib tinglaydi. */
+    if(ASK.test(t)){
+      set("isThinking", true);
+      setTimeout(function(){ set("isThinking", false); }, mine ? 1200 : 2400);
+      return;
+    }
+    fire("wave");
+  }
+
   /* --- Tashqi dunyo uchun --- */
   /* Tarmoq uzilsa — xavotir, qaytsa — quvonch. Bu ikkisi
      ilovadagi xabarlar orqali o'tmaydi, shuning uchun alohida. */
@@ -22289,6 +22413,7 @@
   window.Mascot = {
     set: set,
     fire: fire,
+    react: react,
     state: function(){ return el.getAttribute("data-state"); },
     show: show,
     hide: dismiss,
@@ -22298,6 +22423,7 @@
   if(hidden()){ el.hidden = true; }
   else {
     el.hidden = false;
+    applyPos();
     wake();
     // Ilova ochilganda salomlashadi.
     setTimeout(function(){ fire("greet"); }, 900);
