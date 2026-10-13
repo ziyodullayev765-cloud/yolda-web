@@ -4577,7 +4577,16 @@
       picker("welcome", s.welcomeImageUrl || "",
         '<span style="font-size:11px;color:var(--text-dim);text-align:center;line-height:1.3;">Ilova<br>chizmasi</span>',
         "Ilovaning kirish ekranida ko'rinadi. PNG, JPG yoki WEBP, 600 KB gacha. "
-        + "Qo'yilmasa ilovaning o'z chizmasi qoladi.")
+        + "Qo'yilmasa ilovaning o'z chizmasi qoladi."));
+
+    /* Yordamchi (mascot). Ilovadagi chizma qismlarga bo'lingan —
+       ko'zi, boshi va qo'li alohida harakatlanadi. Rasm qo'yilsa
+       butun tanasi harakatlanadi. */
+    var bot = card("Yordamchi rasmi",
+      picker("bot", s.mascotImageUrl || "",
+        '<span style="font-size:11px;color:var(--text-dim);text-align:center;line-height:1.3;">Ilova<br>chizmasi</span>',
+        "Ekran burchagidagi yordamchi. PNG yoki WEBP (shaffof fon yaxshiroq), 600 KB gacha. "
+        + "Qo'yilmasa ilovaning o'z chizmasi qoladi — unda ko'z va bosh alohida harakatlanadi.")
       + '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>');
 
     /* Paneldagi ism. Hisob yo'q, shuning uchun u shu yerda qo'lda
@@ -4590,7 +4599,7 @@
       + saveBar());
 
     return '<div class="detail-grid">' + company
-      + '<div style="display:grid;gap:16px;">' + logo + welcome + me + '</div></div>';
+      + '<div style="display:grid;gap:16px;">' + logo + welcome + bot + me + '</div></div>';
   }
 
   /* ---------- 2. Bildirishnomalar ----------

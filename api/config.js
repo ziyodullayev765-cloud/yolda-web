@@ -30,6 +30,7 @@ const FALLBACK = {
   maintenanceMode: false,
   maintenanceMessage: '',
   welcomeImageUrl: '',
+  mascotImageUrl: '',
 };
 
 /**
@@ -99,6 +100,8 @@ export default async function handler(req, res) {
     /* Kirish ekranidagi rasm — admin paneldan almashtiriladi.
        Bo'sh bo'lsa ilovaning o'z chizmasi qoladi. */
     welcomeImageUrl: settings.welcomeImageUrl || '',
+    /* Yordamchi rasmi — qo'yilmasa ilovaning o'z chizmasi. */
+    mascotImageUrl: settings.mascotImageUrl || '',
     supportPhone: settings.supportPhone,
     supportTelegram: settings.supportTelegram,
     maintenanceMode: Boolean(settings.maintenanceMode),

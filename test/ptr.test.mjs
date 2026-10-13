@@ -189,8 +189,16 @@ check('tortilganda aylanish yoqiladi',
 check('qaytgach aylanish o\'chadi',
   (html.match(/classList\.remove\("ptr-live"\)/g) || []).length === 2);
 /* Belgining o'zini yana burash ortiqcha — ikkita harakat
-   urishib ketardi. */
-check('ustiga yana burash qo\'shilmagan', !/translateY\([^)]*\) rotate\(/.test(html));
+   urishib ketardi.
+
+   Tekshiruv AYNAN tortish belgisining uslublariga qaraydi:
+   ilgari u butun faylni ko'rardi va ilovaning boshqa joyidagi
+   (masalan yordamchining quvonchi) begona animatsiya ham shu
+   qolipga tushib, testni yiqitib qo'yardi. */
+const ptrCss = (html.match(/\.ptr-[a-z-]*\{[^}]*\}/g) || []).join('\n')
+  + '\n' + (html.match(/@keyframes ptr[A-Za-z]*\{[\s\S]*?\n {2}\}/g) || []).join('\n');
+check('tortish belgisining uslublari topildi', ptrCss.length > 40, ptrCss.length);
+check('ustiga yana burash qo\'shilmagan', !/translateY\([^)]*\) rotate\(/.test(ptrCss));
 
 if (fails.length) {
   console.log('ptr: ' + fails.length + ' ta xato');

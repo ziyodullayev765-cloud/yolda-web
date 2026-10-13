@@ -637,6 +637,8 @@ const DEFAULT_SETTINGS = {
   /* Kirish ekranidagi rasm. Bo'sh bo'lsa ilovaning o'z chizmasi
      qoladi — ya'ni rasm majburiy emas. */
   welcomeImageUrl: '',
+  /* Yordamchi (mascot) rasmi. Shunday ham ishlaydi. */
+  mascotImageUrl: '',
   /* Kompaniya ma'lumotlari — hujjatlarda va yordam oynasida
      ko'rinadi. Hech biri majburiy emas. */
   companyLegalName: '',
@@ -999,6 +1001,11 @@ const getIcons = async (res) => {
 const LOGO_SLOTS = {
   logo: { key: 'adminLogoUrl', folder: 'logo' },
   welcome: { key: 'welcomeImageUrl', folder: 'welcome' },
+  /* Yordamchi (mascot). Qo'yilmasa ilovaning o'z chizmasi
+     qoladi — u chizma qismlarga bo'lingani uchun ko'zi ham,
+     boshi ham alohida harakatlanadi. Rasm qo'yilsa butun
+     tanasi harakatlanadi. */
+  bot: { key: 'mascotImageUrl', folder: 'bot' },
 };
 
 const saveLogo = async (req, res) => {
@@ -1028,8 +1035,9 @@ const saveLogo = async (req, res) => {
 
   let source = body.dataUrl;
   if (!source && body.url) {
+    const slotName = String(body.slot || 'logo');
     const got = await fetchRemoteImage(body.url,
-      String(body.slot || 'logo') === 'welcome' ? MAX_WELCOME_BYTES : MAX_ICON_BYTES);
+      (slotName === 'welcome' || slotName === 'bot') ? MAX_WELCOME_BYTES : MAX_ICON_BYTES);
     if (got.error) return res.status(400).json({ error: got.error });
     source = got.dataUrl;
   }
@@ -1037,7 +1045,8 @@ const saveLogo = async (req, res) => {
 
   /* Kirish ekranidagi rasm belgidan ancha katta bo'lishi tabiiy —
      u butun ekran kengligida turadi. */
-  const limit = slot.folder === 'welcome' ? MAX_WELCOME_BYTES : MAX_ICON_BYTES;
+  const limit = (slot.folder === 'welcome' || slot.folder === 'bot')
+    ? MAX_WELCOME_BYTES : MAX_ICON_BYTES;
   const uploaded = await uploadImage(source, slot.folder, limit);
   if (!uploaded || uploaded.error) {
     return res.status(400).json({ error: (uploaded && uploaded.error) || 'Rasm yuklanmadi' });
