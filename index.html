@@ -5332,13 +5332,108 @@
      Belgi doiraga to'liq sig'sin deb biroz kattaroq chiziladi. */
   .ai-badge.bot{background:linear-gradient(140deg,#12402A,#07190F);}
   .ai-badge.bot svg{width:100%;height:100%;}
-  /* Savol yuborilganda yuz "o'ylayotgani" bilinadi. */
-  .ai-badge.bot.think{animation:aiBotThink 1.15s var(--ease) infinite;}
-  @keyframes aiBotThink{
-    0%,100%{transform:translateY(0) rotate(0);}
-    35%{transform:translateY(-2px) rotate(-4deg);}
-    70%{transform:translateY(1px) rotate(3deg);}
+
+  /* ------------------------------------------------------------
+     Yordamchining yuzi — HARAKAT
+     ------------------------------------------------------------
+     Yuz `<use>` emas, to'liq chizilgan SVG: shu sababli boshni
+     alohida, ko'zni alohida harakatlantirsa bo'ladi.
+
+     Kayfiyat `data-mood` da:
+        idle   — tinch nafas va goh-goh pirpirash;
+        greet  — salomlashib sakraydi (ekran ochilganda);
+        listen — yozayotganingizda bosh irg'aydi;
+        think  — javob kutilayotganda bosh qiyshayadi;
+        happy  — javob kelgach quvonadi;
+        error  — javob kelmasa bosh chayqaydi.
+     ------------------------------------------------------------ */
+  .ai-badge.bot .bf{width:100%;height:100%;display:block;overflow:visible;}
+  .bf-body{transform-origin:53% 70%;}
+  .bf-eyes{transform-origin:53% 58%;}
+  .bf-hood{transform-origin:40% 45%;}
+
+  /* Tinch turish: sezilar-sezilmas nafas. */
+  .ai-badge.bot .bf-body{animation:bfBreathe 3.6s var(--ease) infinite;}
+  @keyframes bfBreathe{
+    0%,100%{transform:translateY(0) scale(1);}
+    50%{transform:translateY(-4.5px) scale(1.04);}
   }
+  /* Pirpirash — kamdan kam, shuning uchun uzun halqa ichida
+     qisqa bir lahza. */
+  .ai-badge.bot .bf-eyes{animation:bfBlink 5.2s steps(1,end) infinite;}
+  @keyframes bfBlink{
+    0%,92%,100%{transform:scaleY(1);}
+    95%{transform:scaleY(0.12);}
+  }
+
+  .ai-badge.bot[data-mood="greet"] .bf-body{animation:bfGreet 0.7s var(--ease) 2;}
+  @keyframes bfGreet{
+    0%,100%{transform:translateY(0) rotate(0);}
+    30%{transform:translateY(-4px) rotate(-7deg);}
+    60%{transform:translateY(0) rotate(5deg);}
+  }
+  .ai-badge.bot[data-mood="greet"] .bf-hood{animation:bfWave 0.7s var(--ease) 2;}
+  @keyframes bfWave{
+    0%,100%{transform:rotate(0);}
+    40%{transform:rotate(-11deg);}
+    70%{transform:rotate(6deg);}
+  }
+
+  .ai-badge.bot[data-mood="listen"] .bf-body{animation:bfNod 1.5s var(--ease) infinite;}
+  @keyframes bfNod{
+    0%,100%{transform:translateY(0) rotate(0);}
+    50%{transform:translateY(1.5px) rotate(3deg);}
+  }
+
+  .ai-badge.bot[data-mood="think"] .bf-body{animation:bfThink 1.5s var(--ease) infinite;}
+  @keyframes bfThink{
+    0%,100%{transform:translateY(0) rotate(-6deg);}
+    50%{transform:translateY(-2.5px) rotate(7deg);}
+  }
+  /* O'ylayotganda ko'z yon tomonga qaraydi. */
+  .ai-badge.bot[data-mood="think"] .bf-eyes{
+    animation:bfLook 1.5s var(--ease) infinite;
+  }
+  @keyframes bfLook{
+    0%,100%{transform:translateX(-3px);}
+    50%{transform:translateX(3px);}
+  }
+
+  .ai-badge.bot[data-mood="happy"] .bf-body{animation:bfHop 0.5s var(--ease) 3;}
+  @keyframes bfHop{
+    0%,100%{transform:translateY(0) scale(1);}
+    40%{transform:translateY(-6px) scale(1.06);}
+  }
+  .ai-badge.bot[data-mood="happy"] .bf-eyes{
+    animation:bfSquint 0.5s var(--ease) 3;transform-origin:53% 60%;
+  }
+  @keyframes bfSquint{
+    0%,100%{transform:scaleY(1);}
+    40%{transform:scaleY(1.45) translateY(-1px);}
+  }
+
+  .ai-badge.bot[data-mood="error"] .bf-body{animation:bfShake 0.42s var(--ease) 3;}
+  @keyframes bfShake{
+    0%,100%{transform:translateX(0) rotate(0);}
+    25%{transform:translateX(-3px) rotate(-6deg);}
+    75%{transform:translateX(3px) rotate(6deg);}
+  }
+  /* Xatolikda ko'z pastga qaraydi. */
+  .ai-badge.bot[data-mood="error"] .bf-eyes{animation:bfDown 0.42s var(--ease) 3;}
+  @keyframes bfDown{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(3px) scaleY(0.7);}
+  }
+
+  /* Javob yonidagi kichik yuz ham jonli, lekin diqqatni
+     tortmasin — faqat nafas oladi. */
+  .ai-who .ai-badge.bot .bf-eyes{animation-duration:6.4s;}
+
+  /* Boshlash ekranidagi katta yuz. */
+  .ai-face-big{
+    width:76px;height:76px;border-radius:24px;margin:0 0 var(--s4);
+  }
+  .ai-face-big[data-mood="greet"] .bf-body{animation-iteration-count:3;}
   .ai-top-title{flex:1;min-width:0;}
   /* Suhbat sarlavhasi — savolning boshi. Uzun bo'lsa ikki qatorga
      tushib, butun yo'lakni cho'zib yuborardi. */
@@ -21963,6 +22058,32 @@
     return '<svg class="ic-svg" aria-hidden="true"><use href="#' + id + '"></use></svg>';
   };
 
+  /* Yordamchining yuzi — HARAKATLANADI.
+     Shuning uchun u `<use>` emas: `<use>` ichidagi qismlarga
+     uslub bermaydi, ya'ni ko'zni alohida pirpiratib, boshni
+     alohida qiyshaytirib bo'lmaydi. Shakl shu yerda to'liq
+     chiziladi, ranglari esa sahifadagi yagona belgidan
+     (`#bmHood`, `#bmVisor`) olinadi — ikki xil robot bo'lib
+     qolmasligi uchun.
+
+     Kayfiyat `data-mood` orqali beriladi, harakatning o'zi CSS
+     da. Nomlar yordamchining nomlari bilan bir xil. */
+  function botFace(){
+    return '<svg class="bf" viewBox="0 0 100 100" aria-hidden="true">'
+      + '<g class="bf-body">'
+      +   '<path class="bf-hood" d="M8 12C40 -3 79 9 96 38 79 23 55 20 41 31 '
+      +     '27 41 22 56 27 72 9 59 -1 31 8 12z" fill="url(#bmHood)"/>'
+      +   '<ellipse class="bf-visor" cx="53" cy="61" rx="37" ry="33" fill="url(#bmVisor)"/>'
+      +   '<ellipse class="bf-glint" cx="36" cy="46" rx="16" ry="10" fill="#FFFFFF" '
+      +     'opacity="0.08" transform="rotate(-18 36 46)"/>'
+      +   '<g class="bf-eyes" fill="none" stroke="#7BF5AE" stroke-width="6.5" '
+      +     'stroke-linecap="round">'
+      +     '<path d="M36 58c4-7 11-7 15 0"/>'
+      +     '<path d="M58 58c4-7 11-7 15 0"/>'
+      +   '</g>'
+      + '</g></svg>';
+  }
+
   /* Yordamchining nomi bitta joyda yozilgan: sarlavhada ham,
      suhbatdagi har bir javobda ham, ro'yxatdagi qatorda ham
      aynan shu ko'rinadi. */
@@ -22005,7 +22126,7 @@
       topEl.innerHTML =
         '<button type="button" class="ai-icon-btn back" data-ai="back" aria-label="Orqaga">'
         + ico("iconArrowRight") + '</button>'
-        + '<span class="ai-badge bot" id="aiFace">' + ico("botMark") + '</span>'
+        + '<span class="ai-badge bot" id="aiFace" data-mood="idle">' + botFace() + '</span>'
         + '<div class="ai-top-title"><b>' + esc(thread.title) + '</b>'
         + '<small>' + esc(BOT) + ' bilan suhbat</small></div>'
         + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
@@ -22022,7 +22143,7 @@
       return;
     }
     topEl.innerHTML =
-      '<span class="ai-badge bot" id="aiFace">' + ico("botMark") + '</span>'
+      '<span class="ai-badge bot" id="aiFace" data-mood="idle">' + botFace() + '</span>'
       + '<div class="ai-top-title"><b>' + esc(BOT) + '</b><small>Yordamchi</small></div>'
       + '<button type="button" class="ai-plan" data-ai="plans">Bepul reja</button>'
       + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
@@ -22071,6 +22192,11 @@
       + '</div>';
     inputEl = document.getElementById("aiInput");
     inputEl.addEventListener("input", autoGrow);
+    /* Odam yozayotganda yordamchi quloq soladi. Javob kutilayotgan
+       bo'lsa tegilmaydi — o'ylash ustunroq. */
+    inputEl.addEventListener("input", function(){
+      if(!asking) setFace(inputEl.value ? "listen" : "idle", 2600);
+    });
   }
 
   /* Uzun savol bitta qatorga sig'masa, maydon o'sadi — lekin
@@ -22092,7 +22218,8 @@
   /* ---------- Ko'rinishlar ---------- */
   function viewChatStart(){
     var name = userName();
-    return (name ? '<p class="ai-hello">Salom, ' + esc(name) + '</p>' : "")
+    return '<div class="ai-badge bot ai-face-big" data-mood="greet">' + botFace() + '</div>'
+      + (name ? '<p class="ai-hello">Salom, ' + esc(name) + '</p>' : "")
       + '<h2 class="ai-q">Bugun nimani<br>birga hal qilamiz?</h2>'
       + '<p class="ai-sub">Savol bering yoki quyidagilardan boshlang.</p>'
       + '<h3 class="ai-sec-title">Boshlash uchun</h3>'
@@ -22110,7 +22237,7 @@
       }
       return '<div class="ai-msg"><div style="width:100%;">'
         + '<div class="ai-who"><span class="ai-badge bot" style="width:24px;height:24px;border-radius:8px;">'
-        +   ico("botMark") + '</span>' + esc(BOT) + ' <small>' + esc(m.at) + '</small></div>'
+        +   botFace() + '</span>' + esc(BOT) + ' <small>' + esc(m.at) + '</small></div>'
         + '<div class="ai-answer">' + m.html + '</div>'
         + '</div></div>';
     }).join("");
@@ -22220,9 +22347,21 @@
   /* Javob kutilayotganda uchta nuqta. */
   var WAIT_HTML = '<div class="ai-typing"><i></i><i></i><i></i></div>';
 
-  function setFace(on){
+  /* Kayfiyat: idle | greet | listen | think | happy | error.
+     Bir martalik kayfiyatlar (salom, quvonch, xatolik) o'z
+     vaqtida o'zi `idle` ga qaytadi. */
+  var moodTimer = null;
+  function setFace(mood, holdMs){
     var face = document.getElementById("aiFace");
-    if(face) face.classList.toggle("think", Boolean(on));
+    if(!face) return;
+    clearTimeout(moodTimer);
+    face.setAttribute("data-mood", mood || "idle");
+    if(holdMs){
+      moodTimer = setTimeout(function(){
+        var f = document.getElementById("aiFace");
+        if(f && f.getAttribute("data-mood") === mood) f.setAttribute("data-mood", "idle");
+      }, holdMs);
+    }
   }
 
   var asking = false;
@@ -22242,7 +22381,7 @@
     thread.items.push({ from:"ai", at:hhmm(), html:WAIT_HTML, waiting:true });
     asking = true;
     render();
-    setFace(true);
+    setFace("think");
 
     var post = window.YoldaChatPost;
     if(!post){
@@ -22260,7 +22399,6 @@
 
     function finish(bad, r){
       asking = false;
-      setFace(false);
       var last = thread.items[thread.items.length - 1];
       if(!last || !last.waiting) return;
       last.waiting = false;
@@ -22273,7 +22411,10 @@
         last.text = r.text;
         last.html = answerHtml(r.text);
       }
+      /* Kayfiyat chizishdan KEYIN qo'yiladi: chizish sarlavhani
+         yangidan yasaydi va eski holat yo'qoladi. */
       render();
+      setFace(bad ? "error" : "happy", 2400);
     }
   }
 
@@ -22285,6 +22426,7 @@
     document.documentElement.setAttribute("data-ai-open", "1");
     if(window.Mascot) window.Mascot.fire("greet");
     render();
+    setFace("greet", 1600);
     if(window.__yoldaSyncBack) window.__yoldaSyncBack();
   }
   function close(){
