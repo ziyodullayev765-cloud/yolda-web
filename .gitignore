@@ -11,3 +11,6 @@ signing-key-info.txt
 
 node_modules/
 .DS_Store
+
+# Sinovdan qolgan rasmlar
+loads-*.png
