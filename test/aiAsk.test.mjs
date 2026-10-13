@@ -166,6 +166,44 @@ flow('Google xato qaytarsa — matni UZATILMAYDI');
     !JSON.stringify(res.payload).includes('INVALID_ARGUMENT'), res.payload);
 }
 
+flow('Chegara tugaganda sababi aytiladi');
+{
+  seed();
+  /* Google bepul hisobda kuniga cheklangan so'rov beradi. Chegara
+     tugasa 429 qaytadi — bu NOSOZLIK EMAS, shuning uchun odamga
+     "javob kelmadi" deyish noto'g'ri bo'lardi. */
+  reply = { ok: false, status: 429, body: { error: { message: 'quota exceeded ' + KEY } } };
+  const res = await ask({ googleIdToken: ME, text: 'Salom' });
+  check('429 qaytdi', res.statusCode === 429, res.statusCode);
+  check('sababi chegara ekani aytilgan', res.payload.quota === true, res.payload);
+  check('matn tushunarli', String(res.payload.error).includes('chegara'), res.payload);
+  check('KALIT KO\'RINMADI', noKey(res), res.payload);
+
+  /* Ikkinchi model ham sinab ko'rilgan bo'lishi kerak. */
+  check('ikkala model ham sinaldi', sent.length === 2, sent.map((x) => x.url));
+  check('ikkinchisi boshqa model',
+    sent[0].url !== sent[1].url && sent[1].url.includes('lite'), sent.map((x) => x.url));
+}
+
+flow('Birinchi model tugasa, ikkinchisi javob beradi');
+{
+  seed();
+  let n = 0;
+  const saved = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (!href.includes(GOOGLE)) return saved(url, init);
+    n += 1;
+    sent.push({ url: href, headers: init.headers, body: JSON.parse(init.body) });
+    if (n === 1) return { ok: false, status: 429, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: 'Zaxira javob' }] } }] }) };
+  };
+  const res = await ask({ googleIdToken: ME, text: 'Salom' });
+  globalThis.fetch = saved;
+  check('200 qaytdi', res.statusCode === 200, res.statusCode);
+  check('ZAXIRA MODEL JAVOB BERDI', res.payload.text === 'Zaxira javob', res.payload);
+}
+
 flow('Javob kech qolsa');
 {
   seed();

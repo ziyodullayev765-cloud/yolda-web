@@ -248,7 +248,19 @@ const setPin = async (req, res) => {
    qolmasligi uchun. Chegara SERVERDA sanaladi: mijozga ishonib
    bo'lmaydi.
    ============================================================ */
-const AI_MODEL = 'gemini-flash-latest';
+/* Modellar — tartib bo'yicha. Birinchisi yaxshiroq javob
+   beradi, lekin bepul hisobda KUNIGA 20 ta so'rovga ruxsat.
+   U tugagach, ikkinchisiga o'tiladi: u soddaroq, ammo kunlik
+   chegarasi ancha katta.
+
+   "Javob kelmadi" degan xatoning sababi aynan shu edi: Google
+   429 (chegara tugadi) qaytarardi, biz esa uni oddiy nosozlik
+   deb ko'rsatardik. Endi sabab aniq aytiladi. */
+const AI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+/* Chegaraga urilgan model shuncha vaqt chetlab o'tiladi —
+   har bir xabarda bekorga so'rov ketmasin. */
+const AI_COOLDOWN_S = 2 * 60 * 60;
+const aiCoolKey = (model) => `aiCool:${model}`;
 const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT || 40);
 const AI_MAX_QUESTION = 2000;
 const AI_MAX_HISTORY = 10;
@@ -308,36 +320,63 @@ const askAi = async (req, res) => {
   }
   contents.push({ role: 'user', parts: [{ text }] });
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
-  let data;
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: { parts: [{ text: AI_SYSTEM }] },
-          generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
-        }),
-        signal: ctrl.signal,
-      },
-    );
-    data = await r.json().catch(() => null);
-    if (!r.ok) {
-      /* Google'ning xato matni kalitni o'z ichiga olishi mumkin,
-         shuning uchun u mijozga UZATILMAYDI — faqat holat kodi
-         jurnalga yoziladi. */
-      console.error('[ai] javob kelmadi, status', r.status);
-      return res.status(502).json({ error: 'Javob kelmadi, qayta urinib ko‘ring' });
+  const payload = JSON.stringify({
+    contents,
+    systemInstruction: { parts: [{ text: AI_SYSTEM }] },
+    generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
+  });
+
+  let data = null;
+  let quotaHit = false;
+  let lastStatus = 0;
+  for (const model of AI_MODELS) {
+    if (await kvGet(aiCoolKey(model)).catch(() => null)) { quotaHit = true; continue; }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+    let r;
+    try {
+      r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: payload,
+          signal: ctrl.signal,
+        },
+      );
+    } catch (err) {
+      console.error('[ai]', model, err && err.name === 'AbortError' ? 'vaqt tugadi' : 'ulanmadi');
+      clearTimeout(timer);
+      return res.status(504).json({ error: 'Javob kech qoldi, qayta urinib ko‘ring' });
     }
-  } catch (err) {
-    console.error('[ai]', err && err.name === 'AbortError' ? 'vaqt tugadi' : 'ulanmadi');
-    return res.status(504).json({ error: 'Javob kech qoldi, qayta urinib ko‘ring' });
-  } finally {
     clearTimeout(timer);
+
+    if (r.ok) { data = await r.json().catch(() => null); break; }
+
+    lastStatus = r.status;
+    /* Google'ning xato MATNI mijozga uzatilmaydi — u so'rovning
+       o'zini, ya'ni kalitni ham qaytarishi mumkin. Faqat holat
+       kodi ishlatiladi. */
+    console.error('[ai]', model, 'status', r.status);
+    if (r.status === 429 || r.status === 503) {
+      quotaHit = true;
+      await kvSet(aiCoolKey(model), '1').catch(() => {});
+      await kvExpire(aiCoolKey(model), AI_COOLDOWN_S).catch(() => {});
+      continue;   // keyingi modelni sinab ko'ramiz
+    }
+    return res.status(502).json({ error: 'Javob kelmadi, qayta urinib ko‘ring' });
+  }
+
+  if (!data) {
+    if (quotaHit) {
+      /* Sababi ochiq aytiladi: bu nosozlik emas, chegara. */
+      return res.status(429).json({
+        error: 'Bugungi bepul chegara tugadi. Ertaga yana ishlaydi.',
+        quota: true,
+      });
+    }
+    return res.status(502).json({ error: 'Javob kelmadi, qayta urinib ko‘ring', status: lastStatus ? 1 : 0 });
   }
 
   const cand = data && data.candidates && data.candidates[0];

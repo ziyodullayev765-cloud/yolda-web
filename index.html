@@ -14925,7 +14925,14 @@
       }, payload))
     }).then(function(r){
       return r.json().then(function(b){
-        if(!r.ok) throw new Error(b.error || "Xato yuz berdi");
+        if(!r.ok){
+          /* Xatolikning o'zi ham ma'lumot olib keladi (masalan
+             chegara tugagani). Faqat matnni emas, butun javobni
+             ham uzatamiz — chaqiruvchi sababini bilsin. */
+          var e = new Error(b.error || "Xato yuz berdi");
+          e.body = b;
+          throw e;
+        }
         return b;
       });
     });
@@ -22670,7 +22677,9 @@
       history: past.filter(function(m){ return m.text; })
         .map(function(m){ return { from:m.from === "me" ? "me" : "ai", text:m.text }; })
     }).then(function(r){ finish(null, r); })
-      .catch(function(err){ finish({ error: err && err.message }); });
+      .catch(function(err){
+        finish({ error: err && err.message, body: (err && err.body) || null });
+      });
 
     function finish(bad, r){
       asking = false;
@@ -22680,7 +22689,12 @@
       last.at = hhmm();
       if(bad){
         last.error = true;
-        last.html = '<div class="ai-notready"><b>Javob kelmadi</b><p>'
+        /* Chegara tugashi — nosozlik emas. "Javob kelmadi" deb
+           yozish odamni xato yo'lga solardi: u qayta-qayta
+           urinaverardi. */
+        var quota = bad.body && bad.body.quota;
+        last.html = '<div class="ai-notready"><b>'
+          + (quota ? "Bugungi chegara tugadi" : "Javob kelmadi") + '</b><p>'
           + esc(bad.error || "Qayta urinib ko'ring") + '</p></div>';
       }else{
         last.text = r.text;
