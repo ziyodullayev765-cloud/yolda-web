@@ -619,7 +619,7 @@
      ("Close") logotipni yopib qo'ygan xato shundan edi. */
   :root[data-tg="1"] .au-screen{padding-top:calc(26px + var(--tg-top));}
   :root[data-tg="1"] .sheet{padding-bottom:calc(var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
-  /* Butun ekranni egallaydigan bo'limlar (yozishma va Yashil AI)
+  /* Butun ekranni egallaydigan bo'limlar (yozishma va YO'LDA bot)
      ham shunday: ularning pastki qatorlari Telegram panelining
      ostida qolmasligi kerak. Yuqori chekkasi esa har birining
      o'z qoidasida (`.chat-thread-head`, `.ai-top`) hisoblanadi. */
@@ -2442,7 +2442,7 @@
     overflow:hidden;
   }
   /* Yozishma qatoridagi amallar tugmasi va qadalgani belgisi. */
-  /* Yashil AI qatori — odamlar bilan yozishmalardan ajralib
+  /* YO'LDA bot qatori — odamlar bilan yozishmalardan ajralib
      tursin, lekin ko'zga urilmasin. */
   .chat-row.ai-entry{
     border:1px solid var(--border);border-radius:var(--r-lg);
@@ -5298,16 +5298,13 @@
   :root[data-theme="dark"] .tc-status.ACTIVE{color:#86EFAC;}
 
   /* ============================================================
-     Yashil AI
+     YO'LDA bot
      ------------------------------------------------------------
      Butun ekranni egallaydigan alohida bo'lim: o'z sarlavhasi,
      o'z pastki paneli. Xabarlar bo'limidan ochiladi.
 
-     DIQQAT — HOZIRCHA JAVOB YO'Q. AI xizmatiga ulanish hali
-     qo'shilmagan. Shuning uchun savol yuborilganda o'ylab
-     topilgan javob CHIQMAYDI: ekranda nima bo'layotgani aniq
-     yoziladi. Soxta javob ko'rsatish — odamni ishontirib,
-     keyin aldash bo'lardi.
+     Javobni server olib keladi (`/api/chat?action=ask`).
+     Kalit brauzerga hech qachon tushmaydi.
      ============================================================ */
   .ai-screen{
     position:fixed;inset:0;z-index:1450;display:flex;flex-direction:column;
@@ -5330,8 +5327,25 @@
     display:flex;align-items:center;justify-content:center;background:var(--route);
   }
   .ai-badge svg{width:22px;height:22px;}
+  /* Yordamchining yuzi yashil, shuning uchun uning ostidagi doira
+     to'q — aks holda yashil ustiga yashil tushib, ko'z ko'rinmaydi.
+     Belgi doiraga to'liq sig'sin deb biroz kattaroq chiziladi. */
+  .ai-badge.bot{background:linear-gradient(140deg,#12402A,#07190F);}
+  .ai-badge.bot svg{width:100%;height:100%;}
+  /* Savol yuborilganda yuz "o'ylayotgani" bilinadi. */
+  .ai-badge.bot.think{animation:aiBotThink 1.15s var(--ease) infinite;}
+  @keyframes aiBotThink{
+    0%,100%{transform:translateY(0) rotate(0);}
+    35%{transform:translateY(-2px) rotate(-4deg);}
+    70%{transform:translateY(1px) rotate(3deg);}
+  }
   .ai-top-title{flex:1;min-width:0;}
-  .ai-top-title b{display:block;font-size:16px;font-weight:700;letter-spacing:-0.01em;}
+  /* Suhbat sarlavhasi — savolning boshi. Uzun bo'lsa ikki qatorga
+     tushib, butun yo'lakni cho'zib yuborardi. */
+  .ai-top-title b{
+    display:block;font-size:16px;font-weight:700;letter-spacing:-0.01em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
   .ai-top-title small{display:block;font-size:11.5px;color:var(--muted);}
   .ai-plan{
     flex:none;font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:var(--r-pill);
@@ -5346,7 +5360,19 @@
   .ai-icon-btn .ic-svg{font-size:17px;}
   .ai-icon-btn.back .ic-svg{transform:rotate(180deg);}
 
-  .ai-body{flex:1;min-height:0;overflow-y:auto;padding:var(--s5) var(--s4) var(--s4);}
+  .ai-body{
+    flex:1;min-height:0;overflow-y:auto;padding:var(--s5) var(--s4) var(--s4);
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  }
+  /* Yozilganni nusxalab olish kerak bo'ladi — ilova "standalone"
+     rejimida matn tanlashni yopib qo'yadi, suhbat esa ochiq
+     qolishi shart. */
+  .ai-bubble,.ai-answer,
+  :root[data-standalone="1"] .ai-bubble,
+  :root[data-standalone="1"] .ai-answer,
+  :root[data-standalone="1"] .ai-answer *{
+    -webkit-user-select:text;user-select:text;-webkit-touch-callout:default;
+  }
 
   .ai-hello{font-size:14px;color:var(--route);font-weight:600;margin:0 0 var(--s2);}
   .ai-q{
@@ -5398,6 +5424,22 @@
     background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
     padding:var(--s4);font-size:14px;line-height:1.55;
   }
+  .ai-answer p{margin:0 0 10px;}
+  .ai-answer p:last-child{margin-bottom:0;}
+  /* Javob kutilayotgani: uchta nuqta. */
+  .ai-typing{display:flex;gap:5px;align-items:center;padding:2px 0;}
+  .ai-typing i{
+    width:7px;height:7px;border-radius:50%;background:var(--route);opacity:0.35;
+    animation:aiDot 1s var(--ease) infinite;
+  }
+  .ai-typing i:nth-child(2){animation-delay:0.15s;}
+  .ai-typing i:nth-child(3){animation-delay:0.3s;}
+  @keyframes aiDot{
+    0%,100%{opacity:0.25;transform:translateY(0);}
+    40%{opacity:1;transform:translateY(-3px);}
+  }
+  .ai-send[disabled]{opacity:0.4;}
+
   .ai-steps{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s3);}
   .ai-step{display:flex;gap:11px;}
   .ai-step-n{
@@ -5434,19 +5476,30 @@
     border-top:1px solid var(--border);background:var(--card);
   }
   .ai-compose-row{
-    display:flex;align-items:center;gap:var(--s2);
-    border:1px solid var(--border);border-radius:var(--r-pill);
+    display:flex;align-items:flex-end;gap:var(--s2);
+    border:1px solid var(--border);border-radius:22px;
     padding:5px 5px 5px var(--s3);background:var(--paper);
+    transition:border-color 0.18s var(--ease);
   }
   .ai-compose-row:focus-within{border-color:var(--route);}
   .ai-plus{
     border:none;background:none;padding:4px;cursor:pointer;color:var(--muted);
-    display:flex;align-items:center;
+    display:flex;align-items:center;height:40px;flex:none;
   }
-  .ai-compose input{
-    flex:1;min-width:0;border:none;background:none;outline:none;
-    font-family:inherit;font-size:14px;color:var(--ink);padding:8px 0;
+  /* MUHIM. Ilovaning umumiy maydon qoidasi (`textarea`,
+     `input[type=text]`) chekka, soya, eng kichik balandlik va
+     burchak beradi. Shu soya tufayli yumaloq qator ICHIDA ikkinchi
+     to'rtburchak ko'rinib turardi. Hammasini aniq o'chiramiz —
+     yozuv maydonining o'z chegarasi yo'q, chegara qatorniki. */
+  .ai-compose textarea{
+    flex:1;min-width:0;width:auto;
+    border:none;background:none;outline:none;box-shadow:none;
+    border-radius:0;min-height:0;height:40px;max-height:132px;
+    margin:0;padding:10px 0;resize:none;overflow-y:auto;
+    font-family:inherit;font-size:15px;line-height:1.35;color:var(--ink);
   }
+  .ai-compose textarea:hover,
+  .ai-compose textarea:focus{border:none;box-shadow:none;outline:none;}
   .ai-send{
     width:40px;height:40px;border-radius:50%;flex:none;border:none;cursor:pointer;
     background:var(--route);color:#FFFFFF;display:flex;align-items:center;justify-content:center;
@@ -6081,6 +6134,32 @@
       <rect x="46.4" y="68" width="7.2" height="11" rx="1.6"/>
       <rect x="47.2" y="49" width="5.6" height="9" rx="1.3"/>
       <rect x="47.8" y="33" width="4.4" height="7" rx="1"/>
+    </g>
+  </symbol>
+
+  <!-- YO'LDA bot — yordamchining yuzi. Aynan ekrandagi
+       yordamchining boshi: bir xil kapyushon, bir xil to'q shisha
+       va bir xil ko'z. Belgi bitta joyda yozilgan, qolgan hamma
+       joy shunga `use` qiladi — ikki xil robot bo'lib qolmasin. -->
+  <symbol id="botMark" viewBox="0 0 100 100">
+    <defs>
+      <linearGradient id="bmHood" x1="0.1" y1="0" x2="0.9" y2="1">
+        <stop offset="0" stop-color="#7CF0A4"/>
+        <stop offset="1" stop-color="#23B85E"/>
+      </linearGradient>
+      <radialGradient id="bmVisor" cx="0.42" cy="0.32" r="0.8">
+        <stop offset="0" stop-color="#1D3A2B"/>
+        <stop offset="1" stop-color="#07140D"/>
+      </radialGradient>
+    </defs>
+    <path d="M8 12C40 -3 79 9 96 38 79 23 55 20 41 31 27 41 22 56 27 72 9 59 -1 31 8 12z"
+          fill="url(#bmHood)"/>
+    <ellipse cx="53" cy="61" rx="37" ry="33" fill="url(#bmVisor)"/>
+    <ellipse cx="36" cy="46" rx="16" ry="10" fill="#FFFFFF" opacity="0.08"
+             transform="rotate(-18 36 46)"/>
+    <g fill="none" stroke="#7BF5AE" stroke-width="6.5" stroke-linecap="round">
+      <path d="M36 58c4-7 11-7 15 0"/>
+      <path d="M58 58c4-7 11-7 15 0"/>
     </g>
   </symbol>
 
@@ -9864,7 +9943,7 @@
 
     var avatar = profileAvatarUrl(p);
     var name = p.displayName || p.name || (t("profile.noName") || "Ismsiz");
-    /* Yashil AI ekrani alohida skriptda — unga ism shu yerdan
+    /* YO'LDA bot ekrani alohida skriptda — unga ism shu yerdan
        beriladi. DOM dan o'qish mo'rt bo'lardi: sarlavha sinfi
        o'zgarsa, salomlashish jimgina yo'qolib qolardi. */
     window.YoldaMe = { name: p.displayName || p.name || "" };
@@ -11126,10 +11205,14 @@
     if(!tg || !tg.BackButton || !isTelegramWebApp) return;
     try{
       var sheetOpen = Boolean(document.querySelector(".sheet-root.open"));
-      if(sheetOpen || visibleTabName() !== "home") tg.BackButton.show();
+      var aiOpen = Boolean(window.YoldaAi && window.YoldaAi.isOpen());
+      if(aiOpen || sheetOpen || visibleTabName() !== "home") tg.BackButton.show();
       else tg.BackButton.hide();
     }catch(e){}
   }
+  /* Bot ekrani alohida skriptda ochiladi — u tugmani qayta
+     hisoblash uchun shu funksiyani chaqiradi. */
+  window.__yoldaSyncBack = syncTelegramBackButton;
 
   function initTelegramWebApp(){
     var tg = window.Telegram && window.Telegram.WebApp;
@@ -11155,6 +11238,10 @@
     try{ tg.onEvent("themeChanged", function(){ applyAutoTheme(); applyTelegramColors(tg); }); }catch(e){}
     try{
       tg.BackButton.onClick(function(){
+        /* Bot ekrani hammasining ustida turadi — avval o'sha
+           yopiladi, aks holda tugma uning ortidagi bo'limni
+           almashtirib, odam shu ekranda qolib ketardi. */
+        if(window.YoldaAi && window.YoldaAi.isOpen()){ window.YoldaAi.close(); return; }
         if(document.querySelector(".sheet-root.open")) Sheet.close();
         else switchTab("home");
       });
@@ -14560,14 +14647,14 @@
   var chatInbox = [];
   var chatFilter = "all";
 
-  /** Yozishmalar ro'yxatining tepasidagi Yashil AI qatori. */
+  /** Yozishmalar ro'yxatining tepasidagi YO'LDA bot qatori. */
   function aiRowHtml(){
     return '<button type="button" class="chat-row ai-entry" data-open-ai>'
       + '<span class="chat-avatar ai-entry-av">'
-      +   '<svg class="ic-svg" aria-hidden="true"><use href="#logoMarkFlat"/></svg></span>'
+      +   '<svg class="ic-svg" aria-hidden="true"><use href="#botMark"/></svg></span>'
       + '<div class="chat-row-txt">'
       +   '<span class="chat-row-top">'
-      +     '<span class="u">Yashil AI</span>'
+      +     '<span class="u">YO\'LDA bot</span>'
       +     '<span class="chat-row-time">YO\'LDA</span>'
       +   '</span>'
       +   '<span class="chat-row-bottom">'
@@ -14636,6 +14723,10 @@
       });
     });
   }
+
+  /* Bot ekrani alohida skriptda turadi. Unga tokenning O'ZI emas,
+     so'rov yuboradigan funksiya beriladi. */
+  window.YoldaChatPost = chatApiPost;
 
   function openChatRowMenu(email){
     var c = null;
@@ -14756,7 +14847,7 @@
       ? chatInbox.filter(function(c){ return Number(c.unread) > 0; })
       : chatInbox;
 
-    /* Yashil AI — ro'yxatning eng tepasida va HAR DOIM: u odam
+    /* YO'LDA bot — ro'yxatning eng tepasida va HAR DOIM: u odam
        emas, shuning uchun yozishmalar bo'lmasa ham turadi.
        Ilgari bo'sh ro'yxatda u ham yo'qolib ketardi. */
     if(!rows.length){
@@ -21768,10 +21859,10 @@
 </script>
 
 <!-- ============================================================
-     Yashil AI — ekranning o'zi JS da chiziladi, chunki to'rtta
+     YO'LDA bot — ekranning o'zi JS da chiziladi, chunki to'rtta
      ko'rinish bitta joyda almashadi.
      ============================================================ -->
-<section class="ai-screen" id="aiScreen" hidden aria-label="Yashil AI">
+<section class="ai-screen" id="aiScreen" hidden aria-label="YO'LDA bot">
   <header class="ai-top" id="aiTop"></header>
   <div class="ai-body" id="aiBody"></div>
   <div id="aiCompose"></div>
@@ -21845,17 +21936,14 @@
 
 <script>
 /* ============================================================
-   Yashil AI — ekranlar
+   YO'LDA bot — ekranlar
    ------------------------------------------------------------
-   HOZIRCHA JAVOB YO'Q. AI xizmatiga ulanish qo'shilmagan.
-   Shuning uchun savol yuborilganda o'ylab topilgan javob
-   CHIQMAYDI: suhbatda nima bo'layotgani ochiq yoziladi.
-   Soxta javob ko'rsatish odamni ishontirib, keyin aldash
-   bo'lardi — va u AIga bergan savoliga kelgan javobni haqiqat
-   deb o'ylab, unga qarab ish qilishi mumkin edi.
+   JAVOBNI SERVER OLIB KELADI. Savol `/api/chat?action=ask` ga
+   ketadi, u yerdan Gemini ga. Kalit faqat server muhitida turadi: bu skript uni ko'rmaydi ham, bilmaydi ham.
 
-   Xizmat ulangan kuni o'zgarishi kerak bo'lgan YAGONA joy —
-   `askAi()`. Qolgan hamma narsa tayyor turadi.
+   SAQLANMAYDI. Savol-javoblar hech qayerga yozilmaydi — ilova
+   yopilsa yo'qoladi. Shuning uchun "Tarix" bo'limi bo'sh va
+   buning sababi o'sha yerda ochiq aytilgan.
    ============================================================ */
 (function(){
   var screenEl = document.getElementById("aiScreen");
@@ -21874,6 +21962,11 @@
   var ico = function(id){
     return '<svg class="ic-svg" aria-hidden="true"><use href="#' + id + '"></use></svg>';
   };
+
+  /* Yordamchining nomi bitta joyda yozilgan: sarlavhada ham,
+     suhbatdagi har bir javobda ham, ro'yxatdagi qatorda ham
+     aynan shu ko'rinadi. */
+  var BOT = "YO'LDA bot";
 
   var view = "chat";     // chat | history | tools | plans
   var thread = null;     // ochilgan suhbat: { title, items:[...] }
@@ -21912,8 +22005,9 @@
       topEl.innerHTML =
         '<button type="button" class="ai-icon-btn back" data-ai="back" aria-label="Orqaga">'
         + ico("iconArrowRight") + '</button>'
+        + '<span class="ai-badge bot" id="aiFace">' + ico("botMark") + '</span>'
         + '<div class="ai-top-title"><b>' + esc(thread.title) + '</b>'
-        + '<small>Yashil AI bilan suhbat</small></div>'
+        + '<small>' + esc(BOT) + ' bilan suhbat</small></div>'
         + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
         + ico("iconClose") + '</button>';
       return;
@@ -21928,8 +22022,8 @@
       return;
     }
     topEl.innerHTML =
-      '<span class="ai-badge">' + ico("logoMarkFlat") + '</span>'
-      + '<div class="ai-top-title"><b>Yashil AI</b><small>YO\'LDA yordamchisi</small></div>'
+      '<span class="ai-badge bot" id="aiFace">' + ico("botMark") + '</span>'
+      + '<div class="ai-top-title"><b>' + esc(BOT) + '</b><small>Yordamchi</small></div>'
       + '<button type="button" class="ai-plan" data-ai="plans">Bepul reja</button>'
       + '<button type="button" class="ai-icon-btn" data-ai="close" aria-label="Yopish">'
       + ico("iconClose") + '</button>';
@@ -21955,21 +22049,44 @@
     }).join("");
   }
 
-  /* ---------- Yozish qatori ---------- */
+  /* ---------- Yozish qatori ----------
+     BIR MARTA chiziladi va shundan keyin hech qachon qayta
+     yaratilmaydi. Ilgari u har chizishda yangidan yasalardi:
+     savol yuborilishi bilan maydon yo'q bo'lib, telefon
+     klaviaturasi yopilib ketardi va yozishni davom ettirish uchun
+     har safar qaytadan bosish kerak edi. */
+  var inputEl = null;
+  function buildCompose(){
+    if(inputEl) return;
+    composeEl.innerHTML =
+      '<div class="ai-compose">'
+      + '<div class="ai-compose-row">'
+      +   '<button type="button" class="ai-plus" aria-label="Qo\'shish">' + ico("iconPlus") + '</button>'
+      +   '<textarea id="aiInput" rows="1" maxlength="1000" autocomplete="off" '
+      +     'enterkeyhint="send" aria-label="Savolingiz"></textarea>'
+      +   '<button type="button" class="ai-send" id="aiSend" aria-label="Yuborish">'
+      +     ico("iconArrowRight") + '</button>'
+      + '</div>'
+      + '<p class="ai-note">AI xato qilishi mumkin. Muhim ma\'lumotni tekshiring.</p>'
+      + '</div>';
+    inputEl = document.getElementById("aiInput");
+    inputEl.addEventListener("input", autoGrow);
+  }
+
+  /* Uzun savol bitta qatorga sig'masa, maydon o'sadi — lekin
+     ekranni yeb qo'ymasligi uchun chegara bor (CSS: max-height). */
+  function autoGrow(){
+    if(!inputEl) return;
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.max(40, inputEl.scrollHeight) + "px";
+  }
+
   function renderCompose(){
+    buildCompose();
     var show = view === "chat";
-    composeEl.innerHTML = show
-      ? '<div class="ai-compose">'
-        + '<div class="ai-compose-row">'
-        +   '<button type="button" class="ai-plus" aria-label="Qo\'shish">' + ico("iconPlus") + '</button>'
-        +   '<input type="text" id="aiInput" maxlength="1000" '
-        +     'placeholder="' + (thread ? "Davom ettirish uchun yozing..." : "Savolingizni yozing...") + '">'
-        +   '<button type="button" class="ai-send" id="aiSend" aria-label="Yuborish">'
-        +     ico("iconArrowRight") + '</button>'
-        + '</div>'
-        + '<p class="ai-note">AI xato qilishi mumkin. Muhim ma\'lumotni tekshiring.</p>'
-        + '</div>'
-      : "";
+    composeEl.hidden = !show;
+    if(!show) return;
+    inputEl.placeholder = thread ? "Davom ettirish uchun yozing..." : "Savolingizni yozing...";
   }
 
   /* ---------- Ko'rinishlar ---------- */
@@ -21992,8 +22109,8 @@
           + '<span class="ai-time">' + esc(m.at) + '</span></div></div>';
       }
       return '<div class="ai-msg"><div style="width:100%;">'
-        + '<div class="ai-who"><span class="ai-badge" style="width:24px;height:24px;border-radius:8px;">'
-        +   ico("logoMarkFlat") + '</span>Yashil AI <small>' + esc(m.at) + '</small></div>'
+        + '<div class="ai-who"><span class="ai-badge bot" style="width:24px;height:24px;border-radius:8px;">'
+        +   ico("botMark") + '</span>' + esc(BOT) + ' <small>' + esc(m.at) + '</small></div>'
         + '<div class="ai-answer">' + m.html + '</div>'
         + '</div></div>';
     }).join("");
@@ -22002,23 +22119,23 @@
   function viewHistory(){
     /* Tarix hali bo'sh: suhbatlar faqat AI ulangandan keyin
        paydo bo'ladi. Bo'sh ro'yxatni to'ldirib ko'rsatish —
-       bo'lmagan ishni bo'lgan qilib ko'rsatish. */
-    return '<div class="ai-search">' + ico("iconSearch")
-      + '<input type="search" placeholder="Suhbatlardan qidirish" disabled></div>'
-      + '<div class="ai-chips">'
-      +   '<button type="button" class="ai-chip active">Hammasi</button>'
-      +   '<button type="button" class="ai-chip">Saqlangan</button>'
-      + '</div>'
-      + '<div class="ai-notready"><b>Hozircha suhbat yo\'q</b>'
-      + '<p>Yashil AI hali ulanmagan. Ulangach, har bir suhbat shu yerda '
-      + 'saqlanadi va qidirish ham ishlaydi.</p></div>';
+       bo'lmagan ishni bo'lgan qilib ko'rsatish.
+
+       QIDIRUV MAYDONI VA FILTRLAR OLIB TASHLANDI. Ular bosilardi,
+       lekin hech narsa qilmasdi: qidiradigan suhbat yo'q.
+       Ishlamaydigan tugma turgandan ko'ra, turmagani yaxshi —
+       ular suhbatlar paydo bo'lgan kuni qaytariladi. */
+    return '<div class="ai-notready"><b>Suhbatlar saqlanmaydi</b>'
+      + '<p>Hozircha yozishgan savol-javoblaringiz ilovani yopganda '
+      + 'yo\'qoladi — hech qayerda saqlanmaydi. Saqlash qo\'shilganda '
+      + 'ular shu yerda chiqadi va qidirish ham ishlaydi.</p></div>';
   }
 
   function viewTools(){
     return '<div class="ai-hero">'
       + '<div class="ai-hero-k">' + ico("iconBolt") + 'Bir yordamchi. Ko\'p imkoniyat.</div>'
       + '<h3>G\'oyadan natijagacha.</h3>'
-      + '<p>Vazifangizga mos vositani tanlang. Yashil AI bilan birga boshlang.</p>'
+      + '<p>Vazifangizga mos vositani tanlang. ' + esc(BOT) + ' bilan birga boshlang.</p>'
       + '</div>'
       + '<h3 class="ai-sec-title">Sizga qanday yordam beramiz?</h3>'
       + '<div class="ai-grid">' + TOOLS.map(function(c){
@@ -22044,7 +22161,7 @@
       + '</div>'
       + '<div class="ai-plan-card on">'
       +   '<div class="ai-plan-head"><b>Plus</b><span class="ai-plan-tag">Tavsiya etiladi</span></div>'
-      +   '<div class="ai-price">' + (yearly ? "—" : "—") + ' <span>narx belgilanmagan</span></div>'
+      +   '<div class="ai-price">— <span>narx belgilanmagan</span></div>'
       +   '<ul class="ai-feats">'
       +     '<li>' + ico("iconCheck") + 'Kuniga ko\'proq so\'rov</li>'
       +     '<li>' + ico("iconCheck") + 'Batafsil va uzunroq javoblar</li>'
@@ -22056,8 +22173,9 @@
          o'ylab topilgan narx ham yo'q. */
       + '<div class="ai-notready" style="margin-top:var(--s4);">'
       +   '<b>Obuna hali ochilmagan</b>'
-      +   '<p>Yashil AI ulanmagan va ilovada to\'lov tizimi yo\'q. Reja va narxlar '
-      +   'ular tayyor bo\'lganda e\'lon qilinadi — bu ekran shunga tayyorlab qo\'yilgan.</p>'
+      +   '<p>Ilovada to\'lov tizimi hali yo\'q, shuning uchun bu yerda sotib '
+      +   'oladigan narsa ham yo\'q. Narxlar belgilanganda shu yerda e\'lon '
+      +   'qilinadi — ekran shunga tayyorlab qo\'yilgan.</p>'
       + '</div>';
   }
 
@@ -22070,7 +22188,14 @@
     else if(view === "tools") bodyEl.innerHTML = viewTools();
     else if(view === "plans") bodyEl.innerHTML = viewPlans();
     else bodyEl.innerHTML = viewChatStart();
-    bodyEl.scrollTop = thread ? bodyEl.scrollHeight : 0;
+    /* Pastga tushirishni darhol qilib bo'lmaydi: yangi matn hali
+       o'lchanmagan, `scrollHeight` eski qiymatni beradi va suhbat
+       oxirigacha tushmasdi. */
+    if(thread){
+      requestAnimationFrame(function(){ bodyEl.scrollTop = bodyEl.scrollHeight; });
+    }else bodyEl.scrollTop = 0;
+    var send = document.getElementById("aiSend");
+    if(send) send.disabled = asking;
   }
 
   function hhmm(){
@@ -22079,23 +22204,77 @@
     return two(d.getHours()) + ":" + two(d.getMinutes());
   }
 
+  /* Javob oddiy matn bo'lib keladi. Uni HTML qilib qo'yish
+     mumkin emas — javob tashqaridan keladigan matn, ichida
+     teg bo'lsa u sahifaga kirib qolardi. Shuning uchun avval
+     butunlay qochiriladi, keyin faqat ikkita bezak tiklanadi:
+     qator ajratish va **qalin** yozuv. */
+  function answerHtml(text){
+    return esc(text)
+      .replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
+      .replace(/\n{2,}/g, "</p><p>")
+      .replace(/\n/g, "<br>")
+      .replace(/^/, "<p>").replace(/$/, "</p>");
+  }
+
+  /* Javob kutilayotganda uchta nuqta. */
+  var WAIT_HTML = '<div class="ai-typing"><i></i><i></i><i></i></div>';
+
+  function setFace(on){
+    var face = document.getElementById("aiFace");
+    if(face) face.classList.toggle("think", Boolean(on));
+  }
+
+  var asking = false;
+
   /**
    * Savol yuborish.
    *
-   * AI xizmati ulanganda O'ZGARTIRILADIGAN YAGONA JOY shu.
-   * Hozir u javob o'ylab topmaydi — nima bo'layotganini aytadi.
+   * KALIT BU YERDA YO'Q. So'rov `/api/chat?action=ask` ga ketadi,
+   * Gemini bilan faqat server gaplashadi. Brauzer na kalitni, na
+   * model nomini biladi — u shunchaki savolni va javobni ko'radi.
    */
   function askAi(text){
+    if(asking) return;
     if(!thread) thread = { title: text.slice(0, 40), items: [] };
+    var past = thread.items.slice();
     thread.items.push({ from:"me", text:text, at:hhmm() });
-    thread.items.push({
-      from:"ai", at:hhmm(),
-      html:'<div class="ai-notready"><b>Yashil AI hali ulanmagan</b>'
-        + '<p>Savolingiz saqlanmadi va hech qayerga yuborilmadi. Xizmat ulangach, '
-        + 'javob aynan shu yerda chiqadi.</p></div>'
-    });
-    if(window.Mascot) window.Mascot.fire("showError");
+    thread.items.push({ from:"ai", at:hhmm(), html:WAIT_HTML, waiting:true });
+    asking = true;
     render();
+    setFace(true);
+
+    var post = window.YoldaChatPost;
+    if(!post){
+      finish({ error:"Avval ilovaga kiring" });
+      return;
+    }
+    /* Tarixga faqat haqiqiy matnlar ketadi: kutish pufakchasi
+       ham, xatolik xabari ham suhbat tarixi emas. */
+    post("ask", {
+      text: text,
+      history: past.filter(function(m){ return m.text; })
+        .map(function(m){ return { from:m.from === "me" ? "me" : "ai", text:m.text }; })
+    }).then(function(r){ finish(null, r); })
+      .catch(function(err){ finish({ error: err && err.message }); });
+
+    function finish(bad, r){
+      asking = false;
+      setFace(false);
+      var last = thread.items[thread.items.length - 1];
+      if(!last || !last.waiting) return;
+      last.waiting = false;
+      last.at = hhmm();
+      if(bad){
+        last.error = true;
+        last.html = '<div class="ai-notready"><b>Javob kelmadi</b><p>'
+          + esc(bad.error || "Qayta urinib ko'ring") + '</p></div>';
+      }else{
+        last.text = r.text;
+        last.html = answerHtml(r.text);
+      }
+      render();
+    }
   }
 
   /* ---------- Ochish va yopish ---------- */
@@ -22106,10 +22285,12 @@
     document.documentElement.setAttribute("data-ai-open", "1");
     if(window.Mascot) window.Mascot.fire("greet");
     render();
+    if(window.__yoldaSyncBack) window.__yoldaSyncBack();
   }
   function close(){
     screenEl.hidden = true;
     document.documentElement.removeAttribute("data-ai-open");
+    if(window.__yoldaSyncBack) window.__yoldaSyncBack();
   }
 
   screenEl.addEventListener("click", function(e){
@@ -22136,17 +22317,31 @@
     if(idea){ askAi(idea.getAttribute("data-ai-idea")); return; }
     var cycle = e.target.closest("[data-ai-cycle]");
     if(cycle){ planCycle = cycle.getAttribute("data-ai-cycle"); render(); return; }
-    if(e.target.closest("#aiSend")){
-      var input = document.getElementById("aiInput");
-      var txt = input && input.value.trim();
-      if(txt){ input.value = ""; askAi(txt); }
-    }
+    if(e.target.closest("#aiSend")) send();
+  });
+
+  function send(){
+    if(!inputEl) return;
+    var txt = inputEl.value.trim();
+    if(!txt || asking) return;
+    inputEl.value = "";
+    autoGrow();
+    /* Klaviatura ochiq qolsin — odam odatda ketma-ket yozadi.
+       Fokus aynan shu bosish ichida qaytariladi, chunki
+       brauzerlar klaviaturani faqat harakat ichida ochadi. */
+    try{ inputEl.focus({ preventScroll:true }); }catch(e){ inputEl.focus(); }
+    askAi(txt);
+  }
+
+  /* Tugmani bosganda maydon fokusni yo'qotmasin. */
+  screenEl.addEventListener("mousedown", function(e){
+    if(e.target.closest("#aiSend")) e.preventDefault();
   });
 
   screenEl.addEventListener("keydown", function(e){
-    if(e.key === "Enter" && e.target && e.target.id === "aiInput"){
-      var txt = e.target.value.trim();
-      if(txt){ e.target.value = ""; askAi(txt); }
+    if(e.target && e.target.id === "aiInput" && e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      send();
     }
   });
 
@@ -22155,7 +22350,17 @@
     if(e.target.closest("[data-open-ai]")){ open("chat"); return; }
   });
 
-  window.YoldaAi = { open: open, close: close };
+  /* "Orqaga" bosilganda ilovadan chiqib ketmasin — avval shu
+     ekran yopilsin. Telefonning o'z tugmasi ham shu yerga
+     keladi, Telegram'ning yo'lagidagi tugma ham. */
+  window.addEventListener("popstate", function(){
+    if(!screenEl.hidden) close();
+  });
+
+  window.YoldaAi = {
+    open: open, close: close,
+    isOpen: function(){ return !screenEl.hidden; }
+  };
 })();
 </script>
 

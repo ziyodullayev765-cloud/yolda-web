@@ -15,6 +15,7 @@
  *   POST /api/chat?action=react   { googleIdToken|telegramInitData, id, emoji }
  *   POST /api/chat?action=pin     { googleIdToken|telegramInitData, withEmail, on }
  *   POST /api/chat?action=hide    { googleIdToken|telegramInitData, withEmail }
+ *   POST /api/chat?action=ask     { googleIdToken|telegramInitData, text, history }
  *
  * Each message is its own key (`msg:<id>`), not just an entry appended to a
  * list — that's what makes editing/deleting/reacting to one specific
@@ -28,7 +29,7 @@
  * /api/order already makes for phone numbers — acceptable at this app's
  * scale, and verified server-side on every call regardless.
  */
-import { kvGet, kvSet, kvDel, kvIncr, kvPush, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
+import { kvGet, kvSet, kvDel, kvIncr, kvExpire, kvPush, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { resolveEmail } from '../lib/identity.js';
 
@@ -224,6 +225,134 @@ const setPin = async (req, res) => {
 
   await kvSet(pinsKey(myEmail), JSON.stringify(next));
   return res.status(200).json({ ok: true, pinned: next, max: MAX_PINS });
+};
+
+/* ============================================================
+   POST ?action=ask — YO'LDA bot (Gemini)
+   ------------------------------------------------------------
+   KALIT FAQAT SHU YERDA. `GEMINI_API_KEY` — server muhitining
+   o'zgaruvchisi. U brauzerga HECH QACHON yuborilmaydi: javobda
+   ham, xatolikda ham ko'rinmaydi. So'rovni server yuboradi,
+   mijoz faqat matnni oladi. Kalitni frontendga qo'yish — uni
+   ochiq e'lon qilish bilan barobar: sahifa kodini istalgan odam
+   o'qiy oladi.
+
+   KIRGAN ODAMGAGINA. Kirmagan odam so'rov yubora olmaydi, aks
+   holda kalit ochiq turgani bilan bir xil bo'lardi.
+
+   CHEGARA BOR. Har bir odamga kunlik chegara — hisob bo'shab
+   qolmasligi uchun. Chegara SERVERDA sanaladi: mijozga ishonib
+   bo'lmaydi.
+   ============================================================ */
+const AI_MODEL = 'gemini-flash-latest';
+const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT || 40);
+const AI_MAX_QUESTION = 2000;
+const AI_MAX_HISTORY = 10;
+const AI_TIMEOUT_MS = 20000;
+
+const AI_SYSTEM = [
+  'Sen "YO\'LDA bot" — YO\'LDA ilovasining yordamchisisan.',
+  'YO\'LDA — O\'zbekistondagi yuk tashish bozori: yuk egalari yuk joylaydi,',
+  'haydovchilar esa o\'z yo\'nalishiga mos yukni oladi.',
+  'Foydalanuvchi qaysi tilda yozgan bo\'lsa, javobni o\'sha tilda ber;',
+  'til aniq bo\'lmasa — o\'zbek tilida (lotin yozuvida).',
+  'Qisqa va aniq yoz, ortiqcha muqaddima qilma.',
+  'Bilmagan narsangni bilmayman deb ayt. Narx, masofa yoki qonunni',
+  'o\'ylab topma; taxmin bo\'lsa, taxmin ekanini ayt.',
+  'Ilovaning ichidagi ma\'lumotlarga (buyurtmalar, foydalanuvchilar,',
+  'to\'lovlar) sening ruxsating yo\'q — ularni so\'rashsa, ilovaning',
+  'tegishli bo\'limiga yo\'naltir.',
+].join(' ');
+
+const aiUsageKey = (email) => `aiUsed:${email}:${new Date().toISOString().slice(0, 10)}`;
+
+const askAi = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const myEmail = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!myEmail) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const text = String(body.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'Savol bo‘sh' });
+  if (text.length > AI_MAX_QUESTION) {
+    return res.status(400).json({ error: `Savol ${AI_MAX_QUESTION} belgidan oshmasin` });
+  }
+
+  const key = process.env.GEMINI_API_KEY;
+  /* Kalit qo'yilmagan bo'lsa — shuni ochiq aytamiz. O'ylab
+     topilgan javob qaytarish odamni aldash bo'lardi. */
+  if (!key) return res.status(503).json({ error: 'AI hali ulanmagan', notReady: true });
+
+  const used = Number(await kvIncr(aiUsageKey(myEmail)).catch(() => 0)) || 0;
+  if (used === 1) await kvExpire(aiUsageKey(myEmail), 60 * 60 * 36).catch(() => {});
+  if (used > AI_DAILY_LIMIT) {
+    return res.status(429).json({
+      error: `Bugunga chegara tugadi (${AI_DAILY_LIMIT} ta savol). Ertaga yana urinib ko‘ring.`,
+      limit: AI_DAILY_LIMIT,
+    });
+  }
+
+  /* Suhbat tarixi mijozdan keladi — u odamning O'Z yozganlari.
+     Shunga qaramay soni ham, uzunligi ham serverda qirqiladi. */
+  const history = Array.isArray(body.history) ? body.history.slice(-AI_MAX_HISTORY) : [];
+  const contents = [];
+  for (const item of history) {
+    const t = String((item && item.text) || '').trim().slice(0, AI_MAX_QUESTION);
+    if (!t) continue;
+    contents.push({ role: item.from === 'ai' ? 'model' : 'user', parts: [{ text: t }] });
+  }
+  contents.push({ role: 'user', parts: [{ text }] });
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+  let data;
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: AI_SYSTEM }] },
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
+        }),
+        signal: ctrl.signal,
+      },
+    );
+    data = await r.json().catch(() => null);
+    if (!r.ok) {
+      /* Google'ning xato matni kalitni o'z ichiga olishi mumkin,
+         shuning uchun u mijozga UZATILMAYDI — faqat holat kodi
+         jurnalga yoziladi. */
+      console.error('[ai] javob kelmadi, status', r.status);
+      return res.status(502).json({ error: 'Javob kelmadi, qayta urinib ko‘ring' });
+    }
+  } catch (err) {
+    console.error('[ai]', err && err.name === 'AbortError' ? 'vaqt tugadi' : 'ulanmadi');
+    return res.status(504).json({ error: 'Javob kech qoldi, qayta urinib ko‘ring' });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const cand = data && data.candidates && data.candidates[0];
+  const parts = (cand && cand.content && cand.content.parts) || [];
+  const answer = parts.map((p) => String(p.text || '')).join('').trim();
+  if (!answer) {
+    /* Javob bo'sh ham bo'lishi mumkin: xavfsizlik filtri
+       to'xtatgan yoki uzunlik chegarasiga urilgan. Bo'sh
+       pufakcha ko'rsatgandan ko'ra sababini aytgan yaxshi. */
+    const why = (cand && cand.finishReason) || 'NO_TEXT';
+    return res.status(200).json({
+      text: why === 'MAX_TOKENS'
+        ? 'Javob juda uzun bo‘lib ketdi. Savolni qismlarga bo‘lib bering.'
+        : 'Bu savolga javob bera olmadim. Boshqacha so‘rab ko‘ring.',
+      empty: true, used, limit: AI_DAILY_LIMIT,
+    });
+  }
+
+  return res.status(200).json({ text: answer, used, limit: AI_DAILY_LIMIT });
 };
 
 /**
@@ -487,6 +616,7 @@ export default async function handler(req, res) {
     if (action === 'react') return reactToMessage(req, res);
     if (action === 'pin') return setPin(req, res);
     if (action === 'hide') return hideConversation(req, res);
+    if (action === 'ask') return askAi(req, res);
     return res.status(400).json({ error: 'Noto‘g‘ri action' });
   }
   return res.status(405).json({ error: 'Method not allowed' });
