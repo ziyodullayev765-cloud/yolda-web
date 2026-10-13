@@ -24,7 +24,7 @@ import { premiumMembers } from '../lib/premium.js';
 import { queueDelayed, drainDue } from '../lib/notifyQueue.js';
 import { resolveIdentity, resolveEmail } from '../lib/identity.js';
 import {
-  CARGO, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON,
+  CARGO, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON, markStage,
 } from '../lib/orderMessage.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { searchesKey, matchesSearch } from '../lib/savedSearch.js';
@@ -288,6 +288,9 @@ const createOrder = async (req, res) => {
     googleEmail: ownerMethod === 'google' ? ownerIdentity : null,
     telegramOwner: ownerMethod === 'telegram' ? (ownerTelegramUser.username || null) : null,
     status: 'NEW', driver: null, rating: null,
+    /* Bosqichlar tarixi — "qachon nima bo'ldi" degan savolga
+       javob. lib/orderMessage.js: markStage. */
+    timeline: [{ s: 'NEW', at: Date.now(), by: 'OWNER' }],
   };
 
   /* Yuk endi faqat shu yerda — bazada — yashaydi. Ilgari u Telegram
@@ -1709,6 +1712,7 @@ const advanceOrder = async (req, res) => {
   if (!next) return res.status(409).json({ error: 'Bu amal endi mavjud emas' });
 
   order.status = next;
+  markStage(order, next, 'DRIVER');
   order.updatedAt = Date.now();
   if (next === 'DELIVERED') order.deliveredAt = Date.now();
   if (!(await kvSet(`order:${code}`, JSON.stringify(order)))) {
@@ -1819,6 +1823,7 @@ const decideOfferCore = async (identity, offerId, accept) => {
   }
 
   order.status = 'DRIVER_FOUND';
+  markStage(order, 'DRIVER_FOUND', 'OWNER');
   order.driver = {
     name: offer.driverName,
     identity: offer.driverIdentity,
@@ -1988,6 +1993,7 @@ const cancelOrder = async (req, res) => {
 
   const hadDriver = order.driver;
   order.status = 'CANCELLED';
+  markStage(order, 'CANCELLED', 'OWNER');
   order.cancelledAt = Date.now();
   order.cancelledBy = 'OWNER';
   if (reason) order.cancelReason = reason;
@@ -2033,6 +2039,7 @@ const releaseDriver = async (req, res) => {
     reason: reason || null,
   });
   order.status = 'NEW';
+  markStage(order, 'NEW', 'OWNER');
   order.driver = null;
   order.updatedAt = Date.now();
 
@@ -2102,6 +2109,7 @@ const giveUpOrder = async (req, res) => {
     reason: reason || null,
   });
   order.status = 'NEW';
+  markStage(order, 'NEW', 'DRIVER');
   order.driver = null;
   order.updatedAt = Date.now();
 

@@ -662,6 +662,40 @@
   /* Xodimlik roli — ro'yxatda darhol ko'rinib tursin. */
   .tag-staff{color:var(--ok-ink);background:var(--ok-soft);}
 
+  /* ============================================================
+     Buyurtma kuzatuvi — bosqichlar vaqt chizig'i
+     ============================================================ */
+  .tl{list-style:none;margin:0;padding:0;}
+  .tl-row{display:flex;gap:14px;position:relative;padding-bottom:18px;}
+  .tl-row:last-child{padding-bottom:0;}
+  /* Nuqtalarni bog'laydigan chiziq. Oxirgisida chizilmaydi —
+     aks holda u bo'shliqqa osilib qolardi. */
+  .tl-row:not(:last-child)::before{
+    content:"";position:absolute;left:8px;top:20px;bottom:0;
+    width:2px;background:var(--line);
+  }
+  .tl-dot{
+    width:18px;height:18px;border-radius:50%;flex:none;margin-top:2px;
+    border:2px solid var(--line-2);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;z-index:1;
+  }
+  .tl-dot svg{width:10px;height:10px;stroke-width:3;}
+  .tl-row.done .tl-dot{border-color:var(--ok);background:var(--ok);color:#FFFFFF;}
+  .tl-row.now .tl-dot{
+    border-color:var(--accent);background:var(--panel);
+    box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .tl-row.bad .tl-dot{border-color:var(--bad);background:var(--bad);color:#FFFFFF;}
+  .tl-main{flex:1;min-width:0;}
+  .tl-main b{display:block;font-size:13.5px;font-weight:600;line-height:1.3;}
+  .tl-row.wait .tl-main b{color:var(--text-dim);font-weight:500;}
+  .tl-main small{display:block;font-size:11.5px;color:var(--text-dim);margin-top:2px;}
+  .tl-gap{font-size:11px;color:var(--text-dim);}
+  .tl-note{
+    margin:14px 0 0;font-size:11.5px;color:var(--text-dim);line-height:1.5;
+    padding-top:12px;border-top:1px solid var(--line);
+  }
+
   select.inline{
     padding:6px 8px;border-radius:7px;border:1px solid var(--line);
     background:var(--panel);color:var(--text);font-size:12.5px;font-family:inherit;
@@ -1148,6 +1182,7 @@
     route: '<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M9 19h5a4 4 0 0 0 0-8h-4a4 4 0 0 1 0-8h5"/>',
     car: '<path d="M5 17h14M6.5 17V9.5l1.8-4A2 2 0 0 1 10.1 4h3.8a2 2 0 0 1 1.8 1.5l1.8 4V17"/><path d="M6.5 9.5h11"/><circle cx="8" cy="17" r="2"/><circle cx="16" cy="17" r="2"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
+    close: '<path d="M18 6 6 18M6 6l12 12"/>',
     shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
     users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
     flag: '<path d="M4 22V4M4 4h12l-2 4 2 4H4"/>',
@@ -2598,11 +2633,106 @@
             + '</dl>'
           : '<p style="color:var(--text-dim);font-size:13px;margin:0;">Bu buyurtmani hali hech kim olmagan.</p>');
 
+        var track = card("Kuzatuv", orderTimeline(order));
+
         return removeBar
-          + '<div class="detail-grid">' + main + '<div style="display:grid;gap:16px;">' + contact + driverCard + '</div></div>';
+          + '<div class="detail-grid">' + main
+          + '<div style="display:grid;gap:16px;">' + track + contact + driverCard + '</div></div>';
       });
   }
   function kvRow(k, v){ return '<dt>' + esc(k) + '</dt><dd>' + v + '</dd>'; }
+
+  /* ==========================================================
+     Buyurtma kuzatuvi
+     ----------------------------------------------------------
+     HECH NARSA O'YLAB TOPILMAYDI. Vaqt faqat serverda yozib
+     olingan bo'lsa ko'rsatiladi (order.timeline). Eski
+     buyurtmalarda bu ro'yxat yo'q — unda ma'lum bo'lgan uchta
+     vaqtdan (yaratilgan, olingan, yetkazilgan) tiklanadi va
+     qolgani "vaqti yozilmagan" deb ochiq aytiladi.
+     ========================================================== */
+  var STAGE_FLOW = ["NEW","DRIVER_FOUND","PICKING_UP","LOADED","ON_THE_WAY","DELIVERED"];
+  var STAGE_BY = { OWNER:"yuk beruvchi", DRIVER:"haydovchi", ADMIN:"admin", SYSTEM:"tizim" };
+
+  /** Eski buyurtmadan ma'lum bo'lgan vaqtlarni yig'ish. */
+  function derivedStages(order){
+    var out = [];
+    if(order.createdAt) out.push({ s:"NEW", at:order.createdAt, by:"OWNER" });
+    if(order.driver && order.driver.takenAt){
+      out.push({ s:"DRIVER_FOUND", at:order.driver.takenAt, by:"OWNER" });
+    }
+    if(order.deliveredAt) out.push({ s:"DELIVERED", at:order.deliveredAt, by:"DRIVER" });
+    if(order.cancelledAt){
+      out.push({ s:"CANCELLED", at:order.cancelledAt, by:order.cancelledBy || "OWNER" });
+    }
+    return out.sort(function(a, b){ return a.at - b.at; });
+  }
+
+  /** Ikki bosqich orasida qancha vaqt o'tgani. */
+  function gapText(from, to){
+    var ms = to - from;
+    if(!(ms > 0)) return "";
+    var min = Math.round(ms / 60000);
+    if(min < 60) return min + " daqiqa";
+    var h = Math.floor(min / 60);
+    if(h < 24) return h + " soat " + (min % 60 ? (min % 60) + " daq" : "");
+    return Math.floor(h / 24) + " kun " + (h % 24 ? (h % 24) + " soat" : "");
+  }
+
+  function orderTimeline(order){
+    var recorded = Array.isArray(order.timeline) && order.timeline.length;
+    var stages = recorded ? order.timeline.slice() : derivedStages(order);
+    var seen = {};
+    stages.forEach(function(x){ if(seen[x.s] === undefined) seen[x.s] = x; });
+
+    var cancelled = (order.status || "NEW") === "CANCELLED";
+    var atNow = STAGE_FLOW.indexOf(order.status || "NEW");
+    var rows = "";
+    var prevAt = 0;
+
+    STAGE_FLOW.forEach(function(st, i){
+      var hit = seen[st];
+      var cls = hit ? (i === atNow ? "now" : "done") : "wait";
+      if(!hit && i > atNow) cls = "wait";
+      var when = hit
+        ? esc(dt(hit.at)) + (hit.by ? ' · ' + esc(STAGE_BY[hit.by] || hit.by) : "")
+        : (i <= atNow ? "Vaqti yozilmagan" : "Hali bo'lmadi");
+      var gap = hit && prevAt ? gapText(prevAt, hit.at) : "";
+      if(hit) prevAt = hit.at;
+      rows += '<li class="tl-row ' + cls + '">'
+        + '<span class="tl-dot">' + (cls === "done" || cls === "now" ? ico("check") : "") + '</span>'
+        + '<span class="tl-main"><b>' + esc(ORDER_LABELS[st] || st) + '</b>'
+        + '<small>' + when + (gap ? ' <span class="tl-gap">· ' + esc(gap) + ' kutildi</span>' : "")
+        + '</small></span></li>';
+    });
+
+    if(cancelled){
+      var c = seen.CANCELLED;
+      rows += '<li class="tl-row bad"><span class="tl-dot">' + ico("close") + '</span>'
+        + '<span class="tl-main"><b>Bekor qilindi</b><small>'
+        + (c ? esc(dt(c.at)) + (c.by ? ' · ' + esc(STAGE_BY[c.by] || c.by) : "") : "Vaqti yozilmagan")
+        + (order.cancelReason ? ' · ' + esc(order.cancelReason) : "")
+        + '</small></span></li>';
+    }
+
+    /* Haydovchi almashgan bo'lsa, bosqichlar qayta boshlangan —
+       buni aytib qo'yish kerak, aks holda chiziq chalkash
+       ko'rinadi. */
+    var again = recorded
+      ? order.timeline.filter(function(x){ return x.s === "NEW"; }).length - 1
+      : 0;
+
+    var note = recorded
+      ? (again > 0
+          ? '<p class="tl-note">Haydovchi ' + again + ' marta almashgan — bosqichlar qaytadan '
+            + 'boshlangan. Chiziqda har bosqichning <b>oxirgi</b> vaqti ko\'rinadi.</p>'
+          : "")
+      : '<p class="tl-note">Bu buyurtma bosqichlar tarixi qo\'shilishidan oldin yaratilgan. '
+        + 'Shuning uchun faqat ma\'lum bo\'lgan vaqtlar ko\'rsatilgan, qolgani '
+        + '<b>o\'ylab topilmadi</b>.</p>';
+
+    return '<ul class="tl">' + rows + '</ul>' + note;
+  }
 
   /* ==========================================================
      19. Trips — orders a driver has actually taken. Derived from
