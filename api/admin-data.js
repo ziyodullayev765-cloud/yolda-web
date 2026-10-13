@@ -1339,10 +1339,10 @@ export default async function handler(req, res) {
     const permission = READ_PERMISSIONS[resource];
     if (!permission) {
       // Still require a session before saying anything about the request.
-      if (!requireAdmin(req, res)) return;
+      if (!await requireAdmin(req, res)) return;
       return res.status(400).json({ error: 'Noto‘g‘ri resource' });
     }
-    if (!requireAdmin(req, res, permission)) return;
+    if (!await requireAdmin(req, res, permission)) return;
 
     if (resource === 'usage') return getUsage(res);
     if (resource === 'orders') return getOrders(res);
@@ -1362,10 +1362,10 @@ export default async function handler(req, res) {
     const action = String(req.query.action || '');
     const permission = WRITE_PERMISSIONS[action];
     if (!permission) {
-      if (!requireAdmin(req, res)) return;
+      if (!await requireAdmin(req, res)) return;
       return res.status(400).json({ error: 'Noto‘g‘ri action' });
     }
-    const byRole = requireAdmin(req, res, permission);
+    const byRole = await requireAdmin(req, res, permission);
     if (!byRole) return;
 
     if (action === 'update-report') return updateReport(req, res);

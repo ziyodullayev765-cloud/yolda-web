@@ -38,13 +38,13 @@ const { makeSessionToken, isAdminAuthed, roleCan } = await import(join(repo, 'li
 
 const cookieFor = (role) => `admin_session=${makeSessionToken(role, Date.now() + 60_000)}`;
 
-const call = async (handler, method, query, body, role) => {
+const call = async (handler, method, query, body, role, cookie) => {
   const res = makeRes();
   await handler({
     method,
     query: query || {},
     body: body || {},
-    headers: role ? { cookie: cookieFor(role) } : {},
+    headers: cookie ? { cookie } : (role ? { cookie: cookieFor(role) } : {}),
   }, res);
   return res;
 };
@@ -294,6 +294,106 @@ flow('Odam yozgan har qanday shaklda topiladi');
   const chala = await call(adminData, 'POST', { action: 'save-staff' },
     { identity: '@ketgan', role: 'ADMIN' }, 'SUPER_ADMIN');
   check('profilsiz yozuv qabul qilinmadi', chala.statusCode === 404, chala.statusCode);
+}
+
+/* ============================================================
+   Xodim panelga kiradi
+   ------------------------------------------------------------
+   "Admin qilish" endi haqiqiy kirish huquqi beradi: xodim
+   ilovaga qanday kirgan bo'lsa, o'sha ma'lumot bilan panelga
+   ham kiradi. Parol shart emas.
+   ============================================================ */
+flow('Xodim ilova hisobi bilan panelga kiradi');
+{
+  reset();
+  seedUser('aziz@example.com', 'aziz');
+  await staffLib.saveStaff('aziz@example.com', { role: 'MODERATOR' });
+
+  const login = async (body) => {
+    const res = makeRes();
+    await adminLogin({ method: 'POST', query: {}, body, headers: {} }, res);
+    return res;
+  };
+
+  /* Testda Google tokeni — pochta manzilining o'zi (harness). */
+  const ok = await login({ googleIdToken: 'aziz@example.com' });
+  check('kiritildi', ok.statusCode === 200, ok.payload);
+  check('roli ro\'yxatdan olindi', ok.payload.role === 'MODERATOR', ok.payload);
+  check('cookie berildi', /admin_session=/.test(String(ok.headers['Set-Cookie'] || '')),
+    ok.headers);
+
+  /* Cookie haqiqatan ishlashi kerak. */
+  const cookie = String(ok.headers['Set-Cookie']).split(';')[0];
+  const who = makeRes();
+  await adminLogin({ method: 'GET', query: {}, body: {}, headers: { cookie } }, who);
+  check('sessiya tiklandi', who.payload.authed === true, who.payload);
+  check('kim ekani ko\'rinadi', who.payload.identity === 'aziz@example.com', who.payload);
+
+  /* Ruxsati bor joyga kiradi... */
+  const canRead = await call(adminData, 'GET', { resource: 'orders' }, null, null, cookie);
+  check('o\'z ruxsati ishlaydi', canRead.statusCode === 200, canRead.statusCode);
+  /* ...ruxsati yo'q joyga kirmaydi. */
+  const cantWrite = await call(adminData, 'POST', { action: 'save-staff' },
+    { identity: 'aziz@example.com', role: 'SUPER_ADMIN' }, null, cookie);
+  check('O\'ZINI SUPER ADMIN QILA OLMADI', cantWrite.statusCode === 403, cantWrite.statusCode);
+}
+
+flow('Ro\'yxatda yo\'q odam kira olmaydi');
+{
+  reset();
+  seedUser('begona@example.com', 'begona');
+  const res = makeRes();
+  await adminLogin({ method: 'POST', query: {},
+    body: { googleIdToken: 'begona@example.com' }, headers: {} }, res);
+  check('rad etildi', res.statusCode === 403, res.statusCode);
+  check('cookie berilmadi', !res.headers['Set-Cookie'], res.headers);
+
+  /* Soxta token ham o'tmaydi. */
+  const soxta = makeRes();
+  await adminLogin({ method: 'POST', query: {},
+    body: { googleIdToken: 'bu-token-emas' }, headers: {} }, soxta);
+  check('soxta token rad etildi', soxta.statusCode === 401, soxta.statusCode);
+}
+
+flow('Ro\'yxatdan chiqarilgan odam DARHOL kira olmay qoladi');
+{
+  reset();
+  seedUser('aziz@example.com', 'aziz');
+  await staffLib.saveStaff('aziz@example.com', { role: 'ADMIN' });
+
+  const res = makeRes();
+  await adminLogin({ method: 'POST', query: {},
+    body: { googleIdToken: 'aziz@example.com' }, headers: {} }, res);
+  const cookie = String(res.headers['Set-Cookie']).split(';')[0];
+  check('avval kirdi',
+    (await call(adminData, 'GET', { resource: 'orders' }, null, null, cookie)).statusCode === 200);
+
+  /* Super admin uni ro'yxatdan chiqaradi — cookie hali o'z
+     muddati ichida, lekin kirish to'xtashi kerak. */
+  await staffLib.removeStaff('aziz@example.com');
+  const after = await call(adminData, 'GET', { resource: 'orders' }, null, null, cookie);
+  check('CHIQARILGACH KIRA OLMADI', after.statusCode === 401, after.statusCode);
+
+  /* Roli pasaytirilsa, yangi roli amal qiladi. */
+  await staffLib.saveStaff('aziz@example.com', { role: 'ACCOUNTANT' });
+  const low = await call(adminData, 'POST', { action: 'update-user' },
+    { email: 'x@example.com' }, null, cookie);
+  check('PASAYTIRILGAN ROL AMAL QILDI', low.statusCode === 403, low.statusCode);
+}
+
+flow('Parol bilan kirish buzilmadi');
+{
+  reset();
+  const res = makeRes();
+  await adminLogin({ method: 'POST', query: {},
+    body: { password: process.env.ADMIN_PASSWORD }, headers: {} }, res);
+  check('parol bilan kirildi', res.statusCode === 200, res.payload);
+  check('super admin', res.payload.role === 'SUPER_ADMIN', res.payload);
+  const cookie = String(res.headers['Set-Cookie']).split(';')[0];
+  /* Parol bilan kirgan sessiya hisobga bog'lanmagan — xodimlar
+     ro'yxatidagi o'zgarish unga ta'sir qilmaydi. */
+  check('ro\'yxatga bog\'liq emas',
+    (await call(adminData, 'GET', { resource: 'orders' }, null, null, cookie)).statusCode === 200);
 }
 
 t.done();

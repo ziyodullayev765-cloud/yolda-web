@@ -136,6 +136,16 @@
     font-size:15px;margin-bottom:12px;background:var(--card);color:var(--ink);
   }
   .login-wrap input:focus{outline:none;border-color:var(--route);}
+  .login-or{
+    display:flex;align-items:center;gap:10px;margin:16px 0 12px;
+    color:var(--text-dim);font-size:11.5px;
+  }
+  .login-or::before,.login-or::after{content:"";flex:1;height:1px;background:var(--line);}
+  .login-wrap .card > button.ghost{
+    background:none;color:var(--text);border:1px solid var(--line-2);
+  }
+  .login-wrap .card > button.ghost:hover{border-color:var(--accent);color:var(--accent-ink);}
+  .login-note{margin:10px 0 0;font-size:11.5px;color:var(--text-dim);line-height:1.45;}
   /* Scoped to the card's direct-child submit button only — a plain
      ".login-wrap button" selector would also (more specifically than
      ".pw-toggle") match the eye-icon button nested inside .pw-field,
@@ -931,7 +941,7 @@
 <div class="login-wrap" id="loginBox" hidden>
   <div class="login-logo" id="loginLogo"></div>
   <h1>YO'LDA — Admin panel</h1>
-  <p class="sub">Davom etish uchun parolingizni kiriting.</p>
+  <p class="sub">Parolingiz bilan yoki ilova hisobingiz bilan kiring.</p>
   <div class="card">
     <div class="pw-field">
       <input type="password" id="pw" placeholder="Parol" autocomplete="current-password">
@@ -941,6 +951,12 @@
     </div>
     <button id="loginBtn">Kirish</button>
     <div class="err" id="loginErr"></div>
+
+    <!-- Ilova hisobi bilan kirish. Super admin sizni xodim qilib
+         qo'ygan bo'lsa, parolsiz ham kirasiz. -->
+    <div class="login-or"><span>yoki</span></div>
+    <button type="button" class="ghost" id="loginAcc">Ilova hisobim bilan kirish</button>
+    <p class="login-note" id="loginAccNote">Avval ilovaga shu brauzerda kiring.</p>
   </div>
 </div>
 
@@ -1341,6 +1357,16 @@
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({password: password})
+      });
+    },
+    /* Ilova hisobi bilan. Tokenning O'ZI yuboriladi va SERVERDA
+       tekshiriladi — panel uni faqat uzatadi, hech narsa hal
+       qilmaydi. */
+    loginAccount: function(creds){
+      return Api.request("/api/admin-login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(creds)
       });
     },
     logout: function(){
@@ -4630,8 +4656,9 @@
        yoziladi — va bo'sh qolsa rol nomi ko'rinadi. */
     var me = card("Admin profili",
       fieldText("setAdminName", "Panelda ko'rinadigan ism", s.adminDisplayName, { max:60, placeholder:"Ism Familiya" })
-      + '<p class="hint">Panelga kirish parol bilan, ya\'ni alohida hisob yo\'q. Bu ism faqat '
-      + 'sarlavhada ko\'rinadi; bo\'sh qoldirsangiz rol nomi chiqadi.</p>'
+      + '<p class="hint">Parol bilan kirilganda alohida hisob yo\'q, shuning uchun ism shu '
+      + 'yerda yoziladi. Ilova hisobi bilan kirilgan xodimda esa o\'z ismi ko\'rinadi. '
+      + 'Bo\'sh qoldirsangiz rol nomi chiqadi.</p>'
       + '<dl class="kv">' + kvRow("Hozirgi rol", esc(ROLE_NAMES[session.role] || session.role)) + '</dl>'
       + saveBar());
 
@@ -4701,8 +4728,9 @@
   }
 
   /* ---------- 4. Rollar va ruxsatlar ----------
-     Eng muhim gap shu sahifada ochiq yozilgan: bu ro'yxat panelga
-     KIRISH huquqi emas. Kirish hamon parol bilan — lib/staff.js. */
+     Bu ro'yxat endi KIRISH HUQUQINI ham beradi: xodim ilova
+     hisobi bilan panelga kiradi (api/admin-login.js). Ro'yxatdan
+     chiqarilsa, kirish shu zahoti to'xtaydi. */
   function settingsRoles(){
     var staff = Store.list("staff");
     var byRole = {};
@@ -4744,9 +4772,11 @@
           '<p class="hint" style="margin-top:0;">Xodim qo\'shilsa, uning <b>ilovadagi ochiq profilida</b> '
           + '“Administrator” yoki “Operator” yorlig\'i chiqadi — odamlar kim bilan '
           + 'gaplashayotganini bilishi uchun.</p>'
-          + '<p class="hint"><b>Bu panelga kirish huquqi emas.</b> Panelga kirish faqat parol bilan '
-          + 'tekshiriladi. Ro\'yxatdan o\'chirish odamni paneldan chiqarib tashlamaydi — buning uchun '
-          + 'parolni almashtirish kerak (ADMIN_PASSWORD... server sozlamalari).</p>')
+          + '<p class="hint"><b>Bu panelga kirish huquqini ham beradi.</b> Xodim ilovaga kirgan '
+          + 'brauzerda shu sahifani ochadi va “Ilova hisobim bilan kirish” tugmasini bosadi — '
+          + 'paroli bo\'lmasa ham kiradi, lekin faqat o\'z rolining ruxsatlari bilan.</p>'
+          + '<p class="hint">Ro\'yxatdan chiqarilsa, kirish <b>shu zahoti</b> to\'xtaydi: ruxsat '
+          + 'har bir so\'rovda ro\'yxatdan qayta o\'qiladi.</p>')
       + '</div></div>';
   }
 
@@ -4936,7 +4966,8 @@
         + '<input type="text" id="stTitle" maxlength="60" value="' + esc(existing ? (existing.title || "") : "")
         + '" placeholder="Operatsiya bo\'limi"></div>'
         + '<p class="hint">Bu rol odamning ilovadagi profilida yorliq bo\'lib ko\'rinadi. '
-        + 'Panelga kirish huquqi bermaydi — kirish parol bilan.</p>'
+        + 'Shu bilan birga u ilova hisobi orqali panelga kira oladi — '
+        + 'faqat shu rolning ruxsatlari bilan.</p>'
         + '<div class="help-err" id="stErr"></div>',
       foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
         + '<button type="button" class="btn primary" data-act="modal-save">Saqlash</button>',
@@ -5008,9 +5039,9 @@
       title: "Xodimni ro'yxatdan chiqarish",
       body: '<p style="margin:0;color:var(--text-soft);font-size:13.5px;line-height:1.55;">'
         + '<b>' + esc(identity) + '</b> profilidagi rol yorlig\'i olib tashlanadi.</p>'
-        + '<p class="hint">Diqqat: bu uni paneldan chiqarib tashlamaydi. Panelga kirish parol '
-        + 'bilan tekshiriladi — kirishni to\'xtatish uchun o\'sha rolning parolini '
-        + 'almashtirish kerak.</p>',
+        + '<p class="hint">Shu bilan birga uning <b>panelga kirishi ham to\'xtaydi</b> — '
+        + 'darhol. Agar u paroldan foydalanayotgan bo\'lsa, parol baribir ishlayveradi: '
+        + 'buning uchun o\'sha rolning parolini almashtirish kerak.</p>',
       foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
         + '<button type="button" class="btn bad" data-act="modal-save">Chiqarish</button>',
       onSave: function(){
@@ -5697,6 +5728,60 @@
   }
   byId("loginBtn").addEventListener("click", doLogin);
   byId("pw").addEventListener("keydown", function(e){ if(e.key === "Enter") doLogin(); });
+
+  /**
+   * Ilovaga kirgan hisobni o'qiydi.
+   *
+   * Ilova va panel BIR domenda, shuning uchun saqlangan sessiya
+   * shu yerda ham ko'rinadi. Tokenni panel tekshirmaydi — uni
+   * shundayligicha serverga uzatadi, tekshirish o'sha yerda.
+   */
+  function appCredentials(){
+    var raw = null;
+    try{ raw = localStorage.getItem("yolda_auth"); }catch(e){ return null; }
+    if(!raw) return null;
+    var saved = null;
+    try{ saved = JSON.parse(raw); }catch(e){ return null; }
+    if(!saved || !saved.token) return null;
+    if(!(Number(saved.expiresAt) > Date.now())) return null;
+
+    if(saved.kind === "google") return { googleIdToken: saved.token };
+    if(saved.kind === "telegram") return { telegramInitData: saved.token };
+    if(saved.kind === "phone"){
+      /* Telefon bilan kirilganda ichkarida yana bir JSON turadi. */
+      var inner = null;
+      try{ inner = JSON.parse(saved.token); }catch(e){ return null; }
+      return inner && inner.token ? { phoneToken: inner.token } : null;
+    }
+    return null;
+  }
+
+  function doAccountLogin(){
+    var btn = byId("loginAcc");
+    var err = byId("loginErr");
+    err.textContent = "";
+    var creds = appCredentials();
+    if(!creds){
+      err.textContent = "Ilovaga kirilmagan. Avval shu brauzerda ilovaga kiring.";
+      return;
+    }
+    btn.disabled = true;
+    Api.loginAccount(creds).then(function(body){
+      startSession(body.role || "MODERATOR");
+    }).catch(function(e){
+      err.textContent = e.message || "Kirib bo'lmadi";
+    }).then(function(){ btn.disabled = false; });
+  }
+  byId("loginAcc").addEventListener("click", doAccountLogin);
+
+  /* Ilovaga kirilmagan bo'lsa, buni oldindan aytamiz. */
+  (function(){
+    var note = byId("loginAccNote");
+    if(!note) return;
+    note.textContent = appCredentials()
+      ? "Super admin sizni xodim qilib qo'ygan bo'lsa, parolsiz kirasiz."
+      : "Avval shu brauzerda ilovaga kiring, keyin shu tugma ishlaydi.";
+  })();
 
   function doLogout(){
     // The cookie is HttpOnly — only the server can clear it, so this has
