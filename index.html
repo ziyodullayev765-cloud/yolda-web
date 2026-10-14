@@ -9766,8 +9766,21 @@
     function paintPush(){
       if(!pushBtn) return;
       var P = window.YoldaPush;
+      /* Qo'llab-quvvatlanmasa qatorni yashirmaymiz — sababini
+         aytamiz. Yo'q narsani jimgina olib qo'yish odamni
+         "qayerda u?" deb qidirtiradi.
+
+         Telegram ichida Push API umuman yo'q (u brauzer emas,
+         ilovaning ichidagi oyna). Lekin u yerda xabar baribir
+         keladi — bot orqali. */
       if(!P || !P.supported()){
-        if(pushRow) pushRow.hidden = true;
+        pushBtn.setAttribute("aria-checked", "false");
+        pushBtn.disabled = true;
+        if(pushSub){
+          pushSub.textContent = isTelegramWebApp
+            ? "Telegram ichida xabar bot orqali keladi — bu kalit kerak emas."
+            : "Bu brauzer bildirishnomani qo'llab-quvvatlamaydi.";
+        }
         return;
       }
       if(!isSignedIn()){
