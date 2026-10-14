@@ -36,6 +36,8 @@ export const kvSadd = async (k, m) => { if(!sets.has(k)) sets.set(k, new Set());
 export const kvSaddNew = async (k, m) => { if(!sets.has(k)) sets.set(k, new Set());
   const had = sets.get(k).has(m); sets.get(k).add(m); return !had; };
 export const kvExpire = async () => true;
+export const kvIncr = async (k) => { const n = Number(store.get(k) || 0) + 1; store.set(k, String(n)); return n; };
+export const kvLrem = async (k, v) => { if(lists.has(k)) lists.set(k, lists.get(k).filter((x) => x !== v)); return true; };
 export const kvSrem = async (k, m) => { if(sets.has(k)) sets.get(k).delete(m); return true; };
 export const kvSmembers = async (k) => sets.has(k) ? [...sets.get(k)] : [];
 export const kvSismember = async (k, m) => sets.has(k) && sets.get(k).has(m);
