@@ -28,7 +28,7 @@ process.env.TELEGRAM_BOT_TOKEN = 'test-bot-token';
 process.env.TELEGRAM_BOT_USERNAME = 'yoldatestbot';
 
 import {
-  db, loadApi, loadApiAll, loadLib, post, telegramMessages, clearOutgoing, runner,
+  db, loadApi, loadApiAll, loadLib, post, telegramMessages, clearOutgoing, outgoing, runner,
 } from './harness.mjs';
 
 const t = runner();
@@ -317,4 +317,63 @@ flow('8. Premium berish va olib tashlash');
   check('ro\'yxatdan ham chiqdi', !(await premium.premiumMembers()).includes('ph:998901110070'));
 }
 
-t.done(8);
+/* ============================================================
+   9. Yo'nalish bo'yicha obuna — BOSHIDAN OXIRIGACHA
+   ------------------------------------------------------------
+   Bu yerdagi savol boshqa: qidiruv ishlaydimi emas, balki odam
+   shu haqda HAQIQATAN xabar oladimi. Qidiruv saqlanib, yuk mos
+   tushib, lekin xabar telefonga chiqmasa — butun zanjirning
+   ma'nosi yo'q.
+   ============================================================ */
+flow('9. Qidiruv → mos yuk → telefonga push');
+{
+  fresh();
+  process.env.VAPID_PUBLIC_KEY = 'BOqI1qeHf2omoZwUywSy_HGj3lnxISyfADhcvaamREMZTyD1KYHJcmwg421LqdWTCrh6NO1apm8xRGUY40r99N8';
+  process.env.VAPID_PRIVATE_KEY = 'pVy2OfNeACp7aWf01VWaTxlss_B8HfXpTbQXyK6Ta7k';
+
+  const token = await registerByPhone('+998901110090');
+  const DRIVER = 'ph:998901110091';
+  addPerson(DRIVER, { search: { fromCity: 'Buxoro', toCity: 'Toshkent' } });
+
+  /* Haydovchi qurilmasini obuna qilib qo'ygan. */
+  db.strings.set(`push:${DRIVER}`, JSON.stringify([{
+    id: 'd1',
+    endpoint: 'https://fcm.googleapis.com/fcm/send/HAYDOVCHI',
+    p256dh: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
+    auth: 'BTBZMqHH6r4Tts7J_aSIgg',
+    at: Date.now(),
+  }]));
+
+  /* 1. Mos kelmaydigan yuk. */
+  clearOutgoing();
+  await postLoad(token, { fromCity: 'Toshkent', toCity: 'Samarqand' });
+  fastForward();
+  await orderMod.sweepNotifyQueue();
+  check('mos kelmagani uchun push KETMADI',
+    !outgoing.some((o) => o.url.includes('HAYDOVCHI')), outgoing.map((o) => o.url));
+
+  /* 2. Aynan kutilgan yo'nalish. */
+  clearOutgoing();
+  await postLoad(token, { fromCity: 'Buxoro', toCity: 'Toshkent' });
+  fastForward();
+  await orderMod.sweepNotifyQueue();
+
+  const pushes = outgoing.filter((o) => o.url.includes('HAYDOVCHI'));
+  check('MOS YUKDA PUSH KELDI', pushes.length === 1, outgoing.map((o) => o.url));
+  check('ilova ichiga ham yozildi', gotInApp(DRIVER) === 1, gotInApp(DRIVER));
+  check('Telegram ham oldi',
+    outgoing.some((o) => o.url.includes('api.telegram.org')), null);
+
+  /* 3. Turkumni o'chirsa — hech qayerga bormaydi. */
+  clearOutgoing();
+  db.strings.set(`profile:${DRIVER}`, JSON.stringify({
+    displayName: DRIVER, notify: { matches: false },
+  }));
+  await postLoad(token, { fromCity: 'Buxoro', toCity: 'Toshkent' });
+  fastForward();
+  await orderMod.sweepNotifyQueue();
+  check("O'CHIRILGAN TURKUM — PUSH HAM YO'Q",
+    !outgoing.some((o) => o.url.includes('HAYDOVCHI')), outgoing.map((o) => o.url));
+}
+
+t.done(9);
