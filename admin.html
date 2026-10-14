@@ -691,6 +691,31 @@
   .tl-row.wait .tl-main b{color:var(--text-dim);font-weight:500;}
   .tl-main small{display:block;font-size:11.5px;color:var(--text-dim);margin-top:2px;}
   .tl-gap{font-size:11px;color:var(--text-dim);}
+  /* Hujjatlar paneli — uchta tasdiq bir joyda. */
+  .doc-row{
+    display:flex;align-items:flex-start;gap:12px;
+    padding:12px 0;border-top:1px solid var(--line);
+  }
+  .doc-row:first-child{border-top:none;padding-top:0;}
+  .doc-row:last-child{padding-bottom:0;}
+  .doc-ico{
+    width:32px;height:32px;border-radius:10px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--sunken);color:var(--text-soft);
+  }
+  .doc-row.ok .doc-ico{background:var(--ok-soft);color:var(--ok-ink);}
+  .doc-row.wait .doc-ico{background:var(--warn-soft);color:var(--warn-ink);}
+  .doc-row.no .doc-ico{background:var(--bad-soft);color:var(--bad-ink);}
+  .doc-ico svg{width:16px;height:16px;}
+  .doc-main{flex:1;min-width:0;}
+  .doc-main b{display:block;font-size:13.5px;font-weight:600;line-height:1.3;}
+  .doc-main small{display:block;font-size:11.5px;color:var(--text-dim);margin-top:3px;line-height:1.4;}
+  .doc-act{flex:none;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+  @media(max-width:700px){
+    .doc-row{flex-wrap:wrap;}
+    .doc-act{width:100%;justify-content:flex-start;padding-left:44px;}
+  }
+
   .tl-note{
     margin:14px 0 0;font-size:11.5px;color:var(--text-dim);line-height:1.5;
     padding-top:12px;border-top:1px solid var(--line);
@@ -3404,8 +3429,10 @@
           }).join("") + '</tbody></table></div></div>');
       }
 
+      var docs = card("Hujjatlar va tasdiqlar", userDocs(user));
+
       return '<div class="detail-grid">' + profile
-        + '<div style="display:grid;gap:16px;">' + activity + lists + '</div></div>';
+        + '<div style="display:grid;gap:16px;">' + docs + activity + lists + '</div></div>';
     });
   }
 
@@ -3416,6 +3443,67 @@
      "qaysi yuk hamon kutib turadi". Shu sababli alohida bo'lim —
      navbatdagi ishni ko'rish uchun jadvalni saralash kerak emas.
      ========================================================== */
+  /* ==========================================================
+     Hujjatlar paneli
+     ----------------------------------------------------------
+     Uchala tasdiq bitta joyda: holati, so'rov vaqti, qaror
+     vaqti va rad etilgan bo'lsa sababi. Ilgari buning uchun
+     "Tasdiqlashlar" bo'limiga o'tib, o'sha odamni qidirish
+     kerak edi.
+
+     YANGI SERVER AMALI QO'SHILMADI — tugmalar o'sha
+     "Tasdiqlashlar" jadvalidagi amallarni chaqiradi.
+     ========================================================== */
+  var DOC_ICON = { PHONE:"phone", IDENTITY:"shield", TRANSPORT:"car" };
+  var DOC_CLS = { VERIFIED:"ok", PENDING:"wait", REJECTED:"no", NONE:"" };
+
+  function userDocs(user){
+    var writable = can("users:write");
+    return VERIFY_ALL_KINDS.map(function(kind){
+      var st = verifyStateOf(user, kind);
+      var pillDef = VERIFY_ST_PILL[st.status] || VERIFY_ST_PILL.NONE;
+
+      var lines = [];
+      if(st.at) lines.push("So'ralgan: " + dt(st.at));
+      if(st.reviewedAt) lines.push("Qaror: " + dt(st.reviewedAt));
+      if(st.reason) lines.push("Sabab: " + st.reason);
+      if(!lines.length){
+        lines.push(kind === "PHONE"
+          ? "Telegram orqali avtomatik tasdiqlanadi"
+          : "Foydalanuvchi hali so'ramagan");
+      }
+
+      var act = "";
+      if(kind === "PHONE"){
+        /* Raqamni Telegram tasdiqlaydi — admin bu yerda hech
+           narsa qila olmaydi, soxta tugma ham qo'yilmaydi. */
+        act = '<span style="color:var(--text-dim);font-size:11.5px;">Telegram orqali</span>';
+      }else if(!writable){
+        act = "";
+      }else if(st.status === "PENDING"){
+        act = '<button type="button" class="btn sm primary" data-act="verify-doc" '
+          + 'data-email="' + esc(user.email) + '" data-kind="' + esc(kind) + '">'
+          + ico("shield") + 'Hujjatni ko\'rish</button>';
+      }else if(st.status === "VERIFIED"){
+        act = '<button type="button" class="btn sm bad" data-act="verify-set" '
+          + 'data-email="' + esc(user.email) + '" data-kind="' + esc(kind) + '" data-on="0">'
+          + 'Bekor qilish</button>';
+      }else{
+        act = '<button type="button" class="btn sm ok" data-act="verify-set" '
+          + 'data-email="' + esc(user.email) + '" data-kind="' + esc(kind) + '" data-on="1">'
+          + ico("check") + 'Tasdiqlash</button>';
+      }
+
+      return '<div class="doc-row ' + (DOC_CLS[st.status] || "") + '">'
+        + '<span class="doc-ico">' + ico(DOC_ICON[kind] || "shield") + '</span>'
+        + '<span class="doc-main"><b>' + esc(VERIFY_KIND_LABELS[kind] || kind) + ' '
+        +   pill(pillDef[0], pillDef[1]) + '</b>'
+        + '<small>' + esc(lines.join(" · ")) + '</small></span>'
+        + (act ? '<span class="doc-act">' + act + '</span>' : "")
+        + '</div>';
+    }).join("");
+  }
+
   function isOpenLoad(o){ return !isTrip(o) && (o.status || "NEW") === "NEW"; }
 
   function viewListings(){
