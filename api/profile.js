@@ -28,7 +28,7 @@ import {
   kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvSmembers, kvRange,
   kvIncr, kvExpire,
 } from '../lib/kv.js';
-import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
+import { MAX_SEARCHES, searchesKey } from '../lib/savedSearch.js';
 import { ensurePublicId } from '../lib/publicId.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
@@ -515,10 +515,8 @@ const handleProfile = async (req, res) => {
    foydalanuvchilar ro'yxati profil bilan birga bularni ham
    tortib yurmasin.
 
-   `search_cities:<shahar>` — qaysi identity shu shahardan yuk
-   kutayotgani indeksi. Yangi yuk kelganda hamma foydalanuvchini
-   ko'rib chiqmaslik uchun kerak; "har qanday shahar" degan
-   qidiruvlar ANY_CITY kalitida turadi.
+   Shahar bo'yicha teskari indeks YO'Q — nega yo'qligi
+   lib/savedSearch.js da yozilgan.
    ============================================================ */
 const readSearches = async (identity) => {
   try {
@@ -574,7 +572,6 @@ const saveSearch = async (req, res, identity, body) => {
   searches.push(search);
   const saved = await kvSet(searchesKey(identity), JSON.stringify(searches));
   if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
-  await kvSadd(cityIndexKey(search.fromCity), identity);
   return res.status(200).json({ ok: true, searches });
 };
 
@@ -587,10 +584,6 @@ const deleteSearch = async (req, res, identity, body) => {
   const next = searches.filter((s) => s.id !== id);
   const saved = await kvSet(searchesKey(identity), JSON.stringify(next));
   if (!saved) return res.status(502).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
-  // Shu shahardan boshqa qidiruv qolmagan bo'lsa, indeksdan chiqamiz.
-  if (!next.some((s) => (s.fromCity || ANY_CITY) === (removed.fromCity || ANY_CITY))) {
-    await kvSrem(cityIndexKey(removed.fromCity), identity);
-  }
   return res.status(200).json({ ok: true, searches: next });
 };
 

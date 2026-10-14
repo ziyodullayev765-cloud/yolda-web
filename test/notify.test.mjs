@@ -371,9 +371,11 @@ const profileHandler = (await load('api/profile.js', 'profile_under_test')).defa
   const overflow = await call('save-search', { ...driver, search: { fromCity: 'Nukus' } });
   check('the number of saved searches is capped', overflow.statusCode === 409);
 
-  check('the city index knows who is waiting',
-    (await (await import(join(work, 'kvmock.mjs'))).kvSmembers('search_cities:Toshkent'))
-      .includes('driver@example.com'));
+  /* Shahar indeksi olib tashlandi — u hech qayerda o'qilmasdi
+     (sababi lib/savedSearch.js da). Shuning uchun endi uning
+     YO'QLIGI tekshiriladi: ortiqcha yozuv qaytib kelmasin. */
+  check('no city index is written any more',
+    (await (await import(join(work, 'kvmock.mjs'))).kvSmembers('search_cities:Toshkent')).length === 0);
 
   const list = await call('searches', driver);
   const firstId = list.body.searches[0].id;

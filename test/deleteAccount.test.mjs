@@ -118,7 +118,6 @@ const reset = () => {
   store.set(`reviews:${ME}`, '[]');
   store.set(`verifydoc:${ME}:IDENTITY`, 'data:image/jpeg;base64,AAAA');
   store.set(`verifydoc:${ME}:LICENSE`, 'data:image/jpeg;base64,BBBB');
-  sets.set(`search_cities:Toshkent`, new Set([ME, OTHER]));
   sets.set(`inbox:${ME}`, new Set([OTHER]));
   sets.set(`inbox:${OTHER}`, new Set([ME]));
   store.set(`chatUnread:${ME}:${OTHER}`, '2');
@@ -161,9 +160,8 @@ await it('Telegram bog\'lanishi o\'chdi', () => {
   assert.equal(store.get('tgIdToEmail:555'), undefined);
   assert.equal(store.get('telegram:555'), undefined);
 });
-await it('saqlangan qidiruv va uning shahar indeksi o\'chdi', () => {
+await it('saqlangan qidiruv o\'chdi', () => {
   assert.equal(store.get(`searches:${ME}`), undefined);
-  assert.ok(!sets.get('search_cities:Toshkent').has(ME));
 });
 await it('bildirishnoma, saralangan, baholar o\'chdi', () => {
   for (const k of [`notifs:${ME}`, `notifs_seen:${ME}`, `truck_favs:${ME}`, `saved_loads:${ME}`, `reviews:${ME}`]) {
