@@ -9789,6 +9789,15 @@
         if(pushSub) pushSub.textContent = "Buning uchun avval ilovaga kiring.";
         return;
       }
+      if(P.needsInstall()){
+        pushBtn.setAttribute("aria-checked", "false");
+        pushBtn.disabled = true;
+        if(pushSub){
+          pushSub.textContent = "iPhone'da buning uchun ilovani ekranga qo'shing: "
+            + "\u201cUlashish\u201d \u2192 \u201cEkranga qo'shish\u201d.";
+        }
+        return;
+      }
       if(P.permission() === "denied"){
         pushBtn.setAttribute("aria-checked", "false");
         pushBtn.disabled = true;
@@ -11414,11 +11423,34 @@
      bezovta qilish va ko'pchilik uni o'sha zahoti rad etadi,
      keyin esa qayta so'rab bo'lmaydi.
      ============================================================ */
-  var pushBusy = false;
+  /* Ketayotgan urinish (yoki null). Bayroq emas, VA'DANING
+     O'ZI: ikkinchi bosish o'shanga qo'shiladi. */
+  var pushBusy = null;
 
   function pushSupported(){
     return typeof Notification !== "undefined"
       && "serviceWorker" in navigator && "PushManager" in window;
+  }
+
+  /* iPhone va iPad: bildirishnoma FAQAT ilova ekranga
+     qo'shilgan bo'lsa ishlaydi. Oddiy Safari varag'ida
+     tugmalar bor-u, obuna bo'lib bo'lmaydi — shuning uchun
+     buni oldindan aytamiz, "nega ishlamadi?" degan savol
+     qolmasin. */
+  function isAppleTouch(){
+    var ua = navigator.userAgent || "";
+    if(/iPad|iPhone|iPod/.test(ua)) return true;
+    /* iPad'ning yangi versiyalari o'zini Mac deb ko'rsatadi. */
+    return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  }
+  function isInstalled(){
+    try{
+      return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+        || window.navigator.standalone === true;
+    }catch(e){ return false; }
+  }
+  function pushNeedsInstall(){
+    return isAppleTouch() && !isInstalled();
   }
 
   /** Kalitni brauzer kutadigan ko'rinishga (bayt massivi) o'tkazish. */
@@ -11430,9 +11462,37 @@
     return out;
   }
 
+  /**
+   * Xizmat fayli (service worker) tayyor bo'lishini kutadi.
+   *
+   * MUHIM — `navigator.serviceWorker.ready` HECH QACHON XATO
+   * BERMAYDI. Agar hech qanday xizmat fayli ro'yxatdan
+   * o'tmagan bo'lsa, u shunchaki MANGUGACHA kutadi. Shu
+   * sababli kalit bir marta bosilgach "band" holatida qotib
+   * qolar va keyingi har bosishda "Kutib turing" deb
+   * chiqaverardi.
+   *
+   * Endi ikki narsa qilinadi: faylni o'zimiz ro'yxatdan
+   * o'tkazamiz (hali o'tmagan bo'lsa) va kutishga muddat
+   * qo'yamiz. Muddat o'tsa `null` qaytadi va chaqiruvchi
+   * tushunarli xabar ko'rsatadi.
+   */
+  var PUSH_READY_MS = 8000;
   function pushReady(){
     if(!pushSupported()) return Promise.resolve(null);
-    return navigator.serviceWorker.ready.catch(function(){ return null; });
+
+    var ready = navigator.serviceWorker.register("/sw.js")
+      .then(function(reg){
+        if(reg && reg.active) return reg;
+        return navigator.serviceWorker.ready;
+      })
+      .catch(function(){ return navigator.serviceWorker.ready; })
+      .catch(function(){ return null; });
+
+    var timeout = new Promise(function(done){
+      setTimeout(function(){ done(null); }, PUSH_READY_MS);
+    });
+    return Promise.race([ready, timeout]);
   }
 
   /** Hozir obuna bormi? */
@@ -11460,13 +11520,20 @@
   }
 
   function pushEnable(){
-    if(pushBusy) return Promise.reject(new Error("Kutib turing"));
+    /* Ikki marta bosilsa xato chiqarmaymiz — birinchi
+       urinishning o'zini qaytaramiz. "Kutib turing" degan
+       xato odamga hech narsa bermaydi. */
+    if(pushBusy) return pushBusy;
     if(!pushSupported()) return Promise.reject(new Error("Bu brauzer qo'llab-quvvatlamaydi"));
+    if(pushNeedsInstall()){
+      return Promise.reject(new Error(
+        "iPhone'da buning uchun ilovani ekranga qo'shish kerak: "
+        + "Safari'da \u201cUlashish\u201d \u2192 \u201cEkranga qo'shish\u201d."));
+    }
     if(!VAPID_PUBLIC_KEY) return Promise.reject(new Error("Push hali sozlanmagan"));
     if(!isSignedIn()) return Promise.reject(new Error("Avval ilovaga kiring"));
-    pushBusy = true;
 
-    return Promise.resolve()
+    pushBusy = Promise.resolve()
       .then(function(){ return Notification.requestPermission(); })
       .then(function(perm){
         if(perm !== "granted"){
@@ -11479,7 +11546,9 @@
         return pushReady();
       })
       .then(function(reg){
-        if(!reg) throw new Error("Xizmat fayli tayyor emas");
+        if(!reg || !reg.pushManager){
+          throw new Error("Ilova hali tayyor emas. Sahifani yangilab, qayta urinib ko'ring.");
+        }
         return reg.pushManager.getSubscription().then(function(old){
           if(old) return old;
           return reg.pushManager.subscribe({
@@ -11495,14 +11564,14 @@
           device: navigator.userAgent.slice(0, 60)
         }).then(function(r){ return r; });
       })
-      .then(function(r){ pushBusy = false; return r; })
-      .catch(function(err){ pushBusy = false; throw err; });
+      .then(function(r){ pushBusy = null; return r; })
+      .catch(function(err){ pushBusy = null; throw err; });
+    return pushBusy;
   }
 
   function pushDisable(){
-    if(pushBusy) return Promise.reject(new Error("Kutib turing"));
-    pushBusy = true;
-    return pushCurrent()
+    if(pushBusy) return pushBusy;
+    pushBusy = pushCurrent()
       .then(function(sub){
         var endpoint = sub ? sub.endpoint : "";
         /* Avval serverdan o'chiramiz: brauzerdan o'chirib
@@ -11511,12 +11580,14 @@
           .catch(function(){ /* serverga yetmasa ham brauzerdan o'chiramiz */ })
           .then(function(){ return sub ? sub.unsubscribe().catch(function(){}) : null; });
       })
-      .then(function(){ pushBusy = false; return true; })
-      .catch(function(err){ pushBusy = false; throw err; });
+      .then(function(){ pushBusy = null; return true; })
+      .catch(function(err){ pushBusy = null; throw err; });
+    return pushBusy;
   }
 
   window.YoldaPush = {
     supported: pushSupported,
+    needsInstall: pushNeedsInstall,
     current: pushCurrent,
     enable: pushEnable,
     disable: pushDisable,
