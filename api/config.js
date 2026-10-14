@@ -94,6 +94,11 @@ export default async function handler(req, res) {
   res.status(200).json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || '',
+    /* Push bildirishnoma uchun OCHIQ kalit. U sir emas va sir
+       bo'lishi ham mumkin emas: brauzer obunani aynan shu
+       kalitga bog'laydi. Maxfiy juftligi (VAPID_PRIVATE_KEY)
+       esa serverdan chiqmaydi. */
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
     icons,
     iconsPlain,
     platformName: settings.platformName,

@@ -19,7 +19,7 @@
  */
 // v2: "navigate" so'rovi endi har qanday sahifani qobiq deb
 // saqlamaydi — eski keshda noto'g'ri qobiq qolgan bo'lishi mumkin.
-const CACHE_VERSION = 'yolda-v2';
+const CACHE_VERSION = 'yolda-v3';
 const SHELL = [
   '/',
   '/index.html',
@@ -115,4 +115,71 @@ self.addEventListener('fetch', (event) => {
 // Sahifa "yangi versiyani hoziroq qo'y" deb aytsa.
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+/* ============================================================
+   Push bildirishnoma
+   ------------------------------------------------------------
+   Server shifrlangan xabar yuboradi, brauzer uni ochib shu
+   yerga beradi. Ichida uchta narsa bo'ladi: sarlavha, matn va
+   bosilganda ochiladigan havola.
+
+   XABAR BUZUQ BO'LSA HAM BILDIRISHNOMA CHIQADI. Brauzer
+   "push" hodisasidan keyin hech narsa ko'rsatilmasa, ba'zi
+   tizimlar o'zining "Yangi xabar" degan yozuvini chiqaradi —
+   undan ko'ra o'zimizning umumiy yozuvimiz yaxshiroq.
+   ============================================================ */
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (err) {
+    data = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = data.title || "YO'LDA";
+  const options = {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    // Bir xil turkumdagi xabar eskisining ustiga tushadi —
+    // ekranni bir xil bildirishnoma bilan to'ldirmaslik uchun.
+    tag: data.tag || 'yolda',
+    renotify: true,
+    data: { link: data.link || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+/* Bosilganda — ilova allaqachon ochiq bo'lsa o'sha oynani
+   ko'taramiz, bo'lmasa yangisini ochamiz. Ikkinchi nusxa
+   ochilishi odamni chalg'itadi. */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const link = (event.notification.data && event.notification.data.link) || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url.indexOf(self.location.origin) === 0 && 'focus' in client) {
+          if ('navigate' in client && link && link !== '/') {
+            return client.navigate(link).then((c) => (c || client).focus());
+          }
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(link);
+    }),
+  );
+});
+
+/* Obuna yangilanganda (brauzer kalitni almashtiradi) eski yozuv
+   yaroqsiz bo'lib qoladi. Sahifa ochilganda u o'zi qayta obuna
+   bo'ladi — shuning uchun bu yerda faqat belgilab qo'yamiz. */
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      list.forEach((c) => c.postMessage({ type: 'PUSH_RESUBSCRIBE' }));
+    }),
+  );
 });

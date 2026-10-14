@@ -39,6 +39,9 @@ import { CARGO } from '../lib/orderMessage.js';
 import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
 import { staffRecord, STAFF_ROLE_LABELS } from '../lib/staff.js';
 import {
+  deviceId, readSubscriptions, writeSubscriptions, vapidConfigured, MAX_DEVICES,
+} from '../lib/webpush.js';
+import {
   KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
   publicVerifications, canSubmit, docKey,
 } from '../lib/verification.js';
@@ -789,6 +792,72 @@ const handleDeleteAccount = async (req, res) => {
   return res.status(200).json({ ok: true, anonymised: result.anonymised });
 };
 
+/* ============================================================
+   Push bildirishnoma obunasi
+   ------------------------------------------------------------
+   Brauzer obuna bo'lgach bergan uchta qiymat shu yerda
+   saqlanadi. Ularning hech biri maxfiy emas: `endpoint` — push
+   xizmatining manzili, `p256dh` — brauzerning OCHIQ kaliti,
+   `auth` esa shu obunaning o'zi uchun tasodifiy bayt. Ular
+   bilan faqat SHU brauzerga xabar yuborish mumkin, boshqa hech
+   narsa qilib bo'lmaydi.
+
+   Obuna odamning hisobiga bog'lanadi: kirmagan odam obuna
+   bo'la olmaydi, aks holda kimningdir qurilmasiga begona
+   xabar yuborib bo'lardi.
+   ============================================================ */
+const pushSubscribe = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+  if (!vapidConfigured()) {
+    return res.status(503).json({ error: 'Push hali sozlanmagan', notReady: true });
+  }
+
+  const sub = body.subscription || {};
+  const endpoint = String(sub.endpoint || '').trim();
+  const p256dh = String((sub.keys && sub.keys.p256dh) || sub.p256dh || '').trim();
+  const auth = String((sub.keys && sub.keys.auth) || sub.auth || '').trim();
+  /* Manzil faqat HTTPS bo'lishi mumkin — push xizmatlari shunday.
+     Boshqa manzil kelsa, bu obuna emas. */
+  if (!/^https:\/\//.test(endpoint) || !p256dh || !auth) {
+    return res.status(400).json({ error: 'Obuna to‘liq emas' });
+  }
+  if (endpoint.length > 1000) return res.status(400).json({ error: 'Manzil juda uzun' });
+
+  const id = deviceId(endpoint);
+  const list = (await readSubscriptions(kvGet, identity))
+    .filter((x) => x && x.id !== id);
+  list.push({
+    id, endpoint, p256dh, auth,
+    at: Date.now(),
+    ua: String(body.device || '').slice(0, 60),
+  });
+  await writeSubscriptions(kvSet, kvDel, identity, list);
+  return res.status(200).json({ ok: true, devices: Math.min(list.length, MAX_DEVICES) });
+};
+
+const pushUnsubscribe = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const endpoint = String(body.endpoint || '').trim();
+  /* Manzil berilmasa — shu hisobning HAMMA qurilmasi o'chadi.
+     Sozlamalardagi tugma aynan shuni kutadi. */
+  const list = endpoint
+    ? (await readSubscriptions(kvGet, identity)).filter((x) => x && x.id !== deviceId(endpoint))
+    : [];
+  await writeSubscriptions(kvSet, kvDel, identity, list);
+  return res.status(200).json({ ok: true, devices: list.length });
+};
+
 export default async function handler(req, res) {
   // Faqat o'qiydigan ikkita GET yo'l; qolgani hamma vaqt POST.
   if (req.method === 'GET') {
@@ -810,5 +879,7 @@ export default async function handler(req, res) {
   if (action === 'save') return toggleSaved(req, res);
   if (action === 'saved') return listSaved(req, res);
   if (action === 'delete-account') return handleDeleteAccount(req, res);
+  if (action === 'push-subscribe') return pushSubscribe(req, res);
+  if (action === 'push-unsubscribe') return pushUnsubscribe(req, res);
   return handleProfile(req, res);
 }
