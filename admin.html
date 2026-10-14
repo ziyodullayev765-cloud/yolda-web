@@ -1496,7 +1496,11 @@
     // Bu ham ro'yxat emas — Store.raw.usage o'qiladi.
     usage:    { query:"resource=usage",    perm:"settings:read", key:"usage" },
     // Xodimlar ro'yxati — faqat super admin. lib/staff.js ga qarang.
-    staff:    { query:"resource=staff",    perm:"staff:read",    key:"staff" }
+    staff:    { query:"resource=staff",    perm:"staff:read",    key:"staff" },
+    /* To'lov hisoblari. Javobda ro'yxatdan tashqari jamilar va
+       qaysi tizim ulangani ham keladi — shuning uchun butun
+       javob saqlanadi. */
+    invoices: { query:"resource=invoices", perm:"payments:read", key:null }
   };
   var Store = {
     data: {},
@@ -1522,7 +1526,9 @@
 
       Store.state[name] = "loading";
       return Api.get(def.query).then(function(body){
-        var value = body[def.key];
+        /* `key: null` — javobning O'ZI kerak (bir nechta maydon
+           bor, masalan ro'yxat + jamilar + holat). */
+        var value = def.key === null ? body : body[def.key];
         Store.data[name] = value === undefined ? null : value;
         Store.raw[name] = body;
         Store.state[name] = "ready";
@@ -3702,53 +3708,82 @@
      Quyidagi raqamlar esa haqiqiy: ular buyurtmalardagi KELISHILGAN
      summalar, ya'ni "platforma orqali o'tgan pul" emas.
      ========================================================== */
+  var INVOICE_PILL = {
+    PAID: ["To'langan", "pill-ok"], HOLD: ["Band qilindi", "pill-warn"],
+    NEW: ["Kutilmoqda", "pill-dim"], CANCELLED: ["Bekor qilindi", "pill-bad"]
+  };
+  var PRODUCT_NAMES = {
+    premium_1m: "Premium — 1 oy", premium_3m: "Premium — 3 oy",
+    premium_12m: "Premium — 1 yil"
+  };
+
   function viewPayments(){
-    return pageHead("To'lovlar", "Kelishilgan summalar hisobi — to'lov tizimi hali ulanmagan",
-      refreshBtn("orders,settings"))
-      + withData(["orders","settings"], function(){
+    var need = ["orders","settings"];
+    if(can("payments:read")) need.push("invoices");
+
+    return pageHead("To'lovlar", "Premium obunalari va buyurtmalardagi kelishilgan summalar",
+      refreshBtn(need.join(",")))
+      + withData(need, function(){
         var orders = Store.list("orders");
         var settings = Store.data.settings || {};
+        var inv = Store.data.invoices || { invoices: [], totals: {}, providers: [] };
+        var invoices = Array.isArray(inv.invoices) ? inv.invoices : [];
+        var totals = inv.totals || {};
+        var connected = Array.isArray(inv.providers) && inv.providers.length;
+
         var delivered = orders.filter(function(o){ return o.status === "DELIVERED"; });
-        var onWay = orders.filter(function(o){
-          return isTrip(o) && o.status !== "DELIVERED" && o.status !== "CANCELLED";
-        });
         var amountOf = function(o){ return Number(o.agreedAmount || o.amount) || 0; };
         var deliveredSum = delivered.reduce(function(a, o){ return a + amountOf(o); }, 0);
-        var onWaySum = onWay.reduce(function(a, o){ return a + amountOf(o); }, 0);
         var commission = Number(settings.commissionPercent) || 0;
 
+        /* Birinchi ikki raqam — HAQIQATAN platforma orqali o'tgan
+           pul. Uchinchisi esa buyurtmalardagi kelishilgan summa,
+           ya'ni platformaga tegishli emas. Ularni aralashtirib
+           ko'rsatish hisobni yolg'on qilardi. */
         var cards = '<div class="stat-grid">'
-          + stat("Yetkazilgan yuklar summasi", fmt(deliveredSum), "so'm — kelishilgan narxlar", "wallet", "ok")
-          + stat("Yo'ldagi yuklar summasi", fmt(onWaySum), "so'm — hali yetkazilmagan", "route")
-          + stat("Yetkazilgan yuklar", fmt(delivered.length),
-              pct(delivered.length, orders.length) + "% barcha buyurtmalardan", "check")
+          + stat("Platforma orqali o'tgan", fmt(totals.paidSum || 0),
+              "so'm — premium obunalari", "wallet", (totals.paidSum ? "ok" : ""))
+          + stat("To'langan obunalar", fmt(totals.paidCount || 0),
+              (totals.waiting ? fmt(totals.waiting) + " ta kutilmoqda" : "kutilayotgani yo'q"),
+              "check", (totals.waiting ? "warn" : ""))
+          + stat("Yetkazilgan yuklar summasi", fmt(deliveredSum),
+              "so'm — tomonlar o'rtasida naqd", "route")
           + stat("Komissiya", commission ? commission + "%" : "0%",
-              commission ? "sozlamalarda belgilangan" : "ushlanmaydi", "chart",
-              commission ? "" : "warn")
+              commission ? "belgilangan, lekin ushlanmaydi" : "ushlanmaydi", "chart", "warn")
           + '</div>';
 
-        var notice =
+        var notice = connected ? "" :
           '<div class="card card-pad" style="border-color:var(--warn);background:var(--warn-soft);margin-bottom:18px;">'
           + '<h2 class="card-title" style="color:var(--warn-ink);">' + ico("warn") + "To'lov tizimi ulanmagan</h2>"
-          + '<p style="margin:0 0 8px;color:var(--text);font-size:13.5px;line-height:1.55;">'
-          + "Pul hozir haydovchi bilan yuk beruvchi o'rtasida to'g'ridan o'tadi. Platforma "
-          + "hech qanday to'lovni qabul qilmaydi, ushlab qolmaydi va o'tkazmaydi — demak "
-          + "quyidagi jadval ham bo'sh.</p>"
-          + '<p style="margin:0;color:var(--text-soft);font-size:12.5px;line-height:1.55;">'
-          + "Yuqoridagi raqamlar buyurtmalardagi kelishilgan summalar yig'indisi, ya'ni "
-          + "<b>platforma orqali o'tgan pul emas</b>. Komissiya foizi sozlamalarda saqlanadi, "
-          + "lekin hozir hech qayerda ushlanmaydi.</p></div>";
+          + '<p style="margin:0;color:var(--text);font-size:13.5px;line-height:1.55;">'
+          + "Payme yoki Click kalitlari server sozlamalarida yo'q, shuning uchun hisob "
+          + "ochilmaydi va ilovada sotib olish tugmasi ko'rinmaydi. Kalitlar qo'yilgan kuni "
+          + "quyidagi jadval o'zi to'la boshlaydi.</p></div>";
 
-        /* Kelajakda to'lov ulanganda shu jadval to'ladi. Hozir u
-           ataylab bo'sh: ustunlari ko'rinib turadi, qatori yo'q. */
-        var table = card("Tranzaksiyalar",
-          '<div class="table-wrap"><div class="table-scroll"><table><thead><tr>'
-          + ["Sana","Buyurtma","Yuk beruvchi","Haydovchi","Summa","Komissiya","Holat"]
-              .map(function(h){ return '<th>' + esc(h) + '</th>'; }).join("")
-          + '</tr></thead><tbody><tr><td colspan="7" style="padding:26px;text-align:center;color:var(--text-dim);">'
-          + "To'lov tizimi ulanganidan keyin tranzaksiyalar shu yerda ko'rinadi."
-          + '</td></tr></tbody></table></div></div>',
-          "0 ta yozuv");
+        var rows = invoices.slice(0, 100).map(function(i){
+          var p = INVOICE_PILL[i.state] || INVOICE_PILL.NEW;
+          return '<tr>'
+            + '<td class="dim">' + esc(dt(i.createdAt)) + '</td>'
+            + '<td><b>' + esc(PRODUCT_NAMES[i.product] || i.product) + '</b></td>'
+            + '<td>' + esc(i.identity) + '</td>'
+            + '<td class="num">' + esc(money(i.amount)) + '</td>'
+            + '<td class="dim">' + esc(i.provider || "—") + '</td>'
+            + '<td>' + pill(p[0], p[1]) + '</td>'
+            + '<td class="dim">' + (i.paidAt ? esc(dt(i.paidAt)) : "—") + '</td>'
+            + '</tr>';
+        }).join("");
+
+        var table = card("Obuna to'lovlari",
+          invoices.length
+            ? '<div class="table-wrap"><div class="table-scroll"><table><thead><tr>'
+              + ["Ochilgan","Mahsulot","Kim","Summa","Tizim","Holat","To'langan"]
+                  .map(function(h){ return '<th>' + esc(h) + '</th>'; }).join("")
+              + '</tr></thead><tbody>' + rows + '</tbody></table></div></div>'
+            : stateBox("empty", "Hisob yo'q",
+                connected
+                  ? "Birinchi obuna sotib olinganda shu yerda ko'rinadi."
+                  : "To'lov tizimi ulangandan keyin shu yerda ko'rinadi."),
+          invoices.length ? invoices.length + " ta" : "");
 
         var ledger = card("Yetkazilgan yuklar bo'yicha hisob",
           delivered.length
@@ -3771,13 +3806,17 @@
             : stateBox("empty", "Yetkazilgan yuk yo'q", "Birinchi yuk yetkazilganda shu yerda ko'rinadi."),
           delivered.length > 50 ? "oxirgi 50 tasi" : delivered.length + " ta");
 
-        return cards + notice + table + '<div style="height:18px;"></div>' + ledger;
+        /* Pastdagi jadval platformaga tegishli emasligi yozib
+           qo'yilgan — ikki jadval yonma-yon tursa, ularni bir xil
+           deb o'ylash oson. */
+        var ledgerNote =
+          '<p class="hint" style="margin:10px 2px 0;">Bu summalar haydovchi bilan yuk beruvchi '
+          + "o'rtasida naqd o'tadi — platforma ularni qabul qilmaydi va ushlab qolmaydi.</p>";
+
+        return cards + notice + table + '<div style="height:18px;"></div>' + ledger + ledgerNote;
       });
   }
 
-  /* ==========================================================
-     23. Shikoyatlar
-     ========================================================== */
   function viewReports(){
     var writable = can("reports:write");
     return pageHead("Shikoyatlar", "Foydalanuvchilardan kelgan shikoyatlar",
@@ -4934,15 +4973,54 @@
           + '<p class="hint">Raqam saqlanadi va To\'lovlar bo\'limida ko\'rsatiladi, lekin hozir '
           + 'hech qanday summadan ushlanmaydi — buning uchun to\'lov tizimi kerak.</p>'
           + saveBar())
-      + card("To'lov tizimi",
-          '<div class="staff-row"><span class="staff-av">' + ico("lock") + '</span>'
-          + '<div class="staff-meta"><b>Ulanmagan</b><small style="white-space:normal;">'
-          + 'Pul haydovchi bilan yuk beruvchi o\'rtasida to\'g\'ridan o\'tadi. Platforma '
-          + 'to\'lovni qabul qilmaydi, ushlab qolmaydi va o\'tkazmaydi.</small></div>'
-          + pill("Yo'q", "pill-dim") + '</div>'
-          + '<p class="hint">To\'lovlar bo\'limi shunga tayyorlab qo\'yilgan: tizim ulangan kuni '
-          + 'tranzaksiyalar o\'sha jadvalga tushadi va bu yerda provayder sozlamalari paydo bo\'ladi.</p>')
+      + card("Premium narxi",
+          '<div class="row2">'
+          + fieldText("setPrice1m", "1 oy (so'm)", s.premiumPrice1m || "",
+              { type:"number", attrs:'min="0" step="1000" ', placeholder:"0 — sotilmaydi" })
+          + fieldText("setPrice3m", "3 oy (so'm)", s.premiumPrice3m || "",
+              { type:"number", attrs:'min="0" step="1000" ', placeholder:"0 — sotilmaydi" })
+          + '</div>'
+          + fieldText("setPrice12m", "1 yil (so'm)", s.premiumPrice12m || "",
+              { type:"number", attrs:'min="0" step="1000" ', placeholder:"0 — sotilmaydi" })
+          + '<p class="hint"><b>Nol — o\'sha muddat umuman sotilmaydi.</b> Bu xato emas: '
+          + 'narx qo\'yilmagan narsani sotib bo\'lmaydi. Premiumning imtiyozi — vaqt: yangi yuk '
+          + 'chiqqanda xabar premium egasiga darhol boradi, qolganlarga bir soatdan keyin.</p>'
+          + saveBar())
+      + card("To'lov tizimi", payProviderCard())
       + '</div>';
+  }
+
+  /**
+   * To'lov tizimi ulanganmi.
+   *
+   * Holat SERVERDAN keladi (resource=invoices → providers):
+   * panel buni o'zidan bila olmaydi, kalitlar serverda turadi.
+   */
+  function payProviderCard(){
+    var data = Store.data.invoices || null;
+    var ready = data && Array.isArray(data.providers) ? data.providers : null;
+
+    if(!ready){
+      return '<p class="hint" style="margin:0;">Holatni ko\'rish uchun To\'lovlar bo\'limini oching.</p>';
+    }
+    if(!ready.length){
+      return '<div class="staff-row"><span class="staff-av">' + ico("lock") + '</span>'
+        + '<div class="staff-meta"><b>Ulanmagan</b><small style="white-space:normal;">'
+        + 'Payme yoki Click kalitlari server sozlamalarida yo\'q. Ulargacha sotib olish '
+        + 'tugmasi ilovada ko\'rinmaydi — ishlamaydigan tugma qo\'yilmaydi.</small></div>'
+        + pill("Yo'q", "pill-dim") + '</div>'
+        + '<p class="hint">Shartnoma uchun kerak bo\'ladigan manzillar:<br>'
+        + '<code style="font-size:11.5px;">/api/pay?provider=payme</code><br>'
+        + '<code style="font-size:11.5px;">/api/pay?provider=click</code></p>';
+    }
+    return ready.map(function(p){
+      return '<div class="staff-row"><span class="staff-av">' + ico("check") + '</span>'
+        + '<div class="staff-meta"><b>' + esc(p === "payme" ? "Payme" : "Click") + '</b>'
+        + '<small>Kalitlar qo\'yilgan — to\'lov qabul qilinadi</small></div>'
+        + pill("Ulangan", "pill-ok") + '</div>';
+    }).join("")
+      + '<p class="hint">Kalitlar faqat server sozlamalarida turadi va panelga ham, '
+      + 'ilovaga ham berilmaydi.</p>';
   }
 
   /* ---------- 4. Rollar va ruxsatlar ----------
@@ -5060,6 +5138,18 @@
     put("setMaintMsg", "maintenanceMessage");
     put("setMaint", "maintenanceMode", function(el){ return el.checked; });
     put("setCommission", "commissionPercent", function(el){ return Number(el.value); });
+    /* Bo'sh maydon = 0 = sotilmaydi. `Number("")` nolga aylanadi,
+       ya'ni odam narxni o'chirsa mahsulot sotuvdan chiqadi. */
+    ["setPrice1m:premiumPrice1m", "setPrice3m:premiumPrice3m", "setPrice12m:premiumPrice12m"]
+      .forEach(function(pair){
+        var bits = pair.split(":");
+        put(bits[0], bits[1], function(el){ return Number(el.value || 0); });
+      });
+
+    var badPrice = ["premiumPrice1m","premiumPrice3m","premiumPrice12m"].some(function(k){
+      return payload[k] !== undefined && (!isFinite(payload[k]) || payload[k] < 0);
+    });
+    if(badPrice){ toast("Narx noto'g'ri", "bad"); return; }
 
     if(payload.commissionPercent !== undefined
        && (!isFinite(payload.commissionPercent) || payload.commissionPercent < 0 || payload.commissionPercent > 100)){
