@@ -9696,11 +9696,6 @@
       +   '<button type="button" class="switch-track" id="notifPushSwitch" role="switch" '
       +     'aria-checked="false" aria-label="Bildirishnomalar"></button>'
       + '</div>'
-      /* Sinov tugmasi faqat obuna bo'lgandan keyin ko'rinadi:
-         yoqilganini tekshirishning yagona ishonchli yo'li —
-         haqiqiy xabar yuborib ko'rish. */
-      + '<button type="button" class="btn ghost small" id="notifPushTest" hidden '
-      +   'style="width:100%;margin:-4px 0 10px;">Sinov xabarini yuborish</button>'
       + '<div class="pref-switch">'
       +   '<div><div class="lbl" data-i18n="notif.soundLabel">Yangi xabar ovozi</div><div class="sub" data-i18n="notif.soundSub"></div></div>'
       +   '<button type="button" class="switch-track" id="notifSoundSwitch" role="switch" aria-checked="'+prefs.sound+'" aria-label="'+escapeHtml(t("notif.soundLabel")||"")+'" data-autofocus></button>'
@@ -9767,7 +9762,6 @@
     var pushBtn = container.querySelector("#notifPushSwitch");
     var pushSub = container.querySelector("#pushSub");
     var pushRow = container.querySelector("#pushRow");
-    var pushTest = container.querySelector("#notifPushTest");
 
     function paintPush(){
       if(!pushBtn) return;
@@ -9816,7 +9810,6 @@
       pushBtn.disabled = false;
       P.current().then(function(sub){
         pushBtn.setAttribute("aria-checked", String(Boolean(sub)));
-        if(pushTest) pushTest.hidden = !sub;
         if(pushSub){
           pushSub.textContent = sub
             ? "Shu qurilmaga xabar keladi."
@@ -9840,37 +9833,6 @@
           toast("Bo'lmadi", err.message || "Qayta urinib ko'ring", "info");
         })
         .then(function(){ pushBtn.disabled = false; paintPush(); });
-    });
-
-    /* Sinov xabari — o'ZIGA. Server boshqa manzil qabul
-       qilmaydi, obunalar chaqiruvchining hisobidan olinadi. */
-    if(pushTest) pushTest.addEventListener("click", function(){
-      pushTest.disabled = true;
-      var old = pushTest.textContent;
-      pushTest.textContent = "Yuborilmoqda…";
-      fetch("/api/profile?action=push-test", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          googleIdToken: googleIdToken, telegramInitData: telegramInitData,
-          phoneToken: phoneToken
-        })
-      }).then(function(r){
-        return r.json().then(function(b){
-          if(!r.ok) throw new Error(b.error || "Yuborilmadi");
-          return b;
-        });
-      }).then(function(b){
-        toast("Yuborildi", b.devices > 1
-          ? b.devices + " ta qurilmaga yuborildi. Bir necha soniyada keladi."
-          : "Bir necha soniyada keladi. Kelmasa — menga ayting.", "success");
-      }).catch(function(err){
-        toast("Kelmadi", err.message || "Qayta urinib ko'ring", "info");
-      }).then(function(){
-        pushTest.disabled = false;
-        pushTest.textContent = old;
-        paintPush();
-      });
     });
 
     if(soundBtn) soundBtn.addEventListener("click", function(){

@@ -242,6 +242,167 @@ flow('Telefon orqali kirgan odam ham yubora oladi');
   }
 }
 
+/* ============================================================
+   Botning qo'llari
+   ------------------------------------------------------------
+   Eng muhimi: javobdagi raqam BAZADAN kelishi kerak. Model
+   "yuk bor" deb o'ylab topsa, odam yo'lga chiqib, bo'sh
+   qaytardi.
+   ============================================================ */
+flow('Yuk so\'ralsa — bazaga qaraydi');
+{
+  seed();
+  db.strings.set('loads_cache', JSON.stringify({
+    at: Date.now(),
+    items: [
+      { code: 'YOL-1', fromCity: 'Toshkent', toCity: 'Samarqand', weightKg: 1200,
+        cargoType: 'Oziq-ovqat', amount: 1500000, pickupDate: '2026-10-15',
+        owner: { name: 'Aziz', phone: '+998901112233' } },
+      { code: 'YOL-2', fromCity: 'Buxoro', toCity: 'Navoiy', weightKg: 800,
+        amount: 700000, owner: { name: 'Dilnoza', phone: '+998909998877' } },
+    ],
+  }));
+
+  /* Model avval vositani so'raydi, keyin javob yozadi. */
+  let step = 0;
+  const saved = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (!href.includes(GOOGLE)) return saved(url, init);
+    sent.push({ url: href, headers: init.headers, body: JSON.parse(init.body) });
+    step += 1;
+    if (step === 1) {
+      return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+        { functionCall: { name: 'yuk_qidir', args: { fromCity: 'Toshkent' } } },
+      ] } }] }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+      { text: 'Toshkentdan bitta yuk bor: YOL-1, Samarqandga, 1200 kg.' },
+    ] } }] }) };
+  };
+
+  const res = await ask({ googleIdToken: ME, text: 'Toshkentdan yuk bormi?' });
+  globalThis.fetch = saved;
+
+  check('javob keldi', res.statusCode === 200, res.payload);
+  check('VOSITA ISHLATILDI', (res.payload.tools || []).includes('yuk_qidir'), res.payload);
+  check('ikki marta so\'raldi', sent.length === 2, sent.length);
+  check('vositalar modelga berilgan',
+    Array.isArray(sent[0].body.tools) && sent[0].body.tools[0].functionDeclarations.length === 2,
+    sent[0].body.tools);
+
+  /* Vosita javobi modelga qanday ketganini tekshiramiz. */
+  const back = sent[1].body.contents[sent[1].body.contents.length - 1];
+  const payload = back.parts[0].functionResponse.response;
+  check('natija modelga uzatildi', payload.ready === true, payload);
+  check('faqat shu shahardan', payload.yuklar.length === 1
+    && payload.yuklar[0].kod === 'YOL-1', payload.yuklar);
+
+  /* ENG MUHIM: shaxsiy ma'lumot modelga BERILMAYDI. */
+  const asJson = JSON.stringify(payload);
+  check('ISM UZATILMADI', !asJson.includes('Aziz'), asJson);
+  check('TELEFON UZATILMADI', !asJson.includes('998901112233'), asJson);
+}
+
+flow('Ro\'yxat tayyor bo\'lmasa — "yuk yo\'q" demaydi');
+{
+  seed();
+  /* loads_cache umuman yo'q. */
+  let step = 0;
+  let toolResult = null;
+  const saved = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (!href.includes(GOOGLE)) return saved(url, init);
+    const body = JSON.parse(init.body);
+    step += 1;
+    if (step === 1) {
+      return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+        { functionCall: { name: 'yuk_qidir', args: {} } },
+      ] } }] }) };
+    }
+    const last = body.contents[body.contents.length - 1];
+    toolResult = last.parts[0].functionResponse.response;
+    return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+      { text: 'Ro‘yxat hozir yangilanmoqda.' },
+    ] } }] }) };
+  };
+  await ask({ googleIdToken: ME, text: 'Yuk bormi?' });
+  globalThis.fetch = saved;
+
+  check('tayyor emasligi aytildi', toolResult && toolResult.ready === false, toolResult);
+  check('SABABI ANIQ YOZILGAN',
+    toolResult && String(toolResult.note).includes('EMAS'), toolResult);
+}
+
+flow('Narx — faqat haqiqiy buyurtmalardan');
+{
+  seed();
+  db.strings.set('price_stats', JSON.stringify({
+    computedAt: Date.now(),
+    routes: { 'Toshkent>Samarqand': { count: 12, p25: 90000, p50: 110000, p75: 130000 } },
+  }));
+
+  const run = async (args) => {
+    let result = null;
+    let step = 0;
+    const saved = globalThis.fetch;
+    globalThis.fetch = async (url, init) => {
+      const href = String(url);
+      if (!href.includes(GOOGLE)) return saved(url, init);
+      const body = JSON.parse(init.body);
+      step += 1;
+      if (step === 1) {
+        return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+          { functionCall: { name: 'narx_statistikasi', args } },
+        ] } }] }) };
+      }
+      result = body.contents[body.contents.length - 1].parts[0].functionResponse.response;
+      return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+        { text: 'Javob' },
+      ] } }] }) };
+    };
+    await ask({ googleIdToken: ME, text: 'Narx qancha?' });
+    globalThis.fetch = saved;
+    return result;
+  };
+
+  const ok = await run({ fromCity: 'Toshkent', toCity: 'Samarqand', weightKg: 2000 });
+  check('ma\'lumot bor', ok && ok.enough === true, ok);
+  check('nechta buyurtmadan ekani aytilgan', ok.buyurtmalarSoni === 12, ok);
+  check('og\'irlikka moslandi', ok.shuYukUchunSom.orta === 220000, ok.shuYukUchunSom);
+
+  const yoq = await run({ fromCity: 'Xiva', toCity: 'Nukus' });
+  check('MA\'LUMOT YO\'Q — TAXMIN QILINMAYDI', yoq && yoq.enough === false, yoq);
+  check('modelga "taxmin qilma" deyilgan',
+    String(yoq.note).includes('Taxmin qilma'), yoq);
+}
+
+flow('Vosita xatosi javobni buzmaydi');
+{
+  seed();
+  db.strings.set('loads_cache', 'buzilgan-matn');
+  let step = 0;
+  const saved = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (!href.includes(GOOGLE)) return saved(url, init);
+    step += 1;
+    if (step === 1) {
+      return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+        { functionCall: { name: 'bunday_vosita_yoq', args: {} } },
+      ] } }] }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [
+      { text: 'Kechirasiz, hozir ma‘lumot yo‘q.' },
+    ] } }] }) };
+  };
+  const res = await ask({ googleIdToken: ME, text: 'Yuk bormi?' });
+  globalThis.fetch = saved;
+  check('javob baribir qaytdi', res.statusCode === 200, res.payload);
+  check('xato matni javobga chiqmadi', !String(res.payload.text).includes('error'), res.payload);
+}
+
 flow('Suhbatlar saqlanadi');
 {
   seed();

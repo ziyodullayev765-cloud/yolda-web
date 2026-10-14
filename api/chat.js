@@ -266,6 +266,127 @@ const AI_MAX_QUESTION = 2000;
 const AI_MAX_HISTORY = 10;
 const AI_TIMEOUT_MS = 20000;
 
+/* ============================================================
+   BOTNING QO'LLARI
+   ------------------------------------------------------------
+   Bot raqam O'YLAB TOPMAYDI. "Toshkentdan Samarqandga yuk
+   bormi?" degan savolga javob berish uchun unga bazaga
+   qarash kerak — shuning uchun ikkita vosita berilgan.
+   Vositani MODEL emas, SERVER bajaradi va javobga faqat
+   natija qo'shiladi.
+
+   MA'LUMOT QAYERDAN. Ikkala vosita ham ilovaning O'ZI
+   ishlatadigan tayyor ro'yxatlardan o'qiydi (`loads_cache`,
+   `price_stats`). Ya'ni bot ko'rgan narsa odam ekranda
+   ko'rgan narsa bilan bir xil.
+
+   RO'YXATNI QAYTA QURMAYDI. Ro'yxatni noldan qurish uch
+   yuzdan ortiq buyruq talab qiladi; buni har bir savolda
+   qilish — bazani savol bilan ko'mish. Tayyor ro'yxat
+   bo'lmasa, bot "hozir ro'yxat tayyor emas" deydi va YUK
+   YO'Q DEMAYDI: bu ikki boshqa narsa.
+
+   SHAXSIY MA'LUMOT UZATILMAYDI. Yuk egasining ismi ham,
+   telefoni ham vositaning javobiga kirmaydi — bot faqat
+   yo'nalish, og'irlik, narx va kodni ko'radi. Telefon
+   kerak bo'lsa, odam yukni ilovada ochadi.
+   ============================================================ */
+const AI_TOOLS = [{
+  functionDeclarations: [
+    {
+      name: 'yuk_qidir',
+      description: 'YO\'LDA dagi ochiq (hali haydovchi olmagan) yuklarni qidiradi. '
+        + 'Yo\'nalish, yuk turi yoki og\'irlik bo\'yicha. Barcha maydonlar ixtiyoriy.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          fromCity: { type: 'STRING', description: 'Yuklash shahri, masalan "Toshkent"' },
+          toCity: { type: 'STRING', description: 'Yetkazish shahri' },
+          maxWeightKg: { type: 'NUMBER', description: 'Eng ko\'pi shuncha kg' },
+          minWeightKg: { type: 'NUMBER', description: 'Eng kami shuncha kg' },
+        },
+      },
+    },
+    {
+      name: 'narx_statistikasi',
+      description: 'Shu yo\'nalishda avvalgi HAQIQIY buyurtmalar bo\'yicha tonna-narx '
+        + 'taqsimoti. Ma\'lumot yetarli bo\'lmasa, shuni aytadi.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          fromCity: { type: 'STRING' },
+          toCity: { type: 'STRING' },
+          weightKg: { type: 'NUMBER', description: 'Berilsa, shu og\'irlikka moslab hisoblaydi' },
+        },
+        required: ['fromCity', 'toCity'],
+      },
+    },
+  ],
+}];
+
+const AI_TOOL_ROUNDS = 3;
+
+/** Ochiq yuklar — faqat TAYYOR ro'yxatdan. */
+const toolFindLoads = async (args = {}) => {
+  let cached = null;
+  try { cached = JSON.parse((await kvGet('loads_cache')) || 'null'); } catch { cached = null; }
+  if (!cached || !Array.isArray(cached.items)) {
+    return { ready: false, note: 'Ro‘yxat hozir tayyor emas. Bu "yuk yo‘q" degani EMAS.' };
+  }
+
+  const eq = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  const list = cached.items
+    .filter((o) => !args.fromCity || eq(o.fromCity, args.fromCity))
+    .filter((o) => !args.toCity || eq(o.toCity, args.toCity))
+    .filter((o) => !(args.minWeightKg > 0) || Number(o.weightKg) >= args.minWeightKg)
+    .filter((o) => !(args.maxWeightKg > 0) || Number(o.weightKg) <= args.maxWeightKg)
+    .slice(0, 8)
+    /* Faqat ochiq ma'lumot. Ism va telefon ATAYLAB yo'q. */
+    .map((o) => ({
+      kod: o.code,
+      yonalish: `${o.fromCity} → ${o.toCity}`,
+      ogirlikKg: o.weightKg,
+      yukTuri: o.cargoType || '',
+      narxSom: o.amount || null,
+      sana: o.pickupDate || '',
+    }));
+
+  return { ready: true, topildi: list.length, jami: cached.items.length, yuklar: list };
+};
+
+/** Narx — faqat haqiqiy buyurtmalardan hisoblangan statistika. */
+const toolPriceStats = async (args = {}) => {
+  let stats = null;
+  try { stats = JSON.parse((await kvGet('price_stats')) || 'null'); } catch { stats = null; }
+  if (!stats || !stats.routes) {
+    return { ready: false, note: 'Statistika hozir tayyor emas.' };
+  }
+  const key = `${String(args.fromCity || '').trim()}>${String(args.toCity || '').trim()}`;
+  const route = stats.routes[key];
+  if (!route) {
+    return {
+      ready: true, enough: false,
+      note: 'Bu yo‘nalishda yetarli buyurtma yo‘q — narx aytib bo‘lmaydi. Taxmin qilma.',
+    };
+  }
+  const out = {
+    ready: true, enough: true, buyurtmalarSoni: route.count,
+    tonnaNarxiSom: { past: route.p25, orta: route.p50, yuqori: route.p75 },
+  };
+  const w = Number(args.weightKg);
+  if (Number.isFinite(w) && w > 0) {
+    const tons = w / 1000;
+    out.shuYukUchunSom = {
+      past: Math.round(route.p25 * tons),
+      orta: Math.round(route.p50 * tons),
+      yuqori: Math.round(route.p75 * tons),
+    };
+  }
+  return out;
+};
+
+const AI_TOOL_IMPL = { yuk_qidir: toolFindLoads, narx_statistikasi: toolPriceStats };
+
 const AI_SYSTEM = [
   'Sen "YO\'LDA bot" — YO\'LDA ilovasining yordamchisisan.',
   'YO\'LDA — O\'zbekistondagi yuk tashish bozori: yuk egalari yuk joylaydi,',
@@ -275,6 +396,14 @@ const AI_SYSTEM = [
   'Qisqa va aniq yoz, ortiqcha muqaddima qilma.',
   'Bilmagan narsangni bilmayman deb ayt. Narx, masofa yoki qonunni',
   'o\'ylab topma; taxmin bo\'lsa, taxmin ekanini ayt.',
+  'YUK VA NARX HAQIDA SO\'RALSA — VOSITALARDAN FOYDALAN.',
+  'Yuk bormi degan savolga xotirangdan javob berma: yuk_qidir ni chaqir.',
+  'Narx so\'ralsa narx_statistikasi ni chaqir; u "yetarli ma\'lumot yo\'q"',
+  'desa, shuni ayt va o\'zingdan raqam aytma.',
+  'Vosita "tayyor emas" desa, buni "yuk yo\'q" deb tarjima qilma —',
+  'ro\'yxat hozir yangilanayotganini ayt.',
+  'Yuk egasining ismi va telefoni senga berilmaydi; ular kerak bo\'lsa',
+  'odam yukni ilovada kod bo\'yicha ochishi kerak.',
   'Ilovaning ichidagi ma\'lumotlarga (buyurtmalar, foydalanuvchilar,',
   'to\'lovlar) sening ruxsating yo\'q — ularni so\'rashsa, ilovaning',
   'tegishli bo\'limiga yo\'naltir.',
@@ -320,52 +449,107 @@ const askAi = async (req, res) => {
   }
   contents.push({ role: 'user', parts: [{ text }] });
 
-  const payload = JSON.stringify({
-    contents,
-    systemInstruction: { parts: [{ text: AI_SYSTEM }] },
-    generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
-  });
+  /* ============================================================
+     Modelga murojaat — vositalar bilan
+     ------------------------------------------------------------
+     Model javob o'rniga "shu vositani chaqir" deyishi mumkin.
+     Unda server vositani bajaradi, natijani suhbatga qo'shadi
+     va yana so'raydi. Shu aylanish chegaralangan: model
+     o'zini-o'zi cheksiz chaqirtira olmasligi kerak.
+     ============================================================ */
+  const callModel = async (body) => {
+    let out = null;
+    let quota = false;
+    let stat = 0;
+    for (const model of AI_MODELS) {
+      if (await kvGet(aiCoolKey(model)).catch(() => null)) { quota = true; continue; }
 
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+      let r;
+      try {
+        r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+            body: JSON.stringify(body),
+            signal: ctrl.signal,
+          },
+        );
+      } catch (err) {
+        console.error('[ai]', model, err && err.name === 'AbortError' ? 'vaqt tugadi' : 'ulanmadi');
+        clearTimeout(timer);
+        return { timeout: true };
+      }
+      clearTimeout(timer);
+
+      if (r.ok) { out = await r.json().catch(() => null); break; }
+
+      stat = r.status;
+      /* Google'ning xato MATNI mijozga uzatilmaydi — u so'rovning
+         o'zini, ya'ni kalitni ham qaytarishi mumkin. Faqat holat
+         kodi ishlatiladi. */
+      console.error('[ai]', model, 'status', r.status);
+      if (r.status === 429 || r.status === 503) {
+        quota = true;
+        await kvSet(aiCoolKey(model), '1').catch(() => {});
+        await kvExpire(aiCoolKey(model), AI_COOLDOWN_S).catch(() => {});
+        continue;   // keyingi modelni sinab ko'ramiz
+      }
+      return { failed: true };
+    }
+    return { data: out, quota, stat };
+  };
+
+  const turns = contents.slice();
   let data = null;
   let quotaHit = false;
   let lastStatus = 0;
-  for (const model of AI_MODELS) {
-    if (await kvGet(aiCoolKey(model)).catch(() => null)) { quotaHit = true; continue; }
+  const usedTools = [];
 
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
-    let r;
-    try {
-      r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          body: payload,
-          signal: ctrl.signal,
-        },
-      );
-    } catch (err) {
-      console.error('[ai]', model, err && err.name === 'AbortError' ? 'vaqt tugadi' : 'ulanmadi');
-      clearTimeout(timer);
-      return res.status(504).json({ error: 'Javob kech qoldi, qayta urinib ko‘ring' });
+  for (let round = 0; round < AI_TOOL_ROUNDS; round += 1) {
+    const got = await callModel({
+      contents: turns,
+      systemInstruction: { parts: [{ text: AI_SYSTEM }] },
+      tools: AI_TOOLS,
+      generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
+    });
+    if (got.timeout) return res.status(504).json({ error: 'Javob kech qoldi, qayta urinib ko‘ring' });
+    if (got.failed) return res.status(502).json({ error: 'Javob kelmadi, qayta urinib ko‘ring' });
+    quotaHit = quotaHit || got.quota;
+    lastStatus = got.stat || lastStatus;
+    data = got.data;
+    if (!data) break;
+
+    const c = data.candidates && data.candidates[0];
+    const parts = (c && c.content && c.content.parts) || [];
+    const calls = parts.filter((x) => x && x.functionCall);
+    if (!calls.length) break;          // model javobini yozdi
+
+    /* Modelning so'rovi ham suhbatga qo'shiladi — aks holda u
+       nima so'raganini unutadi. */
+    turns.push({ role: 'model', parts });
+
+    const answers = [];
+    for (const part of calls) {
+      const name = part.functionCall.name;
+      const impl = AI_TOOL_IMPL[name];
+      let result;
+      if (!impl) {
+        result = { error: 'Bunday vosita yo‘q' };
+      } else {
+        try {
+          result = await impl(part.functionCall.args || {});
+        } catch (err) {
+          console.error('[ai] vosita xatosi', name, err.message);
+          result = { error: 'Ma‘lumotni olib bo‘lmadi' };
+        }
+      }
+      usedTools.push(name);
+      answers.push({ functionResponse: { name, response: result } });
     }
-    clearTimeout(timer);
-
-    if (r.ok) { data = await r.json().catch(() => null); break; }
-
-    lastStatus = r.status;
-    /* Google'ning xato MATNI mijozga uzatilmaydi — u so'rovning
-       o'zini, ya'ni kalitni ham qaytarishi mumkin. Faqat holat
-       kodi ishlatiladi. */
-    console.error('[ai]', model, 'status', r.status);
-    if (r.status === 429 || r.status === 503) {
-      quotaHit = true;
-      await kvSet(aiCoolKey(model), '1').catch(() => {});
-      await kvExpire(aiCoolKey(model), AI_COOLDOWN_S).catch(() => {});
-      continue;   // keyingi modelni sinab ko'ramiz
-    }
-    return res.status(502).json({ error: 'Javob kelmadi, qayta urinib ko‘ring' });
+    turns.push({ role: 'user', parts: answers });
   }
 
   if (!data) {
@@ -395,7 +579,12 @@ const askAi = async (req, res) => {
     });
   }
 
-  return res.status(200).json({ text: answer, used, limit: AI_DAILY_LIMIT });
+  /* Qaysi vosita ishlatilgani mijozga ham aytiladi: javob
+     bazadan olinganini odam bilib tursin. */
+  return res.status(200).json({
+    text: answer, used, limit: AI_DAILY_LIMIT,
+    tools: usedTools.length ? [...new Set(usedTools)] : undefined,
+  });
 };
 
 
