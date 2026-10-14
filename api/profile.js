@@ -26,6 +26,7 @@
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import {
   kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvSmembers, kvRange,
+  kvIncr, kvExpire,
 } from '../lib/kv.js';
 import { MAX_SEARCHES, ANY_CITY, searchesKey, cityIndexKey } from '../lib/savedSearch.js';
 import { ensurePublicId } from '../lib/publicId.js';
@@ -39,7 +40,7 @@ import { CARGO } from '../lib/orderMessage.js';
 import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
 import { staffRecord, STAFF_ROLE_LABELS } from '../lib/staff.js';
 import {
-  deviceId, readSubscriptions, writeSubscriptions, vapidConfigured, MAX_DEVICES,
+  deviceId, readSubscriptions, writeSubscriptions, vapidConfigured, MAX_DEVICES, sendPush,
 } from '../lib/webpush.js';
 import {
   KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
@@ -858,6 +859,70 @@ const pushUnsubscribe = async (req, res) => {
   return res.status(200).json({ ok: true, devices: list.length });
 };
 
+/**
+ * POST ?action=push-test — O'ZINGIZGA sinov xabari.
+ *
+ * NIMA UCHUN KERAK. Bildirishnoma yoqilgani bilinmaydi:
+ * haqiqiy xabar kelguncha kutish kerak, kelmasa esa qayerda
+ * to'xtagani noma'lum qoladi. Bu tugma esa darhol javob
+ * beradi — telefonga kelsa, hammasi ishlayapti.
+ *
+ * FAQAT O'ZIGA. Boshqa odamga yuborish yo'li yo'q: manzil
+ * so'ralmaydi ham, obunalar chaqiruvchining o'z hisobidan
+ * olinadi. Soni ham cheklangan — tugma o'yinchoqqa
+ * aylanmasin.
+ */
+const pushTest = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+  if (!vapidConfigured()) {
+    return res.status(503).json({ error: 'Push hali sozlanmagan', notReady: true });
+  }
+
+  const subs = await readSubscriptions(kvGet, identity);
+  if (!subs.length) {
+    return res.status(409).json({ error: 'Bu hisobda obuna yo‘q. Avval kalitni yoqing.' });
+  }
+
+  /* Daqiqasiga bir nechta — bu sinov tugmasi, xabar tarqatish
+     vositasi emas. */
+  const guard = `pushTest:${identity}`;
+  const used = Number(await kvIncr(guard).catch(() => 0)) || 0;
+  if (used === 1) await kvExpire(guard, 60).catch(() => {});
+  if (used > 5) {
+    return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko‘ring' });
+  }
+
+  const results = await Promise.all(subs.map((s) => sendPush(s, {
+    title: "YO'LDA — sinov",
+    body: 'Bildirishnoma ishlayapti. Endi haqiqiy xabarlar ham shu yerga keladi.',
+    link: '/',
+    tag: 'yolda-test',
+  })));
+
+  /* Yaroqsiz obunani shu yerda ham tozalaymiz: sinov aynan
+     shuni ko'rsatish uchun. */
+  const alive = subs.filter((_, i) => !results[i].gone);
+  if (alive.length !== subs.length) {
+    await writeSubscriptions(kvSet, kvDel, identity, alive).catch(() => {});
+  }
+
+  const sent = results.filter((r) => r.ok).length;
+  if (!sent) {
+    return res.status(502).json({
+      error: alive.length
+        ? 'Yuborib bo‘lmadi. Biroz kutib qayta urinib ko‘ring.'
+        : 'Obuna yaroqsiz bo‘lib qolibdi. Kalitni o‘chirib, qayta yoqing.',
+      devices: alive.length,
+    });
+  }
+  return res.status(200).json({ ok: true, sent, devices: alive.length });
+};
+
 export default async function handler(req, res) {
   // Faqat o'qiydigan ikkita GET yo'l; qolgani hamma vaqt POST.
   if (req.method === 'GET') {
@@ -881,5 +946,6 @@ export default async function handler(req, res) {
   if (action === 'delete-account') return handleDeleteAccount(req, res);
   if (action === 'push-subscribe') return pushSubscribe(req, res);
   if (action === 'push-unsubscribe') return pushUnsubscribe(req, res);
+  if (action === 'push-test') return pushTest(req, res);
   return handleProfile(req, res);
 }

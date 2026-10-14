@@ -263,6 +263,51 @@ flow('O\'chirilgan turkum push\'ga ham tegishli');
   check('boshqa turkum ketdi', outgoing.some((o) => o.url.includes('fcm.googleapis.com')));
 }
 
+flow('Sinov xabari — faqat o\'ziga');
+{
+  seed();
+  await post('push-subscribe', { googleIdToken: ME, subscription: SUB });
+  outgoing.length = 0;
+
+  const ok = await post('push-test', { googleIdToken: ME });
+  check('yuborildi', ok.statusCode === 200, ok.payload);
+  check('bitta qurilmaga', ok.payload.sent === 1, ok.payload);
+  const sent = outgoing.filter((o) => o.url.includes('fcm.googleapis.com'));
+  check('haqiqatan push ketdi', sent.length === 1, outgoing.map((o) => o.url));
+  check('MANZIL O\'ZINIKI', sent[0].url === SUB.endpoint, sent[0].url);
+
+  /* Boshqa odamga yuborish yo'li YO'Q: manzil qabul qilinmaydi. */
+  const begona = await post('push-test', {
+    googleIdToken: 'begona@example.com',
+    endpoint: SUB.endpoint,
+    identity: ME,
+  });
+  check('BEGONAGA YUBORIB BO\'LMADI', begona.statusCode === 409, begona.statusCode);
+  check('uning obunasi yo\'q deb aytildi',
+    String(begona.payload.error).includes('obuna yo'), begona.payload);
+
+  const anon = await post('push-test', {});
+  check('kirmagan odam yubora olmaydi', anon.statusCode === 401, anon.statusCode);
+}
+
+flow('Sinov tugmasi o\'yinchoqqa aylanmaydi');
+{
+  seed();
+  await post('push-subscribe', { googleIdToken: ME, subscription: SUB });
+  let last = null;
+  for (let i = 0; i < 6; i++) last = await post('push-test', { googleIdToken: ME });
+  check('chegaradan keyin to\'xtatildi', last.statusCode === 429, last.statusCode);
+}
+
+flow('Obunasiz sinov');
+{
+  seed();
+  const res = await post('push-test', { googleIdToken: ME });
+  check('409 qaytdi', res.statusCode === 409, res.statusCode);
+  check('nima qilish kerakligi aytildi',
+    String(res.payload.error).includes('kalitni yoqing'), res.payload);
+}
+
 flow('Kalit sahifaga tushmagan');
 {
   const { readFileSync } = await import('fs');
