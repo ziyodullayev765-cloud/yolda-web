@@ -43,6 +43,10 @@ import {
   deviceId, readSubscriptions, writeSubscriptions, vapidConfigured, MAX_DEVICES,
 } from '../lib/webpush.js';
 import {
+  createInvoice, sellableProducts, somToTiyin, readInvoice, activeProviders,
+  payGuardKey, PAY_GUARD_S, PAY_GUARD_MAX,
+} from '../lib/payments.js';
+import {
   KINDS, REVIEWED_KINDS, MAX_DOC_CHARS, readVerifications, setVerification,
   publicVerifications, canSubmit, docKey,
 } from '../lib/verification.js';
@@ -859,6 +863,103 @@ const pushUnsubscribe = async (req, res) => {
   return res.status(200).json({ ok: true, devices: list.length });
 };
 
+/* ============================================================
+   To'lov: hisob ochish
+   ------------------------------------------------------------
+   SUMMA SERVERDA. Mijozdan faqat MAHSULOT nomi olinadi; narx
+   admin sozlamasidan o'qiladi. Mijoz yuborgan summa umuman
+   qaralmaydi — aks holda odam o'ziga ming so'mlik premium yozib
+   olardi.
+
+   KALIT YO'Q BO'LSA — HISOB OCHILMAYDI. To'lov tizimi
+   ulanmagan bo'lsa, odamni to'lov sahifasiga olib borib
+   bo'lmaydi. Yarim ishlaydigan to'lov eng yomon holat.
+   ============================================================ */
+const readSettingsBlob = async () => {
+  try { return JSON.parse((await kvGet('admin_settings')) || '{}'); } catch { return {}; }
+};
+
+/** POST ?action=pay-options — nima sotilyapti va qaysi tizim orqali. */
+const payOptions = async (req, res) => {
+  const settings = await readSettingsBlob();
+  const providers = activeProviders();
+  const products = providers.length ? sellableProducts(settings) : [];
+  return res.status(200).json({ providers, products });
+};
+
+/** POST ?action=pay-start { product, provider } */
+const payStart = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const providers = activeProviders();
+  if (!providers.length) {
+    return res.status(503).json({ error: 'To‘lov tizimi hali ulanmagan', notReady: true });
+  }
+  const provider = providers.includes(String(body.provider)) ? String(body.provider) : providers[0];
+
+  const guard = payGuardKey(identity);
+  const hits = Number(await kvIncr(guard).catch(() => 0)) || 0;
+  if (hits === 1) await kvExpire(guard, PAY_GUARD_S).catch(() => {});
+  if (hits > PAY_GUARD_MAX) {
+    return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko‘ring' });
+  }
+
+  const settings = await readSettingsBlob();
+  const made = await createInvoice({ identity, product: String(body.product || ''), settings });
+  if (!made.ok) return res.status(400).json({ error: made.error });
+  const invoice = made.invoice;
+
+  /* To'lov sahifasining manzili. Hech qanday maxfiy qiymat
+     ichida yo'q: faqat do'kon raqami, hisob raqami va summa. */
+  let url = '';
+  if (provider === 'payme') {
+    const params = [
+      `m=${process.env.PAYME_MERCHANT_ID}`,
+      `ac.invoice=${invoice.id}`,
+      `a=${somToTiyin(invoice.amount)}`,
+      `l=uz`,
+    ].join(';');
+    url = `https://checkout.paycom.uz/${Buffer.from(params, 'utf8').toString('base64')}`;
+  } else {
+    url = 'https://my.click.uz/services/pay'
+      + `?service_id=${encodeURIComponent(process.env.CLICK_SERVICE_ID)}`
+      + `&merchant_id=${encodeURIComponent(process.env.CLICK_MERCHANT_ID)}`
+      + `&amount=${encodeURIComponent(invoice.amount)}`
+      + `&transaction_param=${encodeURIComponent(invoice.id)}`;
+  }
+
+  return res.status(200).json({
+    ok: true, provider, url,
+    invoice: { id: invoice.id, amount: invoice.amount, product: invoice.product, days: invoice.days },
+  });
+};
+
+/** POST ?action=pay-state { id } — to'landimi. */
+const payState = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const identity = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!identity) return res.status(401).json({ error: 'Avval ilovaga kiring' });
+
+  const invoice = await readInvoice(String(body.id || ''));
+  /* Begona hisobning holatini ko'rsatmaymiz — yo'q deymiz. */
+  if (!invoice || invoice.identity !== identity) {
+    return res.status(404).json({ error: 'Hisob topilmadi' });
+  }
+  return res.status(200).json({
+    state: invoice.state,
+    paidAt: invoice.paidAt || 0,
+    premiumUntil: invoice.premiumUntil || 0,
+  });
+};
+
 export default async function handler(req, res) {
   // Faqat o'qiydigan ikkita GET yo'l; qolgani hamma vaqt POST.
   if (req.method === 'GET') {
@@ -882,5 +983,8 @@ export default async function handler(req, res) {
   if (action === 'delete-account') return handleDeleteAccount(req, res);
   if (action === 'push-subscribe') return pushSubscribe(req, res);
   if (action === 'push-unsubscribe') return pushUnsubscribe(req, res);
+  if (action === 'pay-options') return payOptions(req, res);
+  if (action === 'pay-start') return payStart(req, res);
+  if (action === 'pay-state') return payState(req, res);
   return handleProfile(req, res);
 }

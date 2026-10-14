@@ -34,6 +34,7 @@
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLrem,
   kvDbSize, kvUsedMemory, kvMonthCommands } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
+import { listInvoices, activeProviders } from '../lib/payments.js';
 import { grantPremium, revokePremium, premiumState, premiumMembers } from '../lib/premium.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { REVIEWED_KINDS, KIND_LABELS, setVerification, docKey } from '../lib/verification.js';
@@ -629,6 +630,12 @@ const DEFAULT_SETTINGS = {
   supportPhone: '',
   supportTelegram: '',
   commissionPercent: 0,
+  /* Premium narxlari. Bo'sh (0) bo'lsa — o'sha muddat umuman
+     sotuvga chiqmaydi. Narxni EGASI belgilaydi: kodda hech
+     qanday raqam yo'q. */
+  premiumPrice1m: 0,
+  premiumPrice3m: 0,
+  premiumPrice12m: 0,
   maintenanceMode: false,
   maintenanceMessage: '',
   /* Panel sarlavhasidagi belgi. Bo'sh bo'lsa harfdan yasalgan
@@ -685,6 +692,18 @@ const updateSettings = async (req, res) => {
       return res.status(400).json({ error: 'Komissiya 0–100 oralig‘ida bo‘lishi kerak' });
     }
     next.commissionPercent = Math.round(pct * 100) / 100;
+  }
+
+  /* Premium narxlari. 0 — sotuvda yo'q (xato emas). Manfiy yoki
+     haddan tashqari katta raqam qabul qilinmaydi: noldan ortiq
+     xato terilgan narx odamdan haqiqiy pul so'raydi. */
+  for (const field of ['premiumPrice1m', 'premiumPrice3m', 'premiumPrice12m']) {
+    if (body[field] === undefined) continue;
+    const som = Number(body[field]);
+    if (!Number.isFinite(som) || som < 0 || som > 100_000_000) {
+      return res.status(400).json({ error: 'Narx noto‘g‘ri' });
+    }
+    next[field] = Math.round(som);
   }
 
   const saved = await kvSet(SETTINGS_KEY, JSON.stringify(next));
@@ -1288,6 +1307,22 @@ const removeStaffMember = async (req, res) => {
   return res.status(200).json({ ok: true, staff, counts: countByRole(staff) });
 };
 
+/** To'lov hisoblari — haqiqiy yozuvlar, hisoblangan jamilari bilan. */
+const getInvoices = async (res) => {
+  const invoices = await listInvoices(100);
+  const paid = invoices.filter((i) => i.state === 'PAID');
+  return res.status(200).json({
+    invoices,
+    totals: {
+      paidCount: paid.length,
+      paidSum: paid.reduce((a, i) => a + (Number(i.amount) || 0), 0),
+      waiting: invoices.filter((i) => i.state === 'NEW' || i.state === 'HOLD').length,
+    },
+    /* To'lov tizimi ulanganmi — panel buni ochiq ko'rsatsin. */
+    providers: activeProviders(),
+  });
+};
+
 const READ_PERMISSIONS = {
   usage: 'settings:read',
   orders: 'orders:read',
@@ -1301,6 +1336,7 @@ const READ_PERMISSIONS = {
   life: 'life:read',
   icons: 'icons:read',
   staff: 'staff:read',
+  invoices: 'payments:read',
 };
 
 /** Write permission required per POST action. */
@@ -1356,6 +1392,7 @@ export default async function handler(req, res) {
     if (resource === 'life') return getLife(res);
     if (resource === 'icons') return getIcons(res);
     if (resource === 'staff') return getStaff(res);
+    if (resource === 'invoices') return getInvoices(res);
   }
 
   if (req.method === 'POST') {
