@@ -20,7 +20,9 @@
 // v2: "navigate" so'rovi endi har qanday sahifani qobiq deb
 // saqlamaydi — eski keshda noto'g'ri qobiq qolgan bo'lishi mumkin.
 // v4: egasi qo'ygan ikonkalar ham keshlanadi (pastga qarang).
-const CACHE_VERSION = 'yolda-v4';
+// v5: ular endi saytning o'z manzilidan keladi — eski manzildagi
+//     nusxalar keraksiz.
+const CACHE_VERSION = 'yolda-v5';
 const SHELL = [
   '/',
   '/index.html',
@@ -53,9 +55,10 @@ self.addEventListener('activate', (event) => {
 /* ============================================================
    Egasi qo'ygan ikonkalar
    ------------------------------------------------------------
-   Ular saytda emas, fayl omborida (R2) turadi va ilova ochilganda
-   har biri alohida so'rov bo'lib ketadi — ellikka yaqin so'rov.
-   Internet sust bo'lsa yoki ombor so'rovni rad etsa, rasm kelmaydi.
+   Ular `/icon/...` manzilidan keladi — saytning o'zidan. Fayl
+   omborda qoladi, lekin uni brauzer emas, server olib keladi.
+   Ilova ochilganda baribir ellikka yaqin so'rov bo'ladi, ya'ni
+   internet sust bo'lsa rasm kechikadi yoki umuman kelmaydi.
 
    KELMASA — IKONKA UMUMAN KO'RINMAYDI. Rasm niqob (`mask`) ichida
    turadi: niqob bo'sh bo'lsa, ustidagi shakl butunlay qirqib
@@ -68,9 +71,12 @@ self.addEventListener('activate', (event) => {
    beriladi va ikkinchi tashrifdan boshlab tarmoqqa umuman
    bog'liq bo'lmaydi.
    ============================================================ */
+/* Eski ombor manzili ham qoldirilgan: keshdan ochilgan eski
+   sahifa hali o'shani so'raydi. */
 const ICON_HOST = 'pub-9727192a07cd47c1a25898c5abe5c4a9.r2.dev';
 const isIconImage = (url) =>
-  url.hostname === ICON_HOST && url.pathname.startsWith('/icon/');
+  (url.origin === self.location.origin && url.pathname.startsWith('/icon/'))
+  || (url.hostname === ICON_HOST && url.pathname.startsWith('/icon/'));
 
 /** Shu so'rovga umuman aralashmaymizmi? */
 const isBypassed = (request, url) =>

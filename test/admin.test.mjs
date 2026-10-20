@@ -746,7 +746,13 @@ console.log('\n== ikonkalar ==');
 
   // Ilovaga yetib boradimi
   const cfg = await call(config, 'GET', {});
-  check('ilovaga /api/config orqali boradi', cfg.body.icons.iconHome === saved.body.url, JSON.stringify(cfg.body.icons));
+  /* Ilovaga ombor manzili emas, saytning o'z manzili boradi:
+     brauzer boshqa domenga bormasligi kerak (lib/iconProxy.js).
+     Admin panel esa ombor manzilini ko'radi — yuqoridagi
+     "ro'yxatda ko'rinadi" shuni tasdiqlaydi. */
+  const kutilgan = '/icon/' + saved.body.url.split('/icon/')[1];
+  check('ilovaga /api/config orqali boradi', cfg.body.icons.iconHome === kutilgan,
+    JSON.stringify({ kelgan: cfg.body.icons.iconHome, kutilgan }));
 
   // Noto'g'ri kiritmalar
   check('nomi noto‘g‘ri bo‘lsa rad etiladi',

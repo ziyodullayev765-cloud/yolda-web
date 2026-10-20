@@ -22,7 +22,11 @@ import { repo, runner } from './harness.mjs';
 const t = runner();
 const { flow, check } = t;
 
-const ICON = 'https://pub-9727192a07cd47c1a25898c5abe5c4a9.r2.dev/icon/2026-10/7a519091c419c3ec1d46ac4e9f9aff80.png';
+/* Ikonka endi saytning o'z manzilidan keladi; eski ombor
+   manzili ham qoldirilgan, chunki keshdan ochilgan eski sahifa
+   hali o'shani so'raydi. */
+const ICON = 'https://yolda.uz/icon/2026-10/7a519091c419c3ec1d46ac4e9f9aff80.png';
+const ESKI_ICON = 'https://pub-9727192a07cd47c1a25898c5abe5c4a9.r2.dev/icon/2026-10/7a519091c419c3ec1d46ac4e9f9aff80.png';
 
 /** Xizmat faylini soxta brauzer ichida ishga tushiradi. */
 const bootSw = () => {
@@ -120,6 +124,14 @@ flow('Birinchi marta kelmasa — keshga yolg\'on yozilmaydi');
   check('bo\'sh javob keshda qolmadi', !sw.store.has(ICON), [...sw.store.keys()]);
 }
 
+flow('Eski ombor manzili ham keshlanadi');
+{
+  const sw = bootSw();
+  await sw.request(ESKI_ICON);
+  await sw.request(ESKI_ICON);
+  check('eski sahifa ham bir marta so\'raydi', sw.asked.length === 1, sw.asked);
+}
+
 flow('Boshqa domenlarga tegilmaydi');
 {
   const sw = bootSw();
@@ -137,7 +149,7 @@ flow('Kesh raqami oshirilgan');
   const sw = bootSw();
   // Eski kesh ichida ikonkalar yo'q edi; raqam oshmasa, eski
   // nusxa qolib, yangi qoida hech qachon ishlamay qolardi.
-  check('CACHE_VERSION yangilangan', sw.version === 'yolda-v4', sw.version);
+  check('CACHE_VERSION yangilangan', sw.version === 'yolda-v5', sw.version);
 }
 
 t.done();

@@ -22,6 +22,7 @@
 import { kvGet, kvSmembers } from '../lib/kv.js';
 import { publicShape as lifeShape, sortItems as sortLifeItems } from '../lib/life.js';
 import { normalizeIcons } from '../lib/icons.js';
+import { sameOriginIcon, R2_ICON_RE } from '../lib/iconProxy.js';
 
 const FALLBACK = {
   platformName: "YO'LDA",
@@ -59,7 +60,65 @@ const getLife = async (res) => {
   return res.status(200).json({ ok: true, life: sortLifeItems(items).map(lifeShape) });
 };
 
+/**
+ * GET /icon/2026-10/<nom>.png  →  /api/config?iconPath=...
+ *
+ * NEGA. Ikonkalar fayl omborida (R2) turadi va ilova ochilganda
+ * ularning har biri BOSHQA DOMENGA so'rov bo'lib ketadi: yangi
+ * ulanish, yangi TLS, ombor cheklovi. Biri kelmasa — o'sha
+ * ikonka umuman ko'rinmaydi (rasm niqob ichida; bo'sh niqob
+ * shaklni qirqib tashlaydi).
+ *
+ * Endi ular saytning o'z manzilidan beriladi. Fayl o'sha
+ * omborda qoladi, lekin uni brauzer emas, server olib keladi va
+ * javob Vercel chekkasida (CDN) saqlanib qoladi — ya'ni ombor
+ * bir marta bezovta qilinadi, qolgan hammaga chekkadan beriladi.
+ *
+ * XAVFSIZLIK. "Manzilni ayt — olib kelaman" degan endpoint SSRF
+ * uchun ochiq eshik. Shuning uchun bu yerda manzil BERILMAYDI:
+ * domen bizning sozlamamizdan (R2_PUBLIC_URL), yo'lning shakli
+ * esa qat'iy tekshiriladi — `YYYY-MM/<32 belgi>.<png|jpg|webp>`.
+ * Boshqa hech narsa o'tmaydi: na `..`, na boshqa domen, na
+ * omborning boshqa papkasi.
+ */
+const ICON_MAX_BYTES = 2 * 1024 * 1024;
+
+const getIconFile = async (req, res) => {
+  const path = String(req.query.iconPath || '');
+  if (!R2_ICON_RE.test(path)) return res.status(404).json({ error: 'Topilmadi' });
+
+  const base = (process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+  if (!base) return res.status(404).json({ error: 'Topilmadi' });
+
+  try {
+    const got = await fetch(`${base}/icon/${path}`, { redirect: 'error' });
+    if (!got.ok) {
+      /* Xato uzoq saqlanmasin: ombor bir lahzaga javob bermagan
+         bo'lsa, yo'qlik bir yil yopishib qolmasligi kerak. */
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10');
+      return res.status(502).json({ error: 'Rasm olinmadi' });
+    }
+    const type = got.headers.get('content-type') || '';
+    if (!/^image\/(png|jpeg|webp)$/.test(type)) {
+      return res.status(502).json({ error: 'Rasm emas' });
+    }
+    const bytes = Buffer.from(await got.arrayBuffer());
+    if (bytes.length > ICON_MAX_BYTES) return res.status(502).json({ error: 'Rasm juda katta' });
+
+    /* Nomida tasodifiy belgilar bor — bitta manzil doim bitta
+       rasm. Shuning uchun "abadiy" keshlanadi: yangi rasm yangi
+       manzil bilan keladi. */
+    res.setHeader('Content-Type', type);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, immutable');
+    return res.status(200).send(bytes);
+  } catch {
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10');
+    return res.status(502).json({ error: 'Rasm olinmadi' });
+  }
+};
+
 export default async function handler(req, res) {
+  if (req.query.iconPath !== undefined) return getIconFile(req, res);
   if (String(req.query.resource || '') === 'life') return getLife(res);
 
   let settings = FALLBACK;
@@ -84,7 +143,11 @@ export default async function handler(req, res) {
   let iconsPlain = [];
   try {
     const got = normalizeIcons(JSON.parse((await kvGet('icon_overrides')) || '{}'));
-    icons = got.urls;
+    /* Havolalar saytning o'z manziliga aylantiriladi — admin
+       panel ularni ombor manzili bilan saqlaydi, ilova esa
+       boshqa domenga bormasligi kerak. */
+    icons = {};
+    Object.keys(got.urls).forEach((id) => { icons[id] = sameOriginIcon(got.urls[id]); });
     iconsPlain = got.plain;
   } catch {
     icons = {};

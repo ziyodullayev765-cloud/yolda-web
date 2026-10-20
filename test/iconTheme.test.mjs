@@ -132,13 +132,17 @@ const load = async (relPath, name) => {
 };
 
 const call = async (handler, { method = 'GET', query = {}, body = null, cookie = null } = {}) => {
-  let code = 200; let out = null;
+  let code = 200; let out = null; let sent = null;
+  const headers = {};
   const res = {
-    setHeader() {}, status(c) { code = c; return this; },
-    json(v) { out = v; return this; }, end() { return this; },
+    setHeader(k, v) { headers[String(k).toLowerCase()] = v; return this; },
+    status(c) { code = c; return this; },
+    json(v) { out = v; return this; },
+    send(v) { sent = v; return this; },
+    end() { return this; },
   };
   await handler({ method, query, body, headers: cookie ? { cookie } : {} }, res);
-  return { code, body: out };
+  return { code, body: out, sent, headers };
 };
 
 const config = await load('api/config.js', 'config');
@@ -157,11 +161,99 @@ const config = await load('api/config.js', 'config');
     Array.isArray(cfg.body.iconsPlain) && cfg.body.iconsPlain.join() === 'iconTelegram',
     cfg.body.iconsPlain);
 
+  /* ---- Havola saytning o'z manziliga aylantiriladi ----
+     Ilova boshqa domenga bormasligi kerak: u yerga ketgan
+     har bir so'rov yangi ulanish, yangi TLS va omborning o'z
+     cheklovi. Admin panel esa havolani ombor manzili bilan
+     saqlaydi, ya'ni almashtirish shu yerda bo'ladi. */
+  const HASH = '7a519091c419c3ec1d46ac4e9f9aff80';
+  store.set('icon_overrides', JSON.stringify({
+    iconChat: `https://pub-test.r2.dev/icon/2026-10/${HASH}.png`,
+    iconHome: 'https://example.com/boshqa-joydagi-rasm.png',
+  }));
+  const moved = await call(config);
+  check('ikonka saytning o‘z manzilidan beriladi',
+    moved.body.icons.iconChat === `/icon/2026-10/${HASH}.png`, moved.body.icons);
+  check('begona havola o‘zgarishsiz qoladi',
+    moved.body.icons.iconHome === 'https://example.com/boshqa-joydagi-rasm.png',
+    moved.body.icons);
+
   store.set('icon_overrides', 'buzuq json');
   const broken = await call(config);
   check('buzuq jadval sahifani yiqitmaydi', broken.code === 200, broken.code);
   check('buzuq jadvalda ro‘yxat bo‘sh',
     Array.isArray(broken.body.iconsPlain) && broken.body.iconsPlain.length === 0, broken.body.iconsPlain);
+}
+
+/* ============================================================
+   2b. /icon/... — rasmning o'zi saytdan beriladi
+   ============================================================ */
+flow('2b. Rasm saytning o‘z manzilidan');
+{
+  const HASH = '7a519091c419c3ec1d46ac4e9f9aff80';
+  const realFetch = global.fetch;
+  let asked = null;
+  const png = Buffer.from('89504e470d0a1a0a', 'hex');
+
+  const oldBase = process.env.R2_PUBLIC_URL;
+  process.env.R2_PUBLIC_URL = 'https://pub-test.r2.dev';
+  global.fetch = async (url, opts) => {
+    asked = { url: String(url), opts };
+    return {
+      ok: true,
+      headers: { get: () => 'image/png' },
+      arrayBuffer: async () => png,
+    };
+  };
+
+  const good = await call(config, { query: { iconPath: `2026-10/${HASH}.png` } });
+  check('rasm qaytdi', good.code === 200 && Buffer.isBuffer(good.sent), good.code);
+  check('aynan o‘sha baytlar', Buffer.isBuffer(good.sent) && good.sent.equals(png));
+  check('turi aytildi', good.headers['content-type'] === 'image/png', good.headers);
+  check('abadiy keshlanadi', /immutable/.test(good.headers['cache-control'] || ''), good.headers);
+  check('ombordan so‘raldi',
+    asked && asked.url === `https://pub-test.r2.dev/icon/2026-10/${HASH}.png`, asked);
+  check('yo‘naltirish taqiqlangan', asked && asked.opts && asked.opts.redirect === 'error', asked);
+
+  /* ---- SSRF: manzilni mijoz aytolmaydi ----
+     Bu endpointning butun xavfi shunda: "manzilni ayt — olib
+     kelaman" degan server ichki tarmoqqa ham borardi. Shuning
+     uchun domen sozlamadan, yo'l esa qat'iy shaklda. */
+  const yomon = [
+    '../../etc/passwd',
+    '2026-10/../../secret.png',
+    'https://169.254.169.254/latest/meta-data',
+    '//evil.com/x.png',
+    '2026-10/NOTHEX.png',
+    '2026-10/' + HASH + '.svg',
+    '2026-10/' + HASH + '.png?x=1',
+  ];
+  let oqdi = null;
+  for (const path of yomon) {
+    asked = null;
+    const r = await call(config, { query: { iconPath: path } });
+    if (r.code !== 404 || asked) { oqdi = { path, code: r.code, asked }; break; }
+  }
+  check('BEGONA MANZIL O‘TMADI', oqdi === null, oqdi);
+
+  /* ---- Ombor javob bermasa ---- */
+  global.fetch = async () => ({ ok: false, status: 503, headers: { get: () => '' } });
+  const down = await call(config, { query: { iconPath: `2026-10/${HASH}.png` } });
+  check('ombor javob bermasa 502', down.code === 502, down.code);
+  check('xato uzoq keshlanmaydi',
+    !/immutable/.test(down.headers['cache-control'] || ''), down.headers);
+
+  /* ---- Rasm bo'lmagan javob ---- */
+  global.fetch = async () => ({
+    ok: true, headers: { get: () => 'text/html' }, arrayBuffer: async () => Buffer.from('<html>'),
+  });
+  const html = await call(config, { query: { iconPath: `2026-10/${HASH}.png` } });
+  check('rasm bo‘lmagani rad etildi', html.code === 502, html.code);
+
+  global.fetch = realFetch;
+  // Sozlama keyingi bo'limlarga ham kerak — o'z holiga qaytariladi.
+  if (oldBase === undefined) delete process.env.R2_PUBLIC_URL;
+  else process.env.R2_PUBLIC_URL = oldBase;
 }
 
 /* ============================================================
@@ -265,7 +357,7 @@ flow('4. index.html');
     const m = html.match(new RegExp('<symbol id="' + id + '" viewBox="0 0 24 24">([\\s\\S]*?)</symbol>'));
     if (!m) { check(id + ' sprite ichida', false); return; }
     if (RANGLI.has(id)) {
-      check(id + ' o‘z rangida', m[1].includes('<image href="https://'), m[1].slice(0, 80));
+      check(id + ' o‘z rangida', m[1].includes('<image href="/icon/'), m[1].slice(0, 80));
       check(id + ' bo‘yalmagan', !m[1].includes('currentColor'), m[1].slice(0, 80));
     } else {
       check(id + ' ilova rangini oladi',
@@ -274,7 +366,7 @@ flow('4. index.html');
       const mask = html.match(new RegExp('<mask id="iconmask-' + id + '"[^>]*>([\\s\\S]*?)</mask>'));
       check(id + ' niqobi defs ichida', Boolean(mask));
       if (mask) {
-        check(id + ' niqobda rasm bor', mask[1].includes('<image href="https://'), mask[1].slice(0, 80));
+        check(id + ' niqobda rasm bor', mask[1].includes('<image href="/icon/'), mask[1].slice(0, 80));
         check(id + ' shaffoflik bo‘yicha qirqiladi',
           /mask-type:alpha/.test(html.match(new RegExp('<mask id="iconmask-' + id + '"[^>]*>'))[0]));
       }

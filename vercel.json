@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/icon/:path*",
+      "destination": "/api/config?iconPath=:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
