@@ -248,10 +248,18 @@ flow('4. index.html');
     'iconClose', 'iconDownload', 'iconShare', 'iconEdit', 'iconShield',
     'iconFlame', 'iconLogout', 'iconBed', 'iconWrench', 'iconMonitor',
     'iconFood', 'iconParking', 'iconCheckLine', 'iconReactThumb',
+    'iconRoute', 'iconChat',
   ];
   /* Rangli ikonkalar bo'yalmaydi — bitta rangga bo'yash
-     belgisini buzardi. */
-  const RANGLI = new Set(['iconVerifiedBadge', 'iconBox']);
+     belgisini buzardi.
+
+     Ro'yxat admin paneldagi "O'z rangida" belgisidan olinadi
+     (`/api/config` dagi `iconsPlain`), chunki ILOVA o'shanga
+     qarab chizadi. Ilgari bu yerda `iconBox` ham rangli deb
+     yozilgan edi, panelda esa belgisi o'chiq turardi: sahifadagi
+     asosiy nusxa rangli, ilovada ko'rinadigani esa bo'yalgan
+     bo'lib, ikkisi bir-biriga mos kelmasdi. */
+  const RANGLI = new Set(['iconVerifiedBadge']);
 
   QUYILGAN.forEach((id) => {
     const m = html.match(new RegExp('<symbol id="' + id + '" viewBox="0 0 24 24">([\\s\\S]*?)</symbol>'));
