@@ -5569,44 +5569,35 @@
   .ai-answer p{margin:0 0 10px;}
   .ai-answer p:last-child{margin-bottom:0;}
   /* ----------------------------------------------------------
-     Javob kutilayotgani: gullab-so'nadigan uchta qavat.
+     Javob kutilayotgani: uchta yulduzcha.
      ----------------------------------------------------------
-     Uchta bir xil gul bir-birining ustida turadi va har biri
-     o'z tezligida aylanadi: biri soat yo'nalishida, o'rtadagisi
-     teskarisiga. Shuning uchun naqsh takrorlanmaydi.
+     To'rt uchli yulduz — sun'iy intellektning belgisi. Uchtasi
+     har xil o'lchamda, biri ikkinchisining ustida; navbat bilan
+     kattalashib yonadi va so'nadi, shuning uchun yorug'lik bir
+     yulduzdan ikkinchisiga ko'chib yurgandek ko'rinadi.
 
-     Rang faqat YASHIL. Ichkarisi yorug', cheti to'q — gradient
-     markazdan tarqaladi. Ikki tusdan boshqa rang yo'q.
+     HAR BIRI IKKI QAVAT `g`. Tashqisi — joyi va o'lchami (SVG
+     `transform`), ichkisi — harakat (CSS `transform`). Bitta
+     `g` da ikkalasi bo'lmaydi: CSS SVG dagi `transform` ni
+     butunlay bosib ketadi va yulduz markazga sakrab chiqadi.
+
+     Rang faqat YASHIL: yuqorisi yorug', pastki uchi to'q.
      ---------------------------------------------------------- */
-  .ai-bloom{display:block;width:46px;height:46px;margin:2px 0;}
-  .ai-bloom svg{width:100%;height:100%;display:block;overflow:visible;}
-  .ai-bloom .bl{
+  .ai-spark{display:block;width:54px;height:54px;margin:2px 0;}
+  .ai-spark svg{width:100%;height:100%;display:block;overflow:visible;}
+  .ai-spark .sp{
     transform-box:fill-box;transform-origin:center;
-    animation:bloomA 2.6s cubic-bezier(.65,0,.35,1) infinite;
+    animation:aiSpark 1.8s cubic-bezier(.45,0,.3,1) infinite;
   }
-  .ai-bloom .bl-1{opacity:0.22;}
-  .ai-bloom .bl-2{opacity:0.45;animation-name:bloomB;animation-duration:2.1s;}
-  .ai-bloom .bl-3{opacity:0.95;animation-name:bloomC;animation-duration:1.7s;}
-  @keyframes bloomA{
-    0%{transform:rotate(0deg) scale(1);}
-    50%{transform:rotate(180deg) scale(0.66);}
-    100%{transform:rotate(360deg) scale(1);}
+  .ai-spark .sp-2{animation-delay:0.24s;}
+  .ai-spark .sp-3{animation-delay:0.48s;}
+  @keyframes aiSpark{
+    0%,100%{transform:scale(0.55) rotate(-10deg);opacity:0.3;}
+    45%{transform:scale(1) rotate(10deg);opacity:1;}
   }
-  @keyframes bloomB{
-    0%{transform:rotate(0deg) scale(0.62);}
-    50%{transform:rotate(-180deg) scale(0.86);}
-    100%{transform:rotate(-360deg) scale(0.62);}
-  }
-  @keyframes bloomC{
-    0%{transform:rotate(0deg) scale(0.4);}
-    50%{transform:rotate(180deg) scale(0.56);}
-    100%{transform:rotate(360deg) scale(0.4);}
-  }
-  /* Harakat kerak bo'lmasa — shakl qoladi, aylanish to'xtaydi. */
+  /* Harakat kerak bo'lmasa — yulduzlar turadi, yonib-o'chmaydi. */
   @media (prefers-reduced-motion: reduce){
-    .ai-bloom .bl{animation:none;}
-    .ai-bloom .bl-2{transform:scale(0.74);}
-    .ai-bloom .bl-3{transform:scale(0.48);}
+    .ai-spark .sp{animation:none;opacity:0.9;}
   }
   .ai-send[disabled]{opacity:0.4;}
 
@@ -23042,34 +23033,34 @@
   }
 
   /**
-   * Javob kutilayotganda — gul.
+   * Javob kutilayotganda — uchta yulduzcha.
    *
-   * Bitta gul oltita barg: har biri markazdan chiqib, uchida
-   * tutashadi. Shakl bitta marta yoziladi va uch qavat bo'lib
-   * takrorlanadi; qavatlarning tezligi va yo'nalishi har xil.
+   * Yulduz 48×48 maydonda, markazi (24,24) da chiziladi. Uchlari
+   * egri chiziq bilan tutashadi — shuning uchun oralig'i ichkariga
+   * botib, uchlari o'tkir chiqadi.
    *
-   * Rang gradientdan keladi: markaz yorug' yashil, chet to'q
-   * yashil. Boshqa rang yo'q — shu ikkisi.
+   * Shakl bitta marta yoziladi, uch joyda ishlatiladi: har biri
+   * o'z o'rni va o'lchamiga ko'chiriladi, harakati esa CSS da.
    */
-  var BLOOM_PETAL = 'M24 24C18 18.5 17.4 7.2 24 1.6C30.6 7.2 30 18.5 24 24Z';
-  var BLOOM_FLOWER = (function(){
-    var out = '';
-    for(var a = 0; a < 360; a += 60){
-      out += '<path d="' + BLOOM_PETAL + '" transform="rotate(' + a + ' 24 24)"/>';
-    }
-    return out;
-  })();
+  var SPARK_PATH =
+    'M24 2C25.6 13.4 34.6 22.4 46 24C34.6 25.6 25.6 34.6 24 46'
+    + 'C22.4 34.6 13.4 25.6 2 24C13.4 22.4 22.4 13.4 24 2Z';
+  /* [x, y, o'lcham] — rasmdagidek: kattasi o'rtada, kichiklari
+     tepada va pastda, biroz chaproqda. */
+  var SPARK_PLACES = [[56, 60, 0.95], [40, 28, 0.34], [36, 78, 0.24]];
   var WAIT_HTML =
-    '<span class="ai-bloom" role="status" aria-label="Javob tayyorlanmoqda">'
-    + '<svg viewBox="0 0 48 48" aria-hidden="true">'
-    +   '<defs><radialGradient id="aiBloomFill" cx="50%" cy="50%" r="55%">'
+    '<span class="ai-spark" role="status" aria-label="Javob tayyorlanmoqda">'
+    + '<svg viewBox="0 0 100 100" aria-hidden="true">'
+    +   '<defs><linearGradient id="aiSparkFill" x1="0" y1="0" x2="0.4" y2="1">'
     +     '<stop offset="0%" stop-color="#5BE3A4"/>'
     +     '<stop offset="100%" stop-color="#09864B"/>'
-    +   '</radialGradient></defs>'
-    +   '<g fill="url(#aiBloomFill)">'
-    +     '<g class="bl bl-1">' + BLOOM_FLOWER + '</g>'
-    +     '<g class="bl bl-2">' + BLOOM_FLOWER + '</g>'
-    +     '<g class="bl bl-3">' + BLOOM_FLOWER + '</g>'
+    +   '</linearGradient></defs>'
+    +   '<g fill="url(#aiSparkFill)">'
+    +     SPARK_PLACES.map(function(s, i){
+            return '<g transform="translate(' + s[0] + ' ' + s[1] + ') '
+              + 'scale(' + s[2] + ') translate(-24 -24)">'
+              + '<g class="sp sp-' + (i + 1) + '"><path d="' + SPARK_PATH + '"/></g></g>';
+          }).join("")
     +   '</g>'
     + '</svg></span>';
 
