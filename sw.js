@@ -19,7 +19,8 @@
  */
 // v2: "navigate" so'rovi endi har qanday sahifani qobiq deb
 // saqlamaydi — eski keshda noto'g'ri qobiq qolgan bo'lishi mumkin.
-const CACHE_VERSION = 'yolda-v3';
+// v4: egasi qo'ygan ikonkalar ham keshlanadi (pastga qarang).
+const CACHE_VERSION = 'yolda-v4';
 const SHELL = [
   '/',
   '/index.html',
@@ -49,10 +50,32 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+/* ============================================================
+   Egasi qo'ygan ikonkalar
+   ------------------------------------------------------------
+   Ular saytda emas, fayl omborida (R2) turadi va ilova ochilganda
+   har biri alohida so'rov bo'lib ketadi — ellikka yaqin so'rov.
+   Internet sust bo'lsa yoki ombor so'rovni rad etsa, rasm kelmaydi.
+
+   KELMASA — IKONKA UMUMAN KO'RINMAYDI. Rasm niqob (`mask`) ichida
+   turadi: niqob bo'sh bo'lsa, ustidagi shakl butunlay qirqib
+   tashlanadi. "Buzuq rasm" belgisi ham chiqmaydi, shunchaki
+   bo'shliq qoladi.
+
+   Shuning uchun ular keshlanadi. Rasm nomida uning mazmuni xeshi
+   bor — ya'ni manzil o'zgarmasa, rasm ham o'zgarmagan. Demak bir
+   marta olingach, qayta so'rashning hojati yo'q: doim keshdan
+   beriladi va ikkinchi tashrifdan boshlab tarmoqqa umuman
+   bog'liq bo'lmaydi.
+   ============================================================ */
+const ICON_HOST = 'pub-9727192a07cd47c1a25898c5abe5c4a9.r2.dev';
+const isIconImage = (url) =>
+  url.hostname === ICON_HOST && url.pathname.startsWith('/icon/');
+
 /** Shu so'rovga umuman aralashmaymizmi? */
 const isBypassed = (request, url) =>
   request.method !== 'GET' ||
-  url.origin !== self.location.origin ||
+  (url.origin !== self.location.origin && !isIconImage(url)) ||
   url.pathname.startsWith('/api/') ||
   url.pathname.startsWith('/admin');
 
@@ -70,6 +93,27 @@ const isAppShell = (url) => url.pathname === '/' || url.pathname === '/index.htm
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (isBypassed(event.request, url)) return;
+
+  /* Ikonka: avval kesh, so'ng tarmoq. Boshqa fayllardan farqi —
+     orqa fonda yangilanmaydi: manzili o'zgarmaguncha rasm ham
+     o'zgarmaydi, ya'ni qayta so'rash bekorga tarmoq sarflash
+     bo'lardi.
+
+     Javob "opaque" bo'lishi mumkin (boshqa domen, `no-cors`):
+     uning holati 0, `ok` esa false. Shunga qaramay u yaroqli
+     rasm — shuning uchun alohida tekshiriladi. */
+  if (isIconImage(url)) {
+    event.respondWith(
+      caches.match(event.request).then((hit) => hit || fetch(event.request).then((response) => {
+        if (response && (response.ok || response.type === 'opaque')) {
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })),
+    );
+    return;
+  }
 
   // Sahifa ochilishi: avval tarmoq (yangi versiya darrov ko'rinsin),
   // internet bo'lmasa — keshdagi qobiq.
