@@ -5572,9 +5572,14 @@
      Javob kutilayotgani: uchta yulduzcha.
      ----------------------------------------------------------
      To'rt uchli yulduz — sun'iy intellektning belgisi. Uchtasi
-     har xil o'lchamda, biri ikkinchisining ustida; navbat bilan
-     kattalashib yonadi va so'nadi, shuning uchun yorug'lik bir
-     yulduzdan ikkinchisiga ko'chib yurgandek ko'rinadi.
+     har xil o'lchamda va har biri TO'LIQ AYLANADI: kattasi
+     sekin soat yo'nalishida, o'rtadagisi tezroq teskarisiga,
+     kichigi eng sekin. Aylanish bilan birga kattalashib yonadi
+     va so'nadi, shuning uchun yorug'lik bir yulduzdan
+     ikkinchisiga ko'chib yurgandek ko'rinadi.
+
+     Aylanish TEKIS (`linear`): to'xtab-to'xtab aylangan narsa
+     buzuq ko'rinadi.
 
      HAR BIRI IKKI QAVAT `g`. Tashqisi — joyi va o'lchami (SVG
      `transform`), ichkisi — harakat (CSS `transform`). Bitta
@@ -5587,15 +5592,26 @@
   .ai-spark svg{width:100%;height:100%;display:block;overflow:visible;}
   .ai-spark .sp{
     transform-box:fill-box;transform-origin:center;
-    animation:aiSpark 1.8s cubic-bezier(.45,0,.3,1) infinite;
+    animation:aiSparkA 2.4s linear infinite;
   }
-  .ai-spark .sp-2{animation-delay:0.24s;}
-  .ai-spark .sp-3{animation-delay:0.48s;}
-  @keyframes aiSpark{
-    0%,100%{transform:scale(0.55) rotate(-10deg);opacity:0.3;}
-    45%{transform:scale(1) rotate(10deg);opacity:1;}
+  .ai-spark .sp-2{animation:aiSparkB 1.7s linear infinite;}
+  .ai-spark .sp-3{animation:aiSparkC 3.1s linear infinite;}
+  @keyframes aiSparkA{
+    0%{transform:rotate(0deg) scale(0.58);opacity:0.35;}
+    50%{transform:rotate(180deg) scale(1);opacity:1;}
+    100%{transform:rotate(360deg) scale(0.58);opacity:0.35;}
   }
-  /* Harakat kerak bo'lmasa — yulduzlar turadi, yonib-o'chmaydi. */
+  @keyframes aiSparkB{
+    0%{transform:rotate(0deg) scale(1);opacity:1;}
+    50%{transform:rotate(-180deg) scale(0.5);opacity:0.35;}
+    100%{transform:rotate(-360deg) scale(1);opacity:1;}
+  }
+  @keyframes aiSparkC{
+    0%{transform:rotate(0deg) scale(0.7);opacity:0.5;}
+    50%{transform:rotate(180deg) scale(1.15);opacity:1;}
+    100%{transform:rotate(360deg) scale(0.7);opacity:0.5;}
+  }
+  /* Harakat kerak bo'lmasa — yulduzlar turadi, aylanmaydi. */
   @media (prefers-reduced-motion: reduce){
     .ai-spark .sp{animation:none;opacity:0.9;}
   }
