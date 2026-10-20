@@ -9,7 +9,7 @@
  * ba'zisida belgi QO'LDA chizilgan edi — belgi o'zgarsa, bir
  * nechta joy eskisi bilan qolib ketardi.
  *
- * Endi hammasi `icons/logo.png` ga qaraydi. Shu test eski
+ * Endi hammasi `icons/logo-v2.png` ga qaraydi. Shu test eski
  * chizmaning qaytib kelishini va biror joyning chetda qolishini
  * ushlaydi.
  *
@@ -25,14 +25,17 @@ const t = runner();
 const { flow, check } = t;
 
 const read = (name) => readFileSync(join(repo, name), 'utf8');
-const LOGO = '/icons/logo.png';
+/* Fayl nomida VERSIYA bor: `/icons/` bir yilga keshlanadi, ya'ni
+   belgi almashganda nom ham o'zgarishi shart. Shuning uchun test
+   aniq nomni emas, shaklini biladi. */
+const LOGO = '/icons/logo-v2.png';
 const ESKI = 'M18 86 L42 24';
 
 /* ---------------------------------------------------------- */
 flow('Belgi fayli joyida');
 {
-  const file = join(repo, 'icons/logo.png');
-  check('icons/logo.png bor', existsSync(file));
+  const file = join(repo, 'icons/logo-v2.png');
+  check('icons/logo-v2.png bor', existsSync(file));
   const bytes = readFileSync(file);
   check('haqiqiy PNG', bytes.slice(1, 4).toString() === 'PNG', bytes.slice(0, 8));
   /* IHDR: 16-24 baytlarda eni va bo'yi, 25-chida rang turi.
@@ -58,15 +61,16 @@ flow('Ilovadagi hamma joy shu faylga qaraydi');
     if (m) check(id + ' yangi belgini ko‘rsatadi', m[0].includes(LOGO), m[0].slice(0, 120));
   });
 
-  check('kutish ekrani ham', /<img class="splash-mark" src="\/icons\/logo\.png"/.test(page));
-  check('kvitansiya ham', page.includes('img.src = "/icons/logo.png"'));
+  check('kutish ekrani ham',
+    page.includes('<img class="splash-mark" src="' + LOGO + '"'));
+  check('kvitansiya ham', page.includes('img.src = "/icons/logo-v2.png"'));
   check('kvitansiya belgini kutib chizadi', page.includes('loadRcptLogo()'));
 
   check('admin panel ham', read('admin.html').includes(LOGO));
   check('maxfiylik sahifasi ham', read('maxfiylik.html').includes(LOGO));
   check('hisobni o‘chirish sahifasi ham', read('hisob-ochirish.html').includes(LOGO));
   check('ochiq sahifalar qolipi ham', read('tools/pageShell.mjs').includes(LOGO));
-  check('Play Market rasmi ham', read('tools/storeGraphic.mjs').includes("'icons', 'logo.png'"));
+  check('Play Market rasmi ham', read('tools/storeGraphic.mjs').includes("'icons', 'logo-v2.png'"));
 }
 
 /* ---------------------------------------------------------- */
@@ -88,11 +92,11 @@ flow('Telefon va brauzer ikonkalari');
      "maskable" (Android chetini kesadi, shuning uchun belgi
      kichikroq va orqasi to'ldirilgan). */
   const kutilgan = {
-    'icons/favicon-32.png': { size: 32, alpha: true },
-    'icons/icon-192.png': { size: 192, alpha: true },
-    'icons/icon-512.png': { size: 512, alpha: true },
-    'icons/apple-touch-icon.png': { size: 180, alpha: false },
-    'icons/icon-maskable-512.png': { size: 512, alpha: false },
+    'icons/favicon-32-v2.png': { size: 32, alpha: true },
+    'icons/icon-192-v2.png': { size: 192, alpha: true },
+    'icons/icon-512-v2.png': { size: 512, alpha: true },
+    'icons/apple-touch-icon-v2.png': { size: 180, alpha: false },
+    'icons/icon-maskable-512-v2.png': { size: 512, alpha: false },
   };
 
   Object.keys(kutilgan).forEach((name) => {
@@ -115,12 +119,12 @@ flow('Telefon va brauzer ikonkalari');
   const man = JSON.parse(read('manifest.webmanifest'));
   const srcs = man.icons.map((i) => i.src);
   check('manifest shu ikonkalarni ko‘rsatadi',
-    srcs.includes('/icons/icon-192.png') && srcs.includes('/icons/icon-512.png')
-    && srcs.includes('/icons/icon-maskable-512.png'), srcs);
+    srcs.includes('/icons/icon-192-v2.png') && srcs.includes('/icons/icon-512-v2.png')
+    && srcs.includes('/icons/icon-maskable-512-v2.png'), srcs);
 
   const page = read('index.html');
-  check('brauzer yorlig‘i ulangan', page.includes('href="/icons/favicon-32.png"'));
-  check('iOS ikonkasi ulangan', page.includes('href="/icons/apple-touch-icon.png"'));
+  check('brauzer yorlig‘i ulangan', page.includes('href="/icons/favicon-32-v2.png"'));
+  check('iOS ikonkasi ulangan', page.includes('href="/icons/apple-touch-icon-v2.png"'));
 }
 
 t.done();

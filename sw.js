@@ -22,14 +22,17 @@
 // v4: egasi qo'ygan ikonkalar ham keshlanadi (pastga qarang).
 // v5: ular endi saytning o'z manzilidan keladi — eski manzildagi
 //     nusxalar keraksiz.
-const CACHE_VERSION = 'yolda-v5';
+// v6: belgi almashdi. Fayllarning NOMIGA ham `-v2` qo'shildi, chunki
+//     `/icons/` bir yilga keshlanadi: nomi o'zgarmasa, brauzer eskisini
+//     ko'rsatib yuraverardi.
+const CACHE_VERSION = 'yolda-v6';
 const SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png',
+  '/icons/icon-192-v2.png',
+  '/icons/icon-512-v2.png',
+  '/icons/apple-touch-icon-v2.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -190,8 +193,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || "YO'LDA";
   const options = {
     body: data.body || '',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: '/icons/icon-192-v2.png',
+    badge: '/icons/icon-192-v2.png',
     // Bir xil turkumdagi xabar eskisining ustiga tushadi —
     // ekranni bir xil bildirishnoma bilan to'ldirmaslik uchun.
     tag: data.tag || 'yolda',

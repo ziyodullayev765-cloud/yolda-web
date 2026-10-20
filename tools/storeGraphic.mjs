@@ -26,7 +26,7 @@ const OUT = join(repoRoot, 'store');
 
 /* Sahifa `file://` orqali ochiladi, ya'ni `/icons/...` ishlamaydi:
    belgining to'liq yo'li qo'yiladi. */
-const logoSrc = 'file://' + join(repoRoot, 'icons', 'logo.png');
+const logoSrc = 'file://' + join(repoRoot, 'icons', 'logo-v2.png');
 
 const html = `<!doctype html>
 <html lang="uz"><head><meta charset="utf-8">

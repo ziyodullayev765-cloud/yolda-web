@@ -147,9 +147,16 @@ flow('Boshqa domenlarga tegilmaydi');
 flow('Kesh raqami oshirilgan');
 {
   const sw = bootSw();
-  // Eski kesh ichida ikonkalar yo'q edi; raqam oshmasa, eski
-  // nusxa qolib, yangi qoida hech qachon ishlamay qolardi.
-  check('CACHE_VERSION yangilangan', sw.version === 'yolda-v5', sw.version);
+  /* Ikonkalar keshi v4 da paydo bo'ldi: undan oldingi kesh ichida
+     ular yo'q edi, ya'ni raqam oshmasa eski nusxa qolib, yangi
+     qoida hech qachon ishlamay qolardi.
+
+     Aniq raqam emas, ENG KAMI tekshiriladi — raqam keyin ham
+     oshadi (masalan belgi almashganda) va bu test har safar
+     bejiz yiqilmasligi kerak. */
+  const m = /^yolda-v(\d+)$/.exec(sw.version);
+  check('CACHE_VERSION shaklida', Boolean(m), sw.version);
+  check('v4 dan past emas', m && Number(m[1]) >= 4, sw.version);
 }
 
 t.done();

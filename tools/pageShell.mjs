@@ -20,7 +20,7 @@ export const LANG_NAMES = { uz: "O'zbekcha", ru: 'Русский', en: 'English'
 /* Belgi — ilovaning o'zi bilan bitta fayl. U SAYTNING ICHIDAN
    olinadi: sahifaning "tashqaridan hech narsa yuklamaydi" degan
    qoidasi buzilmaydi, chunki rasm ham shu domenda. */
-const LOGO = '<img class="mark" src="/icons/logo.png" alt="" aria-hidden="true">';
+const LOGO = '<img class="mark" src="/icons/logo-v2.png" alt="" aria-hidden="true">';
 
 /**
  * @param {object} o
@@ -52,8 +52,8 @@ export const renderPage = ({ slug, title, description, headings, bodies }) => {
 <meta name="description" content="${description}">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0A9F5B">
-<link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/icons/favicon-32-v2.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-v2.png">
 <style>
   /* Sahifa o'zi yetarli: tashqaridan shrift ham, skript ham
      yuklanmaydi. Play Market tekshiruvchisi uni sekin internetda,

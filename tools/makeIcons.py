@@ -48,15 +48,21 @@ def square(size, pad=0.06, bg=None):
 # 28 dan 120 pikselgacha ko'rinadi, ya'ni farqi bilinmaydi.
 COLORS = 256
 
+# NOMDAGI VERSIYA. `/icons/` bir yilga keshlanadi ("immutable"),
+# shuning uchun belgi almashganda faylning NOMI ham o'zgarishi
+# kerak — aks holda brauzer va telefon ekranidagi yorliq eskisini
+# ko'rsatib yuraveradi. Yangi belgi = yangi versiya.
+V = 'v2'
+
 jobs = [
-    ('logo.png', 512, 0.02, None),
-    ('icon-192.png', 192, 0.06, None),
-    ('icon-512.png', 512, 0.06, None),
-    ('favicon-32.png', 32, 0.02, None),
+    (f'logo-{V}.png', 512, 0.02, None),
+    (f'icon-192-{V}.png', 192, 0.06, None),
+    (f'icon-512-{V}.png', 512, 0.06, None),
+    (f'favicon-32-{V}.png', 32, 0.02, None),
     # iOS: shaffoflik yo'q.
-    ('apple-touch-icon.png', 180, 0.08, (255, 255, 255, 255)),
+    (f'apple-touch-icon-{V}.png', 180, 0.08, (255, 255, 255, 255)),
     # Android chetini kesadi: belgi kichikroq, o'rtada.
-    ('icon-maskable-512.png', 512, 0.20, (255, 255, 255, 255)),
+    (f'icon-maskable-512-{V}.png', 512, 0.20, (255, 255, 255, 255)),
 ]
 
 for name, size, pad, bg in jobs:
