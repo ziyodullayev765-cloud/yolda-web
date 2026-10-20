@@ -30,64 +30,62 @@ const check = (name, ok, extra) => {
 };
 
 /* ---------- Tayoqchalar ----------
-   Ilgari ular navbat bilan so'nib turardi va aylanish shundan
-   ko'rinardi. Endi yorqinligi QAT'IY: doiraning "boshi" bor va
-   g'ildirakning o'zi aylanadi. */
+   Ular BITTALAB yonadi: nechtasi yonishi tortilgan masofadan
+   keladi. Hisobni CSS ning o'zi qiladi — `--ptr-shown` (nechtasi
+   yondi) va `--i` (tayoqchaning raqami) ayirmasi. Manfiy chiqsa
+   brauzer uni nolga qisadi, ya'ni navbati kelmagan tayoqcha
+   ko'rinmaydi. */
 const bar = html.match(/\n {2}\.ptr-bar\{[\s\S]*?\n {2}\}/);
 check('.ptr-bar qoidasi topildi', Boolean(bar));
 if (bar) {
   check('rangni belgidan oladi', /background:currentColor/.test(bar[0]), bar[0]);
-  /* Yorqinlik har bir tayoqchaning o'z qoidasida (pastda), umumiy
-     qoidada emas — aks holda hammasi bir xil bo'lib, doiraning
-     boshi bilinmay qolardi. */
-  check('umumiy qoidada yorqinlik yo\'q', !/opacity:/.test(bar[0]), bar[0]);
+  check('navbati kelganda yonadi',
+    /opacity:calc\(var\(--ptr-shown, 0\) - var\(--i\) \+ 1\)/.test(bar[0]), bar[0]);
+  /* Yonishi birdan emas, yumshoq — lekin aylanayotganda bu
+     o'tish o'chiriladi, aks holda har qadam loyqalanardi. */
+  check('yonishi yumshoq', /transition:opacity [\d.]+s/.test(bar[0]), bar[0]);
   check('animatsiya tayoqchaga qotirib qo\'yilmagan', !/animation:/.test(bar[0]), bar[0]);
 }
+check('aylanayotganda hammasi yonadi',
+  /\.ptr-live \.ptr-bar\{opacity:calc\(1 - \(var\(--i\) - 1\) \* 0\.065\);transition:none;\}/.test(html));
 
-/* ---------- O'n ikkita o'rin va yorqinlik ---------- */
+/* ---------- O'n ikkita o'rin ---------- */
 const rules = [...html.matchAll(
-  /\.ptr-bar:nth-child\((\d+)\)\{transform:rotate\((\d+)deg\) translate\(0,-130%\);opacity:([\d.]+);\}/g)];
+  /\.ptr-bar:nth-child\((\d+)\)\{--i:(\d+);transform:rotate\((\d+)deg\) translate\(0,-130%\);\}/g)];
 check('o\'n ikkita tayoqchaning qoidasi bor', rules.length === 12, rules.length);
 if (rules.length === 12) {
   const n = rules.map((r) => +r[1]);
-  const deg = rules.map((r) => +r[2]);
-  const op = rules.map((r) => +r[3]);
+  const i = rules.map((r) => +r[2]);
+  const deg = rules.map((r) => +r[3]);
   check('raqamlari 1 dan 12 gacha', n.join() === [1,2,3,4,5,6,7,8,9,10,11,12].join(), n);
+  /* `--i` o'rin bilan bir xil bo'lishi SHART: yorqinlik hisobi
+     aynan shunga tayanadi. */
+  check('--i o\'rin bilan bir xil', i.join() === n.join(), i);
   /* Har biri 30 daraja burilgan: 12 × 30 = 360. */
   check('doira teng bo\'lingan', deg.join() === [0,30,60,90,120,150,180,210,240,270,300,330].join(), deg);
-  /* Yorqinlik birinchisidan oxirgisiga qarab FAQAT pasayadi —
-     shunda qaysi tomon "bosh" ekani aniq ko'rinadi. */
-  check('birinchisi to\'q', op[0] === 1, op);
-  check('oxirigacha pasayib boradi',
-    op.every((v, i) => i === 0 || v < op[i - 1]), op);
-  check('oxirgisi ham ko\'rinadi', op[11] >= 0.15, op);
 }
 
-/* ---------- Aylanish ----------
-   Ikki xil: barmoq bilan birga (burchak masofadan) va qo'yib
-   yuborilgandan keyin o'zi. */
-check('g\'ildirak burchagi o\'zgaruvchidan olinadi',
-  /\.ptr-loader\{[\s\S]*?transform:rotate\(var\(--ptr-turn, 0deg\)\);/.test(html));
-check('qo\'yib yuborilgach o\'zi aylanadi',
-  /\.ptr-live \.ptr-loader\{animation:ptrSpin [\d.]+s linear infinite;\}/.test(html));
-/* Aylanish to'xtagan joydan davom etadi: boshlanish burchagi ham
-   o'sha o'zgaruvchidan. Aks holda qo'yib yuborilganda belgi nolga
-   sakrab ketardi. */
-const spin = html.match(/@keyframes ptrSpin\{[\s\S]*?\n {2}\}/);
-check('ptrSpin topildi', Boolean(spin));
-if (spin) {
-  check('to\'xtagan joydan davom etadi', /from\{transform:rotate\(var\(--ptr-turn/.test(spin[0]), spin[0]);
-  check('to\'liq bir aylana', /\+ 360deg\)/.test(spin[0]), spin[0]);
-}
-/* Harakat kamaytirilganda o'zi aylanmaydi. Barmoq bilan burilishi
-   qoladi — u harakat emas, javob. */
-check('harakat kamaytirilganda o\'zi aylanmaydi',
+/* ---------- Qo'yib yuborilgandan keyingi aylanish ----------
+   SAKRAB aylanadi: `steps(12)` bilan har qadam aynan bitta
+   tayoqchaga to'g'ri keladi. Tekis aylanish xunuk ko'rinardi —
+   tayoqchalar bir-biriga surilib, loyqalanib ketardi. */
+check('qadamlab aylanadi',
+  /\.ptr-live \.ptr-loader\{animation:ptrSpin [\d.]+s steps\(12\) infinite;\}/.test(html));
+check('bir aylana — to\'liq doira',
+  /@keyframes ptrSpin\{to\{transform:rotate\(360deg\);\}\}/.test(html));
+/* Harakat kamaytirilganda g'ildirak aylanmaydi — tayoqchalar
+   o'z joyida yonib turadi. */
+check('harakat kamaytirilganda aylanmaydi',
   /\[data-reduce-motion="1"\] \.ptr-live \.ptr-loader\{animation:none;\}/.test(html)
   && /@media \(prefers-reduced-motion: reduce\)\{\s*\n\s*\.ptr-live \.ptr-loader\{animation:none;\}/.test(html));
-/* Burchak ikkala tortishda ham masofadan hisoblanadi. */
-check('burchak masofadan keladi',
-  (html.match(/setProperty\("--ptr-turn", \(eased \/ THRESHOLD \* 360\)/g) || []).length === 2,
-  (html.match(/setProperty\("--ptr-turn"/g) || []).length);
+/* Nechtasi yonishi ikkala tortishda ham masofadan hisoblanadi.
+   Brauzer teginishni ~15 pikseldan keyin "surish" deb hisoblaydi,
+   shu bo'shliq hisobdan chiqariladi — aks holda belgi birdan
+   uch-to'rt tayoqcha bilan paydo bo'lardi. */
+check('yonganlar soni masofadan keladi',
+  (html.match(/Math\.max\(0, eased - PTR_SLOP\) \/ \(THRESHOLD - PTR_SLOP\) \* 12/g) || []).length === 2,
+  (html.match(/setProperty\("--ptr-shown"/g) || []).length);
+check('teginish bo\'shlig\'i aytilgan', /var PTR_SLOP = \d+;/.test(html));
 
 /* ---------- Belgining o'zi ---------- */
 const ptr = html.match(/\n {2}\.ptr\{[\s\S]*?\n {2}\}/);

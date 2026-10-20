@@ -3473,36 +3473,31 @@
     transform:translateY(-56px);opacity:0;pointer-events:none;
   }
 
-  /* ---------- Aylanadigan belgi ----------
-     O'n ikkita tayoqcha doira bo'ylab tiziladi. Ularning
-     yorqinligi QAT'IY: birinchisi to'q, keyingilari asta so'nadi.
-     Ya'ni doiraning "boshi" bor, va g'ildirakning o'zi aylanganda
-     aylanish shundan ko'rinadi.
+  /* ---------- Tortish belgisi ----------
+     O'n ikkita tayoqcha doira bo'ylab tiziladi. Ular ikki xil
+     holatda bo'ladi:
 
-     Aylanish ikki xil bo'ladi:
+     1. TORTAYOTGANDA — bittalab yonadi. Nechtasi yonishi tortilgan
+        masofadan keladi: yarim yo'lda oltitasi, chegaraga yetganda
+        o'n ikkitasi. Oxirgisi to'satdan emas, asta yonadi, chunki
+        hisob kasr son (masalan 7.4 — yettitasi to'liq, sakkizinchisi
+        choraqdan ko'proq).
 
-     1. BARMOQ BILAN BIRGA. Tortilgan masofa burchakka aylanadi
-        (JS `--ptr-turn` ni yozadi): yarim yo'lda yarim aylana,
-        chegaraga yetganda to'liq bir aylana. Barmoq qancha
-        tortsa, g'ildirak shuncha buriladi — orqaga surilsa,
-        orqaga qaytadi.
+        Buni CSS o'zi hisoblaydi: `--ptr-shown` (nechtasi yondi) va
+        `--i` (tayoqchaning raqami) ayirmasi. Manfiy chiqsa brauzer
+        uni nolga qisadi — ya'ni navbati kelmagan tayoqcha
+        ko'rinmaydi.
 
-     2. QO'YIB YUBORILGANDAN KEYIN. `.ptr-live` qo'yiladi va
-        g'ildirak o'zi aylanib ketadi — yangilash tugaguncha.
-        Aylanish TO'XTAGAN JOYDAN davom etadi: keyframe boshlanishi
-        ham `--ptr-turn` dan olinadi, shuning uchun qo'yib
-        yuborilganda belgi sakrab ketmaydi. */
-  .ptr-loader{
-    position:relative;width:100%;height:100%;
-    transform:rotate(var(--ptr-turn, 0deg));
-  }
-  .ptr-live .ptr-loader{animation:ptrSpin 0.75s linear infinite;}
-  @keyframes ptrSpin{
-    from{transform:rotate(var(--ptr-turn, 0deg));}
-    to{transform:rotate(calc(var(--ptr-turn, 0deg) + 360deg));}
-  }
-  /* Harakatni kamaytirish so'ralganda g'ildirak o'zi aylanmaydi —
-     barmoq bilan burilishi qoladi, u harakat emas, javob. */
+     2. QO'YIB YUBORILGANDAN KEYIN — hammasi yonadi, boshi to'q,
+        dumi xira, va g'ildirak SAKRAB aylanadi: `steps(12)` bilan
+        har qadam aynan bitta tayoqchaga to'g'ri keladi. Tekis
+        aylanish bu yerda xunuk ko'rinardi — tayoqchalar bir-biriga
+        surilib, loyqalanib ketardi. */
+  .ptr-loader{position:relative;width:100%;height:100%;}
+  .ptr-live .ptr-loader{animation:ptrSpin 0.9s steps(12) infinite;}
+  @keyframes ptrSpin{to{transform:rotate(360deg);}}
+  /* Harakat kamaytirilganda g'ildirak aylanmaydi — tayoqchalar
+     o'z joyida yonib turadi. */
   :root[data-reduce-motion="1"] .ptr-live .ptr-loader{animation:none;}
   @media (prefers-reduced-motion: reduce){
     .ptr-live .ptr-loader{animation:none;}
@@ -3512,21 +3507,25 @@
     width:8%;height:24%;
     background:currentColor;border-radius:50px;
     box-shadow:0 0 3px rgba(0,0,0,0.2);
+    /* Navbati kelganda yonadi. */
+    opacity:calc(var(--ptr-shown, 0) - var(--i) + 1);
+    transition:opacity 0.12s linear;
   }
-  /* Har bir tayoqcha 30 daraja burilib, markazdan chetga suriladi;
-     yorqinligi esa birinchisidan oxirgisiga qarab pasayadi. */
-  .ptr-bar:nth-child(1){transform:rotate(0deg) translate(0,-130%);opacity:1;}
-  .ptr-bar:nth-child(2){transform:rotate(30deg) translate(0,-130%);opacity:0.93;}
-  .ptr-bar:nth-child(3){transform:rotate(60deg) translate(0,-130%);opacity:0.86;}
-  .ptr-bar:nth-child(4){transform:rotate(90deg) translate(0,-130%);opacity:0.79;}
-  .ptr-bar:nth-child(5){transform:rotate(120deg) translate(0,-130%);opacity:0.72;}
-  .ptr-bar:nth-child(6){transform:rotate(150deg) translate(0,-130%);opacity:0.65;}
-  .ptr-bar:nth-child(7){transform:rotate(180deg) translate(0,-130%);opacity:0.58;}
-  .ptr-bar:nth-child(8){transform:rotate(210deg) translate(0,-130%);opacity:0.51;}
-  .ptr-bar:nth-child(9){transform:rotate(240deg) translate(0,-130%);opacity:0.44;}
-  .ptr-bar:nth-child(10){transform:rotate(270deg) translate(0,-130%);opacity:0.37;}
-  .ptr-bar:nth-child(11){transform:rotate(300deg) translate(0,-130%);opacity:0.30;}
-  .ptr-bar:nth-child(12){transform:rotate(330deg) translate(0,-130%);opacity:0.23;}
+  /* Aylanayotganda hammasi yonadi: boshi to'q, dumi xira. */
+  .ptr-live .ptr-bar{opacity:calc(1 - (var(--i) - 1) * 0.065);transition:none;}
+  /* Har bir tayoqcha 30 daraja burilib, markazdan chetga suriladi. */
+  .ptr-bar:nth-child(1){--i:1;transform:rotate(0deg) translate(0,-130%);}
+  .ptr-bar:nth-child(2){--i:2;transform:rotate(30deg) translate(0,-130%);}
+  .ptr-bar:nth-child(3){--i:3;transform:rotate(60deg) translate(0,-130%);}
+  .ptr-bar:nth-child(4){--i:4;transform:rotate(90deg) translate(0,-130%);}
+  .ptr-bar:nth-child(5){--i:5;transform:rotate(120deg) translate(0,-130%);}
+  .ptr-bar:nth-child(6){--i:6;transform:rotate(150deg) translate(0,-130%);}
+  .ptr-bar:nth-child(7){--i:7;transform:rotate(180deg) translate(0,-130%);}
+  .ptr-bar:nth-child(8){--i:8;transform:rotate(210deg) translate(0,-130%);}
+  .ptr-bar:nth-child(9){--i:9;transform:rotate(240deg) translate(0,-130%);}
+  .ptr-bar:nth-child(10){--i:10;transform:rotate(270deg) translate(0,-130%);}
+  .ptr-bar:nth-child(11){--i:11;transform:rotate(300deg) translate(0,-130%);}
+  .ptr-bar:nth-child(12){--i:12;transform:rotate(330deg) translate(0,-130%);}
   /* Ikki marta yangilash bo'lmasin: o'zimiznikini qo'shgan joyda
      brauzerning o'z overscroll harakati o'chiriladi. */
   html.ptr-on,html.ptr-on body{overscroll-behavior-y:contain;}
@@ -22003,6 +22002,10 @@
     setTimeout(finish, MAX);
   }
 
+  /* Brauzer teginishni shu masofadan keyin "surish" deb hisoblaydi
+     va shundan oldin `touchmove` yubormaydi. */
+  var PTR_SLOP = 14;
+
   function initPullToRefresh(){
     if(!pagePtrEnabled()) return;
     document.documentElement.classList.add("ptr-on");
@@ -22024,7 +22027,13 @@
          aylanadi: chegaraga yetganda to'liq bir aylana. Barmoq
          orqaga surilsa, g'ildirak ham orqaga qaytadi. */
       indicator.classList.remove("ptr-live");
-      indicator.style.setProperty("--ptr-turn", (eased / THRESHOLD * 360).toFixed(1) + "deg");
+      /* Birinchi tayoqcha belgi ko'ringan payt yonadi, oxirgisi
+         chegarada. Brauzer teginishni taxminan 15 pikseldan keyin
+         "surish" deb hisoblaydi va shundan oldin xabar bermaydi —
+         shu bo'shliq hisobdan chiqariladi, aks holda belgi birdan
+         uch-to'rt tayoqcha bilan paydo bo'lardi. */
+      indicator.style.setProperty("--ptr-shown",
+        (Math.max(0, eased - PTR_SLOP) / (THRESHOLD - PTR_SLOP) * 12).toFixed(2));
       indicator.style.transform = "translateY(" + (eased - 56) + "px)";
       indicator.style.opacity = String(Math.min(1, eased / THRESHOLD));
     }
@@ -22036,7 +22045,7 @@
       setTimeout(function(){
         indicator.style.transition = "";
         indicator.classList.remove("ptr-live");
-        indicator.style.removeProperty("--ptr-turn");
+        indicator.style.removeProperty("--ptr-shown");
       }, 280);
     }
 
@@ -22148,7 +22157,13 @@
       var eased = Math.min(dist, MAX);
       // Sahifanikidek: barmoq bilan birga tushadi va aylanadi.
       ind.classList.remove("ptr-live");
-      ind.style.setProperty("--ptr-turn", (eased / THRESHOLD * 360).toFixed(1) + "deg");
+      /* Birinchi tayoqcha belgi ko'ringan payt yonadi, oxirgisi
+         chegarada. Brauzer teginishni taxminan 15 pikseldan keyin
+         "surish" deb hisoblaydi va shundan oldin xabar bermaydi —
+         shu bo'shliq hisobdan chiqariladi, aks holda belgi birdan
+         uch-to'rt tayoqcha bilan paydo bo'lardi. */
+      ind.style.setProperty("--ptr-shown",
+        (Math.max(0, eased - PTR_SLOP) / (THRESHOLD - PTR_SLOP) * 12).toFixed(2));
       ind.style.transform = "translateY(" + (eased - 56) + "px)";
       ind.style.opacity = String(Math.min(1, eased / THRESHOLD));
     }
@@ -22160,7 +22175,7 @@
       setTimeout(function(){
         ind.style.transition = "";
         ind.classList.remove("ptr-live");
-        ind.style.removeProperty("--ptr-turn");
+        ind.style.removeProperty("--ptr-shown");
       }, 280);
     }
 
