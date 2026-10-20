@@ -1007,6 +1007,14 @@
   }
   .bn-back-ring .ic-svg{font-size:17px;}
   .bn-back:active .bn-back-ring,.bn-back.bn-down .bn-back-ring{background:var(--paper-dark);}
+  /* Va chiziq bilan ajraladi: chapda — chiqish, o'ngda — bo'limlar.
+     Chiziq katakning o'ng chetida, ya'ni aynan ikki guruhning
+     chegarasida turadi. */
+  .bn-back::after{
+    content:"";position:absolute;right:0;top:50%;
+    width:1px;height:34px;margin-top:-17px;
+    background:var(--border);
+  }
 
   .bn-item,.bn-ghost{
     /* Balandlik qat'iy: shunda barcha bo'limlar — "Yuk joylash" ham —
