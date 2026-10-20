@@ -5568,17 +5568,45 @@
   }
   .ai-answer p{margin:0 0 10px;}
   .ai-answer p:last-child{margin-bottom:0;}
-  /* Javob kutilayotgani: uchta nuqta. */
-  .ai-typing{display:flex;gap:5px;align-items:center;padding:2px 0;}
-  .ai-typing i{
-    width:7px;height:7px;border-radius:50%;background:var(--route);opacity:0.35;
-    animation:aiDot 1s var(--ease) infinite;
+  /* ----------------------------------------------------------
+     Javob kutilayotgani: gullab-so'nadigan uchta qavat.
+     ----------------------------------------------------------
+     Uchta bir xil gul bir-birining ustida turadi va har biri
+     o'z tezligida aylanadi: biri soat yo'nalishida, o'rtadagisi
+     teskarisiga. Shuning uchun naqsh takrorlanmaydi.
+
+     Rang faqat YASHIL. Ichkarisi yorug', cheti to'q — gradient
+     markazdan tarqaladi. Ikki tusdan boshqa rang yo'q.
+     ---------------------------------------------------------- */
+  .ai-bloom{display:block;width:46px;height:46px;margin:2px 0;}
+  .ai-bloom svg{width:100%;height:100%;display:block;overflow:visible;}
+  .ai-bloom .bl{
+    transform-box:fill-box;transform-origin:center;
+    animation:bloomA 2.6s cubic-bezier(.65,0,.35,1) infinite;
   }
-  .ai-typing i:nth-child(2){animation-delay:0.15s;}
-  .ai-typing i:nth-child(3){animation-delay:0.3s;}
-  @keyframes aiDot{
-    0%,100%{opacity:0.25;transform:translateY(0);}
-    40%{opacity:1;transform:translateY(-3px);}
+  .ai-bloom .bl-1{opacity:0.22;}
+  .ai-bloom .bl-2{opacity:0.45;animation-name:bloomB;animation-duration:2.1s;}
+  .ai-bloom .bl-3{opacity:0.95;animation-name:bloomC;animation-duration:1.7s;}
+  @keyframes bloomA{
+    0%{transform:rotate(0deg) scale(1);}
+    50%{transform:rotate(180deg) scale(0.66);}
+    100%{transform:rotate(360deg) scale(1);}
+  }
+  @keyframes bloomB{
+    0%{transform:rotate(0deg) scale(0.62);}
+    50%{transform:rotate(-180deg) scale(0.86);}
+    100%{transform:rotate(-360deg) scale(0.62);}
+  }
+  @keyframes bloomC{
+    0%{transform:rotate(0deg) scale(0.4);}
+    50%{transform:rotate(180deg) scale(0.56);}
+    100%{transform:rotate(360deg) scale(0.4);}
+  }
+  /* Harakat kerak bo'lmasa — shakl qoladi, aylanish to'xtaydi. */
+  @media (prefers-reduced-motion: reduce){
+    .ai-bloom .bl{animation:none;}
+    .ai-bloom .bl-2{transform:scale(0.74);}
+    .ai-bloom .bl-3{transform:scale(0.48);}
   }
   .ai-send[disabled]{opacity:0.4;}
 
@@ -23013,8 +23041,37 @@
       .replace(/^/, "<p>").replace(/$/, "</p>");
   }
 
-  /* Javob kutilayotganda uchta nuqta. */
-  var WAIT_HTML = '<div class="ai-typing"><i></i><i></i><i></i></div>';
+  /**
+   * Javob kutilayotganda — gul.
+   *
+   * Bitta gul oltita barg: har biri markazdan chiqib, uchida
+   * tutashadi. Shakl bitta marta yoziladi va uch qavat bo'lib
+   * takrorlanadi; qavatlarning tezligi va yo'nalishi har xil.
+   *
+   * Rang gradientdan keladi: markaz yorug' yashil, chet to'q
+   * yashil. Boshqa rang yo'q — shu ikkisi.
+   */
+  var BLOOM_PETAL = 'M24 24C18 18.5 17.4 7.2 24 1.6C30.6 7.2 30 18.5 24 24Z';
+  var BLOOM_FLOWER = (function(){
+    var out = '';
+    for(var a = 0; a < 360; a += 60){
+      out += '<path d="' + BLOOM_PETAL + '" transform="rotate(' + a + ' 24 24)"/>';
+    }
+    return out;
+  })();
+  var WAIT_HTML =
+    '<span class="ai-bloom" role="status" aria-label="Javob tayyorlanmoqda">'
+    + '<svg viewBox="0 0 48 48" aria-hidden="true">'
+    +   '<defs><radialGradient id="aiBloomFill" cx="50%" cy="50%" r="55%">'
+    +     '<stop offset="0%" stop-color="#5BE3A4"/>'
+    +     '<stop offset="100%" stop-color="#09864B"/>'
+    +   '</radialGradient></defs>'
+    +   '<g fill="url(#aiBloomFill)">'
+    +     '<g class="bl bl-1">' + BLOOM_FLOWER + '</g>'
+    +     '<g class="bl bl-2">' + BLOOM_FLOWER + '</g>'
+    +     '<g class="bl bl-3">' + BLOOM_FLOWER + '</g>'
+    +   '</g>'
+    + '</svg></span>';
 
   /* Kayfiyat: idle | greet | listen | think | happy | error.
      Bir martalik kayfiyatlar (salom, quvonch, xatolik) o'z
