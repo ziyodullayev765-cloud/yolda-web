@@ -2128,17 +2128,11 @@
       + '<button type="button" class="sb-logout" data-act="logout">' + ico("logout") + '<span>Chiqish</span></button>';
   }
 
-  /* YO'LDA belgisi — ikkita yashil qanot. O'zgarmas: u ilovaning
-     belgisi, sozlama emas. Sozlamalardagi rasm faqat uni
-     ALMASHTIRISH uchun (belgi fayli yangilansa, qayta chizish
-     shart bo'lmasin). */
-  var PANEL_LOGO =
-    '<svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true">'
-    + '<path d="M18 11h19.6c2.1 0 3.3 2.3 2.1 4l-2.4 3.4a2.6 2.6 0 0 1-2.1 1.1H15.6'
-    +   'c-2.1 0-3.3-2.3-2.1-4l2.4-3.4A2.6 2.6 0 0 1 18 11Z"/>'
-    + '<path d="M12.6 24h24.2c2.3 0 3.6 2.6 2.2 4.4-3.9 5.1-9.4 8.7-15.7 10.2'
-    +   '-2.4.6-4.3-1.9-3.2-4.1l1.4-2.8-10-3.6c-2.3-.8-1.7-4.1.7-4.1Z"/>'
-    + '</svg>';
+  /* YO'LDA belgisi — ilova bilan AYNAN bitta fayl (`icons/logo.png`).
+     Ilgari bu yerda alohida chizma turardi va belgi o'zgarsa,
+     panel eskisi bilan qolib ketardi. Sozlamalardagi rasm esa
+     uni almashtirish uchun. */
+  var PANEL_LOGO = '<img src="/icons/logo.png" alt="">';
 
   /** Panel belgisi: sozlamalardagi rasm bo'lsa u, aks holda belgi. */
   function logoHtml(){

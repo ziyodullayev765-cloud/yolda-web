@@ -24,6 +24,10 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(repoRoot, 'store');
 
+/* Sahifa `file://` orqali ochiladi, ya'ni `/icons/...` ishlamaydi:
+   belgining to'liq yo'li qo'yiladi. */
+const logoSrc = 'file://' + join(repoRoot, 'icons', 'logo.png');
+
 const html = `<!doctype html>
 <html lang="uz"><head><meta charset="utf-8">
 <style>
@@ -66,15 +70,7 @@ const html = `<!doctype html>
 
   <div class="inner">
     <div class="brandline">
-      <svg class="mark" viewBox="0 0 100 100">
-        <rect width="100" height="100" rx="26" fill="#0A9F5B"/>
-        <path d="M18 86 L42 24 H58 L82 86 Z" fill="#FFFFFF"/>
-        <g fill="#0A9F5B">
-          <rect x="46.4" y="68" width="7.2" height="11" rx="1.6"/>
-          <rect x="47.2" y="49" width="5.6" height="9" rx="1.3"/>
-          <rect x="47.8" y="33" width="4.4" height="7" rx="1"/>
-        </g>
-      </svg>
+      <img class="mark" src="${logoSrc}">
       <span class="name">YO'LDA</span>
     </div>
     <p class="tag">Yuk beruvchi va haydovchi<br><b>bir yo'lda uchrashadi</b></p>
