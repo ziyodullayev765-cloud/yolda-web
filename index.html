@@ -998,6 +998,23 @@
   .bn-item.bn-armed .ic-svg,
   .bn-ghost.bn-armed .ic-svg{transform:translateY(-2px) scale(1.12);}
 
+  /* ----------------------------------------------------------
+     Panelning ikki to'plami.
+     ----------------------------------------------------------
+     `data-set` qaysi to'plam ko'rinishini hal qiladi. Tanlov
+     `.bn-item` bo'yicha EMAS, faqat `data-nav-set` bo'yicha:
+     linza ichidagi kattalashtirilgan nusxada sinf `.bn-ghost`
+     ga almashtiriladi, ya'ni `.bn-item` ga bog'langan qoida
+     nusxaga tushmay qolardi va yashirin katak linzada
+     ko'rinib turardi. */
+  .bottom-nav[data-set="main"] [data-nav-set="life"],
+  .bottom-nav[data-set="life"] [data-nav-set="main"]{display:none;}
+
+  /* LIFE to'plamida yozuv bitta qatorda qoladi: "Mening yukim" tor
+     ekranda (320px) ikkiga bo'linib, katakning balandligidan oshib
+     ketardi. Kataklar bu yerda to'rtta — joy yetarli. */
+  .bottom-nav [data-nav-set="life"] span[data-i18n]{white-space:nowrap;}
+
   .bn-item,.bn-ghost{
     /* Balandlik qat'iy: shunda barcha bo'limlar — "Yuk joylash" ham —
        bir xil o'lchamda bo'ladi va panel ularning eng balandiga
@@ -7435,20 +7452,35 @@
 
 </main>
 
-<nav class="bottom-nav" aria-label="Ilova navigatsiyasi">
+<!-- Panelning ikki holati bor. Odatdagisi — "main". YO'LDA LIFE
+     oilasiga (Life, Xabarlar, Mening yukim) kirilganda esa "life"
+     holatiga o'tadi va o'sha oilaning kataklari chiqadi; "Orqaga"
+     qayerdan kirilgan bo'lsa, o'sha bo'limga qaytaradi.
+
+     Kataklar yashirilmaydi, almashtiriladi: ikkala to'plam ham shu
+     yerda turadi, qaysi biri ko'rinishini `data-set` hal qiladi. -->
+<nav class="bottom-nav" data-set="main" aria-label="Ilova navigatsiyasi">
   <!-- Tanlangan bo'lim ostida sirg'aladigan "tomchi". O'lchami va
        joyi JS'da hisoblanadi (moveNavBlob) — tugmalar eni tilga qarab
        o'zgaradi, shuning uchun uni CSS'da qotirib qo'yib bo'lmaydi. -->
   <span class="bn-blob" id="bnBlob" aria-hidden="true"><span class="bn-blob-fill"></span><span class="bn-blob-mag" id="bnBlobMag"></span><span class="bn-blob-gloss"></span><span class="bn-blob-rim"></span></span>
-  <button type="button" class="bn-item active" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
+  <button type="button" class="bn-item active" data-nav-set="main" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
   <!-- Bu katak ham ikki bo'limni ushlab turadi: bosilsa Yuklar,
        bosib turilsa "Mening yukim" ham tanlanadi. -->
-  <button type="button" class="bn-item" data-tab-link="loads" data-nav-pick="loads,myload" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
-  <button type="button" class="bn-item bn-item--primary" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
+  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="loads" data-nav-pick="loads,myload" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
+  <button type="button" class="bn-item bn-item--primary" data-nav-set="main" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
   <!-- Bu katak ikki bo'limni ushlab turadi: shunchaki bosilsa Life
        ochiladi, bosib turilsa esa tanlov chiqadi (Xabarlar / Life). -->
-  <button type="button" class="bn-item" data-tab-link="life" data-nav-pick="chat,life" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
-  <button type="button" class="bn-item" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
+  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="life" data-nav-pick="chat,life" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
+  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
+
+  <!-- YO'LDA LIFE oilasining kataklari. "Orqaga" — bo'lim emas,
+       shuning uchun unda `data-tab-link` yo'q: u qayerdan
+       kirilganini eslab turadi va o'sha yerga qaytaradi. -->
+  <button type="button" class="bn-item" data-nav-set="life" data-nav-back><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg><span data-i18n="myload.back">Orqaga</span></button>
+  <button type="button" class="bn-item" data-nav-set="life" data-tab-link="life"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
+  <button type="button" class="bn-item" data-nav-set="life" data-tab-link="chat"><svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg><span data-i18n="nav.chat">Xabarlar</span></button>
+  <button type="button" class="bn-item" data-nav-set="life" data-tab-link="myload"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span data-i18n="myload.title">Mening yukim</span></button>
 </nav>
 
 <!-- Life katagini bosib turganda chiqadigan tanlov. Panelning ichida
@@ -21026,7 +21058,13 @@
     }, true);
 
     function itemsOf(){
-      return Array.prototype.slice.call(nav.querySelectorAll(".bn-item"));
+      /* Faqat ko'rinib turgan to'plam. Panelda ikkita to'plam
+         yonma-yon turadi, yashiringani barmoq ostiga tushmasligi
+         kerak — aks holda chekkaga bosilganda ko'rinmayotgan
+         katak tanlanib qolardi. */
+      var set = nav.getAttribute("data-set") || "main";
+      return Array.prototype.slice.call(nav.querySelectorAll(".bn-item"))
+        .filter(function(el){ return (el.getAttribute("data-nav-set") || "main") === set; });
     }
 
     function itemAt(clientX){
@@ -21285,6 +21323,8 @@
 
       var name = item && item.getAttribute("data-tab-link");
       if(name) switchTab(name);
+      // "Orqaga" — bo'lim emas, lekin barmoq unda uzilsa ham ishlasin.
+      else if(item && item.hasAttribute("data-nav-back")) navGoBack();
       else moveNavBlob();
     }
 
@@ -21336,15 +21376,45 @@
      bo'lmagan bo'limlar qaysi katakka tegishli bo'lsa, o'shaning
      o'rnini oladi. */
   var TAB_NAV_SLOT = {
-    myload: "loads",     // "Yuklar" katagini bosib turganda ochiladi
     trucks: "loads",     // yuklar bilan bir oilada
-    chat: "life",        // "Life" katagini bosib turganda ochiladi
     contact: "profile"   // profil ichidagi "Aloqa"
   };
 
+  /* YO'LDA LIFE oilasi: panel shu uch bo'limda o'z ko'rinishiga
+     o'tadi. Mashinalar bunda yo'q — u Life ichidan ochilsa ham,
+     yuklar oilasiga tegishli. */
+  var NAV_LIFE_TABS = { life: 1, chat: 1, myload: 1 };
+  function navSetFor(name){ return NAV_LIFE_TABS[name] ? "life" : "main"; }
+
+  /* "Orqaga" qayerga qaytarsin — oilaga QAYERDAN kirilgan bo'lsa,
+     o'sha yerga. Oila ichida yurganda (Life → Xabarlar → Mening
+     yukim) bu o'zgarmaydi: aks holda tugma odamni o'zi kelgan
+     yo'lga emas, bir qadam orqaga tashlardi va u oiladan chiqa
+     olmay qolardi. */
+  var navLifeFrom = "home";
+
+  function applyNavSet(name, prev){
+    var nav = document.querySelector(".bottom-nav");
+    if(!nav) return;
+    var set = navSetFor(name);
+    // Oilaga tashqaridan kirildi — qaytish joyi shu.
+    if(set === "life" && prev && navSetFor(prev) !== "life") navLifeFrom = prev;
+    nav.setAttribute("data-set", set);
+  }
+
+  function navGoBack(){
+    // Qaytish joyi noma'lum yoki o'sha oilaning ichida bo'lsa —
+    // bosh sahifa. Odam hech qachon oila ichida qamalib qolmaydi.
+    switchTab(navSetFor(navLifeFrom) === "life" ? "home" : navLifeFrom);
+  }
+
   function tabNavSlot(name){
     var key = TAB_NAV_SLOT[name] || name;
-    var items = document.querySelectorAll(".bn-item[data-tab-link]");
+    /* Faqat o'z to'plamidagi kataklar sanaladi: ikki to'plam bir
+       vaqtda hech qachon ko'rinmaydi, ya'ni ularning o'rinlarini
+       solishtirish ma'nosiz bo'lardi. */
+    var items = document.querySelectorAll(
+      '.bn-item[data-nav-set="' + navSetFor(name) + '"][data-tab-link]');
     for(var i = 0; i < items.length; i++){
       if(items[i].getAttribute("data-tab-link") === key) return i;
     }
@@ -21354,9 +21424,10 @@
   /** Yangi bo'lim qaysi tomondan kelsin: 1 — o'ngdan, -1 — chapdan. */
   function tabDirection(from, to){
     var a = tabNavSlot(from), b = tabNavSlot(to);
-    // Bir katakka tegishli bo'limlar (masalan Yuklar ↔ Mening yukim)
-    // yoki panelda topilmaganlar — TABS tartibiga qarab.
-    if(a === -1 || b === -1 || a === b){
+    // Bir katakka tegishli bo'limlar (masalan Yuklar ↔ Mashinalar),
+    // panelda topilmaganlar yoki boshqa-boshqa to'plamdagilar —
+    // TABS tartibiga qarab.
+    if(a === -1 || b === -1 || a === b || navSetFor(from) !== navSetFor(to)){
       return TABS.indexOf(to) > TABS.indexOf(from) ? 1 : -1;
     }
     return b > a ? 1 : -1;
@@ -21483,9 +21554,15 @@
     /* Ochiq bo'lim ildizda ham belgilanadi: ba'zi narsalar
        (masalan yordamchi) ayrim bo'limda ko'rinmasligi kerak. */
     document.documentElement.setAttribute("data-tab", name);
-    var navName = name === "myload" ? "loads" : name;
+    applyNavSet(name, prev);
+    /* "Mening yukim" asosiy panelda alohida katak emas — o'sha yerda
+       u "Yuklar" ni yorqin qoldiradi. LIFE panelida esa o'z katagi
+       bor, ya'ni almashtirish kerak emas. */
+    var set = navSetFor(name);
+    var navName = (set === "main" && name === "myload") ? "loads" : name;
     document.querySelectorAll(".bn-item").forEach(function(b){
-      b.classList.toggle("active", b.getAttribute("data-tab-link") === navName);
+      var mine = (b.getAttribute("data-nav-set") || "main") === set;
+      b.classList.toggle("active", mine && b.getAttribute("data-tab-link") === navName);
     });
     // Boshqa bo'limga o'tilsa suhbat to'liq ekranda qolib ketmasin.
     if(name !== "chat") closeChatFullscreen();
@@ -21540,6 +21617,15 @@
     if(!el) return;
     e.preventDefault();
     switchTab(el.getAttribute("data-tab-link"));
+  });
+
+  /* LIFE panelidagi "Orqaga". Bo'lim bo'lmagani uchun yuqoridagi
+     tinglovchiga tushmaydi — o'ziniki bor. */
+  document.addEventListener("click", function(e){
+    var back = e.target.closest && e.target.closest("[data-nav-back]");
+    if(!back) return;
+    e.preventDefault();
+    navGoBack();
   });
 
   /* Profildagi o'z raqamini nusxalash.
