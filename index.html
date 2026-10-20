@@ -795,26 +795,6 @@
     .bottom-nav{background:var(--nav-solid);}
   }
 
-  /* ---------- Life katagini bosib turganda chiqadigan tanlov ----------
-     Panelning ustida suzib turadi; joyini JS o'lchab qo'yadi, shuning
-     uchun bu yerda faqat ko'rinishi bor. */
-  .nav-pick{
-    position:fixed;z-index:1560;min-width:168px;padding:6px;
-    background:var(--card);border:1px solid var(--border);border-radius:16px;
-    box-shadow:0 14px 38px rgba(15,23,42,0.22);
-    animation:navPickIn 0.16s var(--ease) both;
-  }
-  :root[data-theme="dark"] .nav-pick{box-shadow:0 14px 38px rgba(0,0,0,0.6);}
-  .nav-pick[hidden]{display:none;}
-  @keyframes navPickIn{from{opacity:0;transform:translateY(8px) scale(0.96);}to{opacity:1;transform:none;}}
-  :root[data-reduce-motion="1"] .nav-pick{animation:none;}
-  .nav-pick-item{
-    display:flex;align-items:center;gap:11px;width:100%;text-align:left;
-    border:none;background:none;padding:11px 12px;border-radius:11px;cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;color:var(--ink);
-  }
-  .nav-pick-item .ic-svg{font-size:19px;color:var(--route);flex:none;}
-  .nav-pick-item:hover,.nav-pick-item:active{background:var(--tint);}
   /* Soya endi `--nav-drop` da, mavzu bilan birga o'zgaradi. Bu yerda
      alohida qoida qolsa, u panelning qirradagi ichki nurini ham
      o'chirib yuborardi: `box-shadow` butunlay almashadi, qo'shilmaydi. */
@@ -1014,6 +994,19 @@
      ekranda (320px) ikkiga bo'linib, katakning balandligidan oshib
      ketardi. Kataklar bu yerda to'rtta — joy yetarli. */
   .bottom-nav [data-nav-set="life"] span[data-i18n]{white-space:nowrap;}
+
+  /* "Orqaga" qolgan kataklardan ajralib tursin: belgisi doira
+     ichida. Qolgan uchtasi — bo'lim, bu esa chiqish yo'li, ya'ni
+     boshqa vazifa. Doira ilovadagi barcha "orqaga" belgilari
+     bilan bir xil. */
+  .bn-back-ring{
+    width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);background:var(--card);
+    transition:background 0.2s var(--ease),color 0.2s var(--ease);
+  }
+  .bn-back-ring .ic-svg{font-size:17px;}
+  .bn-back:active .bn-back-ring,.bn-back.bn-down .bn-back-ring{background:var(--paper-dark);}
 
   .bn-item,.bn-ghost{
     /* Balandlik qat'iy: shunda barcha bo'limlar — "Yuk joylash" ham —
@@ -3046,7 +3039,9 @@
   .au-back{
     width:38px;height:38px;flex:none;margin:0 0 20px;
     display:grid;place-items:center;
-    border:none;border-radius:12px;background:var(--au-field);
+    /* Doira. Ilovadagi barcha "orqaga" belgilari shu ko'rinishda —
+       bu yerda u yakka 12px radiusli to'rtburchak bo'lib turardi. */
+    border:none;border-radius:50%;background:var(--au-field);
     color:var(--au-ink);cursor:pointer;
     transition:background 0.2s var(--ease);
   }
@@ -3819,7 +3814,9 @@
     backdrop-filter:saturate(180%) blur(24px);
   }
   .chat-back{
-    background:none;border:none;color:var(--route);
+    /* Doirasi ko'rinib tursin: ilgari u shunchaki belgi edi va
+       sarlavha yonida yo'qolib ketardi. */
+    background:var(--card);border:1px solid var(--border);color:var(--route);
     width:34px;height:34px;border-radius:50%;flex-shrink:0;
     cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
@@ -7465,31 +7462,19 @@
        o'zgaradi, shuning uchun uni CSS'da qotirib qo'yib bo'lmaydi. -->
   <span class="bn-blob" id="bnBlob" aria-hidden="true"><span class="bn-blob-fill"></span><span class="bn-blob-mag" id="bnBlobMag"></span><span class="bn-blob-gloss"></span><span class="bn-blob-rim"></span></span>
   <button type="button" class="bn-item active" data-nav-set="main" data-tab-link="home"><svg class="ic-svg" aria-hidden="true"><use href="#iconHome"/></svg><span data-i18n="nav.home">Bosh sahifa</span></button>
-  <!-- Bu katak ham ikki bo'limni ushlab turadi: bosilsa Yuklar,
-       bosib turilsa "Mening yukim" ham tanlanadi. -->
-  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="loads" data-nav-pick="loads,myload" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
+  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="loads"><svg class="ic-svg" aria-hidden="true"><use href="#iconSearch"/></svg><span data-i18n="nav.loads">Yuklar</span></button>
   <button type="button" class="bn-item bn-item--primary" data-nav-set="main" data-tab-link="order"><span class="bn-fab"><svg class="ic-svg" aria-hidden="true"><use href="#iconPlus"/></svg></span><span data-i18n="nav.order">Yuk joylash</span></button>
-  <!-- Bu katak ikki bo'limni ushlab turadi: shunchaki bosilsa Life
-       ochiladi, bosib turilsa esa tanlov chiqadi (Xabarlar / Life). -->
-  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="life" data-nav-pick="chat,life" aria-haspopup="menu"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
+  <button type="button" class="bn-item" data-nav-set="main" data-tab-link="life"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
   <button type="button" class="bn-item" data-nav-set="main" data-tab-link="profile"><svg class="ic-svg" aria-hidden="true"><use href="#iconUser"/></svg><span data-i18n="nav.profile">Profil</span></button>
 
   <!-- YO'LDA LIFE oilasining kataklari. "Orqaga" — bo'lim emas,
        shuning uchun unda `data-tab-link` yo'q: u qayerdan
        kirilganini eslab turadi va o'sha yerga qaytaradi. -->
-  <button type="button" class="bn-item" data-nav-set="life" data-nav-back><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg><span data-i18n="myload.back">Orqaga</span></button>
+  <button type="button" class="bn-item bn-back" data-nav-set="life" data-nav-back><span class="bn-back-ring"><svg class="ic-svg" aria-hidden="true"><use href="#iconArrowLeft"/></svg></span><span data-i18n="myload.back">Orqaga</span></button>
   <button type="button" class="bn-item" data-nav-set="life" data-tab-link="life"><svg class="ic-svg" aria-hidden="true"><use href="#iconHeadphones"/></svg><span data-i18n="nav.life">Life</span></button>
   <button type="button" class="bn-item" data-nav-set="life" data-tab-link="chat"><svg class="ic-svg" aria-hidden="true"><use href="#iconChat"/></svg><span data-i18n="nav.chat">Xabarlar</span></button>
   <button type="button" class="bn-item" data-nav-set="life" data-tab-link="myload"><svg class="ic-svg" aria-hidden="true"><use href="#iconBox"/></svg><span data-i18n="myload.title">Mening yukim</span></button>
 </nav>
-
-<!-- Life katagini bosib turganda chiqadigan tanlov. Panelning ichida
-     emas — panel `overflow` va `border-radius` bilan chegaralangan,
-     ichida turgan narsa kesilib qolardi. -->
-<!-- Tanlov ro'yxati JS'da to'ldiriladi: bosib turiladigan kataklar
-     bir nechta va har biri o'z ikkita bo'limini ko'rsatadi (qaysi
-     bo'limlar — katakdagi `data-nav-pick` da yozilgan). -->
-<div class="nav-pick" id="navPick" role="menu" aria-label="Bo'limni tanlang" hidden></div>
 
 <!-- Shared dialog shell for every Settings sub-page (Language, Theme,
      Notifications, Privacy, Terms, About, Feedback) — populated by
@@ -20952,89 +20937,6 @@
      Pointer Events ishlatiladi: bitta kod bilan barmoq ham, sichqoncha
      ham qamrab olinadi. setPointerCapture bo'lmasa, barmoq panel
      chetidan chiqib ketganda harakat yo'qolardi. */
-  /* ============================================================
-     Katakni bosib turganda chiqadigan bo'lim tanlovi.
-     ------------------------------------------------------------
-     Pastdagi panelda joy kam, bo'lim esa undan ko'p. Shuning uchun
-     ba'zi kataklar ikkitasini ushlab turadi: oddiy bosishda asosiy
-     bo'lim ochiladi, yarim soniya ushlab turilsa — ikkisidan birini
-     tanlash mumkin.
-
-       Life   → Xabarlar / Life
-       Yuklar → Yuklar / Mening yukim
-
-     Qaysi bo'limlar ekani katakning `data-nav-pick` sifatida
-     yozilgan; ro'yxatning o'zi shu yerda chiziladi, ya'ni yangi
-     juftlik qo'shish uchun faqat shu atributni yozish kifoya.
-     ============================================================ */
-  var NAV_PICK_ITEMS = {
-    chat:   { icon: "iconChat",       i18n: "nav.chat",     label: "Xabarlar" },
-    life:   { icon: "iconHeadphones", i18n: "nav.life",     label: "Life" },
-    loads:  { icon: "iconSearch",     i18n: "nav.loads",    label: "Yuklar" },
-    myload: { icon: "iconTruck",      i18n: "myload.title", label: "Mening yukim" }
-  };
-
-  function closeNavPick(){
-    var pick = document.getElementById("navPick");
-    if(!pick || pick.hidden) return;
-    pick.hidden = true;
-    document.querySelectorAll(".bn-item[data-nav-pick]").forEach(function(b){
-      b.setAttribute("aria-expanded", "false");
-    });
-  }
-
-  function openNavPick(item){
-    var pick = document.getElementById("navPick");
-    if(!pick || !item) return;
-
-    var tabs = String(item.getAttribute("data-nav-pick") || "")
-      .split(",").map(function(s){ return s.trim(); })
-      .filter(function(s){ return NAV_PICK_ITEMS[s]; });
-    if(tabs.length < 2) return;
-    pick.innerHTML = tabs.map(function(name){
-      var d = NAV_PICK_ITEMS[name];
-      return '<button type="button" class="nav-pick-item" data-pick-tab="'+name+'" role="menuitem">'
-        + '<svg class="ic-svg" aria-hidden="true"><use href="#'+d.icon+'"/></svg>'
-        + '<span data-i18n="'+d.i18n+'">'+escapeHtml(t(d.i18n) || d.label)+'</span>'
-        + '</button>';
-    }).join("");
-
-    pick.hidden = false;
-    item.setAttribute("aria-expanded", "true");
-    // Katakning tepasida, ekran chetidan chiqib ketmaydigan qilib.
-    // offsetWidth/Height — ochilish animatsiyasidagi scale ta'sir
-    // qilmaydigan o'lcham; getBoundingClientRect kichraytirilgan
-    // holatni qaytarib, tanlovni joyidan surib qo'yardi.
-    var box = item.getBoundingClientRect();
-    var w = pick.offsetWidth, h = pick.offsetHeight;
-    var left = box.left + box.width / 2 - w / 2;
-    left = Math.min(window.innerWidth - w - 10, Math.max(10, left));
-    pick.style.left = Math.round(left) + "px";
-    pick.style.top = Math.round(Math.max(10, box.top - h - 10)) + "px";
-  }
-
-  function initNavPick(){
-    var pick = document.getElementById("navPick");
-    if(!pick) return;
-    pick.addEventListener("click", function(e){
-      var btn = e.target.closest("[data-pick-tab]");
-      if(!btn) return;
-      e.preventDefault();
-      e.stopPropagation();
-      closeNavPick();
-      switchTab(btn.getAttribute("data-pick-tab"));
-    });
-    document.addEventListener("pointerdown", function(e){
-      if(pick.hidden) return;
-      if(e.target.closest("#navPick") || e.target.closest(".bn-item[data-nav-pick]")) return;
-      closeNavPick();
-    });
-    document.addEventListener("keydown", function(e){
-      if(e.key === "Escape") closeNavPick();
-    });
-    window.addEventListener("resize", closeNavPick);
-  }
-
   function initNavDrag(){
     var nav = document.querySelector(".bottom-nav");
     var blob = document.getElementById("bnBlob");
@@ -21163,30 +21065,6 @@
 
     var downItem = null;
 
-    /* ---------- Bosib turish: bo'lim tanlovi ----------
-       "Life" katagi ikki bo'limni ushlab turadi. Oddiy bosish — Life.
-       Yarim soniya ushlab turilsa — tanlov chiqadi: Xabarlar yoki Life.
-       Tanlov ochilgach shu teginish endi hech qanday bo'lim ochmaydi,
-       aks holda barmoq uzilishi bilanoq Life ham ochilib ketardi. */
-    var holdTimer = null, holdFired = false;
-
-    function cancelHold(){
-      if(holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
-    }
-
-    function startHold(item){
-      cancelHold();
-      holdFired = false;
-      if(!item || !item.getAttribute("data-nav-pick")) return;
-      holdTimer = setTimeout(function(){
-        holdTimer = null;
-        holdFired = true;
-        clearPress();
-        haptic("medium");
-        openNavPick(item);
-      }, 480);
-    }
-
     nav.addEventListener("pointerdown", function(e){
       // Yangi teginish boshlandi — oldingi sudrashdan qolgan
       // "bosishni yutish" qoidasi bekor bo'ladi. Ilgari u 350 ms
@@ -21206,7 +21084,6 @@
            e'tiborsiz qolardi va odam nimani oxirgi bosgan bo'lsa,
            o'sha ochilmasdi. Endi navbat yangisiga o'tadi: odam
            oxirgi tekkan katagini kutadi. */
-        cancelHold();
         dragging = false;
         nav.classList.remove("dragging");
         try{ nav.releasePointerCapture(pointerId); }catch(err){}
@@ -21232,8 +21109,6 @@
          bo'lardi. */
       nav.classList.toggle("press-active",
         Boolean(downItem && downItem.classList.contains("active")));
-      closeNavPick();
-      startHold(downItem);
     });
 
     function clearPress(){
@@ -21247,8 +21122,6 @@
       if(e.pointerId !== pointerId) return;
       if(!dragging){
         if(Math.abs(e.clientX - startX) < DRAG_THRESHOLD) return;
-        // Barmoq siljidi — bu endi "bosib turish" emas, sudrash.
-        cancelHold();
         dragging = true;
         nav.classList.add("dragging");
         // Sudrash boshlangach bosilgan bo'limning siqilishi ortiqcha:
@@ -21274,7 +21147,6 @@
 
     function finish(e){
       if(e.pointerId !== pointerId) return;
-      cancelHold();
       var wasDragging = dragging;
       var target = armed;
       pointerId = null;
@@ -21286,15 +21158,6 @@
       nav.classList.remove("dragging");
       clearPress();
       try{ nav.releasePointerCapture(e.pointerId); }catch(err){}
-
-      // Tanlov ochilgan bo'lsa — bu teginish shu bilan tugadi. Keyingi
-      // "click" ham yutiladi, aks holda Life baribir ochilib ketardi.
-      if(holdFired){
-        holdFired = false;
-        dragEndedAt = Date.now();
-        moveNavBlob();
-        return;
-      }
 
       /* ---------- Oddiy bosish ----------
          Ilgari bu yerda shunchaki `moveNavBlob()` turardi va bo'lim
@@ -21331,7 +21194,6 @@
     nav.addEventListener("pointerup", finish);
     nav.addEventListener("pointercancel", function(e){
       if(e.pointerId !== pointerId) return;
-      cancelHold();
       pointerId = null;
       dragging = false;
       stopPaint();
@@ -21843,7 +21705,6 @@
   window.addEventListener("resize", moveNavBlob);
   window.addEventListener("orientationchange", function(){ setTimeout(moveNavBlob, 250); });
   initNavDrag();
-  initNavPick();
   initThemeWatch();
 
   var bellBtn = document.getElementById("btnNotifications");
