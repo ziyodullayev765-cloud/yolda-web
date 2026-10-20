@@ -21420,6 +21420,12 @@
     // floating on top of it.
     Sheet.close();
     window.scrollTo(0, 0);
+    /* Yangi versiya kutib turgan bo'lsa — bo'lim almashuvi uni
+       qo'llash uchun qulay payt: odam hozirgina bir ishni
+       tugatdi, yangisini boshlagani yo'q. Ochiq turgan bo'lim
+       eslab qolingan, ya'ni qayta yuklangach o'sha yerda
+       qoladi. */
+    applyNewVersion();
   }
   // Delegated (not bound per-element) so it still works after applyLang()
   // replaces the innerHTML of an ancestor — like the "Aloqa" link inside
@@ -21938,6 +21944,13 @@
      faqat HAQIQATAN yangi versiya bo'lganda qayta yuklanadi, har
      bir tortishda emas. */
   function ptrCheckUpdate(onReady){
+    /* Yangi versiya allaqachon ishga tushgan bo'lsa (xizmat fayli
+       o'zi boshqaruvni olgan) — tortib yangilash aynan qayta
+       yuklash uchun qulay payt. */
+    if(newVersionReady){
+      onReady(function(){ newVersionReady = false; location.reload(); });
+      return;
+    }
     if(!("serviceWorker" in navigator) || !navigator.serviceWorker.getRegistration) return;
     navigator.serviceWorker.getRegistration().then(function(reg){
       if(!reg) return;
@@ -22417,6 +22430,95 @@
      qarang) — /api/ ga tegmaydi, shuning uchun Google bilan kirish va
      boshqa jonli so'rovlar avvalgidek ishlayveradi. Ro'yxatdan o'tkazish
      "load" dan keyin: birinchi ochilish tezligini sekinlashtirmasin. */
+  /* ============================================================
+     Yangi versiya
+     ------------------------------------------------------------
+     O'RNATILGAN ILOVA O'ZI YANGILANMAYDI. U kunlab yopilmasligi
+     mumkin: odam uni fondan qaytaradi, sahifa esa qaytadan
+     ochilmaydi — ya'ni kod birinchi ochilgan kunidagicha qolib
+     ketadi. Saytga yangi versiya chiqqani bilan telefonda eskisi
+     turaveradi.
+
+     NEGA ESKI YO'L ISHLAMASDI. Yangi versiyani `registration.waiting`
+     orqali kutardik — ya'ni "yangi xizmat fayli navbatda turibdimi".
+     Lekin bizning xizmat faylimiz o'rnatilishi bilan boshqaruvni
+     oladi (`skipWaiting`), ya'ni u navbatda HECH QACHON turmaydi:
+     `waiting` doim bo'sh bo'lib, tekshiruv har safar "yangilik
+     yo'q" deb qaytardi.
+
+     Haqiqiy signal boshqa: BOSHQARUV ALMASHGANI
+     (`controllerchange`). Yangi xizmat fayli ishga tushib sahifani
+     o'z qo'liga olsa — demak yangi versiya keldi.
+
+     QAYTA YUKLASH DARHOL EMAS. Odam yuk joylash formasini to'ldirib
+     o'tirgan bo'lishi mumkin — sahifa ko'z oldida qayta yuklansa,
+     yozgani yo'qoladi. Shuning uchun yangilik belgilab qo'yiladi va
+     xavfsiz paytda qo'llanadi: boshqa bo'limga o'tganda yoki ilova
+     fondan qaytganda. Tortib yangilash ham shu belgini ko'radi. */
+  var newVersionReady = false;
+
+  /** Hozir qayta yuklash xavfsizmi. */
+  function safeToReload(){
+    if(newVersionReady !== true) return false;
+    // Yuk joylash formasida yozilgani bo'lsa — tegilmaydi.
+    if(visibleTabName() === "order") return false;
+    var sheet = document.getElementById("sheetRoot");
+    if(sheet && !sheet.hidden) return false;
+    if(document.documentElement.hasAttribute("data-ai-open")) return false;
+    return true;
+  }
+
+  function applyNewVersion(){
+    if(!safeToReload()) return;
+    newVersionReady = false;
+    location.reload();
+  }
+
+  function watchNewVersion(){
+    /* BIRINCHI MARTA boshqaruvga olish — yangi versiya EMAS.
+       Sahifa birinchi ochilganda xizmat fayli endigina o'rnatiladi
+       va uni qo'lga oladi; kod esa allaqachon yangi, qayta yuklash
+       bekorga bo'lardi.
+
+       Shuning uchun holat qotirib olinmaydi, balki yuritiladi:
+       birinchi almashuv — "qo'lga oldi", keyingilari — "yangi
+       versiya keldi". Ilgari bu bayroq ishga tushganda bir marta
+       o'qilardi va o'sha payt boshqaruv hali yo'q edi, ya'ni
+       keyingi yangilanishlar ham e'tiborsiz qolardi. */
+    var controlled = Boolean(navigator.serviceWorker.controller);
+    navigator.serviceWorker.addEventListener("controllerchange", function(){
+      if(!controlled){ controlled = true; return; }
+      newVersionReady = true;
+      applyNewVersion();
+    });
+
+    var checking = false;
+    var lastCheck = 0;
+    var check = function(force){
+      if(checking || !navigator.serviceWorker.getRegistration) return;
+      if(!force && Date.now() - lastCheck < 30000) return;
+      lastCheck = Date.now();
+      checking = true;
+      navigator.serviceWorker.getRegistration().then(function(reg){
+        checking = false;
+        if(reg) reg.update().catch(function(){});
+      }).catch(function(){ checking = false; });
+    };
+
+    /* Ochilgandan bir oz keyin — birinchi so'rovlar bilan
+       urishmasin. So'ng ilova fondan har qaytganda: o'rnatilgan
+       ilova kunlab yopilmasligi mumkin, fondan qaytish esa yagona
+       ishonchli payt. */
+    setTimeout(check, 4000);
+    var hiddenAt = 0;
+    document.addEventListener("visibilitychange", function(){
+      if(document.hidden){ hiddenAt = Date.now(); return; }
+      applyNewVersion();
+      // Uzoq turib qaytgan bo'lsa — kutmasdan tekshiramiz.
+      check(hiddenAt && Date.now() - hiddenAt > 10000);
+    });
+  }
+
   /* Mahalliy manzil ham qo'shilgan: brauzer uni https bilan teng
      ko'radi (xavfsiz kontekst), shuning uchun service worker u yerda
      ham ro'yxatdan o'tadi. Faqat https qolsa, ilovaning tarmoqsiz
@@ -22437,6 +22539,7 @@
         window.YoldaPush.enable().catch(function(){});
       }
     });
+    watchNewVersion();
   }
 
 })();

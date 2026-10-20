@@ -188,6 +188,38 @@ check('yangi versiya bo\'lsa qayta yuklanadi',
 check('yangi versiya faqat haqiqatan bo\'lsa',
   /var sw = waiting\(\);\s*\n\s*if\(!sw\) return false;/.test(html));
 
+/* ---------- Yangi versiyani ilovaning o'zi ko'radi ----------
+   O'rnatilgan ilova kunlab yopilmaydi: sahifa qaytadan
+   ochilmagach, kod birinchi ochilgan kunidagicha qolib ketardi.
+
+   Eski yo'l `registration.waiting` ga qarardi — "yangi xizmat
+   fayli navbatda turibdimi". Lekin xizmat faylimiz o'rnatilishi
+   bilan boshqaruvni oladi (`skipWaiting`), ya'ni navbatda hech
+   qachon turmaydi va tekshiruv doim "yangilik yo'q" derdi.
+   Haqiqiy signal — boshqaruv almashgani. */
+check('boshqaruv almashuvi kuzatiladi',
+  /addEventListener\("controllerchange", function\(\)\{\s*\n\s*if\(!controlled\)\{ controlled = true; return; \}/.test(html));
+check('xizmat fayli o\'zi boshqaruvni oladi',
+  /self\.skipWaiting\(\)/.test(readFileSync(join(here, '..', 'sw.js'), 'utf8')));
+/* Qayta yuklash xavfsiz paytda: forma to'ldirilayotganda yoki
+   oyna ochiq turganda emas. */
+const safe = html.match(/function safeToReload\(\)\{[\s\S]*?\n {2}\}/);
+check('xavfsizlik tekshiruvi bor', Boolean(safe));
+if (safe) {
+  check('"Yuk joylash" formasiga tegilmaydi', /visibleTabName\(\) === "order"/.test(safe[0]), safe[0]);
+  check('ochiq oynada ham tegilmaydi', /sheetRoot/.test(safe[0]), safe[0]);
+  check('bot ekrani ochiq bo\'lsa ham', /data-ai-open/.test(safe[0]), safe[0]);
+}
+/* Qulay paytlar: bo'lim almashuvi va ilovaning fondan qaytishi. */
+check('qulay paytda qo\'llanadi',
+  (html.match(/applyNewVersion\(\);/g) || []).length >= 3,
+  (html.match(/applyNewVersion\(\);/g) || []).length);
+/* Fondan qaytganda tekshiruv kechiktirilmasin: odatdagi tinch
+   tekshiruv 30 soniyada bir marta, uzoq turib qaytganda esa
+   darhol. */
+check('uzoq turib qaytganda darhol tekshiriladi',
+  /check\(hiddenAt && Date\.now\(\) - hiddenAt > 10000\)/.test(html));
+
 /* ---------- JS tomoni ---------- */
 check('belgi bitta joyda yasaladi', /function makePtrIndicator\(\)\{/.test(html));
 const make = html.match(/function makePtrIndicator\(\)\{[\s\S]*?\n {2}\}/);
