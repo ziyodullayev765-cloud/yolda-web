@@ -103,13 +103,22 @@ const searchUsers = async (req, res) => {
   const email = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!email) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
-  const q = String(req.query.q || '').trim().toLowerCase();
+  /* Odamlar username'ni "@ali" ko'rinishida aytadi va aynan shunday
+     qidiradi. Bazada esa u "@"siz saqlanadi — belgini olib
+     tashlamasak, "@ali" hech kimga tushmasdi. */
+  const q = String(req.query.q || '').trim().replace(/^@+/, '').toLowerCase();
   if (q.length < 2) return res.status(200).json({ users: [] });
 
   const keys = await kvKeys('username:*');
+  /* Boshidan mos kelgani tepada tursin: "ali" deb qidirilganda
+     avval @ali, keyin @xolali chiqadi. */
   const matches = keys
     .map((k) => k.slice('username:'.length))
     .filter((u) => u.includes(q) && u !== '')
+    .sort((a, b) => {
+      const byStart = (b.startsWith(q) ? 1 : 0) - (a.startsWith(q) ? 1 : 0);
+      return byStart || a.length - b.length || (a < b ? -1 : 1);
+    })
     .slice(0, MAX_SEARCH_RESULTS);
 
   const users = (
@@ -120,6 +129,11 @@ const searchUsers = async (req, res) => {
         const profile = parseProfile(await kvGet(`profile:${ownerEmail}`));
         return {
           username: profile.username || uname,
+          /* Ro'yxatda ism ko'rinadi — xuddi yozishmalarda bo'lgani
+             kabi. Bular suhbatdoshga allaqachon ko'rinadigan
+             ma'lumot; telefon, pochta yoki boshqasi berilmaydi. */
+          name: profile.displayName || profile.name || '',
+          avatarUrl: profile.avatarUrl || '',
           role: profile.role || null,
           city: profile.city || null,
           verified: Boolean(profile.verified),

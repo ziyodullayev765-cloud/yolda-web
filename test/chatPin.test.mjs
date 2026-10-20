@@ -153,4 +153,48 @@ flow('O\'chirishda ham begonaga tegilmaydi');
   check('ro\'yxat tegilmadi', (await inbox()).conversations.length === 5);
 }
 
+/**
+ * Odam qidirish.
+ *
+ * Username og'zaki "@ali" deb aytiladi va odam aynan shunday
+ * yozadi. Bazada esa "@" yo'q — belgi olib tashlanmasa, aytilgan
+ * username bo'yicha hech kim topilmasdi.
+ */
+flow('Qidiruv: "@" belgisi to\'siq bo\'lmasin');
+{
+  seed();
+  db.strings.set('username:ali_haydovchi', A);
+  db.strings.set('username:sardor_yuk', B);
+  db.strings.set(`profile:${A}`, JSON.stringify({ username: 'ali_haydovchi', displayName: 'Ali Valiyev', role: 'DRIVER' }));
+  db.strings.set(`profile:${B}`, JSON.stringify({ username: 'sardor_yuk', displayName: 'Sardor Nazarov' }));
+
+  const find = async (q) => (await get('search', { googleIdToken: ME, q })).payload.users.map((u) => u.username);
+
+  check('"@" bilan topiladi', (await find('@sardor')).includes('sardor_yuk'), await find('@sardor'));
+  check('"@"siz ham topiladi', (await find('sardor')).includes('sardor_yuk'));
+  check('ikkalasi bir xil natija',
+    JSON.stringify(await find('@ali')) === JSON.stringify(await find('ali')));
+  check('"@" uzunlikni yeb qo\'ymaydi', (await find('@a')).length === 0);
+
+  const one = (await get('search', { googleIdToken: ME, q: '@ali' })).payload.users[0];
+  check('ism ham beriladi', one.name === 'Ali Valiyev', one);
+  check('pochta berilmaydi', !JSON.stringify(one).includes('@example.com'), one);
+  check('telefon berilmaydi', !('phone' in one), one);
+
+  const anon = await get('search', { q: '@ali' });
+  check('kirmagan odam qidira olmaydi', anon.statusCode === 401, anon.statusCode);
+}
+
+flow('Qidiruvda boshidan mos kelgani yuqorida');
+{
+  seed();
+  db.strings.set('username:xolali', A);
+  db.strings.set('username:ali', B);
+  db.strings.set(`profile:${A}`, JSON.stringify({ username: 'xolali' }));
+  db.strings.set(`profile:${B}`, JSON.stringify({ username: 'ali' }));
+  const users = (await get('search', { googleIdToken: ME, q: '@ali' })).payload.users;
+  check('ikkalasi ham topildi', users.length === 2, users);
+  check('avval @ali', users[0].username === 'ali', users.map((u) => u.username));
+}
+
 t.done();

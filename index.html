@@ -2444,7 +2444,19 @@
   .chat-row.ai-entry{
     border:1px solid var(--border);border-radius:var(--r-lg);
     margin-bottom:var(--s3);background:var(--card);
+    /* Bu qator — tugma, qolganlari esa oddiy blok. Tugma
+       o'z-o'zidan kengaymaydi: eni ichidagi matnga qarab
+       o'lchanadi. Shuning uchun uzun yozuv kartochkadan chiqib
+       ketib, chekkasida kesilib qolardi, ismi esa o'rtaga
+       surilardi. Ikkisi ham shu ikki qatorda hal bo'ladi. */
+    width:100%;text-align:left;
   }
+  /* Tugma ichidagi matn ham qisqarishi kerak, aks holda u
+     kengayishda davom etadi. */
+  .chat-row.ai-entry .chat-row-txt,
+  .chat-row.ai-entry .chat-row-top,
+  .chat-row.ai-entry .chat-row-bottom{min-width:0;}
+  .chat-row.ai-entry .preview{display:block;min-width:0;}
   .chat-row.ai-entry .ai-entry-av{background:var(--route);color:#FFFFFF;}
   .chat-row.ai-entry .ai-entry-av .ic-svg{font-size:20px;}
   .chat-row.ai-entry .chat-row-time{font-size:10px;font-weight:700;color:var(--route);letter-spacing:0.04em;}
@@ -15088,12 +15100,21 @@
 
     var search = document.getElementById("fChatSearch");
     search.addEventListener("input", function(){
-      var q = search.value.trim();
+      /* "@ali" ham, "ali" ham bitta narsani qidiradi: odam
+         username'ni "@" bilan eslaydi va shunday yozadi. */
+      var q = search.value.trim().replace(/^@+/, "");
       clearTimeout(chatSearchDebounce);
       if(q.length < 2){
+        chatSearchQuery = "";
         document.getElementById("chatSearchResults").innerHTML = "";
+        showChatInbox(true);
         return;
       }
+      chatSearchQuery = q;
+      /* Ro'yxatdagilar darhol topiladi — ular uchun server kerak
+         emas. Javob kelgach, ustiga "boshqa odamlar" qo'shiladi. */
+      showChatInbox(false);
+      renderChatSearch(q, null);
       chatSearchDebounce = setTimeout(function(){ runChatSearch(q); }, 300);
     });
 
@@ -15105,30 +15126,101 @@
     hideChatUnder();
   }
 
+  /* Hozir qidirilayotgan so'z. Kech kelgan javob yangi so'zning
+     natijasini bosib ketmasligi uchun kerak. */
+  var chatSearchQuery = "";
+
+  function showChatInbox(on){
+    var wrap = document.getElementById("chatInboxWrap");
+    if(wrap) wrap.hidden = !on;
+  }
+
+  /** Qidiruv qatori — yozishma bo'lmagan odam uchun. */
+  function chatFoundRowHtml(u){
+    var title = u.name || ("@" + u.username);
+    return '<div class="chat-row" data-username="'+escapeHtml(u.username)+'">'
+      + chatAvatarHtml(title, "", u.avatarUrl)
+      + '<div class="chat-row-txt">'
+      +   '<span class="chat-row-top">'
+      +     '<span class="u">'+escapeHtml(title)+chatVerifiedBadgeHtml(u.verified)+'</span>'
+      +   '</span>'
+      +   '<span class="chat-row-bottom">'
+      +     '<span class="preview">@'+escapeHtml(u.username)
+      +       (ROLE_LABELS[u.role] ? " · " + escapeHtml(ROLE_LABELS[u.role]) : "")
+      +     '</span>'
+      +   '</span>'
+      + '</div></div>';
+  }
+
+  /**
+   * Qidiruv natijasi ikki bo'lakdan iborat.
+   *
+   * Tepada — yozishayotgan odamlaringiz: ular allaqachon qurilmada,
+   * shuning uchun harf kiritilishi bilan, serversiz chiqadi.
+   * Pastda — qolgan hamma: username aytilgan, lekin hali
+   * yozishmagan odamni aynan shu yerdan topasiz.
+   *
+   * `found` null bo'lsa, server javobi hali kelmagan.
+   */
+  function renderChatSearch(q, found){
+    var results = document.getElementById("chatSearchResults");
+    if(!results) return;
+    var needle = String(q || "").toLowerCase();
+
+    var mine = chatInbox.filter(function(c){
+      return String(c.username || "").toLowerCase().indexOf(needle) >= 0
+          || String(c.name || "").toLowerCase().indexOf(needle) >= 0;
+    });
+    var haveMine = {};
+    mine.forEach(function(c){ haveMine[c.username] = true; });
+    var others = (found || []).filter(function(u){ return !haveMine[u.username]; });
+
+    var html = "";
+    if(mine.length){
+      html += '<p class="note" style="margin:var(--s3) 0 var(--s2);">Yozishmalaringiz</p>'
+            + mine.map(chatRowHtml).join("");
+    }
+    if(others.length){
+      html += '<p class="note" style="margin:var(--s3) 0 var(--s2);">Boshqa odamlar</p>'
+            + others.map(chatFoundRowHtml).join("");
+    }
+    if(!html){
+      // Server javobi kelmaguncha "topilmadi" deyish — yolg'on.
+      html = found === null
+        ? '<p class="note" style="margin:var(--s3) 0;">Qidirilmoqda…</p>'
+        : '<p class="note" style="margin:var(--s3) 0;">Hech kim topilmadi</p>';
+    }
+    results.innerHTML = html;
+
+    bindChatRows(results);
+    results.querySelectorAll("[data-username]:not([data-email])").forEach(function(row){
+      row.addEventListener("click", function(){
+        clearChatSearch();
+        openChatThread(null, row.getAttribute("data-username"));
+      });
+    });
+  }
+
+  function clearChatSearch(){
+    var input = document.getElementById("fChatSearch");
+    if(input) input.value = "";
+    chatSearchQuery = "";
+    clearTimeout(chatSearchDebounce);
+    var results = document.getElementById("chatSearchResults");
+    if(results) results.innerHTML = "";
+    showChatInbox(true);
+  }
+
   function runChatSearch(q){
     fetch("/api/chat?action=search&q=" + encodeURIComponent(q) + "&googleIdToken=" + encodeURIComponent(googleIdToken||"") + "&telegramInitData=" + encodeURIComponent(telegramInitData||""))
       .then(function(r){ return r.json(); })
       .then(function(data){
-        var results = document.getElementById("chatSearchResults");
-        if(!results) return;
-        var users = data.users || [];
-        results.innerHTML = users.length
-          ? users.map(function(u){
-              return '<div class="chat-row" data-username="'+escapeHtml(u.username)+'">'
-                + chatAvatarHtml(u.username)
-                + '<div class="chat-row-txt"><span class="u">@'+escapeHtml(u.username)+chatVerifiedBadgeHtml(u.verified)+'</span>'
-                + '<span class="preview">'+escapeHtml(ROLE_LABELS[u.role] || "")+'</span></div>'
-                + '</div>';
-            }).join("")
-          : '<p class="note" style="margin:8px 0 0;">Hech kim topilmadi</p>';
-        results.querySelectorAll("[data-username]").forEach(function(row){
-          row.addEventListener("click", function(){
-            document.getElementById("fChatSearch").value = "";
-            document.getElementById("chatSearchResults").innerHTML = "";
-            openChatThread(null, row.getAttribute("data-username"));
-          });
-        });
-      }).catch(function(){});
+        // So'z almashib ketgan bo'lsa, bu javob endi eskirgan.
+        if(chatSearchQuery !== q) return;
+        renderChatSearch(q, data.users || []);
+      }).catch(function(){
+        if(chatSearchQuery === q) renderChatSearch(q, []);
+      });
   }
 
   /* Yozishmalar ro'yxati. Serverdan bir marta olinadi, so'ngra
@@ -15370,7 +15462,13 @@
 
     list.innerHTML = aiRowHtml() + rows.map(chatRowHtml).join("");
     bindAiEntry(list);
-    list.querySelectorAll("[data-email]").forEach(function(row){
+    bindChatRows(list);
+  }
+
+  /* Yozishma qatori ro'yxatda ham, qidiruv natijasida ham bir xil
+     ishlaydi — shuning uchun tinglovchilar bitta joyda. */
+  function bindChatRows(root){
+    root.querySelectorAll("[data-email]").forEach(function(row){
       row.addEventListener("click", function(e){
         // Amallar tugmasi suhbatni ochmaydi.
         if(e.target.closest("[data-chat-more]")) return;
@@ -15378,7 +15476,7 @@
                        row.getAttribute("data-name"));
       });
     });
-    list.querySelectorAll("[data-chat-more]").forEach(function(btn){
+    root.querySelectorAll("[data-chat-more]").forEach(function(btn){
       btn.addEventListener("click", function(e){
         e.stopPropagation();
         openChatRowMenu(btn.getAttribute("data-chat-more"));
