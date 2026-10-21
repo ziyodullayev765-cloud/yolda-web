@@ -31,7 +31,9 @@
 //     boshqaruv almashganini ko'radi va bir marta qayta yuklanib
 //     yangi yo'lga o'tadi. Undan keyin bu raqamga bog'liq
 //     bo'lmaydi.
-const CACHE_VERSION = 'yolda-v7';
+// v8: eski nusxa javob bermasa, u MAJBURAN qayta yuklanadi
+//     (pastdagi `nudgeClients`).
+const CACHE_VERSION = 'yolda-v8';
 const SHELL = [
   '/',
   '/index.html',
@@ -41,10 +43,18 @@ const SHELL = [
   '/icons/apple-touch-icon-v2.png',
 ];
 
+/* Bu O'RNATISH emas, YANGILANISH bo'ldimi.
+   Birinchi marta kirgan odamning sahifasini qo'zg'atish mantiqsiz:
+   unda allaqachon eng yangi kod turibdi (u hozirgina yuklandi).
+   Eski kesh bor bo'lsa — demak bu yerda avvalgi nusxa bo'lgan. */
+let yangilanish = false;
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
-      .open(CACHE_VERSION)
+      .keys()
+      .then((keys) => { yangilanish = keys.length > 0; })
+      .then(() => caches.open(CACHE_VERSION))
       // Bitta fayl yuklanmasa ham o'rnatish buzilmasin — qobiq keyingi
       // tashrifda to'ldiriladi.
       .then((cache) => Promise.allSettled(SHELL.map((url) => cache.add(url))))
@@ -52,12 +62,55 @@ self.addEventListener('install', (event) => {
   );
 });
 
+/* ============================================================
+   ESKI NUSXANI QO'ZG'ATISH
+   ------------------------------------------------------------
+   MUAMMO. O'rnatilgan ilova kunlab ochiq turadi va sahifa
+   qaytadan yuklanmaydi. Yangi sahifalar yangilikni o'zi
+   sezadi (index.html, `watchBuild`), lekin TELEFONDA ALLAQACHON
+   TURGAN eski nusxa buni bilmaydi — unda hali o'sha eski kod.
+
+   Shuning uchun yangi xizmat fayli ishga tushganda hamma ochiq
+   oynaga xabar yuboriladi. Yangi kod javob qaytaradi va o'zi
+   qulay paytda yangilanadi (forma to'ldirilayotgan bo'lsa
+   kutadi). Javob kelmasa — demak u yerda eski kod turibdi va
+   boshqa yo'l yo'q: oyna majburan qayta yuklanadi.
+
+   Bu faqat xizmat fayli ALMASHGANDA, ya'ni juda kamdan-kam
+   bo'ladi. /admin esa tegilmaydi: u ichki vosita, u yerda ish
+   ketayotgan bo'lishi mumkin.
+   ============================================================ */
+const ACK_WAIT = 5000;
+const acked = new Set();
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data && event.data.type === 'VERSION_ACK' && event.source) acked.add(event.source.id);
+});
+
+const nudgeClients = async () => {
+  const windows = () => self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const list = (await windows()).filter((c) => c.url.indexOf('/admin') === -1);
+  if (!list.length) return;
+
+  acked.clear();
+  list.forEach((c) => c.postMessage({ type: 'NEW_VERSION' }));
+  await new Promise((done) => setTimeout(done, ACK_WAIT));
+
+  const qolgan = (await windows()).filter((c) => c.url.indexOf('/admin') === -1);
+  for (const c of qolgan) {
+    if (acked.has(c.id) || !('navigate' in c)) continue;
+    try { await c.navigate(c.url); } catch (err) { /* oyna yopilgan bo'lishi mumkin */ }
+  }
+};
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
+      .then(() => (yangilanish ? nudgeClients() : undefined)),
   );
 });
 
@@ -169,11 +222,6 @@ self.addEventListener('fetch', (event) => {
       return hit || network;
     }),
   );
-});
-
-// Sahifa "yangi versiyani hoziroq qo'y" deb aytsa.
-self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 /* ============================================================

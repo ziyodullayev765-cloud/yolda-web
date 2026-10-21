@@ -139,7 +139,40 @@ flow('Xizmat fayli raqami oshirildi');
   const sw = readFileSync(join(repo, 'sw.js'), 'utf8');
   const m = /CACHE_VERSION = 'yolda-v(\d+)'/.exec(sw);
   check('raqam o\'qildi', Boolean(m), sw.slice(0, 40));
-  check('v7 dan past emas', m && Number(m[1]) >= 7, m && m[1]);
+  check('v8 dan past emas', m && Number(m[1]) >= 8, m && m[1]);
+}
+
+flow('Telefonda turgan eski nusxa qo\'zg\'atiladi');
+{
+  /* Yangi sahifalar yangilikni o'zi sezadi. Lekin TELEFONDA
+     ALLAQACHON TURGAN eski nusxada o'sha eski kod bor — u
+     hech narsa sezmaydi. Shuning uchun yangi xizmat fayli
+     ishga tushganda ochiq oynalarga xabar yuboradi. */
+  const sw = readFileSync(join(repo, 'sw.js'), 'utf8');
+  check('ishga tushganda xabar yuboriladi', /nudgeClients\(\)/.test(sw));
+  check('xabar hamma oynaga ketadi', /postMessage\(\{ type: 'NEW_VERSION' \}\)/.test(sw));
+
+  /* Yangi kod javob qaytaradi — demak uni majburan qayta
+     yuklash shart emas, u o'zi qulay paytda yangilanadi. */
+  check('javob kutiladi', /VERSION_ACK/.test(sw));
+  check('javob berganga tegilmaydi', /acked\.has\(c\.id\)[\s\S]{0,40}continue;/.test(sw));
+  /* Javob kelmasa — u yerda eski kod. Boshqa yo'l yo'q. */
+  check('JAVOB BERMAGANI QAYTA YUKLANADI', /c\.navigate\(c\.url\)/.test(sw));
+  /* /admin ichki vosita — u yerda ish ketayotgan bo'lishi
+     mumkin, tegilmaydi. */
+  check('admin tegilmaydi',
+    (sw.match(/c\.url\.indexOf\('\/admin'\) === -1/g) || []).length === 2, sw.includes('/admin'));
+
+  /* BIRINCHI MARTA KIRGAN ODAMGA TEGILMAYDI. Unda allaqachon
+     eng yangi kod turibdi — hozirgina yuklandi. Bu qoida
+     bo'lmaganda har bir yangi tashrif qayta yuklanib ketardi. */
+  check('faqat yangilanishda qo\'zg\'atiladi', /yangilanish \? nudgeClients\(\) : undefined/.test(sw));
+  check('yangilanish eski keshdan aniqlanadi', /yangilanish = keys\.length > 0;/.test(sw));
+
+  check('sahifa javob qaytaradi', /type:"VERSION_ACK"/.test(html));
+  /* Va o'zi darhol emas, XAVFSIZ paytda yangilanadi. */
+  check('sahifa xavfsiz paytda yangilanadi',
+    /NEW_VERSION"\)\{[\s\S]{0,400}?newVersionReady = true;\s*\n\s*applyNewVersion\(\);/.test(html));
 }
 
 t.done();

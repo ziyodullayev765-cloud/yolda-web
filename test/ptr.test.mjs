@@ -242,7 +242,7 @@ check('eng ko\'p surilish — chegaraning o\'zi',
    bir surganda ham yangilanib ketardi. */
 const chegara = [...html.matchAll(/var THRESHOLD = (\d+);/g)].map((m) => +m[1]);
 check('ikkala tortishning ham chegarasi bor', chegara.length === 2, chegara);
-check('chegara yetarlicha uzoq', chegara.every((v) => v >= 75), chegara);
+check('chegara yetarlicha uzoq', chegara.every((v) => v >= 86), chegara);
 
 /* ---------- Belgi ekranning ostida ----------
    Tortilganda bo'limlar pastga suriladi va belgi ochilgan
@@ -328,27 +328,36 @@ check('tortish belgisining uslublari topildi', ptrCss.length > 40, ptrCss.length
 check('surish va aylanish aralashmagan', !/translateY\([^)]*\) rotate\(/.test(ptrCss));
 
 /* ---- Bir harakat ichida ikkinchi marta tortish ----
-   Odam belgini bir marta tushirib, yangilanishga yetkazmasdan
-   joyiga qaytarsa va YANA tortsa — tushishi kerak. Ilgari
-   `dy <= 0` bo'lgani uchun kuzatish butunlay to'xtardi, barmoq
-   esa ko'tarilmagani uchun yangi "touchstart" kelmasdi: ikkinchi
-   tortish umuman ishlamay qolardi.
+   Odam belgini tushirib, yangilanishga yetkazmasdan qo'lini
+   tepaga olib, so'ng YANA tortsa — tushishi kerak.
 
-   Ikki nusxada ham shunday — sahifada va xabarlar ro'yxatida. */
-check('TEPAGA CHIQQANDA KUZATISH TO\'XTAMAYDI',
-  (html.match(/if\(dy <= 0\)\{/g) || []).length === 2,
-  (html.match(/if\(dy <= 0\)/g) || []).length);
-/* Va eng muhimi: masofa shu nuqtadan QAYTADAN o'lchanadi.
-   Aks holda o'lchov hamon birinchi tegilgan nuqtadan yurib,
-   odam qo'lini tepaga olib so'ng pastga tushirsa, ekranda
-   hech narsa qimirlamasdi — aynan shu kamchilik bor edi. */
-check('MASOFA QAYTADAN O\'LCHANADI',
-  (html.match(/startY = (e|ev)\.touches\[0\]\.clientY;\s*\n\s*startX = \1\.touches\[0\]\.clientX;\s*\n\s*draw\(0\);/g) || []).length === 2,
-  (html.match(/draw\(0\);/g) || []).length);
+   Ilgari masofa `clientY - startY` edi, ya'ni BIRINCHI TEGILGAN
+   NUQTADAN o'lchanardi. Shuning uchun qo'l tepaga chiqib qaytsa,
+   u hali ham "boshlanishdan tepada" bo'lib, ekranda hech narsa
+   qimirlamasdi.
+
+   Endi har qadam QO'SHIB boriladi va yig'indi nolda to'xtaydi —
+   keyingi pastga harakat darhol ishlaydi. Ikki nusxada ham. */
+check('MASOFA QADAMLAB YIG\'ILADI',
+  (html.match(/pull = Math\.max\(0, pull \+ qadam\);/g) || []).length === 2,
+  (html.match(/pull = Math\.max\(0, pull \+ qadam\);/g) || []).length);
+check('qadam oldingi nuqtadan o\'lchanadi',
+  (html.match(/var qadam = y - lastY;/g) || []).length === 2);
+check('har tegishda noldan boshlanadi',
+  (html.match(/lastY = startY;\s*\n\s*pull = 0;/g) || []).length === 2);
+/* Qo'yib yuborilganda ham o'sha yig'indiga qaraladi — ilgari
+   bu yerda yana `clientY - startY` hisoblanardi. */
+check('qaror ham yig\'indiga qarab chiqariladi',
+  (html.match(/if\(pull < THRESHOLD\)\{ reset\(\); return; \}/g) || []).length === 2);
+/* Harakat birinchi pikseldan ushlab qolinadi: aks holda brauzer
+   sahifani o'zi surishni boshlab yuborardi. */
+check('birinchi pikseldan ushlanadi',
+  (html.match(/if\(pull > 0 && (e|ev)\.cancelable\) \1\.preventDefault\(\);/g) || []).length === 2);
 check('bekor qilish faqat yonlamasiga surishda yoki sahifa surilganda',
   (html.match(/if\(window\.scrollY > 0 \|\| \(dy > 0 && dx > dy\)\)\{ pulling = false; reset\(\); return; \}/g) || []).length === 2);
-/* Eski shart qolib ketmasin. */
-check('eski shart olib tashlandi', !/dy <= 0 \|\| dx > dy/.test(html));
+/* Eski o'lchov qolib ketmasin. */
+check('eski o\'lchov olib tashlandi', !/dy <= 0 \|\| dx > dy/.test(html)
+  && !/var dy = (e|ev)\.touches\[0\]\.clientY - startY;/.test(html));
 
 if (fails.length) {
   console.log('ptr: ' + fails.length + ' ta xato');

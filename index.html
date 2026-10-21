@@ -1749,30 +1749,16 @@
   @media(max-width:640px){ .features{grid-template-columns:1fr;} }
 
   /* ---------- APP SECTION ---------- */
-  #tab-order{
-    background:
-      radial-gradient(circle at 50% 0%, rgba(10,159,91,0.05), transparent 55%),
-      var(--paper-dark);
-  }
   /* Tepadagi 64px bo'shliq saytning kirish sahifasidan qolgan edi —
      ilova ichidagi bo'lim uchun ko'p. Qolgan bo'limlar bilan bir xil. */
   .app-shell{max-width:660px;margin:0 auto;padding:var(--s6) var(--s4) var(--s9);}
 
-  /* Shisha ortida sinadigan narsa bo'lishi kerak — tekis qora fonda
-     shisha oddiy kulrang qutiga aylanadi. Shuning uchun bo'lim fonida
-     ikkita yumshoq yorug'lik dog'i turadi: biri yashil (brend rangi),
-     ikkinchisi sovuqroq. Ular qimirlamaydi va hech narsani to'smaydi. */
+  /* Fon SOF: kunduzi oq, tunda qora. Ilgari tepada yashil nur dog'i
+     turardi (shisha panellar ortida sinishi uchun), lekin u oq fonda
+     bilinib qolardi — bo'lim oq emas, yashilga moyil ko'rinardi.
+     Shuning uchun olib tashlandi; shisha panellarning o'zi joyida
+     qoldi. */
   #tab-order{position:relative;isolation:isolate;background:var(--paper);}
-  /* Fon sof qora (kunduzi — sof oq). Yashil nur faqat eng tepada,
-     tor yo'l bo'lib turadi: pastga tushib fonni kulrang qilib
-     yubormaydi. */
-  #tab-order::before{
-    content:"";position:absolute;inset:0 0 auto;height:260px;z-index:-1;pointer-events:none;
-    background:radial-gradient(120% 100% at 50% 0%, rgba(10,159,91,0.10), transparent 72%);
-  }
-  :root[data-theme="dark"] #tab-order::before{
-    background:radial-gradient(120% 100% at 50% 0%, rgba(45,212,128,0.13), transparent 72%);
-  }
 
   .tabs{
     display:flex;gap:var(--s1);margin:var(--s5) 0 var(--s5);
@@ -4258,9 +4244,13 @@
      mavzuga moslashadi: pastdagi qiymatlar — kunduzgi (standart) holat,
      :root[data-theme="dark"] ostidagilari esa avvalgi qorong'i palitra. */
   .life{
-    --lf-bg:#F4F9F6;        /* asosiy fon */
+    /* Fon SOF OQ. Ilgari #F4F9F6 va #EAF3ED edi — yashilga moyil
+       och tuslar. Ular alohida qaraganda sezilmaydi, lekin ilovaning
+       oq bo'limlari yonida bo'lim yashil tortib ko'rinardi. Yashil
+       endi faqat o'z joyida: ikonka, nishon va tugmalarda. */
+    --lf-bg:#FFFFFF;        /* asosiy fon */
     --lf-card:#FFFFFF;      /* kartochka */
-    --lf-card-2:#EAF3ED;    /* ikkinchi darajali yuza */
+    --lf-card-2:#F3F5F8;    /* ikkinchi darajali yuza — betaraf */
     --lf-line:rgba(20,38,29,0.10);
     --lf-ink:#0F2318;
     --lf-soft:#4F6459;
@@ -22278,13 +22268,31 @@
 
     var indicator = makePtrIndicator();
 
-    var THRESHOLD = 77;   // shuncha tortilsa yangilanadi
+    var THRESHOLD = 89;   // shuncha tortilsa yangilanadi
     /* CHEGARADAN NARIGA QIMIRLAMAYDI. Telefon titradi, halqa
        yopildi — javob berildi. Shundan keyin ham ekran cho'zilib
        ketsa, bu "yana bir narsa bo'ladi" degan yolg'on ishora
        bo'lardi; qo'l esa baribir bir joyda to'xtab qoladi. */
     var MAX = THRESHOLD;
-    var startX = 0, startY = 0, pulling = false, refreshing = false;
+    /* ============================================================
+       TORTISH MASOFASI QANDAY HISOBLANADI
+       ------------------------------------------------------------
+       Har bir qadam QO'SHIB boriladi (`pull`), boshlanish
+       nuqtasidan emas. Ilgari masofa `clientY - startY` edi va
+       aynan shundan quyidagi xato kelib chiqdi: odam belgini
+       tushirib, qo'lini tepaga olib, so'ng yana pastga tushirsa,
+       o'lchov hamon birinchi tegilgan nuqtadan yurardi — ya'ni
+       qo'l hali ham "boshlanishdan tepada" bo'lib, ekranda hech
+       narsa qimirlamasdi.
+
+       Yig'indi esa nolda to'xtaydi: tepaga surish uni nolgacha
+       kamaytiradi, undan pastga tushmaydi. Shuning uchun keyingi
+       pastga harakat DARHOL ishlaydi — qo'l qayerda bo'lishidan
+       qat'i nazar. Harakat necha marta yuqoriga-pastga bo'lishi
+       ham muhim emas.
+       ============================================================ */
+    var startX = 0, startY = 0, lastY = 0, pull = 0;
+    var pulling = false, refreshing = false;
 
     function sheetOpen(){
       var sheet = document.getElementById("sheetRoot");
@@ -22339,45 +22347,35 @@
       if(startsInsideDraggableWidget(e.target)) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
+      lastY = startY;
+      pull = 0;
       pulling = true;
     }, { passive: true });
 
     window.addEventListener("touchmove", function(e){
       if(!pulling || refreshing) return;
-      var dy = e.touches[0].clientY - startY;
+      var y = e.touches[0].clientY;
+      var qadam = y - lastY;           // shu qadamda qancha yurdi
+      lastY = y;
       var dx = Math.abs(e.touches[0].clientX - startX);
-      // Yonlamasiga surish yoki sahifa allaqachon pastga tushib
-      // ketgan bo'lsa — bu bizning harakatimiz emas.
+      var dy = y - startY;
+      /* Sahifa surilib ketgan bo'lsa yoki harakat yonlamasiga
+         aylansa — bu bizning harakatimiz emas. */
       if(window.scrollY > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
-      /* BARMOQ BOSHLANGAN JOYIDAN TEPAGA CHIQDI — harakat
-         tugagani emas: qo'l hali ekranda va u yana pastga
-         tushishi mumkin.
 
-         Ikki narsa qilinadi. Birinchisi — kuzatish to'xtamaydi
-         (ilgari shu yerda butunlay to'xtardi, barmoq esa
-         ko'tarilmaganidan yangi "touchstart" ham kelmasdi).
-         Ikkinchisi — MASOFA SHU NUQTADAN QAYTADAN O'LCHANADI.
-         Aks holda o'lchov hamon birinchi tegilgan nuqtadan
-         yurardi: odam qo'lini 100 piksel tepaga olib, so'ng 60
-         piksel pastga tushirsa, ilova uchun u hali ham
-         boshlanish nuqtasidan 40 piksel TEPADA bo'lib,
-         ekranda hech narsa qimirlamasdi. */
-      if(dy <= 0){
-        startY = e.touches[0].clientY;
-        startX = e.touches[0].clientX;
-        draw(0);
-        return;
-      }
-      if(dy > 8 && e.cancelable) e.preventDefault();
-      draw(dy);
+      pull = Math.max(0, pull + qadam);
+      /* Noldan katta bo'lsa — harakat bizda. Birinchi pikseldan
+         boshlab ushlab qolinadi: aks holda brauzer o'zi sahifani
+         surishni boshlab yuborishi mumkin va harakat qo'ldan
+         ketardi. */
+      if(pull > 0 && e.cancelable) e.preventDefault();
+      draw(pull);
     }, { passive: false });
 
-    function finish(e){
+    function finish(){
       if(!pulling || refreshing) return;
       pulling = false;
-      var touch = e.changedTouches && e.changedTouches[0];
-      var dy = touch ? touch.clientY - startY : 0;
-      if(dy < THRESHOLD){ reset(); return; }
+      if(pull < THRESHOLD){ reset(); return; }
 
       refreshing = true;
       /* Qo'yib yuborildi — endi g'ildirak o'zi aylanadi, to'xtagan
@@ -22443,9 +22441,11 @@
   function initChatPullRefresh(){
     var ind = makePtrIndicator();
 
-    var THRESHOLD = 75;   // shuncha tortilsa yangilanadi
+    var THRESHOLD = 86;   // shuncha tortilsa yangilanadi
     var MAX = THRESHOLD;  // chegaradan nariga qimirlamaydi
-    var startX = 0, startY = 0, pulling = false, busy = false, armed = false;
+    /* Masofa qadamlab qo'shiladi — sahifanikidek, izohga qarang. */
+    var startX = 0, startY = 0, lastY = 0, pull = 0;
+    var pulling = false, busy = false, armed = false;
 
     function draw(dist){
       var eased = Math.min(dist, MAX);
@@ -22480,34 +22480,31 @@
       if(!armed){ armed = true; document.documentElement.classList.add("ptr-on"); }
       startX = ev.touches[0].clientX;
       startY = ev.touches[0].clientY;
+      lastY = startY;
+      pull = 0;
       pulling = true;
     }, { passive: true });
 
     window.addEventListener("touchmove", function(ev){
       if(!pulling || busy) return;
-      var dy = ev.touches[0].clientY - startY;
+      var y = ev.touches[0].clientY;
+      var qadam = y - lastY;
+      lastY = y;
       var dx = Math.abs(ev.touches[0].clientX - startX);
+      var dy = y - startY;
       // Yonlamasiga surish yoki ro'yxat pastga tushib ketgan
       // bo'lsa — bu bizning harakatimiz emas.
       if(window.scrollY > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
-      /* Tepaga chiqdi — kuzatish to'xtamaydi va masofa shu
-         nuqtadan qaytadan o'lchanadi (sahifanikidek, izohga
-         qarang). */
-      if(dy <= 0){
-        startY = ev.touches[0].clientY;
-        startX = ev.touches[0].clientX;
-        draw(0);
-        return;
-      }
-      if(dy > 8 && ev.cancelable) ev.preventDefault();
-      draw(dy);
+
+      pull = Math.max(0, pull + qadam);
+      if(pull > 0 && ev.cancelable) ev.preventDefault();
+      draw(pull);
     }, { passive: false });
 
-    window.addEventListener("touchend", function(ev){
+    window.addEventListener("touchend", function(){
       if(!pulling || busy) return;
       pulling = false;
-      var touch = ev.changedTouches && ev.changedTouches[0];
-      if(!touch || touch.clientY - startY < THRESHOLD){ reset(); return; }
+      if(pull < THRESHOLD){ reset(); return; }
 
       busy = true;
       ind.classList.add("ptr-live");
@@ -22902,6 +22899,20 @@
     navigator.serviceWorker.addEventListener("message", function(e){
       if(e.data && e.data.type === "PUSH_RESUBSCRIBE" && window.YoldaPush){
         window.YoldaPush.enable().catch(function(){});
+      }
+      /* Yangi xizmat fayli "yangi versiya keldi" deyapti. Javob
+         qaytaramiz — shu javob xizmat fayliga bu oynada YANGI
+         kod turganini bildiradi va u bizni majburan qayta
+         yuklamaydi. O'zimiz qulay paytda yangilanamiz: forma
+         to'ldirilayotgan bo'lsa kutib turiladi. */
+      if(e.data && e.data.type === "NEW_VERSION"){
+        try{
+          if(navigator.serviceWorker.controller){
+            navigator.serviceWorker.controller.postMessage({type:"VERSION_ACK"});
+          }
+        }catch(err){}
+        newVersionReady = true;
+        applyNewVersion();
       }
     });
     watchNewVersion();
