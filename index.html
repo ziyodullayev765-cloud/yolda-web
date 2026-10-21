@@ -22019,6 +22019,58 @@
      va shundan oldin `touchmove` yubormaydi. */
   var PTR_SLOP = 14;
 
+  /* ---------- Ekranning o'zi ham suriladi ----------
+     Belgi yolg'iz tushib kelsa, u sahifaning ustiga qo'yilgandek
+     ko'rinadi. Tanish harakat boshqacha: ekran barmoq ortidan
+     pastga suriladi va bo'shagan joyda belgi turadi — ya'ni
+     sahifa ostidan tortib ochilayotgandek.
+
+     Suriladigan narsa — `<main>`, ya'ni bo'limlarning o'zi.
+     Sarlavha va pastki panel joyida qoladi: ular ilovaning
+     ramkasi, ular ham qimirlasa ekran sinadi.
+
+     TINCH TURGANDA USLUB BUTUNLAY OLIB TASHLANADI. `transform`
+     qo'yilgan element o'z ichidagi `position:fixed` lar uchun
+     yangi tayanch bo'lib qoladi — hatto `translateY(0)` da ham.
+     Shuning uchun tortish tugashi bilan uslub tozalanadi. */
+  var PTR_PULL_RESIST = 0.85;   /* barmoq yurgan yo'lning ulushi */
+  var PTR_HOLD = 54;            /* yangilash davomida shuncha turadi */
+
+  /* Belgi bo'shagan joyning O'RTASIDA turadi. Bo'shliq sarlavha
+     ostidan boshlanadi, shuning uchun uning pastki chekkasi
+     o'lchanadi — sarlavha balandligi tilga va qurilmaga qarab
+     o'zgaradi, kodga yozib qo'yib bo'lmaydi. */
+  function ptrTop(){
+    var nav = document.querySelector("nav.nav");
+    var box = nav && nav.getBoundingClientRect();
+    return box && box.bottom > 0 ? box.bottom : 0;
+  }
+
+  /** Belgining bo'shliq ichidagi o'rni. */
+  function ptrSpot(gap){
+    return Math.round(ptrTop() + gap / 2 - 22);
+  }
+
+  function ptrPull(px, smooth){
+    var main = document.querySelector("main");
+    if(!main) return;
+    main.style.transition = smooth
+      ? "transform 0.3s cubic-bezier(0.22,1,0.36,1)" : "";
+    if(px <= 0){
+      main.style.transform = "translateY(0px)";
+      /* Tozalash — o'tish tugagach. Darhol olib tashlansa, ekran
+         joyiga sirg'alib emas, sakrab qaytardi. */
+      clearTimeout(main.__ptrClear);
+      main.__ptrClear = setTimeout(function(){
+        main.style.transform = "";
+        main.style.transition = "";
+      }, smooth ? 320 : 0);
+      return;
+    }
+    clearTimeout(main.__ptrClear);
+    main.style.transform = "translateY(" + Math.round(px) + "px)";
+  }
+
   function initPullToRefresh(){
     if(!pagePtrEnabled()) return;
     document.documentElement.classList.add("ptr-on");
@@ -22047,14 +22099,16 @@
          uch-to'rt tayoqcha bilan paydo bo'lardi. */
       indicator.style.setProperty("--ptr-shown",
         (Math.max(0, eased - PTR_SLOP) / (THRESHOLD - PTR_SLOP) * 12).toFixed(2));
-      indicator.style.transform = "translateY(" + (eased - 56) + "px)";
+      indicator.style.transform = "translateY(" + ptrSpot(eased * PTR_PULL_RESIST) + "px)";
       indicator.style.opacity = String(Math.min(1, eased / THRESHOLD));
+      ptrPull(eased * PTR_PULL_RESIST, false);
     }
 
     function reset(){
       indicator.style.transition = "transform .25s ease, opacity .25s ease";
       indicator.style.transform = "translateY(-56px)";
       indicator.style.opacity = "0";
+      ptrPull(0, true);
       setTimeout(function(){
         indicator.style.transition = "";
         indicator.classList.remove("ptr-live");
@@ -22078,6 +22132,10 @@
       // sahifani qayta yuklash ortiqcha, ikkitasi birga ishlasa esa
       // ikki marta yangilangan bo'lardi.
       if(chatListPullable()) return;
+      /* Ochiq suhbatda pastga tortish — eski xabarlarni ko'rish,
+         yangilash emas. Ustiga, suhbat to'liq ekranda `<main>`
+         ichida turadi: ekranni surish uni ham surib yuborardi. */
+      if(document.querySelector(".chat-fullscreen")) return;
       if(startsInsideDraggableWidget(e.target)) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
@@ -22107,8 +22165,12 @@
          joyidan davom etib, yangilash tugaguncha. */
       indicator.classList.add("ptr-live");
       indicator.style.transition = "transform .2s ease";
-      indicator.style.transform = "translateY(22px)";
+      indicator.style.transform = "translateY(" + ptrSpot(PTR_HOLD) + "px)";
       indicator.style.opacity = "1";
+      /* Yangilash davomida ekran ko'tarilib ketmaydi: belgi
+         bo'shliqda turadi, ya'ni ish ketayotgani ko'rinib
+         turadi. */
+      ptrPull(PTR_HOLD, true);
       ptrRefresh(function(){
         refreshing = false;
         reset();
@@ -22177,14 +22239,16 @@
          uch-to'rt tayoqcha bilan paydo bo'lardi. */
       ind.style.setProperty("--ptr-shown",
         (Math.max(0, eased - PTR_SLOP) / (THRESHOLD - PTR_SLOP) * 12).toFixed(2));
-      ind.style.transform = "translateY(" + (eased - 56) + "px)";
+      ind.style.transform = "translateY(" + ptrSpot(eased * PTR_PULL_RESIST) + "px)";
       ind.style.opacity = String(Math.min(1, eased / THRESHOLD));
+      ptrPull(eased * PTR_PULL_RESIST, false);
     }
 
     function reset(){
       ind.style.transition = "transform .25s ease, opacity .25s ease";
       ind.style.transform = "translateY(-56px)";
       ind.style.opacity = "0";
+      ptrPull(0, true);
       setTimeout(function(){
         ind.style.transition = "";
         ind.classList.remove("ptr-live");
@@ -22225,8 +22289,9 @@
       busy = true;
       ind.classList.add("ptr-live");
       ind.style.transition = "transform .2s ease";
-      ind.style.transform = "translateY(22px)";
+      ind.style.transform = "translateY(" + ptrSpot(PTR_HOLD) + "px)";
       ind.style.opacity = "1";
+      ptrPull(PTR_HOLD, true);
       // Javob juda tez kelsa aylanish ko'rinmay qolardi — eng kamida
       // shuncha turadi, shunda harakat tugaganini odam sezadi.
       var started = Date.now();

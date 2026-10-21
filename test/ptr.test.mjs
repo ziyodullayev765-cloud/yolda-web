@@ -188,6 +188,43 @@ check('yangi versiya bo\'lsa qayta yuklanadi',
 check('yangi versiya faqat haqiqatan bo\'lsa',
   /var sw = waiting\(\);\s*\n\s*if\(!sw\) return false;/.test(html));
 
+/* ---------- Ekranning o'zi ham suriladi ----------
+   Belgi yolg'iz tushib kelsa, sahifaning ustiga qo'yilgandek
+   ko'rinadi. Tanish harakat boshqacha: ekran barmoq ortidan
+   pastga suriladi va bo'shagan joyda belgi turadi. */
+const pull = html.match(/function ptrPull\(px, smooth\)\{[\s\S]*?\n {2}\}/);
+check('ptrPull topildi', Boolean(pull));
+if (pull) {
+  check('suriladigan narsa — bo\'limlar', /querySelector\("main"\)/.test(pull[0]), pull[0]);
+  /* `transform` qo'yilgan element o'z ichidagi `position:fixed`
+     lar uchun yangi tayanch bo'lib qoladi — hatto `translateY(0)`
+     da ham. Shuning uchun tortish tugagach uslub BUTUNLAY
+     tozalanadi. */
+  check('tinch turganda uslub tozalanadi',
+    /main\.style\.transform = "";/.test(pull[0]) && /main\.style\.transition = "";/.test(pull[0]),
+    pull[0]);
+  check('qaytishi yumshoq', /cubic-bezier/.test(pull[0]), pull[0]);
+}
+/* Ikkala tortish ham ekranni suradi: tortayotganda masofaga
+   qarab, yangilash davomida esa qat'iy balandlikda ushlab
+   turadi. */
+check('tortayotganda suriladi',
+  (html.match(/ptrPull\(eased \* PTR_PULL_RESIST, false\)/g) || []).length === 2);
+check('yangilash davomida ushlab turiladi',
+  (html.match(/ptrPull\(PTR_HOLD, true\)/g) || []).length === 2);
+check('qaytgach joyiga qaytadi',
+  (html.match(/ptrPull\(0, true\)/g) || []).length === 2);
+/* Belgi bo'shliqning O'RTASIDA turadi; bo'shliq sarlavha ostidan
+   boshlanadi, shuning uchun uning o'rni o'lchanadi — sarlavha
+   balandligi tilga va qurilmaga qarab o'zgaradi. */
+check('belgi bo\'shliq o\'rtasida', /function ptrSpot\(gap\)\{\s*\n\s*return Math\.round\(ptrTop\(\) \+ gap \/ 2 - 22\);/.test(html));
+check('sarlavha o\'lchanadi', /function ptrTop\(\)\{[\s\S]*?querySelector\("nav\.nav"\)/.test(html));
+/* Ochiq suhbatda tortish — eski xabarlarni ko'rish. Ustiga,
+   suhbat to'liq ekranda `<main>` ichida turadi: ekranni surish
+   uni ham surib yuborardi. */
+check('ochiq suhbatda sahifa tortilmaydi',
+  /if\(document\.querySelector\("\.chat-fullscreen"\)\) return;/.test(html));
+
 /* ---------- Yangi versiyani ilovaning o'zi ko'radi ----------
    O'rnatilgan ilova kunlab yopilmaydi: sahifa qaytadan
    ochilmagach, kod birinchi ochilgan kunidagicha qolib ketardi.
