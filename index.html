@@ -22110,6 +22110,14 @@
      faqat HAQIQATAN yangi versiya bo'lganda qayta yuklanadi, har
      bir tortishda emas. */
   function ptrCheckUpdate(onReady){
+    /* Nashr belgisini ham so'raymiz: yangilik ko'pincha faqat
+       HTML ichida bo'ladi, ya'ni xizmat fayli o'zgarmaydi va
+       pastdagi tekshiruv uni ko'rmaydi (`watchBuild` izohiga
+       qarang). Javob kelsa belgi qo'yiladi va keyingi qulay
+       paytda — shu tortishda yoki bo'lim almashganda —
+       qo'llanadi. */
+    askBuild(true);
+
     /* Yangi versiya allaqachon ishga tushgan bo'lsa (xizmat fayli
        o'zi boshqaruvni olgan) — tortib yangilash aynan qayta
        yuklash uchun qulay payt. */
@@ -22709,6 +22717,11 @@
      fondan qaytganda. Tortib yangilash ham shu belgini ko'radi. */
   var newVersionReady = false;
 
+  /* Nashr belgisini so'rash. Haqiqiy vazifa `watchBuild()` ichida
+     beriladi — to o'shagacha bu bo'sh amal, ya'ni undan oldin
+     chaqirilsa ham hech narsa buzilmaydi. */
+  var askBuild = function(){};
+
   /** Hozir qayta yuklash xavfsizmi. */
   function safeToReload(){
     if(newVersionReady !== true) return false;
@@ -22770,6 +22783,78 @@
       check(hiddenAt && Date.now() - hiddenAt > 10000);
     });
   }
+
+  /* ============================================================
+     Nashr belgisi — yangilikning HAQIQIY o'lchovi
+     ------------------------------------------------------------
+     YUQORIDAGI YO'L YETARLI EMAS. "Boshqaruv almashdi"
+     (`controllerchange`) faqat YANGI XIZMAT FAYLI o'rnatilganda
+     bo'ladi. Brauzer esa xizmat faylini uning BAYTLARI
+     o'zgarganda almashtiradi — ya'ni faqat `sw.js` o'zgarsa.
+     Bizning tuzatishlarimiz esa deyarli doim `index.html` ichida:
+     `sw.js` o'sha-o'sha qoladi, brauzer "yangilik yo'q" deydi va
+     ilova eski kodda qolib ketadi. AYNAN SHU BO'LDI.
+
+     Shuning uchun yangilik serverdan so'raladi: `/api/config`
+     har nashrda boshqa `build` belgisini qaytaradi. Ilova
+     ochilganda uni eslab qoladi va keyin solishtiradi — belgi
+     almashgan bo'lsa, demak saytda yangi versiya turibdi.
+
+     ISHONCHLILIK. Sahifa ochilganda qobiq avval TARMOQDAN
+     olinadi (sw.js'ga qarang), ya'ni ochilish paytidagi belgi
+     aynan shu ishlab turgan koddan. Birinchi so'rov o'tmasa
+     (internet yo'q) belgi OLINMAYDI va hech narsa qilinmaydi:
+     bilmasdan qayta yuklagandan ko'ra kutish yaxshi. Keyingi
+     muvaffaqiyatli so'rov uni o'rnatadi.
+
+     Qayta yuklash o'zi emas, `applyNewVersion()` orqali — ya'ni
+     forma to'ldirilayotganda yoki varaq ochiqligida tegilmaydi.
+     ============================================================ */
+  function watchBuild(){
+    /* Tortib yangilash ham shu tekshiruvni chaqiradi. */
+    var baseline = "";
+    var asking = false;
+    var lastAsk = 0;
+
+    var ask = function(force){
+      if(asking) return;
+      if(!force && Date.now() - lastAsk < 30000) return;
+      lastAsk = Date.now();
+      asking = true;
+      /* `no-store`: brauzerning o'z keshi javob bermasin — aks
+         holda ilova o'zining eski javobini qayta o'qib, "hech
+         narsa o'zgarmagan" degan xulosaga kelardi. */
+      fetch("/api/config", {cache:"no-store"})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(cfg){
+          asking = false;
+          var build = cfg && typeof cfg.build === "string" ? cfg.build : "";
+          if(!build) return;                 // server aytmadi — tegmaymiz
+          if(!baseline){ baseline = build; return; }
+          if(build === baseline) return;
+          newVersionReady = true;
+          applyNewVersion();
+        })
+        .catch(function(){ asking = false; });
+    };
+    askBuild = ask;
+
+    /* Ochilishdagi birinchi so'rovlar bilan urishmasin. */
+    setTimeout(function(){ ask(true); }, 3000);
+
+    var hiddenAt = 0;
+    document.addEventListener("visibilitychange", function(){
+      if(document.hidden){ hiddenAt = Date.now(); return; }
+      /* Fondan qaytish — o'rnatilgan ilovada yagona ishonchli
+         payt: sahifa qaytadan ochilmaydi, lekin bu hodisa keladi. */
+      ask(hiddenAt && Date.now() - hiddenAt > 10000);
+    });
+
+    /* Ilova ochiq turib qolsa ham (masalan kun bo'yi stolda)
+       yangilik kelsin. */
+    setInterval(function(){ if(!document.hidden) ask(true); }, 600000);
+  }
+  watchBuild();
 
   /* Mahalliy manzil ham qo'shilgan: brauzer uni https bilan teng
      ko'radi (xavfsiz kontekst), shuning uchun service worker u yerda

@@ -25,7 +25,13 @@
 // v6: belgi almashdi. Fayllarning NOMIGA ham `-v2` qo'shildi, chunki
 //     `/icons/` bir yilga keshlanadi: nomi o'zgarmasa, brauzer eskisini
 //     ko'rsatib yuraverardi.
-const CACHE_VERSION = 'yolda-v6';
+// v7: ilova endi yangilikni SHU FAYLDAN emas, serverdan so'raydi
+//     (index.html, `watchBuild`). Raqam shuning uchun oshirildi:
+//     telefonda turgan eski nusxa aynan shu fayl almashganda
+//     boshqaruv almashganini ko'radi va bir marta qayta yuklanib
+//     yangi yo'lga o'tadi. Undan keyin bu raqamga bog'liq
+//     bo'lmaydi.
+const CACHE_VERSION = 'yolda-v7';
 const SHELL = [
   '/',
   '/index.html',

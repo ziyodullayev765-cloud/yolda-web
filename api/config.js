@@ -19,10 +19,42 @@
  * index.html renders whatever it gets. Only the genuinely public fields
  * are forwarded — commissionPercent stays admin-side.
  */
+import { createHash } from 'node:crypto';
 import { kvGet, kvSmembers } from '../lib/kv.js';
 import { publicShape as lifeShape, sortItems as sortLifeItems } from '../lib/life.js';
 import { normalizeIcons } from '../lib/icons.js';
 import { sameOriginIcon, R2_ICON_RE } from '../lib/iconProxy.js';
+
+/**
+ * Shu nashrning belgisi.
+ *
+ * NEGA KERAK. O'rnatilgan ilova kunlab yopilmaydi: odam uni fondan
+ * qaytaradi, sahifa esa qaytadan ochilmaydi. Ilgari yangilikni
+ * faqat xizmat fayli (`sw.js`) almashganidan bilardik — lekin u
+ * fayl har nashrda o'zgarmaydi: faqat HTML tuzatilsa, uning
+ * baytlari o'sha-o'sha qoladi, brauzer esa "yangi xizmat fayli
+ * yo'q" deb qaytaradi. Ya'ni sayt yangilangan, telefondagi ilova
+ * esa buni BILMASDI.
+ *
+ * Shuning uchun nashrni server aytadi. Bu qiymat har nashrda
+ * boshqacha va bitta nashr davomida o'zgarmaydi — ilova uni
+ * ochilganda eslab qoladi, keyin solishtiradi.
+ *
+ * NEGA XESHLANADI. Vercel bergan belgi — git commit nomeri.
+ * O'zi sir emas, lekin ombordagi ishlarimizni oshkor qilib
+ * o'tirishning hojati yo'q: qisqa, ma'nosiz xesh ham xuddi
+ * shunday vazifani bajaradi — nashr almashsa, u ham almashadi.
+ */
+const buildId = () => {
+  const src = process.env.VERCEL_DEPLOYMENT_ID
+    || process.env.VERCEL_GIT_COMMIT_SHA
+    || process.env.VERCEL_URL
+    || '';
+  // Mahalliy ishga tushirishda bo'sh qoladi — ilova bo'sh qiymatni
+  // "bilmadim" deb qabul qiladi va hech narsa qilmaydi.
+  if (!src) return '';
+  return createHash('sha256').update(`yolda:${src}`).digest('hex').slice(0, 12);
+};
 
 const FALLBACK = {
   platformName: "YO'LDA",
@@ -155,6 +187,9 @@ export default async function handler(req, res) {
   }
 
   res.status(200).json({
+    /* Nashr belgisi — ilova o'zining yangi versiyasini shundan
+       biladi (yuqoridagi izohga qarang). */
+    build: buildId(),
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || '',
     /* Push bildirishnoma uchun OCHIQ kalit. U sir emas va sir
