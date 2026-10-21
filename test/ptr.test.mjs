@@ -327,6 +327,22 @@ check('tortish belgisining uslublari topildi', ptrCss.length > 40, ptrCss.length
    ikkalasi bo'lsa, ular bir-birini bosib ketardi. */
 check('surish va aylanish aralashmagan', !/translateY\([^)]*\) rotate\(/.test(ptrCss));
 
+/* ---- Bir harakat ichida ikkinchi marta tortish ----
+   Odam belgini bir marta tushirib, yangilanishga yetkazmasdan
+   joyiga qaytarsa va YANA tortsa — tushishi kerak. Ilgari
+   `dy <= 0` bo'lgani uchun kuzatish butunlay to'xtardi, barmoq
+   esa ko'tarilmagani uchun yangi "touchstart" kelmasdi: ikkinchi
+   tortish umuman ishlamay qolardi.
+
+   Ikki nusxada ham shunday — sahifada va xabarlar ro'yxatida. */
+check('JOYIGA QAYTGANDA KUZATISH TO\'XTAMAYDI',
+  (html.match(/if\(dy <= 0\)\{ draw\(0\); return; \}/g) || []).length === 2,
+  (html.match(/if\(dy <= 0\)/g) || []).length);
+check('bekor qilish faqat yonlamasiga surishda yoki sahifa surilganda',
+  (html.match(/if\(window\.scrollY > 0 \|\| \(dy > 0 && dx > dy\)\)\{ pulling = false; reset\(\); return; \}/g) || []).length === 2);
+/* Eski shart qolib ketmasin. */
+check('eski shart olib tashlandi', !/dy <= 0 \|\| dx > dy/.test(html));
+
 if (fails.length) {
   console.log('ptr: ' + fails.length + ' ta xato');
   for (const f of fails) console.log('  ✗ ' + f);
