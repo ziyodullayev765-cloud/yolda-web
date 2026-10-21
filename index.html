@@ -22349,14 +22349,25 @@
       // Yonlamasiga surish yoki sahifa allaqachon pastga tushib
       // ketgan bo'lsa — bu bizning harakatimiz emas.
       if(window.scrollY > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
-      /* BARMOQ BOSHLANGAN JOYIGA QAYTDI — harakat tugagani emas.
-         Qo'l hali ekranda va u yana pastga tushishi mumkin.
-         Ilgari shu yerda kuzatish BUTUNLAY to'xtardi; barmoq
-         ko'tarilmaganidan yangi "touchstart" ham kelmasdi, ya'ni
-         bir marta tushirib joyiga qaytargandan keyin ikkinchi
-         marta tortish umuman ishlamay qolardi. Shuning uchun
-         belgi nolga yig'iladi, lekin kuzatish davom etadi. */
-      if(dy <= 0){ draw(0); return; }
+      /* BARMOQ BOSHLANGAN JOYIDAN TEPAGA CHIQDI — harakat
+         tugagani emas: qo'l hali ekranda va u yana pastga
+         tushishi mumkin.
+
+         Ikki narsa qilinadi. Birinchisi — kuzatish to'xtamaydi
+         (ilgari shu yerda butunlay to'xtardi, barmoq esa
+         ko'tarilmaganidan yangi "touchstart" ham kelmasdi).
+         Ikkinchisi — MASOFA SHU NUQTADAN QAYTADAN O'LCHANADI.
+         Aks holda o'lchov hamon birinchi tegilgan nuqtadan
+         yurardi: odam qo'lini 100 piksel tepaga olib, so'ng 60
+         piksel pastga tushirsa, ilova uchun u hali ham
+         boshlanish nuqtasidan 40 piksel TEPADA bo'lib,
+         ekranda hech narsa qimirlamasdi. */
+      if(dy <= 0){
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        draw(0);
+        return;
+      }
       if(dy > 8 && e.cancelable) e.preventDefault();
       draw(dy);
     }, { passive: false });
@@ -22479,9 +22490,15 @@
       // Yonlamasiga surish yoki ro'yxat pastga tushib ketgan
       // bo'lsa — bu bizning harakatimiz emas.
       if(window.scrollY > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
-      /* Joyiga qaytdi — kuzatish to'xtamaydi (sahifanikidek
-         izohga qarang: barmoq hali ekranda). */
-      if(dy <= 0){ draw(0); return; }
+      /* Tepaga chiqdi — kuzatish to'xtamaydi va masofa shu
+         nuqtadan qaytadan o'lchanadi (sahifanikidek, izohga
+         qarang). */
+      if(dy <= 0){
+        startY = ev.touches[0].clientY;
+        startX = ev.touches[0].clientX;
+        draw(0);
+        return;
+      }
       if(dy > 8 && ev.cancelable) ev.preventDefault();
       draw(dy);
     }, { passive: false });

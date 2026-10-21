@@ -335,9 +335,16 @@ check('surish va aylanish aralashmagan', !/translateY\([^)]*\) rotate\(/.test(pt
    tortish umuman ishlamay qolardi.
 
    Ikki nusxada ham shunday — sahifada va xabarlar ro'yxatida. */
-check('JOYIGA QAYTGANDA KUZATISH TO\'XTAMAYDI',
-  (html.match(/if\(dy <= 0\)\{ draw\(0\); return; \}/g) || []).length === 2,
+check('TEPAGA CHIQQANDA KUZATISH TO\'XTAMAYDI',
+  (html.match(/if\(dy <= 0\)\{/g) || []).length === 2,
   (html.match(/if\(dy <= 0\)/g) || []).length);
+/* Va eng muhimi: masofa shu nuqtadan QAYTADAN o'lchanadi.
+   Aks holda o'lchov hamon birinchi tegilgan nuqtadan yurib,
+   odam qo'lini tepaga olib so'ng pastga tushirsa, ekranda
+   hech narsa qimirlamasdi — aynan shu kamchilik bor edi. */
+check('MASOFA QAYTADAN O\'LCHANADI',
+  (html.match(/startY = (e|ev)\.touches\[0\]\.clientY;\s*\n\s*startX = \1\.touches\[0\]\.clientX;\s*\n\s*draw\(0\);/g) || []).length === 2,
+  (html.match(/draw\(0\);/g) || []).length);
 check('bekor qilish faqat yonlamasiga surishda yoki sahifa surilganda',
   (html.match(/if\(window\.scrollY > 0 \|\| \(dy > 0 && dx > dy\)\)\{ pulling = false; reset\(\); return; \}/g) || []).length === 2);
 /* Eski shart qolib ketmasin. */
