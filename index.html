@@ -5890,191 +5890,6 @@
     .ai-screen{max-width:560px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border);}
   }
 
-  /* ============================================================
-     YO'LDA yordamchisi (mascot)
-     ------------------------------------------------------------
-     Belgi SVG bilan chiziladi, harakatlar esa CSS da.
-
-     NEGA RIVE EMAS. Rive fayli (`.riv`) ni yasash uchun Rive
-     muharriri kerak — bu muhitda u yo'q. "Rive qo'shildi" deyish
-     yolg'on bo'lardi. Buning o'rniga shu yerda AYNI o'sha
-     holatlar bor va boshqaruv nomlari ham bir xil
-     (isThinking, isLoading, celebrate, greet...). Haqiqiy `.riv`
-     tayyor bo'lgan kuni u shu nomlarga ulanadi va chaqiruvchi
-     kodning birortasi o'zgarmaydi.
-
-     Harakatlar faqat `transform` va `opacity` da: ular sahifani
-     qayta joylashtirmaydi, ya'ni eski telefonda ham silliq.
-     ============================================================ */
-  .mascot{
-    position:fixed;z-index:1500;width:84px;height:84px;
-    right:calc(var(--s4) + env(safe-area-inset-right, 0px));
-    bottom:calc(var(--nav-top, 92px) + var(--s3));
-    border:none;background:none;padding:0;cursor:grab;
-    -webkit-tap-highlight-color:transparent;touch-action:none;
-    filter:drop-shadow(0 10px 18px rgba(6,40,24,0.28));
-    transition:transform 0.34s cubic-bezier(0.2,0.9,0.3,1), opacity 0.28s ease;
-  }
-  .mascot[hidden]{display:none;}
-  /* AI ekrani ochiq bo'lsa yordamchi ko'rinmaydi: u o'sha
-     ekranning o'zi, va ustida turib yuborish tugmasini yopib
-     qo'yardi. */
-  :root[data-ai-open] .mascot{display:none;}
-  /* Xabarlar RO'YXATIDA yordamchi ko'rinmaydi: u yerda uning o'z
-     qatori bor ("YO'LDA bot"), ikkinchi marta ekranda osilib
-     turishi sarlavhani yopib qo'yardi.
-
-     YOZISHMA ICHIDA esa qoladi — u yerda yuborilgan xabarga
-     kayfiyat bildiradi, ya'ni ishi bor. */
-  :root[data-tab="chat"]:not([data-chat-open="1"]) .mascot{display:none;}
-  /* Odam uni ko'chirgan bo'lsa, o'rni `left/top` bilan beriladi —
-     shuning uchun burchakka bog'lab turgan qoidalar bekor
-     qilinadi. */
-  .mascot.placed{right:auto;bottom:auto;}
-  /* Sudrab turganda silliqlash o'chadi: aks holda belgi
-     barmoqdan orqada sudralib kelardi. */
-  .mascot.dragging{transition:none;}
-  /* Yozishma ochiq bo'lsa yordamchi yozuv qatorining ustida
-     turmasin. */
-  :root[data-chat-open="1"] .mascot{z-index:1500;}
-  .mascot:active{cursor:grabbing;}
-  /* Surib yuborilganda chetga uchib ketadi. */
-  .mascot.gone{opacity:0;transform:translateX(150px) scale(0.6) rotate(16deg);pointer-events:none;}
-  /* Qaytib kelganda kichikdan kattaga. */
-  .mascot.pop{animation:mscPop 0.5s cubic-bezier(0.2,1.3,0.4,1) both;}
-  @keyframes mscPop{
-    from{opacity:0;transform:scale(0.3) translateY(26px);}
-    60%{opacity:1;transform:scale(1.08) translateY(-4px);}
-    to{opacity:1;transform:none;}
-  }
-  .mascot svg{width:100%;height:100%;display:block;overflow:visible;}
-
-  /* Qismlar alohida harakatlanadi: nafas — tana, qiyshayish —
-     bosh, pirpirash — ko'z. */
-  #msc-body{transform-origin:60px 100px;}
-  #msc-head{transform-origin:62px 72px;}
-  #msc-arm-r{transform-origin:94px 80px;}
-  #msc-arm-l{transform-origin:29px 80px;}
-  #msc-eyes{transform-origin:62px 60px;}
-
-  /* --- Tinch holat: nafas va pirpirash --- */
-  .mascot[data-state] #msc-body{animation:mscBreathe 3.6s ease-in-out infinite;}
-  @keyframes mscBreathe{
-    0%,100%{transform:translateY(0) scaleY(1) scaleX(1);}
-    50%{transform:translateY(-3px) scaleY(1.025) scaleX(0.99);}
-  }
-  .mascot[data-state] #msc-eyes{animation:mscBlink 5.4s ease-in-out infinite;}
-  @keyframes mscBlink{
-    0%,93%,100%{transform:scaleY(1);}
-    95.5%{transform:scaleY(0.12);}
-    98%{transform:scaleY(1);}
-  }
-
-  /* --- Salom va qo'l silkitish --- */
-  .mascot[data-state="greet"] #msc-arm-r,
-  .mascot[data-state="wave"] #msc-arm-r{animation:mscWave 0.62s ease-in-out 3;}
-  @keyframes mscWave{
-    0%,100%{transform:rotate(0deg);}
-    30%{transform:rotate(-30deg);}
-    70%{transform:rotate(12deg);}
-  }
-  .mascot[data-state="greet"] #msc-body{animation:mscHop 0.6s ease-in-out 2;}
-  @keyframes mscHop{
-    0%,100%{transform:translateY(0) scaleY(1);}
-    30%{transform:translateY(-10px) scaleY(1.06);}
-    60%{transform:translateY(0) scaleY(0.94);}
-  }
-
-  /* --- Quvonch --- */
-  .mascot[data-state="happy"] #msc-body{animation:mscCheer 0.5s ease-in-out 3;}
-  @keyframes mscCheer{
-    0%,100%{transform:translateY(0) rotate(0deg);}
-    25%{transform:translateY(-12px) rotate(-7deg);}
-    75%{transform:translateY(-6px) rotate(7deg);}
-  }
-  .mascot[data-state="happy"] #msc-arm-r,
-  .mascot[data-state="happy"] #msc-arm-l{animation:mscArmsUp 0.5s ease-in-out 3;}
-  @keyframes mscArmsUp{
-    0%,100%{transform:rotate(0deg);}
-    50%{transform:rotate(-22deg);}
-  }
-
-  /* --- O'ylash --- */
-  .mascot[data-state="thinking"] #msc-head{animation:mscTilt 2.4s ease-in-out infinite;}
-  @keyframes mscTilt{
-    0%,100%{transform:rotate(0deg);}
-    35%{transform:rotate(-9deg) translateY(-2px);}
-    70%{transform:rotate(-6deg);}
-  }
-  .mascot[data-state="thinking"] #msc-eyes{animation:mscLook 2.4s ease-in-out infinite;}
-  @keyframes mscLook{
-    0%,100%{transform:translateX(0);}
-    40%{transform:translateX(-4px);}
-    75%{transform:translateX(3px);}
-  }
-
-  /* --- Tinglash --- */
-  .mascot[data-state="listening"] #msc-head{animation:mscLean 1.8s ease-in-out infinite;}
-  @keyframes mscLean{
-    0%,100%{transform:rotate(0deg) scale(1);}
-    50%{transform:rotate(5deg) scale(1.03);}
-  }
-
-  /* --- Yuklanmoqda: tekis va uzluksiz --- */
-  .mascot[data-state="loading"] #msc-head{animation:mscNod 1.1s ease-in-out infinite;}
-  @keyframes mscNod{
-    0%,100%{transform:rotate(-7deg);}
-    50%{transform:rotate(7deg);}
-  }
-  .mascot[data-state="loading"] #msc-body{animation:mscBreathe 1.1s ease-in-out infinite;}
-
-  /* --- Yuk qidirish --- */
-  .mascot[data-state="searching"] #msc-head{animation:mscScan 2.2s ease-in-out infinite;}
-  @keyframes mscScan{
-    0%,100%{transform:translateX(0) rotate(0deg);}
-    30%{transform:translateX(-5px) rotate(-8deg);}
-    65%{transform:translateX(5px) rotate(8deg);}
-  }
-  .mascot[data-state="searching"] #msc-eyes{animation:mscLook 2.2s ease-in-out infinite;}
-
-  /* --- Bajarildi --- */
-  .mascot[data-state="success"] #msc-body{animation:mscHop 0.52s ease-in-out 2;}
-  .mascot[data-state="success"] #msc-arm-r{animation:mscWave 0.52s ease-in-out 2;}
-
-  /* --- Xatolik: qo'rqinchli emas, boshini chayqaydi --- */
-  .mascot[data-state="error"] #msc-head{animation:mscShake 0.42s ease-in-out 3;}
-  @keyframes mscShake{
-    0%,100%{transform:translateX(0) rotate(0deg);}
-    25%{transform:translateX(-4px) rotate(-5deg);}
-    75%{transform:translateX(4px) rotate(5deg);}
-  }
-
-  /* --- Uyqu --- */
-  .mascot[data-state="sleep"] #msc-body{animation:mscBreathe 5.6s ease-in-out infinite;}
-  .mascot[data-state="sleep"] #msc-eyes{animation:none;transform:scaleY(0.14);}
-  .mascot[data-state="sleep"] #msc-head{transform:rotate(10deg);}
-  #msc-zzz{opacity:0;}
-  .mascot[data-state="sleep"] #msc-zzz{animation:mscZzz 3.2s ease-in-out infinite;}
-  @keyframes mscZzz{
-    0%{opacity:0;transform:translate(0,0) scale(0.7);}
-    25%{opacity:0.9;}
-    100%{opacity:0;transform:translate(10px,-24px) scale(1.1);}
-  }
-
-  /* --- Bosilganda --- */
-  .mascot[data-state="tap"] #msc-body{animation:mscSquish 0.42s cubic-bezier(0.3,1.4,0.4,1) 1;}
-  @keyframes mscSquish{
-    0%{transform:scale(1,1);}
-    30%{transform:scale(1.14,0.86) translateY(4px);}
-    60%{transform:scale(0.94,1.08) translateY(-6px);}
-    100%{transform:scale(1,1);}
-  }
-
-  /* Harakatni kamaytirish yoqilgan bo'lsa belgi joyida qoladi,
-     lekin hech narsa harakatlanmaydi. */
-  @media (prefers-reduced-motion: reduce){
-    .mascot,.mascot *{animation:none !important;transition:none !important;}
-  }
 
   /* ============================================================
      Yuk tashish kvitansiyasi
@@ -11881,28 +11696,10 @@
          Rasm yuklanmasa (tarmoq, o'chirilgan fayl) chizma qaytib
          keladi: kirish ekrani — ilovaning birinchi ekrani, u yerda
          bo'sh to'rtburchak turishi mumkin emas. */
-      /* Yordamchi rasmi admin paneldan almashtiriladi. Rasm
-         qo'yilsa butun tanasi harakatlanadi (ko'z va bosh
-         alohida emas) — shuning uchun u chizmaning O'RNIGA
-         emas, `#msc-body` ICHIGA qo'yiladi: nafas, sakrash va
-         quvonch harakatlari o'z joyida qoladi. */
-      if(cfg.mascotImageUrl){
-        var mscBody = document.getElementById("msc-body");
-        if(mscBody){
-          var mscImg = new Image();
-          mscImg.onload = function(){
-            mscBody.innerHTML = "";
-            var fo = document.createElementNS("http://www.w3.org/2000/svg", "image");
-            fo.setAttribute("href", cfg.mascotImageUrl);
-            fo.setAttribute("x", "6"); fo.setAttribute("y", "14");
-            fo.setAttribute("width", "108"); fo.setAttribute("height", "108");
-            fo.setAttribute("preserveAspectRatio", "xMidYMid meet");
-            mscBody.appendChild(fo);
-          };
-          // Yuklanmasa chizma o'z joyida qoladi.
-          mscImg.src = cfg.mascotImageUrl;
-        }
-      }
+      /* `mascotImageUrl` endi ishlatilmaydi: ekranda osilib
+         turadigan yordamchi belgisi olib tashlandi. Server uni
+         hali qaytaradi — keshdan ochilgan eski sahifa o'shani
+         kutadi — bu yerda esa e'tiborsiz qoldiriladi. */
 
       if(cfg.welcomeImageUrl){
         var hero = document.querySelector(".au-hero");
@@ -15643,17 +15440,6 @@
     initChatSwipeBack(chatCard);
     document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
 
-    /* Odam yozayotganda yordamchi tinglab turadi. Har bosishda
-       emas — biroz jim turgandan keyin o'chadi, aks holda u
-       titrab turardi. */
-    var typingOff = null;
-    var msgInput = document.getElementById("fChatMessage");
-    if(msgInput) msgInput.addEventListener("input", function(){
-      if(!window.Mascot) return;
-      window.Mascot.set("isListening", true);
-      if(typingOff) clearTimeout(typingOff);
-      typingOff = setTimeout(function(){ window.Mascot.set("isListening", false); }, 1800);
-    });
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
 
     var whoBtn = document.getElementById("btnChatWho");
@@ -16013,12 +15799,6 @@
           // Yangi xabar bor — suhbat jonli, tez rejimni uzaytiramiz.
           if(chatLastSeenId !== null) markChatActivity();
           if(!scrollDown && chatLastSeenId !== null && !last.fromMe) playNotifSound();
-          /* Suhbatdoshdan kelgan xabarga ham javob beradi.
-             Birinchi ochilishda emas (chatLastSeenId hali null) —
-             aks holda eski xabarga reaksiya chiqardi. */
-          if(chatLastSeenId !== null && !last.fromMe && !last.deleted){
-            try{ if(window.Mascot) window.Mascot.react(last.text, false); }catch(e){}
-          }
         }
         chatLastSeenId = last.id;
       }
@@ -16389,7 +16169,6 @@
     if(chatCard) chatCard.classList.remove("chat-fullscreen");
     reattachChatCard();
     document.documentElement.removeAttribute("data-chat-open");
-    try{ if(window.Mascot) window.Mascot.set("isListening", false); }catch(e){}
     syncTelegramBackButton();
   }
 
@@ -16459,11 +16238,6 @@
         if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
         return;
       }
-      /* Yordamchi yuborilgan xabarga kayfiyat bilan javob
-         beradi. Matnni tushunmaydi — faqat bir nechta belgiga
-         qaraydi (lib: Mascot.react). */
-      try{ if(window.Mascot) window.Mascot.react(text, true); }catch(e){}
-
       input.value = "";
       saveChatDraft(chatWithUsername, "");
       if(isEdit) cancelChatEdit();
@@ -20062,17 +19836,6 @@
      ============================================================ */
   var toastHost = document.getElementById("toastHost");
   function toast(title, detail, kind){
-    /* Yordamchi ilovadagi xabarlarga javob beradi. Bitta joydan
-       ulanadi: har bir muvaffaqiyat va xato baribir shu yerdan
-       o'tadi, ya'ni o'nta joyga alohida chaqiruv qo'shish shart
-       emas. */
-    try{
-      if(window.Mascot){
-        if(kind === "success") window.Mascot.fire("success");
-        else if(kind === "error") window.Mascot.fire("showError");
-      }
-    }catch(e){ /* yordamchi bo'lmasa ham xabar ko'rinaveradi */ }
-
     if(!toastHost) return;
     var el = document.createElement("div");
     el.className = "toast " + (kind || "info");
@@ -22936,71 +22699,6 @@
   <aside class="ai-drawer" id="aiDrawer" hidden aria-label="Suhbatlar"></aside>
 </section>
 
-<!-- ============================================================
-     YO'LDA yordamchisi
-     ------------------------------------------------------------
-     Belgi sahifaga chizib qo'yilgan: hech qanday tashqi fayl va
-     kutubxona kutilmaydi, ya'ni u birinchi bo'yoqdayoq joyida
-     turadi. Qismlar alohida guruhlarda — har biri o'z vaqtida
-     harakatlanadi (CSS: .mascot[data-state=...]).
-     ============================================================ -->
-<button type="button" class="mascot" id="mascot" data-state="idle"
-        aria-label="YO'LDA yordamchisi" hidden>
-  <svg viewBox="0 0 120 130" aria-hidden="true">
-    <defs>
-      <linearGradient id="mscSkin" x1="0" y1="0" x2="0.4" y2="1">
-        <stop offset="0" stop-color="#5BE88A"/>
-        <stop offset="0.55" stop-color="#2FCB68"/>
-        <stop offset="1" stop-color="#17A153"/>
-      </linearGradient>
-      <linearGradient id="mscHood" x1="0.1" y1="0" x2="0.9" y2="1">
-        <stop offset="0" stop-color="#7CF0A4"/>
-        <stop offset="1" stop-color="#23B85E"/>
-      </linearGradient>
-      <radialGradient id="mscVisor" cx="0.42" cy="0.32" r="0.8">
-        <stop offset="0" stop-color="#1D3A2B"/>
-        <stop offset="1" stop-color="#07140D"/>
-      </radialGradient>
-    </defs>
-
-    <!-- Uyqudagi "z" belgilari -->
-    <g id="msc-zzz" fill="#8CF2B4" font-family="Inter,sans-serif" font-weight="700">
-      <text x="96" y="30" font-size="13">z</text>
-      <text x="104" y="19" font-size="9">z</text>
-    </g>
-
-    <g id="msc-body">
-      <!-- Qo'llar tananing ortida: oldiga chiqsa, burilganda
-           tanadan uzilib ko'rinardi. -->
-      <ellipse id="msc-arm-l" cx="26" cy="88" rx="10" ry="12" fill="url(#mscSkin)"/>
-      <ellipse id="msc-arm-r" cx="97" cy="88" rx="10" ry="12" fill="url(#mscSkin)"/>
-
-      <!-- Tana -->
-      <path d="M62 46c19 0 29 14 29 33 0 18-12 28-29 28s-29-10-29-28c0-19 10-33 29-33z"
-            fill="url(#mscSkin)"/>
-
-      <g id="msc-head">
-        <!-- Kapyushon: YO'LDA belgisidagi uchli bargsimon shakl.
-             Yuzning ORTIDAN o'tadi — oldidan o'tsa yuzni yopib
-             qo'yardi. -->
-        <path id="msc-hood"
-              d="M18 14C44 2 76 12 90 36 76 24 56 22 44 31 33 39 29 51 33 64 19 54 11 30 18 14z"
-              fill="url(#mscHood)"/>
-        <!-- Yuz: to'q shisha -->
-        <ellipse cx="62" cy="62" rx="30" ry="27" fill="url(#mscVisor)"/>
-        <!-- Shishadagi yorug'lik -->
-        <ellipse cx="48" cy="50" rx="13" ry="8" fill="#FFFFFF" opacity="0.08"
-                 transform="rotate(-18 48 50)"/>
-        <g id="msc-eyes" fill="none" stroke="#7BF5AE" stroke-width="5.5"
-           stroke-linecap="round">
-          <path d="M48 60c3-6 9-6 12 0"/>
-          <path d="M66 60c3-6 9-6 12 0"/>
-        </g>
-      </g>
-    </g>
-  </svg>
-</button>
-
 <script>
 /* ============================================================
    YO'LDA bot — ekranlar
@@ -23576,7 +23274,6 @@
     thread = null;
     screenEl.hidden = false;
     document.documentElement.setAttribute("data-ai-open", "1");
-    if(window.Mascot) window.Mascot.fire("greet");
     render();
     setFace("greet", 1600);
     loadThreads();
@@ -23659,295 +23356,5 @@
 })();
 </script>
 
-<script>
-
-/* ============================================================
-   YO'LDA yordamchisi — holatlar boshqaruvi
-   ------------------------------------------------------------
-   NOMLAR ATAYLAB RIVE NIKIDEK. Rive fayli (`.riv`) bu yerda
-   yasalmadi va yasab bo'lmaydi ham — buning uchun Rive muharriri
-   kerak. Shuning uchun harakatlar SVG va CSS bilan qilingan,
-   lekin boshqaruv nomlari bir xil qoldirildi:
-
-       Mascot.set("isThinking", true)
-       Mascot.fire("celebrate")
-
-   Haqiqiy `.riv` tayyor bo'lgan kuni shu funksiyalarning ichi
-   Rive state machine'iga ulanadi va chaqiruvchi kodning
-   birortasi o'zgarmaydi.
-
-   IKKI TUR BOSHQARUV:
-     - bayroq (`set`) — yoqilgan ekan davom etadi (o'ylash,
-       yuklanish, qidirish, uyqu);
-     - uchqun (`fire`) — bir marta o'ynaydi va o'zi qaytadi
-       (salom, quvonch, xatolik, bosilish).
-   ============================================================ */
-(function(){
-  var el = document.getElementById("mascot");
-  if(!el) return;
-
-  var HIDE_KEY = "yolda_mascot_hidden";
-  var POS_KEY = "yolda_mascot_pos";
-  var TAPS_TO_RETURN = 4;      // ekranning istalgan joyiga shuncha bosish
-  var TAP_WINDOW_MS = 1200;    // bosishlar orasidagi eng uzun tanaffus
-  var SLEEP_AFTER_MS = 90000;  // shuncha jimlikdan keyin uxlaydi
-
-  /* Bayroqlar — ustunligi bo'yicha. Yuqoridagisi pastdagisini
-     bosib ketadi: masalan yuklanayotganda uyqu ko'rinmasligi
-     kerak. */
-  var FLAGS = ["isSearching", "isLoading", "isThinking", "isListening", "isSleeping"];
-  var FLAG_STATE = {
-    isSearching: "searching", isLoading: "loading", isThinking: "thinking",
-    isListening: "listening", isSleeping: "sleep"
-  };
-  /* Uchqunlar: nomi -> [holat, necha ms]. Vaqt CSS dagi
-     animatsiya uzunligidan olingan. */
-  var SHOTS = {
-    greet: ["greet", 1900], celebrate: ["happy", 1600], showError: ["error", 1300],
-    tapReaction: ["tap", 450], success: ["success", 1100], wave: ["wave", 1900]
-  };
-
-  var flags = {};
-  var shotTimer = null;
-  var sleepTimer = null;
-
-  function baseState(){
-    for(var i = 0; i < FLAGS.length; i++){
-      if(flags[FLAGS[i]]) return FLAG_STATE[FLAGS[i]];
-    }
-    return "idle";
-  }
-
-  function apply(){
-    if(shotTimer) return;           // uchqun o'ynayapti — tegmaymiz
-    el.setAttribute("data-state", baseState());
-  }
-
-  function set(name, on){
-    if(FLAG_STATE[name] === undefined) return;
-    flags[name] = Boolean(on);
-    // Biror ish boshlandi — demak odam uyg'oq.
-    if(name !== "isSleeping" && on) wake();
-    apply();
-  }
-
-  function fire(name){
-    var shot = SHOTS[name];
-    if(!shot) return;
-    wake();
-    if(shotTimer){ clearTimeout(shotTimer); shotTimer = null; }
-    /* Sinfni qaytadan qo'yish uchun avval bo'shatamiz: bir xil
-       qiymat turganda CSS animatsiyasi qayta boshlanmaydi. */
-    el.setAttribute("data-state", "idle");
-    void el.offsetWidth;
-    el.setAttribute("data-state", shot[0]);
-    shotTimer = setTimeout(function(){
-      shotTimer = null;
-      apply();
-    }, shot[1]);
-  }
-
-  /* --- Uyqu: uzoq jimlikdan keyin --- */
-  function wake(){
-    if(flags.isSleeping){ flags.isSleeping = false; }
-    if(sleepTimer) clearTimeout(sleepTimer);
-    sleepTimer = setTimeout(function(){
-      flags.isSleeping = true;
-      apply();
-    }, SLEEP_AFTER_MS);
-  }
-
-  /* --- Ko'rinishi: surib yuborish va qaytarish --- */
-  function hidden(){
-    try{ return localStorage.getItem(HIDE_KEY) === "1"; }catch(e){ return false; }
-  }
-  function show(animate){
-    try{ localStorage.removeItem(HIDE_KEY); }catch(e){}
-    el.hidden = false;
-    el.classList.remove("gone");
-    applyPos();
-    if(animate){
-      el.classList.remove("pop");
-      void el.offsetWidth;
-      el.classList.add("pop");
-    }
-    wake();
-  }
-  function dismiss(){
-    try{ localStorage.setItem(HIDE_KEY, "1"); }catch(e){}
-    el.classList.add("gone");
-    setTimeout(function(){ if(el.classList.contains("gone")) el.hidden = true; }, 360);
-  }
-
-  /* ----------------------------------------------------------
-     Joylashuv
-     ----------------------------------------------------------
-     Yordamchini istalgan joyga qo'yish mumkin va o'rni
-     saqlanadi. O'rin PIKSELDA emas, ekran kengligiga nisbatan
-     (0..1) saqlanadi: aks holda telefon burilganda yoki boshqa
-     ekranda u ko'rinmaydigan joyga tushib qolardi.
-     ---------------------------------------------------------- */
-  function readPos(){
-    try{
-      var v = JSON.parse(localStorage.getItem(POS_KEY) || "null");
-      if(v && typeof v.fx === "number" && typeof v.fy === "number") return v;
-    }catch(e){}
-    return null;
-  }
-  function savePos(fx, fy){
-    try{ localStorage.setItem(POS_KEY, JSON.stringify({ fx:fx, fy:fy })); }catch(e){}
-  }
-  /** Ekrandan chiqib ketmasin. */
-  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
-
-  function applyPos(){
-    var pos = readPos();
-    if(!pos){ el.classList.remove("placed"); el.style.left = el.style.top = ""; return; }
-    var w = el.offsetWidth || 84, h = el.offsetHeight || 84;
-    var maxX = Math.max(0, window.innerWidth - w);
-    var maxY = Math.max(0, window.innerHeight - h);
-    el.classList.add("placed");
-    el.style.left = clamp(pos.fx * window.innerWidth, 4, maxX - 4) + "px";
-    el.style.top = clamp(pos.fy * window.innerHeight, 4, maxY - 4) + "px";
-  }
-  window.addEventListener("resize", applyPos);
-  window.addEventListener("orientationchange", function(){ setTimeout(applyPos, 250); });
-
-  /* --- Sudrash: ko'chirish, chetga chiqarsa — yashirish --- */
-  var drag = null;
-  el.addEventListener("pointerdown", function(e){
-    var r = el.getBoundingClientRect();
-    drag = {
-      x:e.clientX, y:e.clientY, ox:r.left, oy:r.top,
-      w:r.width, h:r.height, moved:false, t:Date.now()
-    };
-    el.setPointerCapture(e.pointerId);
-    el.classList.add("dragging");
-  });
-  el.addEventListener("pointermove", function(e){
-    if(!drag) return;
-    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if(Math.abs(dx) > 6 || Math.abs(dy) > 6) drag.moved = true;
-    if(!drag.moved) return;
-    el.classList.add("placed");
-    el.style.left = (drag.ox + dx) + "px";
-    el.style.top = (drag.oy + dy) + "px";
-  });
-  function endDrag(e){
-    if(!drag) return;
-    var d = drag;
-    drag = null;
-    el.classList.remove("dragging");
-    try{ el.releasePointerCapture(e.pointerId); }catch(err){}
-
-    if(!d.moved){
-      fire("tapReaction");
-      /* Yordamchi — AI ning yuzi: bosilganda uning ekrani
-         ochiladi. Ko'chirish esa boshqa ish, shuning uchun
-         faqat SURILMAGAN bosish hisobga olinadi. */
-      if(window.YoldaAi) setTimeout(function(){ window.YoldaAi.open("chat"); }, 220);
-      return;
-    }
-
-    var r = el.getBoundingClientRect();
-
-    /* Qachon YASHIRILADI, qachon shunchaki KO'CHIRILADI.
-
-       Barmoq ekrandan tashqariga chiqa olmaydi — ya'ni "yarmi
-       chiqib ketsa yashir" degan qoida telefonda hech qachon
-       ishlamasdi. Shuning uchun asosiy belgi — IRG'ITISH: tez
-       va chetga qarab. Sekin ko'chirish esa ko'chirish bo'lib
-       qolaveradi. */
-    var ms = Date.now() - d.t;
-    var dx = r.left - d.ox, dy = r.top - d.oy;
-    var fling = ms < 320 && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy);
-    var toEdge = dx > 0
-      ? (r.right > window.innerWidth - 12)
-      : (r.left < 12);
-    var mostlyOut = r.right < d.w * 0.5 || r.left > window.innerWidth - d.w * 0.5
-      || r.bottom < d.h * 0.5 || r.top > window.innerHeight - d.h * 0.5;
-    if(mostlyOut || (fling && toEdge)){ dismiss(); return; }
-
-    savePos(r.left / window.innerWidth, r.top / window.innerHeight);
-    applyPos();
-  }
-  el.addEventListener("pointerup", endDrag);
-  el.addEventListener("pointercancel", endDrag);
-
-  /* --- To'rt marta bosish: qaytarish ---
-     Faqat yordamchi yashirilgan bo'lsa sanaladi, ya'ni oddiy
-     ishlayotgan odamning bosishlari hech narsani buzmaydi. */
-  var taps = 0, tapAt = 0;
-  document.addEventListener("pointerdown", function(e){
-    if(!hidden()) return;
-    if(e.target && e.target.closest && e.target.closest("#mascot")) return;
-    var now = Date.now();
-    taps = (now - tapAt < TAP_WINDOW_MS) ? taps + 1 : 1;
-    tapAt = now;
-    if(taps >= TAPS_TO_RETURN){
-      taps = 0;
-      show(true);
-      fire("greet");
-    }
-  }, { passive: true });
-
-  /* ----------------------------------------------------------
-     Xabarga his-tuyg'u bilan javob
-     ----------------------------------------------------------
-     Yozishmada xabar yuborilganda yoki kelganda yordamchi
-     unga mos holatga o'tadi.
-
-     Bu MATNNI TUSHUNISH emas — bir nechta oddiy belgiga
-     qarash: savol belgisi, minnatdorchilik so'zlari, muammo
-     haqidagi so'zlar. Shuning uchun u hech qachon javob
-     yozmaydi va hech narsani tasdiqlamaydi, faqat kayfiyat
-     bildiradi. Tushunmasa — oddiygina bosh irg'aydi.
-     ---------------------------------------------------------- */
-  var GOOD = /(rahmat|raxmat|zo'r|zor\b|yaxshi|ajoyib|kelishdik|ok\b|xop|bo'ldi|tayyor|👍|❤️|😊|🙏|😁|🎉)/i;
-  var BAD = /(muammo|xato|nosoz|kechik|kech qold|uzr|kechir|bekor|yo'q\b|yomon|😢|😠|😡|😔)/i;
-  var ASK = /[?؟]/;
-
-  function react(text, mine){
-    var t = String(text || "");
-    if(!t) return;
-    if(BAD.test(t)){ fire("showError"); return; }
-    if(GOOD.test(t)){ fire("celebrate"); return; }
-    /* Savol kelgan bo'lsa — o'ylaydi; savolni O'ZI bergan
-       bo'lsa — javobni kutib tinglaydi. */
-    if(ASK.test(t)){
-      set("isThinking", true);
-      setTimeout(function(){ set("isThinking", false); }, mine ? 1200 : 2400);
-      return;
-    }
-    fire("wave");
-  }
-
-  /* --- Tashqi dunyo uchun --- */
-  /* Tarmoq uzilsa — xavotir, qaytsa — quvonch. Bu ikkisi
-     ilovadagi xabarlar orqali o'tmaydi, shuning uchun alohida. */
-  window.addEventListener("offline", function(){ fire("showError"); });
-  window.addEventListener("online", function(){ fire("celebrate"); });
-
-  window.Mascot = {
-    set: set,
-    fire: fire,
-    react: react,
-    state: function(){ return el.getAttribute("data-state"); },
-    show: show,
-    hide: dismiss,
-    isHidden: hidden
-  };
-
-  if(hidden()){ el.hidden = true; }
-  else {
-    el.hidden = false;
-    applyPos();
-    wake();
-    // Ilova ochilganda salomlashadi.
-    setTimeout(function(){ fire("greet"); }, 900);
-  }
-})();
-
-</script>
 </body>
 </html>
