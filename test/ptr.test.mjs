@@ -231,6 +231,31 @@ check('sarlavha o\'lchanadi', /function ptrTop\(\)\{[\s\S]*?querySelector\("nav\
 check('ochiq suhbatda sahifa tortilmaydi',
   /if\(document\.querySelector\("\.chat-fullscreen"\)\) return;/.test(html));
 
+/* ---------- Chegaradan nariga qimirlamaydi ----------
+   Telefon titradi, halqa yopildi — javob berildi. Shundan keyin
+   ham ekran cho'zilib ketsa, bu "yana bir narsa bo'ladi" degan
+   yolg'on ishora bo'lardi; qo'l esa baribir bir joyda to'xtaydi. */
+check('eng ko\'p surilish — chegaraning o\'zi',
+  (html.match(/var MAX = THRESHOLD;/g) || []).length === 2,
+  (html.match(/var MAX = THRESHOLD;/g) || []).length);
+/* Masofa: barmoq yetarlicha yurishi kerak, aks holda ro'yxatni
+   bir surganda ham yangilanib ketardi. */
+const chegara = [...html.matchAll(/var THRESHOLD = (\d+);/g)].map((m) => +m[1]);
+check('ikkala tortishning ham chegarasi bor', chegara.length === 2, chegara);
+check('chegara yetarlicha uzoq', chegara.every((v) => v >= 75), chegara);
+
+/* ---------- Belgi ekranning ostida ----------
+   Tortilganda bo'limlar pastga suriladi va belgi ochilgan
+   bo'shliqda ko'rinadi; qaytganda esa ekran uning ustini yopadi.
+   Ilgari u eng ustda turardi va qaytayotgan ekranning ustiga
+   chiqib qolardi. */
+if (ptr) {
+  check('belgi manfiy qavatda', /z-index:-1;/.test(ptr[0]), ptr[0]);
+}
+/* Buning uchun bo'limlarning O'Z FONI bo'lishi shart: fon
+   shaffof bo'lsa, ostidagi belgi ko'rinib turaverardi. */
+check('bo\'limlarning foni bor', /\n {2}main\{background:var\(--paper\);\}/.test(html));
+
 /* ---------- Yangi versiyani ilovaning o'zi ko'radi ----------
    O'rnatilgan ilova kunlab yopilmaydi: sahifa qaytadan
    ochilmagach, kod birinchi ochilgan kunidagicha qolib ketardi.

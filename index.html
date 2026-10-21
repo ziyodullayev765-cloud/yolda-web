@@ -3494,8 +3494,19 @@
 
   /* Yuqoridan pastga tortib yangilash — o'rnatilgan ilova uchun.
      Brauzerda buni Chrome/Safari o'zi qiladi, u yerda bu qo'shilmaydi. */
+  /* BELGI EKRANNING OSTIDA TURADI. Tortilganda bo'limlar pastga
+     suriladi va u ochilgan bo'shliqda ko'rinadi; qaytganda esa
+     ekran uning ustini yopib, belgi ichkariga kirib ketadi.
+     Ilgari u eng ustda edi va qaytayotgan ekranning ustiga
+     chiqib qolardi.
+
+     Buning uchun ikki narsa kerak: belgi manfiy qavatda tursin
+     va bo'limlarning O'Z FONI bo'lsin — fon shaffof bo'lsa,
+     ostidagi belgi ko'rinib turaverardi. Fon sahifanikining
+     aynan o'zi, ya'ni ko'zga hech qanday o'zgarish ko'rinmaydi. */
+  main{background:var(--paper);}
   .ptr{
-    position:fixed;top:0;left:50%;z-index:120;width:44px;height:44px;margin-left:-22px;
+    position:fixed;top:0;left:50%;z-index:-1;width:44px;height:44px;margin-left:-22px;
     color:var(--muted);
     display:flex;align-items:center;justify-content:center;
     transform:translateY(-56px);opacity:0;pointer-events:none;
@@ -22259,8 +22270,12 @@
 
     var indicator = makePtrIndicator();
 
-    var THRESHOLD = 70;   // shuncha tortilsa yangilanadi
-    var MAX = 112;        // undan nariga cho'zilmaydi
+    var THRESHOLD = 77;   // shuncha tortilsa yangilanadi
+    /* CHEGARADAN NARIGA QIMIRLAMAYDI. Telefon titradi, halqa
+       yopildi — javob berildi. Shundan keyin ham ekran cho'zilib
+       ketsa, bu "yana bir narsa bo'ladi" degan yolg'on ishora
+       bo'lardi; qo'l esa baribir bir joyda to'xtab qoladi. */
+    var MAX = THRESHOLD;
     var startX = 0, startY = 0, pulling = false, refreshing = false;
 
     function sheetOpen(){
@@ -22401,8 +22416,8 @@
   function initChatPullRefresh(){
     var ind = makePtrIndicator();
 
-    var THRESHOLD = 68;   // shuncha tortilsa yangilanadi
-    var MAX = 108;        // undan nariga cho'zilmaydi
+    var THRESHOLD = 75;   // shuncha tortilsa yangilanadi
+    var MAX = THRESHOLD;  // chegaradan nariga qimirlamaydi
     var startX = 0, startY = 0, pulling = false, busy = false, armed = false;
 
     function draw(dist){
