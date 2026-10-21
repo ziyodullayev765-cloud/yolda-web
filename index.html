@@ -2022,6 +2022,34 @@
   .notif-title{font-weight:600;font-size:14px;line-height:1.4;}
   .notif-body{font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.5;white-space:pre-line;}
   .notif-time{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  /* O'chirish tugmasi — qatorning o'ng chekkasida, xira. Yozuvning
+     o'zidan ko'zni tortib olmasligi kerak, lekin barmoqqa
+     yetarlicha katta bo'lsin. */
+  .notif-del{
+    flex:none;margin-left:auto;align-self:flex-start;
+    width:30px;height:30px;border-radius:50%;
+    border:none;background:none;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .notif-del .ic-svg{font-size:15px;}
+  .notif-del:active{background:var(--paper-dark);color:var(--ink);}
+  /* Yo'qolishi ko'rinib tursin: qator avval so'nadi, keyin
+     o'rni yopiladi. */
+  .notif-item.going{
+    opacity:0;transform:translateX(16px);
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .notif-head{
+    display:flex;align-items:center;justify-content:flex-end;
+    padding-bottom:var(--s2);
+  }
+  .notif-clear{
+    border:none;background:none;cursor:pointer;padding:6px 2px;
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;
+    color:var(--muted);
+  }
+  .notif-clear:active{color:var(--bad, #DC2626);}
 
   /* Takliflar — yuk egasi taqqoslab tanlaydigan kartochkalar. */
   .offer-card{
@@ -7492,6 +7520,7 @@
       "nav.trucks": "Mashinalar", "nav.life": "Life",
 
       "myload.title": "Mening yukim", "myload.back": "Orqaga",
+      "notif.clearAll": "Hammasini o'chirish",
       "nav.myload": "Yukim",
       "myload.call": "Qo'ng'iroq", "myload.message": "Xabar",
       "loads.driverTitle": "Haydovchi",
@@ -8057,6 +8086,7 @@
       "nav.trucks": "Машины", "nav.life": "Life",
 
       "myload.title": "Мой груз", "myload.back": "Назад",
+      "notif.clearAll": "Очистить все",
       "nav.myload": "Мой груз",
       "myload.call": "Позвонить", "myload.message": "Сообщение",
       "loads.driverTitle": "Водитель",
@@ -8618,6 +8648,7 @@
       "nav.trucks": "Vehicles", "nav.life": "Life",
 
       "myload.title": "My load", "myload.back": "Back",
+      "notif.clearAll": "Clear all",
       "nav.myload": "My load",
       "myload.call": "Call", "myload.message": "Message",
       "loads.driverTitle": "Driver",
@@ -16915,6 +16946,127 @@
     }).catch(function(){ /* nishon — majburiy emas */ });
   }
 
+  /* ---------- Ro'yxatning o'zi ----------
+     Alohida funksiya: ro'yxat uch joyda qaytadan chiziladi —
+     ochilganda, bittasi o'chirilganda va hammasi tozalanganda. */
+  function notifRowHtml(i){
+    return '<div class="notif-item" data-notif="'+escapeHtml(i.id || "")+'">'
+      + '<span class="notif-dot'+(i.unread ? "" : " read")+'"></span>'
+      + '<div style="min-width:0;">'
+      +   (i.title ? '<div class="notif-title">'+escapeHtml(i.title)+'</div>' : "")
+      +   (i.body ? '<div class="notif-body">'+escapeHtml(i.body)+'</div>' : "")
+      +   '<div class="notif-time">'+escapeHtml(truckRelativeTime(i.at))+'</div>'
+      + '</div>'
+      + (i.id
+          ? '<button type="button" class="notif-del" data-notif-del="'+escapeHtml(i.id)+'" '
+            + 'aria-label="O\'chirish">' + icon("iconClose") + '</button>'
+          : "")
+      + '</div>';
+  }
+
+  function notifEmptyHtml(){
+    return '<div class="empty-state">' + icon("iconBell")
+      + '<p data-i18n="notif.empty">Hozircha bildirishnoma yo\'q.</p></div>';
+  }
+
+  function renderNotifList(box, items){
+    if(!box) return;
+    if(!items.length){
+      box.innerHTML = notifEmptyHtml();
+      applyLang();
+      return;
+    }
+    box.innerHTML =
+      '<div class="notif-head">'
+      +   '<button type="button" class="notif-clear" id="btnNotifClear" '
+      +     'data-i18n="notif.clearAll">Hammasini o\'chirish</button>'
+      + '</div>'
+      + items.map(notifRowHtml).join("");
+    applyLang();
+
+    box.querySelectorAll("[data-notif-del]").forEach(function(btn){
+      btn.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var row = btn.closest(".notif-item");
+        var id = btn.getAttribute("data-notif-del");
+        btn.disabled = true;
+        /* Avval ko'zga ko'rinadigan javob: qator so'nadi. Server
+           javobi kelgach ro'yxat qaytadan chiziladi — ya'ni
+           sanoq ham, qolganlari ham haqiqat bo'yicha. */
+        if(row) row.classList.add("going");
+        haptic("light");
+        notifDelete(id).then(function(body){
+          renderNotifList(box, body.notifications || []);
+          notifSetBadge(body.unread || 0);
+        }).catch(function(){
+          if(row) row.classList.remove("going");
+          btn.disabled = false;
+          toast("O'chirib bo'lmadi, qayta urinib ko'ring");
+        });
+      });
+    });
+
+    /* "Hammasini o'chirish" IKKI BOSISHDA bo'ladi: birinchisida
+       tugma savolga aylanadi, ikkinchisida o'chadi. Uch soniyada
+       javob bo'lmasa o'zi ortga qaytadi.
+
+       Nega alohida oyna emas: ro'yxatning o'zi oynada ochilgan,
+       ustiga ikkinchisini qo'yib bo'lmaydi. Nega to'g'ridan
+       emas: bu qaytarib bo'lmaydigan ish, tasodifan bosilmasin. */
+    var clear = box.querySelector("#btnNotifClear");
+    if(clear) clear.addEventListener("click", function(){
+      if(clear.getAttribute("data-armed") !== "1"){
+        clear.setAttribute("data-armed", "1");
+        clear.removeAttribute("data-i18n");
+        clear.textContent = "Rostdan o'chirilsinmi?";
+        clear.style.color = "var(--bad, #DC2626)";
+        haptic("warning");
+        clearTimeout(clear.__back);
+        clear.__back = setTimeout(function(){
+          clear.removeAttribute("data-armed");
+          clear.setAttribute("data-i18n", "notif.clearAll");
+          clear.textContent = t("notif.clearAll") || "Hammasini o'chirish";
+          clear.style.color = "";
+        }, 3000);
+        return;
+      }
+      clearTimeout(clear.__back);
+      clear.disabled = true;
+      notifRequest("notifications-clear").then(function(body){
+        renderNotifList(box, body.notifications || []);
+        notifSetBadge(0);
+        haptic("success");
+      }).catch(function(){
+        clear.disabled = false;
+        toast("O'chirib bo'lmadi, qayta urinib ko'ring");
+      });
+    });
+  }
+
+  function notifSetBadge(n){
+    notifUnread = n;
+    var badge = document.getElementById("notifBadge");
+    if(!badge) return;
+    badge.textContent = n > 9 ? "9+" : String(n);
+    badge.hidden = n === 0;
+  }
+
+  /** Bitta bildirishnomani o'chirish so'rovi. */
+  function notifDelete(id){
+    return fetch("/api/profile?action=notification-delete", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id
+      })
+    }).then(function(r){
+      return r.json().then(function(b){
+        if(!r.ok) throw new Error(b.error || "Xato");
+        return b;
+      });
+    });
+  }
+
   function openNotifications(){
     Sheet.open({
       title: t("settings.notifications") || "Bildirishnomalar",
@@ -16925,21 +17077,8 @@
         notifRequest("notifications").then(function(body){
           var box = container.querySelector(".sheet-body") || container;
           var items = body.notifications || [];
-          if(!items.length){
-            box.innerHTML = '<div class="empty-state">' + icon("iconBell")
-              + '<p data-i18n="notif.empty">Hozircha bildirishnoma yo\'q.</p></div>';
-            applyLang();
-            return;
-          }
-          box.innerHTML = items.map(function(i){
-            return '<div class="notif-item">'
-              + '<span class="notif-dot'+(i.unread ? "" : " read")+'"></span>'
-              + '<div style="min-width:0;">'
-              +   (i.title ? '<div class="notif-title">'+escapeHtml(i.title)+'</div>' : "")
-              +   (i.body ? '<div class="notif-body">'+escapeHtml(i.body)+'</div>' : "")
-              +   '<div class="notif-time">'+escapeHtml(truckRelativeTime(i.at))+'</div>'
-              + '</div></div>';
-          }).join("");
+          renderNotifList(box, items);
+          if(!items.length) return;
           // Ochilgan zahoti o'qilgan deb belgilanadi — ro'yxatni ko'rish
           // aynan shu degani.
           notifRequest("notifications-seen").then(function(){

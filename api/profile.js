@@ -26,11 +26,12 @@
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import {
   kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvSmembers, kvRange,
-  kvIncr, kvExpire,
+  kvIncr, kvExpire, kvLrem,
 } from '../lib/kv.js';
 import { MAX_SEARCHES, searchesKey } from '../lib/savedSearch.js';
 import { ensurePublicId } from '../lib/publicId.js';
-import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen } from '../lib/notify.js';
+import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen,
+  deleteNotification, clearNotifications } from '../lib/notify.js';
 import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
 import { deleteAccount, activeOrdersFor } from '../lib/deleteAccount.js';
 // Yuk turlari ro'yxati bitta joydan olinadi — haydovchi "nima
@@ -600,6 +601,25 @@ const handleNotifications = async (req, res, action) => {
     await markNotificationsSeen(identity);
     return res.status(200).json({ ok: true, unread: 0 });
   }
+
+  /* O'chirish FAQAT O'ZINIKI: identity so'rovdan emas, kirish
+     belgisidan olinadi, ya'ni boshqa odamning bildirishnomasini
+     o'chirib bo'lmaydi. */
+  if (action === 'notification-delete') {
+    const id = String(body.id || '');
+    if (!id) return res.status(400).json({ error: 'id kerak' });
+    await deleteNotification(identity, id, kvRange, kvLrem);
+    /* Yo'q bo'lsa ham "ok": odam ikki marta bosgan yoki yozuv
+       chegaradan chiqib ketgan bo'lishi mumkin — bu xato emas. */
+    const after = await readNotifications(identity, kvRange);
+    return res.status(200).json({ ok: true, notifications: after.items, unread: after.unread });
+  }
+
+  if (action === 'notifications-clear') {
+    await clearNotifications(identity, kvDel);
+    return res.status(200).json({ ok: true, notifications: [], unread: 0 });
+  }
+
   const { items, unread } = await readNotifications(identity, kvRange);
   return res.status(200).json({ ok: true, notifications: items, unread });
 };
@@ -965,7 +985,8 @@ export default async function handler(req, res) {
   if (action === 'searches' || action === 'save-search' || action === 'delete-search') {
     return handleSearches(req, res, action);
   }
-  if (action === 'notifications' || action === 'notifications-seen') {
+  if (action === 'notifications' || action === 'notifications-seen'
+      || action === 'notification-delete' || action === 'notifications-clear') {
     return handleNotifications(req, res, action);
   }
   if (action === 'link-telegram-start') return linkTelegramStart(req, res);
