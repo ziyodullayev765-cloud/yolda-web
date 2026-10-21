@@ -29,63 +29,69 @@ const check = (name, ok, extra) => {
   fails.push(name + (extra === undefined ? '' : '  → ' + JSON.stringify(extra)));
 };
 
-/* ---------- Tayoqchalar ----------
-   Ular BITTALAB yonadi: nechtasi yonishi tortilgan masofadan
-   keladi. Hisobni CSS ning o'zi qiladi — `--ptr-shown` (nechtasi
-   yondi) va `--i` (tayoqchaning raqami) ayirmasi. Manfiy chiqsa
-   brauzer uni nolga qisadi, ya'ni navbati kelmagan tayoqcha
-   ko'rinmaydi. */
-const bar = html.match(/\n {2}\.ptr-bar\{[\s\S]*?\n {2}\}/);
-check('.ptr-bar qoidasi topildi', Boolean(bar));
-if (bar) {
-  check('rangni belgidan oladi', /background:currentColor/.test(bar[0]), bar[0]);
-  check('navbati kelganda yonadi',
-    /opacity:calc\(var\(--ptr-shown, 0\) - var\(--i\) \+ 1\)/.test(bar[0]), bar[0]);
-  /* Yonishi birdan emas, yumshoq — lekin aylanayotganda bu
-     o'tish o'chiriladi, aks holda har qadam loyqalanardi. */
-  check('yonishi yumshoq', /transition:opacity [\d.]+s/.test(bar[0]), bar[0]);
-  check('animatsiya tayoqchaga qotirib qo\'yilmagan', !/animation:/.test(bar[0]), bar[0]);
+/* ---------- Halqa ----------
+   Belgi — halqa: ostida xira iz, ustida chiziladigan yoy.
+   Ilgari o'n ikkita tayoqcha edi va ular bittalab yonardi;
+   aylanishi esa sakrab-sakrab, qo'pol ko'rinardi. */
+const arc = html.match(/\n {2}\.ptr-arc\{[\s\S]*?\n {2}\}/);
+check('.ptr-arc qoidasi topildi', Boolean(arc));
+if (arc) {
+  check('rangni belgidan oladi', /stroke:currentColor/.test(arc[0]), arc[0]);
+  /* Yoyning boshi TEPADA. SVG da nol nuqta o'ngda, shuning uchun
+     chorak aylana burib qo'yiladi. */
+  check('yoy tepadan boshlanadi', /transform:rotate\(-90deg\)/.test(arc[0]), arc[0]);
+  /* Uzunlik — aylananing o'zi: 2πr, r = 18 → 113.1.
+     O'LCHOV BIRLIGI SHART: `stroke-dashoffset` CSS da uzunlik
+     kutadi va birliksiz son butun qoidani yaroqsiz qiladi — yoy
+     esa doim to'liq chizilgan bo'lib qolardi. */
+  check('yoy uzunligi halqaga teng', /stroke-dasharray:113\.1px;/.test(arc[0]), arc[0]);
+  check('uzunlik masofadan keladi',
+    /stroke-dashoffset:calc\(113\.1px - 113\.1px \* var\(--ptr-progress, 0\)\)/.test(arc[0]), arc[0]);
 }
-check('aylanayotganda hammasi yonadi',
-  /\.ptr-live \.ptr-bar\{opacity:calc\(1 - \(var\(--i\) - 1\) \* 0\.065\);transition:none;\}/.test(html));
+check('ostida xira iz bor', /\.ptr-track\{stroke:currentColor;opacity:0\.\d+;\}/.test(html));
 
-/* ---------- O'n ikkita o'rin ---------- */
-const rules = [...html.matchAll(
-  /\.ptr-bar:nth-child\((\d+)\)\{--i:(\d+);transform:rotate\((\d+)deg\) translate\(0,-130%\);\}/g)];
-check('o\'n ikkita tayoqchaning qoidasi bor', rules.length === 12, rules.length);
-if (rules.length === 12) {
-  const n = rules.map((r) => +r[1]);
-  const i = rules.map((r) => +r[2]);
-  const deg = rules.map((r) => +r[3]);
-  check('raqamlari 1 dan 12 gacha', n.join() === [1,2,3,4,5,6,7,8,9,10,11,12].join(), n);
-  /* `--i` o'rin bilan bir xil bo'lishi SHART: yorqinlik hisobi
-     aynan shunga tayanadi. */
-  check('--i o\'rin bilan bir xil', i.join() === n.join(), i);
-  /* Har biri 30 daraja burilgan: 12 × 30 = 360. */
-  check('doira teng bo\'lingan', deg.join() === [0,30,60,90,120,150,180,210,240,270,300,330].join(), deg);
+/* ---------- Chegara: titrash va bir aylanish ----------
+   Chegaraga yetganda telefon bir titraydi va halqa bir marta
+   aylanib qo'yadi — "endi qo'yib yuborsangiz bo'ladi". */
+check('chegarada bir aylanadi',
+  /\.ptr-armed \.ptr-ring\{animation:ptrSnap [\d.]+s cubic-bezier\([^)]*\) 1;\}/.test(html));
+check('bir aylanish — to\'liq doira',
+  /@keyframes ptrSnap\{from\{transform:rotate\(0deg\);\}to\{transform:rotate\(360deg\);\}\}/.test(html));
+const prog = html.match(/function ptrProgress\(el, dist, threshold\)\{[\s\S]*?\n {2}\}/);
+check('ptrProgress topildi', Boolean(prog));
+if (prog) {
+  check('chegarada titraydi', /haptic\("medium"\)/.test(prog[0]), prog[0]);
+  /* Faqat bir marta: barmoq chegara atrofida qimirlab tursa,
+     telefon tinimsiz titrab turmasligi kerak. */
+  check('titrash bir martadan', /if\(!el\.classList\.contains\("ptr-armed"\)\)/.test(prog[0]), prog[0]);
+  check('orqaga surilsa belgi qaytadi', /el\.classList\.remove\("ptr-armed"\)/.test(prog[0]), prog[0]);
+  /* Teginish bo'shlig'i hisobdan chiqariladi: brauzer taxminan
+     15 pikseldan keyin xabar beradi. */
+  check('teginish bo\'shlig\'i hisobga olinadi', /dist - PTR_SLOP/.test(prog[0]), prog[0]);
 }
+check('ikkala tortish ham shu hisobdan foydalanadi',
+  (html.match(/ptrProgress\(\w+, eased, THRESHOLD\)/g) || []).length === 2);
 
 /* ---------- Qo'yib yuborilgandan keyingi aylanish ----------
-   SAKRAB aylanadi: `steps(12)` bilan har qadam aynan bitta
-   tayoqchaga to'g'ri keladi. Tekis aylanish xunuk ko'rinardi —
-   tayoqchalar bir-biriga surilib, loyqalanib ketardi. */
-check('qadamlab aylanadi',
-  /\.ptr-live \.ptr-loader\{animation:ptrSpin [\d.]+s steps\(12\) infinite;\}/.test(html));
-check('bir aylana — to\'liq doira',
-  /@keyframes ptrSpin\{to\{transform:rotate\(360deg\);\}\}/.test(html));
-/* Harakat kamaytirilganda g'ildirak aylanmaydi — tayoqchalar
-   o'z joyida yonib turadi. */
+   Ikki harakat bir vaqtda: halqa aylanadi, yoy esa
+   cho'zilib-qisqaradi. Davomiyliklari teng emas, shuning uchun
+   naqsh takrorlanmaydi va aylanish "tirik" ko'rinadi. */
+check('halqa tekis aylanadi',
+  /\.ptr-live \.ptr-ring\{animation:ptrRotate [\d.]+s linear infinite;\}/.test(html));
+check('yoy cho\'zilib-qisqaradi',
+  /\.ptr-live \.ptr-arc\{\s*\n\s*animation:ptrDash [\d.]+s ease-in-out infinite;/.test(html));
+const dash = html.match(/@keyframes ptrDash\{[\s\S]*?\n {2}\}/);
+check('ptrDash topildi', Boolean(dash));
+if (dash) {
+  check('yoy qisqadan uzunga va qaytadi',
+    /0%\{stroke-dasharray:2px/.test(dash[0]) && /50%\{stroke-dasharray:80px/.test(dash[0])
+    && /100%\{stroke-dasharray:2px/.test(dash[0]), dash[0]);
+}
+/* Harakat kamaytirilganda hech narsa aylanmaydi, lekin belgi
+   ko'rinib turadi — ish ketayotgani bilinsin. */
 check('harakat kamaytirilganda aylanmaydi',
-  /\[data-reduce-motion="1"\] \.ptr-live \.ptr-loader\{animation:none;\}/.test(html)
-  && /@media \(prefers-reduced-motion: reduce\)\{\s*\n\s*\.ptr-live \.ptr-loader\{animation:none;\}/.test(html));
-/* Nechtasi yonishi ikkala tortishda ham masofadan hisoblanadi.
-   Brauzer teginishni ~15 pikseldan keyin "surish" deb hisoblaydi,
-   shu bo'shliq hisobdan chiqariladi — aks holda belgi birdan
-   uch-to'rt tayoqcha bilan paydo bo'lardi. */
-check('yonganlar soni masofadan keladi',
-  (html.match(/Math\.max\(0, eased - PTR_SLOP\) \/ \(THRESHOLD - PTR_SLOP\) \* 12/g) || []).length === 2,
-  (html.match(/setProperty\("--ptr-shown"/g) || []).length);
-check('teginish bo\'shlig\'i aytilgan', /var PTR_SLOP = \d+;/.test(html));
+  /\[data-reduce-motion="1"\] \.ptr-armed \.ptr-ring,/.test(html)
+  && /@media \(prefers-reduced-motion: reduce\)\{\s*\n\s*\.ptr-armed \.ptr-ring,\.ptr-live \.ptr-ring,\.ptr-live \.ptr-arc\{animation:none;\}/.test(html));
 
 /* ---------- Belgining o'zi ---------- */
 const ptr = html.match(/\n {2}\.ptr\{[\s\S]*?\n {2}\}/);
@@ -261,8 +267,8 @@ check('uzoq turib qaytganda darhol tekshiriladi',
 check('belgi bitta joyda yasaladi', /function makePtrIndicator\(\)\{/.test(html));
 const make = html.match(/function makePtrIndicator\(\)\{[\s\S]*?\n {2}\}/);
 if (make) {
-  check('o\'n ikkita tayoqcha qo\'yiladi',
-    /for\(var i = 0; i < 12; i\+\+\)/.test(make[0]) && /ptr-bar/.test(make[0]), make[0]);
+  check('halqa chiziladi',
+    /ptr-ring/.test(make[0]) && /ptr-track/.test(make[0]) && /ptr-arc/.test(make[0]), make[0]);
 }
 /* Ikkala tortib yangilash ham shu belgidan foydalanadi — ilgari
    ularning har biri o'z nusxasini yozib qo'ygandi. */

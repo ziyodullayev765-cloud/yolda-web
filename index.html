@@ -3474,58 +3474,72 @@
   }
 
   /* ---------- Tortish belgisi ----------
-     O'n ikkita tayoqcha doira bo'ylab tiziladi. Ular ikki xil
-     holatda bo'ladi:
+     Halqa. Uning uch holati bor va uchalasi bir-biriga qo'shilib
+     ketadi:
 
-     1. TORTAYOTGANDA — bittalab yonadi. Nechtasi yonishi tortilgan
-        masofadan keladi: yarim yo'lda oltitasi, chegaraga yetganda
-        o'n ikkitasi. Oxirgisi to'satdan emas, asta yonadi, chunki
-        hisob kasr son (masalan 7.4 — yettitasi to'liq, sakkizinchisi
-        choraqdan ko'proq).
+     1. TORTAYOTGANDA — yoy barmoq ortidan chiziladi. Masofa
+        ulushga aylanadi (`--ptr-progress`), ulush esa chiziqning
+        uzunligiga: nol — yoy yo'q, bir — halqa to'liq yopiladi.
+        Hech narsa aylanmaydi, chunki bu hali javob emas, hisob.
 
-        Buni CSS o'zi hisoblaydi: `--ptr-shown` (nechtasi yondi) va
-        `--i` (tayoqchaning raqami) ayirmasi. Manfiy chiqsa brauzer
-        uni nolga qisadi — ya'ni navbati kelmagan tayoqcha
-        ko'rinmaydi.
+     2. CHEGARAGA YETGANDA — halqa bir marta to'liq aylanib
+        qo'yadi (`.ptr-armed`) va telefon bir titraydi. Shundan
+        odam qo'lini qo'yib yuborsa bo'lishini biladi.
 
-     2. QO'YIB YUBORILGANDAN KEYIN — hammasi yonadi, boshi to'q,
-        dumi xira, va g'ildirak SAKRAB aylanadi: `steps(12)` bilan
-        har qadam aynan bitta tayoqchaga to'g'ri keladi. Tekis
-        aylanish bu yerda xunuk ko'rinardi — tayoqchalar bir-biriga
-        surilib, loyqalanib ketardi. */
-  .ptr-loader{position:relative;width:100%;height:100%;}
-  .ptr-live .ptr-loader{animation:ptrSpin 0.9s steps(12) infinite;}
-  @keyframes ptrSpin{to{transform:rotate(360deg);}}
-  /* Harakat kamaytirilganda g'ildirak aylanmaydi — tayoqchalar
-     o'z joyida yonib turadi. */
-  :root[data-reduce-motion="1"] .ptr-live .ptr-loader{animation:none;}
+     3. QO'YIB YUBORILGANDAN KEYIN — yoy uzunligi o'zgarib,
+        halqa tinimsiz aylanadi. Bu ikki harakat bir vaqtda
+        ketadi va ularning davomiyligi teng emas, shuning uchun
+        naqsh takrorlanmaydi — aylanish "tirik" ko'rinadi.
+
+     NEGA SVG. Yoyni chizmasdan ko'rsatib bo'lmaydi: `stroke-dasharray`
+     bilan aylananing qancha qismi chizilishini pikselgacha aniq
+     berish mumkin. Tayoqchalar bilan bu faqat o'n ikki bosqichda
+     chiqardi va sakrab-sakrab ko'rinardi. */
+  .ptr-ring{width:100%;height:100%;display:block;overflow:visible;}
+  .ptr-ring circle{
+    fill:none;stroke-width:3;stroke-linecap:round;
+    cx:22px;cy:22px;r:18px;
+  }
+  /* Ostidagi xira halqa: yoy qayerda yurayotgani ko'rinsin. */
+  .ptr-track{stroke:currentColor;opacity:0.16;}
+  /* Yoyning o'zi. Boshi tepada: SVG da nol nuqta o'ngda. */
+  .ptr-arc{
+    stroke:currentColor;
+    transform:rotate(-90deg);transform-origin:22px 22px;
+    /* O'lchov birligi SHART: `stroke-dashoffset` CSS da uzunlik
+       kutadi va birliksiz son butun qoidani yaroqsiz qiladi —
+       yoy esa doim to'liq chizilgan bo'lib qolardi. */
+    stroke-dasharray:113.1px;
+    stroke-dashoffset:calc(113.1px - 113.1px * var(--ptr-progress, 0));
+  }
+
+  /* Chegaraga yetdi — bir marta aylanib qo'yadi. */
+  .ptr-armed .ptr-ring{animation:ptrSnap 0.5s cubic-bezier(0.34,1.2,0.5,1) 1;}
+  @keyframes ptrSnap{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+  /* Qo'yib yuborilgandan keyin. */
+  .ptr-live .ptr-ring{animation:ptrRotate 1.6s linear infinite;}
+  .ptr-live .ptr-arc{
+    animation:ptrDash 1.3s ease-in-out infinite;
+    stroke-dashoffset:0;
+  }
+  @keyframes ptrRotate{to{transform:rotate(360deg);}}
+  @keyframes ptrDash{
+    0%{stroke-dasharray:2px 113px;stroke-dashoffset:0px;}
+    50%{stroke-dasharray:80px 113px;stroke-dashoffset:-18px;}
+    100%{stroke-dasharray:2px 113px;stroke-dashoffset:-112px;}
+  }
+  /* Harakat kamaytirilganda: halqa aylanmaydi, yoy qotib turadi.
+     Belgi baribir ko'rinadi — ish ketayotgani bilinsin. */
+  :root[data-reduce-motion="1"] .ptr-armed .ptr-ring,
+  :root[data-reduce-motion="1"] .ptr-live .ptr-ring,
+  :root[data-reduce-motion="1"] .ptr-live .ptr-arc{animation:none;}
+  :root[data-reduce-motion="1"] .ptr-live .ptr-arc{stroke-dasharray:80px 113px;}
   @media (prefers-reduced-motion: reduce){
-    .ptr-live .ptr-loader{animation:none;}
+    .ptr-armed .ptr-ring,.ptr-live .ptr-ring,.ptr-live .ptr-arc{animation:none;}
+    .ptr-live .ptr-arc{stroke-dasharray:80px 113px;}
   }
-  .ptr-bar{
-    position:absolute;left:50%;top:30%;
-    width:8%;height:24%;
-    background:currentColor;border-radius:50px;
-    box-shadow:0 0 3px rgba(0,0,0,0.2);
-    /* Navbati kelganda yonadi. */
-    opacity:calc(var(--ptr-shown, 0) - var(--i) + 1);
-    transition:opacity 0.12s linear;
-  }
-  /* Aylanayotganda hammasi yonadi: boshi to'q, dumi xira. */
-  .ptr-live .ptr-bar{opacity:calc(1 - (var(--i) - 1) * 0.065);transition:none;}
-  /* Har bir tayoqcha 30 daraja burilib, markazdan chetga suriladi. */
-  .ptr-bar:nth-child(1){--i:1;transform:rotate(0deg) translate(0,-130%);}
-  .ptr-bar:nth-child(2){--i:2;transform:rotate(30deg) translate(0,-130%);}
-  .ptr-bar:nth-child(3){--i:3;transform:rotate(60deg) translate(0,-130%);}
-  .ptr-bar:nth-child(4){--i:4;transform:rotate(90deg) translate(0,-130%);}
-  .ptr-bar:nth-child(5){--i:5;transform:rotate(120deg) translate(0,-130%);}
-  .ptr-bar:nth-child(6){--i:6;transform:rotate(150deg) translate(0,-130%);}
-  .ptr-bar:nth-child(7){--i:7;transform:rotate(180deg) translate(0,-130%);}
-  .ptr-bar:nth-child(8){--i:8;transform:rotate(210deg) translate(0,-130%);}
-  .ptr-bar:nth-child(9){--i:9;transform:rotate(240deg) translate(0,-130%);}
-  .ptr-bar:nth-child(10){--i:10;transform:rotate(270deg) translate(0,-130%);}
-  .ptr-bar:nth-child(11){--i:11;transform:rotate(300deg) translate(0,-130%);}
-  .ptr-bar:nth-child(12){--i:12;transform:rotate(330deg) translate(0,-130%);}
+
   /* Ikki marta yangilash bo'lmasin: o'zimiznikini qo'shgan joyda
      brauzerning o'z overscroll harakati o'chiriladi. */
   html.ptr-on,html.ptr-on body{overscroll-behavior-y:contain;}
@@ -21847,17 +21861,19 @@
        - faqat sahifa eng tepasida turganda va harakat aniq pastga
          qaratilgan bo'lsa ishlaydi, yonlamasiga surishga tegmaydi.
      ============================================================ */
-  /* Tortib yangilash belgisi. Ikki joyda kerak — butun sahifa uchun
-     va xabarlar ro'yxati uchun — shuning uchun bitta joyda
-     yasaladi. O'n ikkita tayoqchaning o'rni va navbati CSS da
-     (`.ptr-bar`), bu yerda faqat ularning o'zi. */
+  /* Tortib yangilash belgisi. Ikki joyda kerak — butun sahifa
+     uchun va xabarlar ro'yxati uchun — shuning uchun bitta joyda
+     yasaladi. Ko'rinishi va harakati CSS da (`.ptr-ring`), bu
+     yerda faqat shakli. */
   function makePtrIndicator(){
     var el = document.createElement("div");
     el.className = "ptr";
     el.setAttribute("aria-hidden", "true");
-    var bars = "";
-    for(var i = 0; i < 12; i++) bars += '<span class="ptr-bar"></span>';
-    el.innerHTML = '<span class="ptr-loader">' + bars + '</span>';
+    el.innerHTML =
+      '<svg class="ptr-ring" viewBox="0 0 44 44">'
+      + '<circle class="ptr-track"></circle>'
+      + '<circle class="ptr-arc"></circle>'
+      + '</svg>';
     document.body.appendChild(el);
     return el;
   }
@@ -22046,6 +22062,33 @@
     return box && box.bottom > 0 ? box.bottom : 0;
   }
 
+  /* ---------- Yoyning uzunligi va chegara ----------
+     Masofa ulushga aylanadi: nol — yoy yo'q, bir — halqa to'liq
+     yopildi. Brauzer teginishni taxminan 15 pikseldan keyin
+     "surish" deb hisoblaydi va shundan oldin umuman xabar
+     bermaydi, shuning uchun o'sha bo'shliq hisobdan chiqariladi —
+     aks holda yoy birdan choragigacha chizilgan holda paydo
+     bo'lardi.
+
+     CHEGARAGA YETGANDA telefon bir titraydi va halqa bir marta
+     aylanib qo'yadi: "endi qo'yib yuborsangiz bo'ladi". Javob
+     FAQAT BIR MARTA beriladi — barmoq chegara atrofida qimirlab
+     tursa, telefon tinimsiz titrab turmaydi. */
+  function ptrProgress(el, dist, threshold){
+    var share = Math.max(0, dist - PTR_SLOP) / (threshold - PTR_SLOP);
+    el.style.setProperty("--ptr-progress", Math.min(1, share).toFixed(3));
+    if(share >= 1){
+      if(!el.classList.contains("ptr-armed")){
+        el.classList.add("ptr-armed");
+        haptic("medium");
+      }
+    } else {
+      /* Orqaga surildi — belgi ham qaytadi, ya'ni keyingi safar
+         chegaraga yetganda yana titraydi. */
+      el.classList.remove("ptr-armed");
+    }
+  }
+
   /** Belgining bo'shliq ichidagi o'rni. */
   function ptrSpot(gap){
     return Math.round(ptrTop() + gap / 2 - 22);
@@ -22092,13 +22135,7 @@
          aylanadi: chegaraga yetganda to'liq bir aylana. Barmoq
          orqaga surilsa, g'ildirak ham orqaga qaytadi. */
       indicator.classList.remove("ptr-live");
-      /* Birinchi tayoqcha belgi ko'ringan payt yonadi, oxirgisi
-         chegarada. Brauzer teginishni taxminan 15 pikseldan keyin
-         "surish" deb hisoblaydi va shundan oldin xabar bermaydi —
-         shu bo'shliq hisobdan chiqariladi, aks holda belgi birdan
-         uch-to'rt tayoqcha bilan paydo bo'lardi. */
-      indicator.style.setProperty("--ptr-shown",
-        (Math.max(0, eased - PTR_SLOP) / (THRESHOLD - PTR_SLOP) * 12).toFixed(2));
+      ptrProgress(indicator, eased, THRESHOLD);
       indicator.style.transform = "translateY(" + ptrSpot(eased * PTR_PULL_RESIST) + "px)";
       indicator.style.opacity = String(Math.min(1, eased / THRESHOLD));
       ptrPull(eased * PTR_PULL_RESIST, false);
@@ -22112,7 +22149,8 @@
       setTimeout(function(){
         indicator.style.transition = "";
         indicator.classList.remove("ptr-live");
-        indicator.style.removeProperty("--ptr-shown");
+        indicator.classList.remove("ptr-armed");
+        indicator.style.removeProperty("--ptr-progress");
       }, 280);
     }
 
@@ -22232,13 +22270,7 @@
       var eased = Math.min(dist, MAX);
       // Sahifanikidek: barmoq bilan birga tushadi va aylanadi.
       ind.classList.remove("ptr-live");
-      /* Birinchi tayoqcha belgi ko'ringan payt yonadi, oxirgisi
-         chegarada. Brauzer teginishni taxminan 15 pikseldan keyin
-         "surish" deb hisoblaydi va shundan oldin xabar bermaydi —
-         shu bo'shliq hisobdan chiqariladi, aks holda belgi birdan
-         uch-to'rt tayoqcha bilan paydo bo'lardi. */
-      ind.style.setProperty("--ptr-shown",
-        (Math.max(0, eased - PTR_SLOP) / (THRESHOLD - PTR_SLOP) * 12).toFixed(2));
+      ptrProgress(ind, eased, THRESHOLD);
       ind.style.transform = "translateY(" + ptrSpot(eased * PTR_PULL_RESIST) + "px)";
       ind.style.opacity = String(Math.min(1, eased / THRESHOLD));
       ptrPull(eased * PTR_PULL_RESIST, false);
@@ -22252,7 +22284,8 @@
       setTimeout(function(){
         ind.style.transition = "";
         ind.classList.remove("ptr-live");
-        ind.style.removeProperty("--ptr-shown");
+        ind.classList.remove("ptr-armed");
+        ind.style.removeProperty("--ptr-progress");
       }, 280);
     }
 
