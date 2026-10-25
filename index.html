@@ -587,7 +587,7 @@
     --nav-top:calc(var(--nav-gap) + var(--tg-bottom) + var(--nav-h) + env(safe-area-inset-bottom, 0px));
   }
   :root[data-tg="1"] .nav{padding-top:calc(var(--s3) + var(--tg-top));}
-  :root[data-tg="1"] .bottom-nav{bottom:calc(20px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
+  :root[data-tg="1"] .bottom-nav{bottom:calc(20px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px) + var(--vv-bottom, 0px));}
   /* Oyna ichidagi ekranlar `position:absolute; inset:0` bilan turadi,
      ya'ni kartaning o'z ichki bo'shlig'i ularni pastga surmaydi —
      joyni aynan ekranning o'ziga qo'shish kerak. Telegram yo'lagi
@@ -605,8 +605,24 @@
     padding-bottom:calc(8px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));
   }
 
+  /* ============================================================
+     IKKALA PANEL JOYIDAN QIMIRLAMAYDI
+     ------------------------------------------------------------
+     Telefonda KO'RINADIGAN oyna (visual viewport) bilan
+     SAHIFANING oynasi (layout viewport) har doim ham ustma-ust
+     tushmaydi. Brauzer yo'lagi yashirinib-chiqqanda, tizim
+     paneli o'zgarganda yoki sahifa cho'zilganda ular ajraladi.
+     `position:fixed` esa SAHIFANING oynasiga qarab o'lchanadi —
+     shuning uchun pastki panel ko'rinadigan maydondan pastda
+     qolib ketishi, ya'ni "yo'qolishi" mumkin.
+
+     Shu ikki o'zgaruvchi farqni ushlab turadi (pastdagi
+     `pinBars` ularni yangilab boradi). Brauzer visualViewport ni
+     bilmasa, ikkisi ham nol bo'ladi va hech narsa o'zgarmaydi. */
+  :root{--vv-top:0px; --vv-bottom:0px;}
+
   .nav{
-    position:sticky;top:0;z-index:50;
+    position:sticky;top:var(--vv-top);z-index:50;
     display:flex;align-items:center;justify-content:space-between;
     gap:var(--s4);
     padding:var(--s3) var(--s5);
@@ -723,7 +739,7 @@
     position:fixed;left:14px;right:14px;z-index:1500;
     /* Telefonning eng pastiga yopishib qolmasin — ostida bo'shliq
        qoladi, iPhone'ning o'z chizig'i uchun ham joy bor. */
-    bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    bottom:calc(20px + env(safe-area-inset-bottom, 0px) + var(--vv-bottom, 0px));
     display:flex;align-items:center;
     border-radius:999px;
     /* ---------- Material: to'rt qatlam ----------
@@ -21633,6 +21649,64 @@
   populateCityDatalist();
   renderHomeTrucks();
 
+  /* ============================================================
+     PANELLARNI JOYIDA USHLAB TURISH
+     ------------------------------------------------------------
+     MUAMMO. Telefonda ikkita "oyna" bor: sahifa o'lchanadigan
+     oyna (layout viewport) va odam HAQIQATAN ko'rib turgan oyna
+     (visual viewport). Brauzer yo'lagi yashirinib-chiqqanda yoki
+     tizim paneli o'zgarganda ular ajralib qoladi.
+     `position:fixed` esa birinchisiga qarab o'lchanadi — shuning
+     uchun pastki panel ko'rinadigan maydondan pastda qolib,
+     "yo'qolib" ketishi mumkin. Aynan shu shikoyat kelgan:
+     pastdan tepaga surilganda panel ko'rinmay qolgan.
+
+     YECHIM. Ikki oynaning farqi o'lchab turiladi va panellarga
+     shuncha qo'shiladi. Farq nol bo'lsa (kompyuterda, va
+     telefonda ham ko'p hollarda) hech narsa o'zgarmaydi.
+
+     KLAVIATURAGA TEGILMAYDI. Klaviatura ochilganda ko'rinadigan
+     oyna keskin qisqaradi. Agar o'shanda ham to'g'rilayversak,
+     pastki panel klaviatura ustiga chiqib, yozish maydonini
+     yopib qo'yardi. Shuning uchun matn maydoni tanlangan bo'lsa
+     to'g'rilash to'xtaydi, ustiga farq ham chegaralangan. */
+  function initPinnedBars(){
+    var vv = window.visualViewport;
+    if(!vv) return;                 // eski brauzer — avvalgidek ishlayveradi
+    var root = document.documentElement;
+    var CHEGARA = 180;              // bundan kattasi klaviatura, panel emas
+
+    var yozyaptimi = function(){
+      var el = document.activeElement;
+      if(!el) return false;
+      var teg = (el.tagName || "").toLowerCase();
+      return teg === "input" || teg === "textarea" || el.isContentEditable === true;
+    };
+
+    var qoy = function(nom, qiymat){
+      var hozir = root.style.getPropertyValue(nom);
+      var yangi = Math.round(qiymat) + "px";
+      if(hozir !== yangi) root.style.setProperty(nom, yangi);
+    };
+
+    var pinBars = function(){
+      if(yozyaptimi()){ qoy("--vv-bottom", 0); qoy("--vv-top", 0); return; }
+      var pastki = window.innerHeight - (vv.height + vv.offsetTop);
+      var tepa = vv.offsetTop;
+      qoy("--vv-bottom", Math.min(CHEGARA, Math.max(0, pastki)));
+      qoy("--vv-top", Math.min(CHEGARA, Math.max(0, tepa)));
+    };
+
+    vv.addEventListener("resize", pinBars);
+    vv.addEventListener("scroll", pinBars);
+    window.addEventListener("orientationchange", function(){ setTimeout(pinBars, 250); });
+    /* Matn maydonidan chiqilganda ham qayta hisoblanadi — aks
+       holda klaviatura yopilgandan keyin nol bo'lib qolardi. */
+    document.addEventListener("focusout", function(){ setTimeout(pinBars, 120); });
+    document.addEventListener("focusin", pinBars);
+    pinBars();
+  }
+
   /* Teginish sezgisi sanoqli joyda beriladi — hamma tugmada emas.
      Ro'yxat ataylab qisqa: bo'lim almashuvi, Mashinalar, Yuklardagi
      filtr, yuk joylashdagi "Davom etish" va profildagi Sozlamalar.
@@ -21673,6 +21747,7 @@
   moveNavBlob();
   window.addEventListener("resize", moveNavBlob);
   window.addEventListener("orientationchange", function(){ setTimeout(moveNavBlob, 250); });
+  initPinnedBars();
   initNavDrag();
   initThemeWatch();
 
