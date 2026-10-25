@@ -76,8 +76,19 @@ export const renderPage = ({ slug, title, description, headings, bodies }) => {
     -webkit-text-size-adjust:100%;
   }
   .wrap{max-width:720px;margin:0 auto;padding:24px 16px 64px;}
-  header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
-  .mark{width:34px;height:34px;border-radius:9px;flex:none;}
+  /* Tepadagi LENTA. Ilgari logo va nom oddiy qator bo'lib,
+     matn ustunining ichida turardi. Endi u sahifaning butun
+     enini egallaydigan yo'lak: o'z foni va ostida chizig'i bor.
+
+     YOPISHIB QOLMAYDI (position berilmagan): sahifa surilganda
+     u ham yuqoriga ketadi. Hujjat uzun — ekranning bir qismini
+     doimiy band qilib turish o'qishga xalaqit berardi. */
+  .topbar{background:var(--bg);border-bottom:1px solid var(--line);}
+  .topbar-in{
+    max-width:720px;margin:0 auto;padding:12px 16px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .mark{width:30px;height:30px;border-radius:8px;flex:none;}
   .brand{font-weight:800;letter-spacing:0.02em;font-size:17px;}
   .langs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px;}
   .langs button{
@@ -100,12 +111,15 @@ export const renderPage = ({ slug, title, description, headings, bodies }) => {
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <header>
+<header class="topbar">
+  <div class="topbar-in">
     ${LOGO}
     <span class="brand">YO'LDA</span>
-  </header>
+  </div>
+</header>
+
+<div class="wrap">
 
   <nav class="langs" id="langs" aria-label="Til / Язык / Language">${tabs}</nav>
 
