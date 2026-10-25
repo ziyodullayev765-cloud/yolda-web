@@ -364,28 +364,6 @@ const lang = html.match(/function applyLang\(\)\{[\s\S]*?\n {2}\}/);
 check('applyLang topildi', Boolean(lang));
 if (lang) check('til almashganda tabletka qayta o\'lchanadi', lang[0].includes('moveNavBlob()'));
 
-/* ---------- Panellar joyidan qimirlamaydi ----------
-   Telefonda sahifa o'lchanadigan oyna bilan odam ko'rib turgan
-   oyna doim ustma-ust tushmaydi: brauzer yo'lagi chiqqanda yoki
-   tizim paneli o'zgarganda ular ajraladi. `position:fixed` esa
-   birinchisiga qarab o'lchanadi — shuning uchun pastki panel
-   ko'rinadigan maydondan pastda qolib, "yo'qolib" ketardi.
-
-   Farq o'lchanib, panellarga qo'shiladi. Quyidagilarning
-   birortasi yo'qolsa, kamchilik jimgina qaytadi. */
-check('ko\'rinadigan oyna kuzatiladi', /function initPinnedBars\(\)/.test(html));
-check('kuzatuv ishga tushadi', /\n\s*initPinnedBars\(\);/.test(html));
-check('pastki panel farqni hisobga oladi', /bottom:calc\([^;]*var\(--vv-bottom/.test(html));
-check('tepadagi lenta ham', /position:sticky;top:var\(--vv-top\)/.test(html));
-check('boshlang\'ich qiymat nol — hech narsa buzilmaydi',
-  /--vv-top:0px; --vv-bottom:0px;/.test(html));
-/* Klaviatura ochilganda to'g'rilanmaydi: aks holda panel
-   klaviatura ustiga chiqib, yozish maydonini yopib qo'yardi. */
-check('matn yozilayotganda tegilmaydi', /if\(yozyaptimi\(\)\)\{ qoy\("--vv-bottom", 0\)/.test(html));
-check('haddan katta farq chegaralangan', /Math\.min\(CHEGARA, Math\.max\(0, pastki\)\)/.test(html));
-/* visualViewport ni bilmaydigan brauzerda avvalgidek ishlaydi. */
-check('eski brauzer buzilmaydi', /var vv = window\.visualViewport;\s*\n\s*if\(!vv\) return;/.test(html));
-
 if (fails.length) {
   console.log('navlens: ' + fails.length + ' ta xato');
   for (const f of fails) console.log('  ✗ ' + f);

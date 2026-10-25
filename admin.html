@@ -4891,16 +4891,17 @@
       picker("welcome", s.welcomeImageUrl || "",
         '<span style="font-size:11px;color:var(--text-dim);text-align:center;line-height:1.3;">Ilova<br>chizmasi</span>',
         "Ilovaning kirish ekranida ko'rinadi. PNG, JPG yoki WEBP, 600 KB gacha. "
-        + "Qo'yilmasa ilovaning o'z chizmasi qoladi.")
-      /* Yashirin fayl tanlagich — ikkala rasm uchun BITTA. Ilgari
-         u "Yordamchi rasmi" kartochkasida turardi; o'sha kartochka
-         olib tashlanganda u ham ketib, qolganlari ishlamay
-         qolardi. */
-      + '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>');
+        + "Qo'yilmasa ilovaning o'z chizmasi qoladi."));
 
-    /* "Yordamchi rasmi" OLIB TASHLANDI. Ilovada ekran burchagida
-       osilib turadigan yordamchi belgisi endi yo'q, ya'ni bu
-       yerga rasm qo'yish hech narsani o'zgartirmasdi. */
+    /* Yordamchi (mascot). Ilovadagi chizma qismlarga bo'lingan —
+       ko'zi, boshi va qo'li alohida harakatlanadi. Rasm qo'yilsa
+       butun tanasi harakatlanadi. */
+    var bot = card("Yordamchi rasmi",
+      picker("bot", s.mascotImageUrl || "",
+        '<span style="font-size:11px;color:var(--text-dim);text-align:center;line-height:1.3;">Ilova<br>chizmasi</span>',
+        "Ekran burchagidagi yordamchi. PNG yoki WEBP (shaffof fon yaxshiroq), 600 KB gacha. "
+        + "Qo'yilmasa ilovaning o'z chizmasi qoladi — unda ko'z va bosh alohida harakatlanadi.")
+      + '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>');
 
     /* Paneldagi ism. Hisob yo'q, shuning uchun u shu yerda qo'lda
        yoziladi — va bo'sh qolsa rol nomi ko'rinadi. */
@@ -4913,7 +4914,7 @@
       + saveBar());
 
     return '<div class="detail-grid">' + company
-      + '<div style="display:grid;gap:16px;">' + logo + welcome + me + '</div></div>';
+      + '<div style="display:grid;gap:16px;">' + logo + welcome + bot + me + '</div></div>';
   }
 
   /* ---------- 2. Bildirishnomalar ----------
