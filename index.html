@@ -4054,6 +4054,68 @@
   .cb-menu-acts .ic-svg{font-size:17px;}
   .cb-menu-veil{position:fixed;inset:0;z-index:1590;background:rgba(15,23,42,0.18);}
 
+  /* ---------- Javob berilgan xabarning ko'chirmasi ---------- */
+  .cb-quote{
+    display:block;margin:0 0 5px;padding:5px 9px;border-radius:9px;
+    border-left:3px solid var(--route);
+    background:rgba(10,159,91,0.10);
+  }
+  .chat-bubble.mine .cb-quote{background:rgba(255,255,255,0.18);border-left-color:rgba(255,255,255,0.75);}
+  .cb-quote b{display:block;font-size:12px;font-weight:650;}
+  .cb-quote small{display:block;font-size:12px;opacity:0.78;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* ---------- Yozish qatori ustidagi "javob beryapsiz" chizig'i ---------- */
+  .chat-reply-strip{
+    display:flex;align-items:center;gap:9px;flex:none;
+    padding:8px 14px;border-top:1px solid var(--border);background:var(--paper);
+  }
+  .chat-reply-strip[hidden]{display:none;}
+  .crs-bar{width:3px;align-self:stretch;border-radius:2px;background:var(--route);}
+  .crs-text{flex:1;min-width:0;}
+  .crs-text b{display:block;font-size:12px;color:var(--route);}
+  .crs-text small{display:block;font-size:12px;opacity:0.72;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .crs-x{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;}
+
+  /* ---------- Tanlash rejimi ----------
+     Qator sarlavhaning USTIGA tushadi: sarlavhaning o'zi ham,
+     pastdagi panel ham joyidan qimirlamaydi. */
+  .chat-thread-head{position:relative;}
+  .chat-sel-bar{
+    position:absolute;inset:0;z-index:3;
+    display:flex;align-items:center;gap:6px;
+    padding:calc(10px + var(--tg-top, 0px) + env(safe-area-inset-top, 0px)) 10px 10px;
+    background:var(--paper);
+  }
+  .chat-sel-bar[hidden]{display:none;}
+  .chat-sel-x, .chat-sel-act{
+    background:none;border:none;cursor:pointer;color:var(--ink);
+    padding:8px;border-radius:50%;display:flex;align-items:center;
+  }
+  .chat-sel-act:hover, .chat-sel-x:hover{background:var(--tint);}
+  .chat-sel-act.danger{color:#DC2626;}
+  .chat-sel-act:disabled{opacity:0.4;cursor:default;}
+  .chat-sel-n{flex:1;min-width:0;font-size:15px;font-weight:600;}
+  .chat-thread.select-mode .chat-bubble{cursor:pointer;}
+  .chat-thread.select-mode .chat-bubble .cb-body{
+    transition:transform 0.14s var(--ease);
+  }
+  .chat-bubble.sel .cb-body{
+    box-shadow:0 0 0 2px var(--route);
+  }
+  /* Belgi HAMMA xabarda bir joyda — o'ngda. Xabarlar shu qadar
+     chapga suriladi, ustiga tushmaydi. */
+  .chat-thread.select-mode .chat-bubble{padding-right:30px;}
+  .chat-thread.select-mode .chat-bubble::after{
+    content:"";position:absolute;right:0;top:50%;margin-top:-10px;
+    width:20px;height:20px;border-radius:50%;
+    border:1.5px solid var(--border);background:var(--card);
+  }
+  .chat-thread.select-mode .chat-bubble.sel::after{
+    background:var(--route);border-color:var(--route);
+  }
+
   /* Yozish qatori: dumaloq maydon + aylana yuborish tugmasi. */
   .chat-input-row{
     display:flex;gap:8px;align-items:center;flex:none;
@@ -14930,6 +14992,9 @@
   var chatPollTimer = null;
   var chatSearchDebounce = null;
   var chatEditingId = null;
+  var chatReplyTo = null;      // { id, text, mine } — javob yozilayotgan xabar
+  var chatSelected = [];       // tanlangan xabarlar id'si
+  var chatMsgById = {};        // ko'chirmalar uchun: id → xabar
   var chatLastSeenId = null;
   // Yozishmaning server bergan versiyasi — o'zgarganini bilish uchun.
   var chatVer = null;
@@ -15656,6 +15721,8 @@
     // Sahifa yangilansa shu suhbat qaytadan ochilsin.
     try{ sessionStorage.setItem(CHAT_OPEN_KEY, JSON.stringify({ email: email || "", username: username, name: chatWithName })); }catch(e){}
     chatEditingId = null;
+    chatReplyTo = null;
+    chatSelected = [];
     chatLastSeenId = null;
     chatVer = null;
     /* Suhbat ochilishi — server uni o'qilgan deb belgilaydi. Keshdagi
@@ -15697,8 +15764,22 @@
          ma'lumot va profilning ommaviy qismida yo'q. */
       +   '<a class="chat-call" id="btnChatCall" hidden aria-label="Qo\'ng\'iroq qilish">'
       +     icon("iconPhone") + '</a>'
+      /* Tanlash rejimidagi qator. Sarlavhaning USTIGA tushadi —
+         sarlavha o'z joyida qoladi, panellar joyidan qimirlamaydi. */
+      +   '<div class="chat-sel-bar" id="chatSelBar" hidden>'
+      +     '<button type="button" class="chat-sel-x" id="btnSelExit" aria-label="Bekor qilish">'+icon("iconClose")+'</button>'
+      +     '<span class="chat-sel-n" id="chatSelN">0 ta xabar tanlandi</span>'
+      +     '<button type="button" class="chat-sel-act" id="btnSelCopy" aria-label="Nusxalash">'+icon("iconClipboard")+'</button>'
+      +     '<button type="button" class="chat-sel-act" id="btnSelShare" aria-label="Ulashish">'+icon("iconShare")+'</button>'
+      +     '<button type="button" class="chat-sel-act danger" id="btnSelDel" aria-label="O\'chirish">'+icon("iconTrash")+'</button>'
+      +   '</div>'
       + '</div>'
       + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
+      + '<div class="chat-reply-strip" id="chatReplyStrip" hidden>'
+      +   '<span class="crs-bar" aria-hidden="true"></span>'
+      +   '<span class="crs-text"><b id="chatReplyWho"></b><small id="chatReplyText"></small></span>'
+      +   '<button type="button" class="crs-x" id="btnReplyCancel" aria-label="Bekor qilish">'+icon("iconClose")+'</button>'
+      + '</div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
       + '<div class="chat-input-row">'
       +   '<input type="text" id="fChatMessage" maxlength="1000" placeholder="Xabar yozing...">'
@@ -15707,6 +15788,8 @@
       + '<p class="note" id="chatSendNote"></p>';
 
     document.getElementById("btnChatBack").addEventListener("click", function(){
+      // Tanlash rejimida orqaga — avval tanlovdan chiqadi.
+      if(chatSelectOn()){ exitChatSelect(); return; }
       closeChatFullscreen();
       renderChatShell();
     });
@@ -15714,6 +15797,8 @@
     document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
 
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
+    document.getElementById("btnReplyCancel").addEventListener("click", cancelChatReply);
+    bindChatSelectBar();
 
     var whoBtn = document.getElementById("btnChatWho");
     if(whoBtn) whoBtn.addEventListener("click", function(){ openPublicProfile(username); });
@@ -15740,9 +15825,25 @@
     return [
       m.deleted ? "d" : "",
       m.text || "",
+      m.replyTo || "",
       m.editedAt || "",
       (m.reactions || []).map(function(r){ return r.emoji + r.count + (r.mine ? "1" : "0"); }).join(",")
     ].join("|");
+  }
+
+  /* Javob berilgan xabarning ustidagi kichik ko'chirma. Matn SHU
+     yozishmadagi xabarlardan olinadi — serverdan qo'shimcha narsa
+     so'ralmaydi va begona xabar bu yerga tusha olmaydi. */
+  function chatQuoteHtml(m){
+    if(!m.replyTo) return "";
+    var manba = chatMsgById[m.replyTo];
+    var kim = manba ? (manba.fromMe ? "Siz" : (chatWithName || "Suhbatdosh")) : "";
+    var matn = !manba ? "Xabar o'chirilgan"
+      : (manba.deleted ? "Xabar o'chirildi" : String(manba.text || "").slice(0, 90));
+    return '<span class="cb-quote">'
+      + '<b>'+escapeHtml(kim || "Xabar")+'</b>'
+      + '<small>'+escapeHtml(matn)+'</small>'
+      + '</span>';
   }
 
   function chatBubbleHtml(m){
@@ -15767,7 +15868,7 @@
     return '<div class="chat-bubble '+side+(reactions ? " has-react" : "")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
       + ' data-text="'+escapeHtml(m.text)+'">'
       + time
-      + '<div class="cb-body">'+linkifyPhones(m.text)
+      + '<div class="cb-body">'+chatQuoteHtml(m)+linkifyPhones(m.text)
       +   (m.editedAt ? ' <span style="opacity:0.6;font-size:11px;">tahrirlangan</span>' : "")
       +   '<span class="cb-reactions">'+reactions+'</span>'
       + '</div>'
@@ -15817,11 +15918,15 @@
           }).join("")
         + '</div>')
       + '<div class="cb-menu-acts">'
-      +   '<button type="button" class="cb-act-copy">'+icon("iconClipboard")+'Nusxalash</button>'
-      +   (mine && !deleted
-            ? '<button type="button" class="cb-act-edit">'+icon("iconEdit")+'Tahrirlash</button>'
-              + '<button type="button" class="cb-act-del">'+icon("iconTrash")+'O\'chirish</button>'
-            : "")
+      +   (deleted ? "" : '<button type="button" class="cb-act-reply">'+icon("iconArrowLeft")+'Javob berish</button>')
+      +   (mine && !deleted ? '<button type="button" class="cb-act-edit">'+icon("iconEdit")+'Tahrirlash</button>' : "")
+      +   (deleted ? "" : '<button type="button" class="cb-act-copy">'+icon("iconClipboard")+'Nusxa olish</button>')
+      +   (deleted ? "" : '<button type="button" class="cb-act-share">'+icon("iconShare")+'Ulashish</button>')
+      +   '<button type="button" class="cb-act-pick">'+icon("iconCheckCircle")+'Tanlash</button>'
+      /* O'chirish begona xabar uchun ham bor: "faqat o'zim uchun"
+         yashirish har kimning o'z ro'yxatiga tegishli. "Hamma uchun"
+         esa keyingi oynada faqat o'z xabariga taklif qilinadi. */
+      +   '<button type="button" class="cb-act-del">'+icon("iconTrash")+'O\'chirish</button>'
       + '</div>';
     document.body.appendChild(chatMenuEl);
 
@@ -15847,11 +15952,23 @@
         return;
       }
       if(ev.target.closest(".cb-act-copy")){
-        var text = row.getAttribute("data-text") || "";
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          navigator.clipboard.writeText(text).then(function(){ toast("Nusxalandi", "", "success"); }).catch(function(){});
-        }
+        copyChatText(row.getAttribute("data-text") || "");
         closeChatMenu();
+        return;
+      }
+      if(ev.target.closest(".cb-act-share")){
+        shareChatText(row.getAttribute("data-text") || "");
+        closeChatMenu();
+        return;
+      }
+      if(ev.target.closest(".cb-act-reply")){
+        beginChatReply(id, row.getAttribute("data-text") || "", mine);
+        closeChatMenu();
+        return;
+      }
+      if(ev.target.closest(".cb-act-pick")){
+        closeChatMenu();
+        if(chatSelected.indexOf(id) < 0) toggleChatSelect(id);
         return;
       }
       if(ev.target.closest(".cb-act-edit")){
@@ -15861,7 +15978,7 @@
       }
       if(ev.target.closest(".cb-act-del")){
         closeChatMenu();
-        if(confirm("Xabarni o'chirasizmi?")) deleteChatMessage(id);
+        askDeleteMessages([id], mine, chatWithName);
       }
     });
   }
@@ -15891,6 +16008,8 @@
       if(pill) return;                       // reaksiyani bosish — alohida
       var row = ev.target.closest(".chat-bubble");
       if(!row) return;
+      // Tanlash rejimida bitta bosish tanlaydi — menyu ochilmaydi.
+      if(chatSelectOn()) return;
       holdRow = row; holdX = ev.clientX; holdY = ev.clientY;
       var b = row.querySelector(".cb-body");
       holdTimer = setTimeout(function(){
@@ -15920,6 +16039,12 @@
 
     /* --- Reaksiyani olib tashlash / qo'shish --- */
     body.addEventListener("click", function(ev){
+      var row = ev.target.closest(".chat-bubble");
+      // Tanlash rejimi: bosilgan xabar tanlanadi yoki tanlovdan chiqadi.
+      if(chatSelectOn()){
+        if(row) toggleChatSelect(row.getAttribute("data-id"));
+        return;
+      }
       var pill = ev.target.closest(".cb-react-pill");
       if(pill) toggleChatReaction(pill.getAttribute("data-id"), pill.getAttribute("data-emoji"));
     });
@@ -16001,6 +16126,14 @@
 
   function renderChatMessages(body, messages){
     syncChatCallBtn(messages);
+    /* Ko'chirmalar uchun qidiruv jadvali. Chizishdan OLDIN
+       to'ldiriladi: chatQuoteHtml shundan o'qiydi. */
+    chatMsgById = {};
+    messages.forEach(function(m){ chatMsgById[m.id] = m; });
+    /* Ro'yxatdan ketgan xabar tanlovda qolib ketmasin. */
+    if(chatSelected.length){
+      chatSelected = chatSelected.filter(function(id){ return !!chatMsgById[id]; });
+    }
     if(!messages.length){
       if(!body.querySelector(".chat-empty")){
         body.innerHTML = '<p class="note chat-empty" style="margin:0;">Hali xabar yo\'q. Birinchi bo\'lib yozing!</p>';
@@ -16044,6 +16177,8 @@
 
     // Ro'yxatda qolmagan xabarlar (masalan butunlay o'chirilgani).
     Object.keys(existing).forEach(function(id){ existing[id].remove(); changed = true; });
+    // Qaytadan chizilgan xabarlarda tanlov belgisi joyida qolsin.
+    syncChatSelectBar();
     return changed;
   }
 
@@ -16455,12 +16590,146 @@
   /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
   function closeChatFullscreen(){
     closeChatMenu();
+    chatSelected = [];
+    chatReplyTo = null;
     try{ sessionStorage.removeItem(CHAT_OPEN_KEY); }catch(e){}
     var chatCard = document.getElementById("chatCard");
     if(chatCard) chatCard.classList.remove("chat-fullscreen");
     reattachChatCard();
     document.documentElement.removeAttribute("data-chat-open");
     syncTelegramBackButton();
+  }
+
+  /* ============================================================
+     Javob berish
+     ------------------------------------------------------------
+     Javob yozilayotgan xabar yozish qatorining ustida ko'rinib
+     turadi, toki odam nimaga javob berayotganini ko'rsin.
+     ============================================================ */
+  function beginChatReply(id, text, mine){
+    chatReplyTo = { id: id, text: text || "", mine: Boolean(mine) };
+    var strip = document.getElementById("chatReplyStrip");
+    var who = document.getElementById("chatReplyWho");
+    var t = document.getElementById("chatReplyText");
+    if(who) who.textContent = mine ? "Siz" : (chatWithName || "Suhbatdosh");
+    if(t) t.textContent = String(text || "").slice(0, 90);
+    if(strip) strip.hidden = false;
+    var input = document.getElementById("fChatMessage");
+    if(input) input.focus();
+  }
+
+  function cancelChatReply(){
+    chatReplyTo = null;
+    var strip = document.getElementById("chatReplyStrip");
+    if(strip) strip.hidden = true;
+  }
+
+  /* ============================================================
+     Bir nechta xabarni tanlash
+     ------------------------------------------------------------
+     Tanlash rejimi sarlavhaning ustiga tushadigan qator bilan
+     ko'rsatiladi: tanlanganlar soni, nusxalash, ulashish va
+     o'chirish. Panellar o'z joyida qoladi — qator sarlavhaning
+     ichida, ustiga qo'yiladi.
+     ============================================================ */
+  function chatSelectOn(){ return chatSelected.length > 0; }
+
+  function toggleChatSelect(id){
+    var i = chatSelected.indexOf(id);
+    if(i >= 0) chatSelected.splice(i, 1);
+    else chatSelected.push(id);
+    haptic("light");
+    syncChatSelectBar();
+  }
+
+  function exitChatSelect(){
+    chatSelected = [];
+    syncChatSelectBar();
+  }
+
+  /** Tanlanganlarni matnga aylantiradi (nusxalash va ulashish uchun). */
+  function chatSelectedText(){
+    var body = document.getElementById("chatThreadBody");
+    if(!body) return "";
+    var qatorlar = [];
+    body.querySelectorAll(".chat-bubble").forEach(function(el){
+      if(chatSelected.indexOf(el.getAttribute("data-id")) < 0) return;
+      var t = el.getAttribute("data-text") || "";
+      if(t) qatorlar.push(t);
+    });
+    return qatorlar.join("\n");
+  }
+
+  function syncChatSelectBar(){
+    var bar = document.getElementById("chatSelBar");
+    var body = document.getElementById("chatThreadBody");
+    var on = chatSelectOn();
+    if(bar) bar.hidden = !on;
+    if(body) body.classList.toggle("select-mode", on);
+    var n = document.getElementById("chatSelN");
+    if(n) n.textContent = chatSelected.length + " ta xabar tanlandi";
+    if(body){
+      body.querySelectorAll(".chat-bubble").forEach(function(el){
+        el.classList.toggle("sel", chatSelected.indexOf(el.getAttribute("data-id")) >= 0);
+      });
+    }
+    // Hamma uchun o'chirish faqat o'z xabarlari uchun — tugma shuni biladi.
+    var del = document.getElementById("btnSelDel");
+    if(del) del.disabled = !on;
+  }
+
+  /** Tanlanganlarning HAMMASI o'zimnikimi (serverdagi qoida bilan bir xil). */
+  function chatSelectedAllMine(){
+    var body = document.getElementById("chatThreadBody");
+    if(!body) return false;
+    var hammasi = true;
+    chatSelected.forEach(function(id){
+      var el = body.querySelector('.chat-bubble[data-id="'+id+'"]');
+      if(!el || !el.classList.contains("mine")) hammasi = false;
+    });
+    return hammasi && chatSelected.length > 0;
+  }
+
+  function bindChatSelectBar(){
+    var x = document.getElementById("btnSelExit");
+    if(x) x.addEventListener("click", exitChatSelect);
+
+    var copy = document.getElementById("btnSelCopy");
+    if(copy) copy.addEventListener("click", function(){
+      copyChatText(chatSelectedText());
+      exitChatSelect();
+    });
+
+    var share = document.getElementById("btnSelShare");
+    if(share) share.addEventListener("click", function(){
+      shareChatText(chatSelectedText());
+      exitChatSelect();
+    });
+
+    var del = document.getElementById("btnSelDel");
+    if(del) del.addEventListener("click", function(){
+      if(!chatSelectOn()) return;
+      askDeleteMessages(chatSelected.slice(), chatSelectedAllMine(), chatWithName);
+    });
+  }
+
+  function copyChatText(text){
+    if(!text) return;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(function(){ toast("Nusxalandi", "", "success"); })
+        .catch(function(){ toast("Nusxalanmadi", "", "info"); });
+    }
+  }
+
+  /** Ulashish: qurilmaning o'z oynasi bo'lsa — u, bo'lmasa nusxalash. */
+  function shareChatText(text){
+    if(!text) return;
+    if(navigator.share){
+      navigator.share({ text: text }).catch(function(){});
+      return;
+    }
+    copyChatText(text);
   }
 
   function beginChatEdit(id, text){
@@ -16479,17 +16748,95 @@
     if(note) note.hidden = true;
   }
 
-  function deleteChatMessage(id){
+  /**
+   * Xabarlarni o'chiradi.
+   *
+   * @param ids    o'chiriladiganlar
+   * @param forMe  true — faqat o'zim uchun yashirish (xabar
+   *               suhbatdoshda qoladi); false — hamma uchun.
+   */
+  function deleteChatMessages(ids, forMe, onDone){
+    var ro = (ids || []).filter(Boolean);
+    if(!ro.length) return;
     fetch("/api/chat?action=delete", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: id })
+      body: JSON.stringify({
+        googleIdToken: googleIdToken, telegramInitData: telegramInitData, phoneToken: phoneToken,
+        ids: ro, forMe: Boolean(forMe)
+      })
     }).then(function(r){
       return r.json().then(function(b){ return {ok: r.ok, body: b}; });
     }).then(function(res){
-      if(!res.ok){ alert(res.body.error || "O'chirilmadi"); return; }
+      if(!res.ok){ toast(res.body.error || "O'chirilmadi", "", "info"); return; }
       loadChatThread(false);
-    }).catch(function(){ alert("O'chirilmadi, qayta urinib ko'ring."); });
+      var n = res.body.count || ro.length;
+      toast(n + " ta xabar " + (forMe ? "o'chirildi" : "hamma uchun o'chirildi"), "", "success");
+      if(onDone) onDone();
+    }).catch(function(){ toast("O'chirilmadi, qayta urinib ko'ring", "", "info"); });
+  }
+
+  /* ============================================================
+     O'chirishni tasdiqlash
+     ------------------------------------------------------------
+     Ikki xil o'chirish bor va ular bir xil emas, shuning uchun
+     odam qaysi birini tanlaganini bilib turishi kerak:
+
+       - FAQAT O'ZIM UCHUN: xabar suhbatdoshda qoladi;
+       - HAMMA UCHUN: ikkala tomondan ham ketadi, qaytarib
+         bo'lmaydi.
+
+     "Hamma uchun" faqat O'Z xabarlari uchun taklif qilinadi —
+     begonanikini o'chirish huquqi yo'q (serverda ham shunday).
+     ============================================================ */
+  function askDeleteMessages(ids, hammasiMeniki, kim){
+    var n = ids.length;
+    var sarlavha = n === 1 ? "Xabar o'chirilsinmi?" : (n + " ta xabar o'chirilsinmi?");
+
+    var html = '<div class="rp-list">'
+      + '<button type="button" class="rp-item on" data-del="me">'
+      +   '<span class="rp-label"><b>Faqat o\'zim uchun</b>'
+      +     '<small>Faqat sizning suhbatingizdan o\'chiriladi.'
+      +     (kim ? " " + escapeHtml(kim) + "da xabar saqlanib qoladi." : "") + '</small></span>'
+      +   '<span class="rp-dot" aria-hidden="true"></span>'
+      + '</button>'
+      + (hammasiMeniki
+          ? '<button type="button" class="rp-item" data-del="all">'
+            + '<span class="rp-label"><b>Hamma uchun o\'chirish</b>'
+            +   '<small>Sizning va ' + (kim ? escapeHtml(kim) + "ning" : "suhbatdoshning")
+            +   ' suhbatingizdan o\'chiriladi.</small></span>'
+            + '<span class="rp-dot" aria-hidden="true"></span>'
+            + '</button>'
+          : '')
+      + '</div>'
+      + '<p class="note" style="margin-top:var(--s3);">Bu amalni ortga qaytarib bo\'lmaydi.</p>';
+
+    Sheet.open({
+      title: sarlavha,
+      html: html,
+      footerHtml: '<button class="btn danger" id="btnDelGo">'
+        + (n === 1 ? "O'chirish" : n + " ta xabarni o'chirish") + '</button>'
+        + '<button class="btn ghost" id="btnDelCancel" style="margin-top:var(--s2);">Bekor qilish</button>',
+      onOpen: function(container){
+        var tanlov = "me";
+        container.querySelectorAll(".rp-item").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            container.querySelectorAll(".rp-item").forEach(function(b){ b.classList.remove("on"); });
+            btn.classList.add("on");
+            tanlov = btn.getAttribute("data-del");
+            haptic("light");
+          });
+        });
+        var cancel = document.getElementById("btnDelCancel");
+        if(cancel) cancel.addEventListener("click", function(){ Sheet.close(); });
+        var go = document.getElementById("btnDelGo");
+        if(go) go.addEventListener("click", function(){
+          go.disabled = true;
+          Sheet.close();
+          deleteChatMessages(ids, tanlov === "me", exitChatSelect);
+        });
+      }
+    });
   }
 
   function toggleChatReaction(id, emoji){
@@ -16515,7 +16862,8 @@
     var url = isEdit ? "/api/chat?action=edit" : "/api/chat?action=send";
     var payload = isEdit
       ? { googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: chatEditingId, text: text }
-      : { googleIdToken: googleIdToken, telegramInitData: telegramInitData, toUsername: chatWithUsername, text: text };
+      : { googleIdToken: googleIdToken, telegramInitData: telegramInitData, toUsername: chatWithUsername, text: text,
+          replyTo: (chatReplyTo ? chatReplyTo.id : null) };
 
     fetch(url, {
       method: "POST",
@@ -16532,6 +16880,7 @@
       input.value = "";
       saveChatDraft(chatWithUsername, "");
       if(isEdit) cancelChatEdit();
+      cancelChatReply();
       // Yozdim — javob tez kelishi mumkin, tez rejimga o'tamiz.
       markChatActivity();
       loadChatThread(true);

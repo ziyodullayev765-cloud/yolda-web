@@ -9,9 +9,9 @@
  *   GET  /api/chat?action=search&q=<text>&googleIdToken=...|&telegramInitData=...
  *   GET  /api/chat?action=inbox&googleIdToken=...|&telegramInitData=...
  *   GET  /api/chat?action=thread&googleIdToken=...|&telegramInitData=...&withEmail=...   (or &withUsername=...)
- *   POST /api/chat?action=send    { googleIdToken|telegramInitData, toUsername, text }
+ *   POST /api/chat?action=send    { googleIdToken|telegramInitData, toUsername, text, replyTo? }
  *   POST /api/chat?action=edit    { googleIdToken|telegramInitData, id, text }
- *   POST /api/chat?action=delete  { googleIdToken|telegramInitData, id }
+ *   POST /api/chat?action=delete  { googleIdToken|telegramInitData, ids[], forMe }
  *   POST /api/chat?action=react   { googleIdToken|telegramInitData, id, emoji }
  *   POST /api/chat?action=pin     { googleIdToken|telegramInitData, withEmail, on }
  *   POST /api/chat?action=hide    { googleIdToken|telegramInitData, withEmail }
@@ -780,7 +780,12 @@ const getThread = async (req, res) => {
   await kvDel(unreadKey(myEmail, withEmail)).catch(() => {});
 
   const ids = await kvRange(pairKey(myEmail, withEmail), 0, 99);
-  const raw = (await Promise.all(ids.map((id) => kvGet(`msg:${id}`)))).map(parseMessage).filter(Boolean);
+  /* "Faqat o'zim uchun" yashirilganlar chetlab o'tiladi. Ular
+     o'chirilmagan — suhbatdoshda joyida turibdi, shunchaki shu
+     odamning ro'yxatida ko'rinmaydi. */
+  const yashirin = new Set(await kvSmembers(hiddenKey(myEmail)));
+  const raw = (await Promise.all(ids.filter((id) => !yashirin.has(id)).map((id) => kvGet(`msg:${id}`))))
+    .map(parseMessage).filter(Boolean);
 
   const messages = raw
     .reverse() // ids stored newest-first (LPUSH); a chat reads oldest-first
@@ -791,6 +796,7 @@ const getThread = async (req, res) => {
       editedAt: m.editedAt || null,
       deleted: Boolean(m.deleted),
       fromMe: m.from === myEmail,
+      replyTo: m.replyTo || null,
       reactions: REACTIONS
         .map((emoji) => ({ emoji, count: (m.reactions?.[emoji] || []).length, mine: (m.reactions?.[emoji] || []).includes(myEmail) }))
         .filter((r) => r.count > 0),
@@ -867,8 +873,21 @@ const sendMessage = async (req, res) => {
 
   if (isThrottled(myEmail)) return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko‘ring' });
 
+  /* Javob berilayotgan xabar. Faqat SHU ikki odamning yozishmasidagi
+     xabarga javob bo'lishi mumkin: aks holda begona yozishmadagi
+     xabarning id'sini yuborib, uning matnini ko'rish mumkin bo'lardi. */
+  let replyTo = null;
+  const replyId = String(body.replyTo || '').slice(0, 64);
+  if (replyId) {
+    const nishon = parseMessage(await kvGet(`msg:${replyId}`));
+    const shuSuhbat = nishon
+      && (nishon.from === myEmail || nishon.to === myEmail)
+      && (nishon.from === toEmail || nishon.to === toEmail);
+    if (shuSuhbat) replyTo = nishon.id;
+  }
+
   const id = generateId();
-  const message = { id, from: myEmail, to: toEmail, text, at: Date.now(), editedAt: null, deleted: false, reactions: {} };
+  const message = { id, from: myEmail, to: toEmail, text, at: Date.now(), editedAt: null, deleted: false, reactions: {}, replyTo };
 
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
@@ -929,18 +948,65 @@ const editMessage = async (req, res) => {
   return res.status(200).json({ ok: true });
 };
 
-const deleteMessage = async (req, res) => {
-  const ctx = await loadOwnMessage(req, res, { requireSender: true });
-  if (!ctx) return;
-  const { id, message } = ctx;
+/**
+ * O'chirish ikki xil bo'ladi.
+ *
+ * HAMMA UCHUN (`delete`) — xabarning o'zi o'chadi, ikkala
+ * tomonda ham. Shuning uchun uni faqat YOZGAN odam qila oladi:
+ * boshqaning gapini o'chirib tashlash huquqi hech kimda yo'q.
+ *
+ * FAQAT O'ZIM UCHUN (`hide`) — xabar joyida qoladi, shunchaki
+ * shu odamning ro'yxatida ko'rinmaydi. Buni ikkala tomon ham
+ * qila oladi va bir-biriga ta'sir qilmaydi: siz yashirsangiz,
+ * suhbatdoshingiz baribir ko'rib turaveradi. Yashirilganlar
+ * `hidden:<odam>` to'plamida saqlanadi va yozishma o'qilganda
+ * chetlab o'tiladi.
+ */
+const hiddenKey = (identity) => `hidden:${identity}`;
 
-  message.deleted = true;
-  message.text = '';
-  const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
-  if (!saved) return res.status(500).json({ error: 'O‘chirilmadi, qayta urinib ko‘ring' });
+/** So'rovdagi id lar ro'yxati. Bitta `id` ham qabul qilinadi. */
+const idsFromBody = (body) => {
+  const raw = Array.isArray(body.ids) ? body.ids : (body.id ? [body.id] : []);
+  return raw.map((x) => String(x || '')).filter(Boolean).slice(0, 50);
+};
 
-  await bumpVer(message.from, message.to);
-  return res.status(200).json({ ok: true });
+const deleteMessages = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const myEmail = await resolveEmail({
+    googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
+  });
+  if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
+
+  const ids = idsFromBody(body);
+  if (!ids.length) return res.status(400).json({ error: 'Xabar topilmadi' });
+
+  /* `forMe` — faqat o'zi uchun yashirish. Bo'lmasa, hamma uchun
+     o'chirish: unda har bir xabar SHU ODAMNIKI bo'lishi shart. */
+  const forMe = Boolean(body.forMe);
+  let juftlik = null;
+  let tegildi = 0;
+
+  for (const id of ids) {
+    const message = parseMessage(await kvGet(`msg:${id}`));
+    if (!message) continue;
+    const isParticipant = message.from === myEmail || message.to === myEmail;
+    if (!isParticipant) continue;
+    if (!forMe && message.from !== myEmail) continue;   // begonanikini o'chirib bo'lmaydi
+
+    if (forMe) {
+      await kvSadd(hiddenKey(myEmail), id);
+    } else {
+      message.deleted = true;
+      message.text = '';
+      if (!(await kvSet(`msg:${id}`, JSON.stringify(message)))) continue;
+    }
+    juftlik = [message.from, message.to];
+    tegildi += 1;
+  }
+
+  if (!tegildi) return res.status(403).json({ error: 'Bu amalga huquqingiz yo‘q' });
+  if (juftlik) await bumpVer(juftlik[0], juftlik[1]);
+  return res.status(200).json({ ok: true, count: tegildi });
 };
 
 const reactToMessage = async (req, res) => {
@@ -980,7 +1046,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     if (action === 'send') return sendMessage(req, res);
     if (action === 'edit') return editMessage(req, res);
-    if (action === 'delete') return deleteMessage(req, res);
+    if (action === 'delete') return deleteMessages(req, res);
     if (action === 'react') return reactToMessage(req, res);
     if (action === 'pin') return setPin(req, res);
     if (action === 'hide') return hideConversation(req, res);
