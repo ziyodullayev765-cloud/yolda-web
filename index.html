@@ -4984,6 +4984,27 @@
   /* Bosiladigan telefon raqami. */
   .phone-link{color:inherit;text-decoration:none;}
   .phone-link:hover{color:var(--route);}
+  /* YOZISHMADAGI raqam — tagi chizilgan havola. Profildagi
+     raqamdan farqi shunda: u yerda raqam o'z qatorida turadi va
+     ajratib ko'rsatish shart emas, bu yerda esa matn orasida
+     yotadi va bosilishi mumkinligi ko'rinib turishi kerak. */
+  .cb-body .phone-link{
+    text-decoration:underline;text-underline-offset:2px;
+    font-variant-numeric:tabular-nums;
+  }
+  .chat-bubble.mine .cb-body .phone-link{color:inherit;}
+
+  /* Sarlavhadagi qo'ng'iroq tugmasi. Raqam ma'lum bo'lgandagina
+     ko'rinadi (`hidden` olib tashlanadi). */
+  .chat-call{
+    flex:none;width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--route);background:var(--tint);
+    -webkit-tap-highlight-color:transparent;text-decoration:none;
+  }
+  .chat-call[hidden]{display:none;}
+  .chat-call .ic-svg{font-size:18px;}
+  .chat-call:active{transform:scale(0.94);}
   .pf-id-phone{
     font-size:14px;color:var(--ink-soft);margin-top:3px;
     font-variant-numeric:tabular-nums;
@@ -14955,6 +14976,86 @@
       + escapeHtml(text) + '</a>';
   }
 
+  /* ============================================================
+     Xabar matnidagi telefon raqami
+     ------------------------------------------------------------
+     Odamlar raqamni yozishmaning ichida yuborishadi. Ilgari u
+     oddiy matn edi: qo'ng'iroq qilish uchun qo'lda belgilab,
+     nusxalab, telefon ilovasiga o'tish kerak bo'lardi. Endi
+     raqamning tagi chiziladi va bosilsa qo'ng'iroq ketadi.
+
+     XAVFSIZLIK. Matn AVVAL butunlay qochiriladi (escapeHtml),
+     qidiruv esa shundan keyin boshlanadi. Shuning uchun xabar
+     ichiga yozilgan teg yoki qo'shtirnoq havolaga aylana
+     olmaydi: izlanadigan belgilar faqat raqam, bo'shliq, qavs,
+     chiziqcha va "+" — ularning birortasi qochirishda
+     o'zgarmaydi.
+
+     QAYSI SON RAQAM HISOBLANADI. Bu yerda ehtiyot shart: chatda
+     narx ham, og'irlik ham, hajm ham yoziladi. Dastlab shart
+     "kamida yettita raqam" edi va sinov darhol tutdi — "1500000"
+     (narx) ham havolaga aylanib qoldi.
+
+     Shuning uchun uchta aniq shakl qabul qilinadi:
+       1. "+" bilan boshlansa (9-15 raqam) — xalqaro yozuv;
+       2. raqamlari "998" bilan boshlanib, jami 12 ta bo'lsa;
+       3. aynan 9 ta raqam, orasida ajratuvchi bor va birinchi
+          ikkitasi O'zbekiston operator kodi bo'lsa.
+     Ustiga, uchta-uchtadan guruhlangan son (200 000 000) rad
+     etiladi: bu narxning yozilishi, raqamniki emas. */
+  var PHONE_RE = /(\+?\d[\d\s()\-]{5,18}\d)/g;
+  /* O'zbekistondagi mobil kodlar. */
+  var UZ_CODES = ["20","33","50","55","61","62","63","64","65","66","67","69",
+    "70","71","72","73","74","75","76","77","78","79","88","90","91","93","94","95","97","98","99"];
+
+  function looksLikePhone(topildi){
+    var matn = topildi.trim();
+    var raqamlar = matn.replace(/\D/g, "");
+    if(raqamlar.length < 9 || raqamlar.length > 15) return false;
+
+    /* Narx yozilishi: birinchi guruhdan keyin hammasi uchtadan
+       (200 000 000, 1 500 000). Bu son — pul, raqam emas. */
+    var guruhlar = matn.replace(/^\+/, "").split(/[\s\-]+/).filter(Boolean);
+    if(guruhlar.length >= 3 && guruhlar.slice(1).every(function(g){ return g.length === 3; })){
+      return false;
+    }
+
+    if(matn.charAt(0) === "+") return true;
+    if(raqamlar.indexOf("998") === 0 && raqamlar.length === 12) return true;
+    if(raqamlar.length === 9 && /[\s()\-]/.test(matn)
+       && UZ_CODES.indexOf(raqamlar.slice(0, 2)) !== -1) return true;
+    return false;
+  }
+
+  function linkifyPhones(text){
+    var xavfsiz = escapeHtml(String(text == null ? "" : text));
+    return xavfsiz.replace(PHONE_RE, function(topildi){
+      if(!looksLikePhone(topildi)) return topildi;
+      var raqamlar = topildi.replace(/\D/g, "");
+      var dial = (topildi.trim().charAt(0) === "+" ? "+" : "") + raqamlar;
+      return '<a class="phone-link" href="tel:' + dial + '">' + topildi + '</a>';
+    });
+  }
+
+  /** Yozishmada aytilgan oxirgi raqam — sarlavhadagi tugma uchun. */
+  function lastPhoneInChat(messages){
+    for(var i = (messages || []).length - 1; i >= 0; i--){
+      var m = messages[i];
+      if(!m || m.deleted || !m.text) continue;
+      var topildi = String(m.text).match(PHONE_RE);
+      if(!topildi) continue;
+      for(var j = topildi.length - 1; j >= 0; j--){
+        /* Matndagi bilan bir xil qoida — sarlavhada boshqacha
+           hisoblansa, bir xil xabardan ikki xil natija chiqardi. */
+        if(looksLikePhone(topildi[j])){
+          var raqamlar = topildi[j].replace(/\D/g, "");
+          return (topildi[j].trim().charAt(0) === "+" ? "+" : "") + raqamlar;
+        }
+      }
+    }
+    return "";
+  }
+
   function chatAvatarColor(label){
     var text = String(label || "?");
     var sum = 0;
@@ -15590,6 +15691,12 @@
       +     '<span class="chat-thread-title" id="chatThreadTitle">'+escapeHtml(chatWithName || ("@" + username))+'</span>'
       +     '<span class="chat-thread-sub" id="chatThreadSub">@'+escapeHtml(username)+'</span>'
       +   '</button>'
+      /* Qo'ng'iroq tugmasi. Raqam MA'LUM bo'lgandagina chiqadi —
+         ya'ni suhbatdosh uni shu yozishmada aytgan bo'lsa.
+         YO'LDA raqamni o'zi oshkor qilmaydi: u shaxsiy
+         ma'lumot va profilning ommaviy qismida yo'q. */
+      +   '<a class="chat-call" id="btnChatCall" hidden aria-label="Qo\'ng\'iroq qilish">'
+      +     icon("iconPhone") + '</a>'
       + '</div>'
       + '<div class="chat-thread" id="chatThreadBody"><div class="skeleton sk-line" style="width:60%;"></div></div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
@@ -15660,7 +15767,7 @@
     return '<div class="chat-bubble '+side+(reactions ? " has-react" : "")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
       + ' data-text="'+escapeHtml(m.text)+'">'
       + time
-      + '<div class="cb-body">'+escapeHtml(m.text)
+      + '<div class="cb-body">'+linkifyPhones(m.text)
       +   (m.editedAt ? ' <span style="opacity:0.6;font-size:11px;">tahrirlangan</span>' : "")
       +   '<span class="cb-reactions">'+reactions+'</span>'
       + '</div>'
@@ -15875,7 +15982,25 @@
    * tashlanadi. Hech narsa o'zgarmagan bo'lsa — DOM'ga umuman
    * tegilmaydi, ya'ni eng ko'p uchraydigan holatda ish nolga teng.
    */
+  /**
+   * Sarlavhadagi qo'ng'iroq tugmasini yangilaydi.
+   *
+   * Raqam faqat yozishmaning o'zidan olinadi — suhbatdosh uni
+   * yozgan bo'lsa. Ilova odamning ro'yxatdan o'tgan raqamini bu
+   * yerda oshkor qilmaydi: u shaxsiy ma'lumot.
+   */
+  function syncChatCallBtn(messages){
+    var btn = document.getElementById("btnChatCall");
+    if(!btn) return;
+    var raqam = lastPhoneInChat(messages);
+    if(!raqam){ btn.hidden = true; btn.removeAttribute("href"); return; }
+    btn.hidden = false;
+    btn.setAttribute("href", "tel:" + raqam);
+    btn.setAttribute("title", raqam);
+  }
+
   function renderChatMessages(body, messages){
+    syncChatCallBtn(messages);
     if(!messages.length){
       if(!body.querySelector(".chat-empty")){
         body.innerHTML = '<p class="note chat-empty" style="margin:0;">Hali xabar yo\'q. Birinchi bo\'lib yozing!</p>';
