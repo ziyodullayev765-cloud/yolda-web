@@ -1330,6 +1330,22 @@
      ixcham va bo'yoqsiz. Ilgari u qalin yashil yozuv bo'lib,
      qidiruv qutisidan ko'ra ko'proq e'tibor tortardi. */
   .loads-save-row{display:flex;justify-content:flex-end;}
+  /* "Yana" — ro'yxatning oxiridagi keng tugma. */
+  .loads-more{
+    display:flex;align-items:center;justify-content:center;gap:var(--s2);
+    width:100%;margin-top:var(--s3);padding:15px;
+    border:1px solid var(--border);border-radius:var(--r-md);
+    background:var(--card);font-family:inherit;font-size:15px;font-weight:700;
+    color:var(--route);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .loads-more:active{transform:scale(0.99);}
+  /* Nechtasi qolganini aytib turadi — "yana qancha bor" degan
+     savolga javob. */
+  .loads-more-n{
+    min-width:22px;padding:1px 7px;border-radius:999px;
+    background:var(--tint);color:var(--route);font-size:12.5px;
+  }
+
   .loads-save-chip{
     display:inline-flex;align-items:center;gap:6px;margin-top:10px;
     padding:6px 12px;border-radius:var(--r-pill);
@@ -7570,6 +7586,7 @@
       "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "Faqat mos yuklar",
       "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
+      "loads.more": "Yana",
       /* Yuk sahifasidagi baho va shikoyat kartochkalari. */
       "loads.rateOwnerTitle": "Yuk beruvchiga baho bering",
       "loads.rateOwnerHint": "Nima uchun shunday baho berdingiz?",
@@ -8154,6 +8171,7 @@
       "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "Только подходящие",
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
+      "loads.more": "Ещё",
       "loads.rateOwnerTitle": "Оцените заказчика",
       "loads.rateOwnerHint": "Почему вы поставили такую оценку?",
       "loads.rateThanks": "Спасибо за вашу оценку",
@@ -8733,6 +8751,7 @@
       "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "Matching loads only",
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
+      "loads.more": "More",
       "loads.rateOwnerTitle": "Rate the cargo owner",
       "loads.rateOwnerHint": "Why did you give this rating?",
       "loads.rateThanks": "Thank you for your rating",
@@ -16789,6 +16808,53 @@
     });
   }
 
+  /* ============================================================
+     Yuklar OLTITADAN ko'rsatiladi
+     ------------------------------------------------------------
+     Ilgari topilgan e'lonlarning HAMMASI birdan chizilardi. Yuz
+     dona e'lon bo'lsa, ro'yxat cheksiz uzayib ketardi: odam
+     pastga surib-surib oxirini topolmasdi, eski telefon esa
+     yuzta kartochkani birdan chizishga tirishardi.
+
+     Endi oltitasi chiqadi, ostida "Yana" turadi — har bosilganda
+     yana oltita qo'shiladi. Serverga qayta so'rov ketmaydi:
+     ro'yxat allaqachon qo'lda, faqat ko'rsatilishi cheklangan. */
+  var LOADS_PAGE = 6;
+  var loadsShown = LOADS_PAGE;
+
+  function renderLoadsPage(list, loads){
+    if(!list) return;
+    if(!loads.length){ list.innerHTML = emptyLoadsHtml(); return; }
+
+    var korinadi = loads.slice(0, loadsShown);
+    var qoldi = loads.length - korinadi.length;
+
+    list.innerHTML = korinadi.map(loadCardHtml).join("")
+      + (qoldi > 0
+          ? '<button type="button" class="loads-more" id="btnLoadsMore">'
+            + '<span data-i18n="loads.more">Yana</span>'
+            + '<span class="loads-more-n">' + qoldi + '</span>'
+            + '</button>'
+          : '');
+
+    var more = document.getElementById("btnLoadsMore");
+    if(more) more.addEventListener("click", function(){
+      loadsShown += LOADS_PAGE;
+      /* Qo'shilgan birinchi kartochka qayerdaligini eslab
+         qolamiz: chizilgandan keyin ekran o'sha joyda qolsin,
+         tepaga otilib ketmasin. */
+      var oldin = more.getBoundingClientRect().top;
+      renderLoadsPage(list, loads);
+      applyLang();
+      var yangi = list.children[korinadi.length];
+      if(yangi){
+        var surish = yangi.getBoundingClientRect().top - oldin;
+        if(surish) window.scrollBy(0, surish);
+      }
+      haptic("light");
+    });
+  }
+
   function emptyLoadsHtml(){
     return '<div class="empty-state">'
       + icon("iconInboxEmpty")
@@ -16847,7 +16913,9 @@
 
         if(countEl) countEl.textContent = loads.length + " ta yuk topildi";
         renderLoadCityChips(loads);
-        list.innerHTML = loads.length ? loads.map(loadCardHtml).join("") : emptyLoadsHtml();
+        // Yangi ro'yxat — hisob yana boshidan, oltitadan.
+        loadsShown = LOADS_PAGE;
+        renderLoadsPage(list, loads);
         applyLang();
 
         var resetBtn = document.getElementById("btnLoadsResetEmpty");
