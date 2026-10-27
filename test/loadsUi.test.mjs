@@ -188,7 +188,16 @@ flow('4. Maxfiylik');
   /* Aloqa ilova ichidagi yozishuv orqali — bu yo'l allaqachon
      bor va raqamni ochmaydi. */
   check('aloqa yozishuv orqali', detailFn.includes('goToChatWith(d.ownerUsername'));
-  check('nusxalash tugmasi yo‘q', !/data-copy-phone|navigator\.clipboard/.test(detailFn));
+  /* RAQAMNI nusxalash bo'lmasin. Nusxalashning o'zi taqiqlangan
+     emas — buyurtma kodi aynan shu yo'l bilan ko'chiriladi va
+     bu odamga kerak. Taqiq telefon raqamiga tegishli: u sahifada
+     umuman yo'q, demak nusxalanadigan narsa ham yo'q. */
+  check('raqamni nusxalash tugmasi yo‘q', !/data-copy-phone/.test(detailFn));
+  check('nusxalashga raqam berilmaydi', !/writeText\([^)]*(phone|raqam)/i.test(detailFn));
+  /* Nusxalanadigan kataklar faqat `facts` ro'yxatidan keladi,
+     unda esa raqam yo'q (yuqoridagi tekshiruvlarga qarang). */
+  const nusxaOlchov = detailFn.match(/data-copy="[^"]*"/g) || [];
+  check('nusxalanadigan katak bitta joydan chiziladi', nusxaOlchov.length <= 1, nusxaOlchov);
 }
 
 /* ============================================================

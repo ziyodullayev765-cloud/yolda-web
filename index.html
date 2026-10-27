@@ -151,7 +151,7 @@
        emas. Shuning uchun o'sha ochiq yashil --stamp-dark da turadi va
        matn ostiga emas, bezakka ishlatiladi. */
     --paper:#FFFFFF;
-    --paper-dark:#EEF1F6;
+    --paper-dark:#F1F2F4;
     --card:#FFFFFF;
     --ink:#14263D;
     --ink-soft:#48566E;
@@ -262,9 +262,15 @@
      faqat kulrangning to'q darajalari — rang bermaydi, shuning uchun
      yashil brend rangi ham toza chiqadi. */
   :root[data-theme="dark"]{
+    /* YUZALAR FONDAN AJRALIB TURADI. Ilgari kartochka #0E0E0E,
+       fon esa #000000 edi — ikkisining farqi ko'zga deyarli
+       ilinmasdi va bo'limlar bitta qora maydon bo'lib qolardi.
+       Endi kartochka aniq kulrang, ikkinchi darajali yuza esa
+       undan ham ochiqroq: qaysi narsa qayerda tugashi
+       ko'rinadi. */
     --paper:#000000;
-    --paper-dark:#141414;
-    --card:#0E0E0E;
+    --paper-dark:#2C2C2E;
+    --card:#1C1C1E;
     --ink:#F2F2F2;
     --ink-soft:#A8A8A8;
     --muted:#767676;
@@ -274,9 +280,9 @@
     --stamp-dark:#10B981;
     --accepted:#34D399;
     --warn:#FBBF24;
-    --border:rgba(255,255,255,0.10);
+    --border:rgba(255,255,255,0.14);
     --tint:rgba(45,212,128,0.13);
-    --skeleton-mid:#1B1B1B;
+    --skeleton-mid:#3A3A3C;
     --hero-veil:14,14,14;
     --chrome-glass:rgba(8,8,8,0.62);
     --chrome-solid:rgba(8,8,8,0.96);
@@ -2403,6 +2409,17 @@
   .ld-cta .ic-svg{font-size:19px;}
   .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-bottom:var(--s4);}
   .detail-grid .dg-item{background:var(--paper-dark);border-radius:var(--r-md);padding:var(--s3) var(--s4);}
+  /* Nusxalanadigan katak — tugma. Brauzerning o'z tugma
+     ko'rinishi olib tashlanadi, aks holda u qolganlaridan
+     ajralib, qiyshayib turardi. */
+  .detail-grid .dg-copy{
+    position:relative;border:none;width:100%;text-align:left;
+    font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .detail-grid .dg-copy:active{transform:scale(0.98);}
+  .dg-copy-ic{position:absolute;top:50%;right:var(--s3);margin-top:-8px;font-size:16px;color:var(--muted);}
+  .detail-grid .dg-copy .val{padding-right:22px;}
+  .detail-grid .dg-copy.done .dg-copy-ic{color:var(--route);}
 
   /* ---------- Yuk sahifasidagi ikki kartochka ----------
      Baho va shikoyat. Ikkalasi bir xil qolipda: yumaloq belgi,
@@ -2505,11 +2522,11 @@
     overflow:hidden;
   }
   /* Yozishma qatoridagi amallar tugmasi va qadalgani belgisi. */
-  /* YO'LDA bot qatori — odamlar bilan yozishmalardan ajralib
-     tursin, lekin ko'zga urilmasin. */
+  /* YO'LDA AI qatori. Ilgari u o'z to'rtburchagi ichida —
+     chegara va foni bilan — turardi; endi qolgan qatorlar bilan
+     bir xil, hech narsa o'rab turmaydi. */
   .chat-row.ai-entry{
-    border:1px solid var(--border);border-radius:var(--r-lg);
-    margin-bottom:var(--s3);background:var(--card);
+    border:none;background:none;
     /* Bu qator — tugma, qolganlari esa oddiy blok. Tugma
        o'z-o'zidan kengaymaydi: eni ichidagi matnga qarab
        o'lchanadi. Shuning uchun uzun yozuv kartochkadan chiqib
@@ -4326,10 +4343,12 @@
     padding:var(--s5) var(--s4) var(--s7);
   }
   :root[data-theme="dark"] .life{
+    /* Qolgan bo'limlar bilan bir xil: kartochka fondan aniq
+       ajralib tursin (yuqoridagi `--card` bilan bir xil tus). */
     --lf-bg:#000000;
-    --lf-card:#101010;
-    --lf-card-2:#191919;
-    --lf-line:rgba(255,255,255,0.09);
+    --lf-card:#1C1C1E;
+    --lf-card-2:#2C2C2E;
+    --lf-line:rgba(255,255,255,0.14);
     --lf-ink:#F1F5F2;
     --lf-soft:#9FB0A6;
     --lf-dim:#6B7C72;
@@ -14830,8 +14849,14 @@
     // below reconciles against what the server actually stored.
     if(wasFav) truckFavIds = truckFavIds.filter(function(x){ return x !== id; });
     else truckFavIds.push(id);
+    /* Belgi ham, SINF ham almashadi. Ilgari faqat ichidagi
+       yurakcha almashtirilardi — `on` sinfi esa qo'yilmasdi.
+       Qizil rang aynan shu sinfga bog'langan (`.htc-fav.on`,
+       `.tc-fav.on`), ya'ni to'ldirilgan yurakcha qo'yilsa ham
+       rangi o'zgarmay, qoramtir bo'lib ko'rinaverardi. */
     document.querySelectorAll('[data-truck-fav="'+id+'"]').forEach(function(b){
       b.innerHTML = heartIcon(!wasFav);
+      b.classList.toggle("on", !wasFav);
     });
 
     fetch("/api/trucks?action=" + (wasFav ? "unfavorite" : "favorite"), {
@@ -15206,18 +15231,17 @@
   var chatInbox = [];
   var chatFilter = "all";
 
-  /** Yozishmalar ro'yxatining tepasidagi YO'LDA bot qatori. */
+  /** Yozishmalar ro'yxatining tepasidagi YO'LDA AI qatori.
+      Faqat belgi va nom: yonidagi "YO'LDA" yozuvi ham, ostidagi
+      izoh ham olib tashlandi — qator qolganlari bilan bir xil
+      ko'rinsin, o'z to'rtburchagi ichida ajralib turmasin. */
   function aiRowHtml(){
     return '<button type="button" class="chat-row ai-entry" data-open-ai>'
       + '<span class="chat-avatar ai-entry-av">'
       +   '<svg class="ic-svg" aria-hidden="true"><use href="#botMark"/></svg></span>'
       + '<div class="chat-row-txt">'
       +   '<span class="chat-row-top">'
-      +     '<span class="u">YO\'LDA bot</span>'
-      +     '<span class="chat-row-time">YO\'LDA</span>'
-      +   '</span>'
-      +   '<span class="chat-row-bottom">'
-      +     '<span class="preview">Savol bering — yuk, yo\'nalish va hujjat bo\'yicha</span>'
+      +     '<span class="u">YO\'LDA AI</span>'
       +   '</span>'
       + '</div></button>';
   }
@@ -16727,15 +16751,42 @@
     if(loadsState.fromCity && cities.indexOf(loadsState.fromCity) === -1){
       cities.unshift(loadsState.fromCity);
     }
-    if(!cities.length){ box.hidden = true; box.innerHTML = ""; return; }
+    if(!cities.length){ box.hidden = true; box.innerHTML = ""; box.__cities = ""; return; }
 
     box.hidden = false;
-    box.innerHTML = '<button type="button" class="lcy'+(loadsState.fromCity ? "" : " on")+'" data-city="">'
+
+    /* TUGMALAR BEKORGA QAYTA CHIZILMAYDI.
+       Ilgari har bosishda butun qator `innerHTML` bilan qaytadan
+       yasalardi. Javob kelguncha bir soniyacha o'tadi — agar odam
+       shu orada yana bossa, barmoq ostidagi tugma o'rnini yangisi
+       egallab ulgurardi. Brauzer esa bosilgan va qo'yib yuborilgan
+       element BIR XIL bo'lmasa, "click" hodisasini umuman
+       bermaydi: tez bosilgan tegish yo'qolardi.
+
+       Endi shaharlar ro'yxati o'zgarmagan bo'lsa, faqat tanlangani
+       belgilanadi — tugmalarning o'zi joyida qoladi. */
+    var kalit = cities.join("|");
+    if(box.__cities === kalit){
+      markLoadCity(box);
+      return;
+    }
+    box.__cities = kalit;
+    box.innerHTML = '<button type="button" class="lcy" data-city="">'
       + '<span data-i18n="loads.anyCity">Barchasi</span></button>'
       + cities.map(function(c){
-          return '<button type="button" class="lcy'+(loadsState.fromCity === c ? " on" : "")+'" '
-            + 'data-city="'+escapeHtml(c)+'">'+escapeHtml(c)+'</button>';
+          return '<button type="button" class="lcy" data-city="'+escapeHtml(c)+'">'
+            + escapeHtml(c)+'</button>';
         }).join("");
+    markLoadCity(box);
+  }
+
+  /** Qaysi shahar tanlanganini tugmalarga belgilaydi. */
+  function markLoadCity(box){
+    box = box || document.getElementById("loadsCityChips");
+    if(!box) return;
+    box.querySelectorAll(".lcy").forEach(function(btn){
+      btn.classList.toggle("on", (btn.getAttribute("data-city") || "") === (loadsState.fromCity || ""));
+    });
   }
 
   function emptyLoadsHtml(){
@@ -19291,7 +19342,10 @@
     var facts = [];
     if(d.truckType) facts.push(["loads.truckType", "Mashina turi", VEHICLE_LABELS[d.truckType] || d.truckType]);
     if(d.quantity && d.volumeM3) facts.push(["order.volumeShort", "Hajm", d.volumeM3 + " m³"]);
-    facts.push(["order.trackCodeLabel", "Buyurtma kodi", d.code]);
+    /* To'rtinchi qiymat — bosilganda nusxalanadigan katak.
+       Buyurtma kodi aynan ko'chirish uchun kerak bo'ladi:
+       uni qo'lda terib o'tirish xatoga olib keladi. */
+    facts.push(["order.trackCodeLabel", "Buyurtma kodi", d.code, true]);
 
     var addr = addressLineHtml("iconArrowRight", d.fromAddress, d.fromPoint, "loads.from", "Qayerdan")
       + addressLineHtml("iconArrowRight", d.toAddress, d.toPoint, "loads.to", "Qayerga");
@@ -19375,8 +19429,15 @@
       +   '<h3 class="ld-sec-title" data-i18n="loads.detailsTitle">Tafsilotlar</h3>'
       +   '<div class="detail-grid">'
       +     facts.map(function(f){
-            return '<div class="dg-item"><div class="lbl" data-i18n="'+f[0]+'">'+escapeHtml(f[1])+'</div>'
-              + '<div class="val">'+escapeHtml(String(f[2]))+'</div></div>';
+            var ich = '<div class="lbl" data-i18n="'+f[0]+'">'+escapeHtml(f[1])+'</div>'
+              + '<div class="val">'+escapeHtml(String(f[2]))+'</div>';
+            /* Nusxalanadigan katak tugma bo'ladi — bosilishi
+               mumkinligi ko'rinib tursin va klaviatura bilan ham
+               yetib borilsin. */
+            return f[3]
+              ? '<button type="button" class="dg-item dg-copy" data-copy="'+escapeHtml(String(f[2]))+'">'
+                + ich + icon("iconClipboard", "dg-copy-ic") + '</button>'
+              : '<div class="dg-item">' + ich + '</div>';
           }).join("")
       +   '</div>'
 
@@ -19428,8 +19489,35 @@
     var offerBtn = document.getElementById("btnDetailOffer");
     if(offerBtn) offerBtn.addEventListener("click", function(){ openOfferSheet(d); });
 
+    /* "Aloqa" qatori odamning PROFILINI ochadi, yozishmani emas.
+       Ilgari u to'g'ridan-to'g'ri chatga olib kirardi: kim
+       ekanini ko'rmasdan turib yozishga majbur bo'lardi. Profil
+       ichida "Xabar yozish" tugmasi bor — yozishmoqchi bo'lgan
+       odam bir bosishda o'sha yerga o'tadi. */
+    /* Buyurtma kodi bosilganda nusxalanadi. Javob darhol
+       ko'rinadi: belgi yashil bo'ladi va qisqa xabar chiqadi —
+       aks holda nimadir bo'lgani bilinmasdi. */
+    detailView.querySelectorAll("[data-copy]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var matn = btn.getAttribute("data-copy") || "";
+        if(!matn) return;
+        var bildir = function(){
+          btn.classList.add("done");
+          setTimeout(function(){ btn.classList.remove("done"); }, 1600);
+          toast("Nusxalandi", matn, "success");
+        };
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(matn).then(bildir).catch(function(){
+            window.prompt("Nusxalang:", matn);
+          });
+        } else {
+          window.prompt("Nusxalang:", matn);
+        }
+      });
+    });
+
     var contactRow = document.getElementById("rowContact");
-    if(contactRow) contactRow.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
+    if(contactRow) contactRow.addEventListener("click", function(){ openPublicProfile(d.ownerUsername); });
 
     var msgBtn = document.getElementById("btnDetailMessage");
     if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
@@ -21802,6 +21890,9 @@
       loadsState.fromCity = city;
       var fromSel = document.getElementById("fLoadsFrom");
       if(fromSel) fromSel.value = city;
+      /* Belgi DARHOL ko'chadi — javob kutilmaydi. Aks holda
+         tugma bosilgandek tuyulmasdi va odam yana bosardi. */
+      markLoadCity(cityChip.parentNode);
       fetchLoads();
       return;
     }
@@ -23140,7 +23231,7 @@
   /* Yordamchining nomi bitta joyda yozilgan: sarlavhada ham,
      suhbatdagi har bir javobda ham, ro'yxatdagi qatorda ham
      aynan shu ko'rinadi. */
-  var BOT = "YO'LDA bot";
+  var BOT = "YO'LDA AI";
 
   var view = "chat";     // chat | history | tools | plans
   var thread = null;     // ochilgan suhbat: { title, items:[...] }
