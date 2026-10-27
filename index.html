@@ -2419,6 +2419,54 @@
   .ld-cta .ic-svg{font-size:19px;}
   .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-bottom:var(--s4);}
   .detail-grid .dg-item{background:var(--paper-dark);border-radius:var(--r-md);padding:var(--s3) var(--s4);}
+
+  /* ---------- Yuk sahifasidagi ikki kartochka ----------
+     Baho va shikoyat. Ikkalasi bir xil qolipda: yumaloq belgi,
+     yonida ikki qatorli yozuv, ostida amal. */
+  .ld-card{
+    background:var(--paper-dark);border-radius:var(--r-lg);
+    padding:var(--s4);margin-top:var(--s4);
+  }
+  .ld-card-head{display:flex;align-items:center;gap:var(--s3);}
+  .ld-card-ic{
+    flex:none;width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+  }
+  .ld-card-ic--star{background:rgba(245,158,11,0.16);color:var(--warn);}
+  .ld-card-ic--warn{background:rgba(220,38,38,0.12);color:#DC2626;}
+  .ld-card-txt{min-width:0;}
+  .ld-card-txt b{display:block;font-size:15.5px;color:var(--ink);line-height:1.3;}
+  .ld-card-txt small{display:block;font-size:13px;color:var(--muted);margin-top:2px;word-break:break-word;}
+  /* O'qish uchun turgan yulduzchalar — bosilmaydi. */
+  .ld-stars{display:flex;gap:var(--s2);margin-top:var(--s3);font-size:26px;color:var(--border);}
+  .ld-star.on{color:var(--warn);}
+  .ld-report-btn{
+    display:block;width:100%;margin-top:var(--s3);padding:14px;
+    border:none;border-radius:var(--r-md);background:var(--card);
+    font-family:inherit;font-size:15px;font-weight:700;color:#DC2626;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .ld-report-btn:active{transform:scale(0.99);}
+  :root[data-theme="dark"] .ld-report-btn{background:rgba(255,255,255,0.06);}
+
+  /* ---------- Shikoyat varag'i ---------- */
+  .rp-list{display:flex;flex-direction:column;gap:var(--s3);}
+  .rp-item{
+    display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+    padding:14px var(--s4);border:none;border-radius:var(--r-md);
+    background:var(--paper-dark);font-family:inherit;font-size:14.5px;
+    color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .rp-ic{flex:none;font-size:18px;color:var(--muted);display:flex;}
+  .rp-label{flex:1;min-width:0;line-height:1.35;}
+  /* Tanlov belgisi — bo'sh doira, tanlanganda ichi to'ladi. */
+  .rp-dot{
+    flex:none;width:20px;height:20px;border-radius:50%;
+    border:2px solid var(--border);box-sizing:border-box;
+  }
+  .rp-item.on{background:rgba(10,159,91,0.08);}
+  .rp-item.on .rp-dot{border-color:var(--route);border-width:6px;}
+  .rp-item.on .rp-ic{color:var(--route);}
   .detail-grid .dg-item .lbl{font-size:11px;color:var(--muted);margin-bottom:2px;}
   .detail-grid .dg-item .val{font-size:14px;font-weight:600;color:var(--ink);}
   /* ---------- Sozlamalar sahifasi ----------
@@ -7508,6 +7556,23 @@
       "loads.viewList": "Ro'yxat", "loads.viewMap": "Xarita", "loads.matchOnly": "Faqat mos yuklar",
       "loads.backhaulTitle": "Qaytish yuklari", "loads.backhaulSub": "safaringizga mos",
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
+      /* Yuk sahifasidagi baho va shikoyat kartochkalari. */
+      "loads.rateOwnerTitle": "Yuk beruvchiga baho bering",
+      "loads.rateOwnerHint": "Yuk yetkazildi \u2014 qanday o'tdi?",
+      "loads.noRatingYet": "Hali baho yo'q",
+      "loads.reportTitle": "E'lon bilan muammo bormi?",
+      "loads.reportSub": "Xabar bering, tekshirib ko'ramiz.",
+      "loads.reportBtn": "Shikoyat qilish",
+      "loads.reportSheetTitle": "Shikoyat bormi?",
+      "loads.reportAsk": "E'londa nima noto'g'ri? Bittasini tanlang.",
+      "loads.rpOk": "Hammasi joyida, muammo yo'q",
+      "loads.rpStale": "Eski e'lon \u2014 bu yuk allaqachon olingan yoki bekor qilingan",
+      "loads.rpFake": "Soxta e'lon, yolg'on ma'lumot, shubhali pullik takliflar",
+      "loads.rpOther": "Boshqa",
+      "loads.reportFreePh": "Nima bo'lganini yozing",
+      "loads.reportSend": "Yuborish",
+      "loads.reportOkNote": "Bu shikoyat emas \u2014 hech qayerga yuborilmaydi.",
+      "loads.reportOkThanks": "Rahmat",
       "loads.statWeight": "Og'irlik", "loads.statQty": "Yuk miqdori",
       "loads.statDate": "Sana", "loads.statDistance": "Masofa",
       "loads.route": "Yo'nalish", "loads.contact": "Aloqa",
@@ -8074,6 +8139,22 @@
       "loads.viewList": "Список", "loads.viewMap": "Карта", "loads.matchOnly": "Только подходящие",
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
+      "loads.rateOwnerTitle": "Оцените заказчика",
+      "loads.rateOwnerHint": "Груз доставлен \u2014 как всё прошло?",
+      "loads.noRatingYet": "Оценок пока нет",
+      "loads.reportTitle": "Что-то не так с объявлением?",
+      "loads.reportSub": "Сообщите — мы проверим.",
+      "loads.reportBtn": "Пожаловаться",
+      "loads.reportSheetTitle": "Есть жалоба?",
+      "loads.reportAsk": "Что не так в объявлении? Выберите одно.",
+      "loads.rpOk": "Всё в порядке, проблем нет",
+      "loads.rpStale": "Старое объявление \u2014 груз уже взят или отменён",
+      "loads.rpFake": "Фальшивое объявление, ложные данные, подозрительные платные предложения",
+      "loads.rpOther": "Другое",
+      "loads.reportFreePh": "Напишите, что случилось",
+      "loads.reportSend": "Отправить",
+      "loads.reportOkNote": "Это не жалоба \u2014 никуда не отправляется.",
+      "loads.reportOkThanks": "Спасибо",
       "loads.statWeight": "Вес", "loads.statQty": "Количество",
       "loads.statDate": "Дата", "loads.statDistance": "Расстояние",
       "loads.route": "Маршрут", "loads.contact": "Контакт",
@@ -8636,6 +8717,22 @@
       "loads.viewList": "List", "loads.viewMap": "Map", "loads.matchOnly": "Matching loads only",
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
+      "loads.rateOwnerTitle": "Rate the cargo owner",
+      "loads.rateOwnerHint": "The load was delivered \u2014 how did it go?",
+      "loads.noRatingYet": "No ratings yet",
+      "loads.reportTitle": "Something wrong with this listing?",
+      "loads.reportSub": "Tell us and we will check it.",
+      "loads.reportBtn": "Report",
+      "loads.reportSheetTitle": "Is there a problem?",
+      "loads.reportAsk": "What is wrong with the listing? Pick one.",
+      "loads.rpOk": "All fine, no problem",
+      "loads.rpStale": "Old listing \u2014 this load is already taken or cancelled",
+      "loads.rpFake": "Fake listing, false details, suspicious paid offers",
+      "loads.rpOther": "Other",
+      "loads.reportFreePh": "Describe what happened",
+      "loads.reportSend": "Send",
+      "loads.reportOkNote": "This is not a report \u2014 nothing is sent.",
+      "loads.reportOkThanks": "Thank you",
       "loads.statWeight": "Weight", "loads.statQty": "Quantity",
       "loads.statDate": "Date", "loads.statDistance": "Distance",
       "loads.route": "Route", "loads.contact": "Contact",
@@ -19296,12 +19393,29 @@
             : '')
       /* Takliflar: yuk egasiga kelganlari, haydovchiga o'zinikini. */
       +   '<div id="offersBox"></div>'
+      +   ownerRateCardHtml(d)
+      +   reportCardHtml()
       + '</div>';
 
     applyLang();
 
     var backBtn = document.getElementById("btnDetailBack");
     if(backBtn) backBtn.addEventListener("click", closeLoadDetail);
+
+    var reportBtn = document.getElementById("btnLoadReport");
+    if(reportBtn) reportBtn.addEventListener("click", function(){ openLoadReportSheet(d); });
+
+    /* Baho berish huquqi bo'lsa — widgetni jonlantiramiz.
+       Yuborish `?action=rate` ga ketadi, u yerda huquq QAYTA
+       tekshiriladi. */
+    if(d.canRateOwner){
+      bindRatingPicker("ldOwner", function(review, rateBtn){
+        submitRating({
+          code: d.code, side: "OWNER",
+          stars: review.stars, tags: review.tags, comment: review.comment
+        }, rateBtn, function(){ openLoadDetail(d.code); });
+      });
+    }
 
     var favBtn = document.getElementById("btnDetailFav");
     if(favBtn) favBtn.addEventListener("click", function(){
@@ -19326,6 +19440,189 @@
     if(msgBtn) msgBtn.addEventListener("click", function(){ goToChatWith(d.ownerUsername, ""); });
 
     loadOffers(d);
+  }
+
+  /* ============================================================
+     Yuk beruvchiga baho
+     ------------------------------------------------------------
+     BAHO KIMGA RUXSAT — SERVER AYTADI (`canRateOwner`). Sahifa
+     buni o'zi hisoblab olmaydi: aks holda kim bo'lsa ham
+     yulduzcha bosib, begonaning bahosini ko'tarib yoki tushirib
+     yuborishi mumkin edi. Shart serverda: yukni OLGAN haydovchi,
+     yuk yetkazilgan va u hali baho bermagan bo'lsin.
+
+     Qolganlarga blok o'qish uchun turadi: hozirgi o'rtacha baho
+     ko'rinadi, yulduzchalar bosilmaydi. Bahosi yo'q bo'lsa
+     bo'sh yulduzcha va halol yozuv — "hali baho yo'q". Yangi
+     odamni yomon ko'rsatib qo'ymaslik uchun nol yozilmaydi.
+     ============================================================ */
+  function ownerRateCardHtml(d){
+    var kim = d.name || (d.ownerUsername ? "@" + d.ownerUsername : "");
+    if(!kim) return "";
+
+    if(d.canRateOwner){
+      return '<div class="ld-card ld-rate" id="ldRateCard">'
+        + '<div class="ld-card-head">'
+        +   '<span class="ld-card-ic ld-card-ic--star">'+icon("iconStar", "filled")+'</span>'
+        +   '<div class="ld-card-txt">'
+        +     '<b data-i18n="loads.rateOwnerTitle">Yuk beruvchiga baho bering</b>'
+        +     '<small>'+escapeHtml(kim)+'</small>'
+        +   '</div>'
+        + '</div>'
+        + ratingPickerHtml("ldOwner", [], "loads.rateOwnerHint", "Yuk yetkazildi — qanday o'tdi?")
+        + '</div>';
+    }
+
+    var bor = d.ownerRating && d.ownerRating.count > 0;
+    return '<div class="ld-card ld-rate">'
+      + '<div class="ld-card-head">'
+      +   '<span class="ld-card-ic ld-card-ic--star">'+icon("iconStar", "filled")+'</span>'
+      +   '<div class="ld-card-txt">'
+      +     '<b>'+escapeHtml(kim)+'</b>'
+      +     '<small>' + (bor
+              ? escapeHtml(d.ownerRating.avg + " · " + d.ownerRating.count + " ta baho")
+              : '<span data-i18n="loads.noRatingYet">Hali baho yo\'q</span>') + '</small>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="ld-stars" aria-hidden="true">'
+      +   [1,2,3,4,5].map(function(n){
+            var toLa = bor && n <= Math.round(d.ownerRating.avg);
+            return '<span class="ld-star'+(toLa ? ' on' : '')+'">'+icon("iconStar", toLa ? "filled" : "")+'</span>';
+          }).join("")
+      + '</div>'
+      + '</div>';
+  }
+
+  /* ============================================================
+     "E'lon bilan muammo bormi?"
+     ------------------------------------------------------------
+     Shikoyat allaqachon bor edi, lekin faqat "Aloqa" bo'limida —
+     ya'ni odam e'londan chiqib, boshqa bo'limni topib, qaysi
+     e'lon haqida ekanini qo'lda yozishi kerak edi. Endi u shu
+     yerda, e'lonning o'zida.
+     ============================================================ */
+  function reportCardHtml(){
+    return '<div class="ld-card ld-report">'
+      + '<div class="ld-card-head">'
+      +   '<span class="ld-card-ic ld-card-ic--warn">'+icon("iconAlert")+'</span>'
+      +   '<div class="ld-card-txt">'
+      +     '<b data-i18n="loads.reportTitle">E\'lon bilan muammo bormi?</b>'
+      +     '<small data-i18n="loads.reportSub">Xabar bering, tekshirib ko\'ramiz.</small>'
+      +   '</div>'
+      + '</div>'
+      + '<button type="button" class="ld-report-btn" id="btnLoadReport" data-i18n="loads.reportBtn">Shikoyat qilish</button>'
+      + '</div>';
+  }
+
+  /* ============================================================
+     Shikoyat varag'i
+     ------------------------------------------------------------
+     Bitta savol, bitta tanlov. Uzun forma o'rniga tayyor
+     sabablar: odam e'londan chiqmasdan, bir-ikki teginishda
+     xabar beradi.
+
+     BIRINCHI TANLOV SHIKOYAT EMAS. "Hammasi joyida" — bu
+     javobning o'zi, ya'ni tekshiradigan narsa yo'q. Shuning
+     uchun u serverga YUBORILMAYDI: admin ro'yxatini "muammo
+     yo'q" degan yozuvlar bilan to'ldirish ularning ishiga
+     xalaqit berardi. Varaqning o'zida ham shu ochiq yozilgan.
+
+     Qolgan sabablar `/api/report` dagi mavjud ro'yxatga
+     tushadi — yangi sabab o'ylab topilmadi, shunda ular
+     boshqa shikoyatlar bilan bitta navbatga boradi. */
+  var LOAD_REPORT_REASONS = [
+    { id: "OK", ic: "iconCheck", label: "Hammasi joyida, muammo yo'q", kalit: "loads.rpOk" },
+    { id: "OTHER", ic: "iconClock", label: "Eski e'lon — bu yuk allaqachon olingan yoki bekor qilingan", kalit: "loads.rpStale" },
+    { id: "FAKE_LOAD", ic: "iconShield", label: "Soxta e'lon, yolg'on ma'lumot, shubhali pullik takliflar", kalit: "loads.rpFake" },
+    { id: "OTHER_FREE", ic: "iconChat", label: "Boshqa", kalit: "loads.rpOther" }
+  ];
+
+  function openLoadReportSheet(d){
+    var html = '<p class="note" style="margin:0 0 var(--s4);" data-i18n="loads.reportAsk">'
+      + 'E\'londa nima noto\'g\'ri? Bittasini tanlang.</p>'
+      + '<div class="rp-list">'
+      + LOAD_REPORT_REASONS.map(function(r, i){
+          return '<button type="button" class="rp-item" data-rp="'+r.id+'" data-rp-i="'+i+'">'
+            + '<span class="rp-ic">'+icon(r.ic)+'</span>'
+            + '<span class="rp-label" data-i18n="'+r.kalit+'">'+escapeHtml(r.label)+'</span>'
+            + '<span class="rp-dot" aria-hidden="true"></span>'
+            + '</button>';
+        }).join("")
+      + '</div>'
+      + '<div class="field" id="rpFreeWrap" hidden style="margin-top:var(--s4);margin-bottom:0;">'
+      +   '<textarea id="rpFree" maxlength="500" placeholder="Nima bo\'lganini yozing" '
+      +     'data-i18n-placeholder="loads.reportFreePh"></textarea></div>'
+      + '<p class="note" id="rpNote" style="margin-top:var(--s3);"></p>';
+
+    Sheet.open({
+      title: t("loads.reportSheetTitle") || "Shikoyat bormi?",
+      html: html,
+      footerHtml: '<button class="btn" id="btnRpSend" disabled data-i18n="loads.reportSend">Yuborish</button>',
+      onOpen: function(container){
+        applyLang();
+        var tanlangan = null;
+        var free = container.querySelector("#rpFreeWrap");
+        var send = document.getElementById("btnRpSend");
+        var note = container.querySelector("#rpNote");
+
+        container.querySelectorAll(".rp-item").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            container.querySelectorAll(".rp-item").forEach(function(b){ b.classList.remove("on"); });
+            btn.classList.add("on");
+            tanlangan = LOAD_REPORT_REASONS[+btn.getAttribute("data-rp-i")];
+            if(free) free.hidden = tanlangan.id !== "OTHER_FREE";
+            if(send) send.disabled = false;
+            if(note){ note.textContent = tanlangan.id === "OK"
+              ? (t("loads.reportOkNote") || "Bu shikoyat emas — hech qayerga yuborilmaydi.") : ""; }
+            haptic("light");
+          });
+        });
+
+        if(!send) return;
+        send.addEventListener("click", function(){
+          if(!tanlangan) return;
+          if(tanlangan.id === "OK"){
+            Sheet.close();
+            toast(t("loads.reportOkThanks") || "Rahmat", "", "success");
+            return;
+          }
+          var qoshimcha = container.querySelector("#rpFree");
+          var matn = qoshimcha ? qoshimcha.value.trim() : "";
+          if(tanlangan.id === "OTHER_FREE" && !matn){
+            if(note){ note.textContent = t("trucks.reportNeedDesc") || "Nima bo'lganini tasvirlab bering."; note.style.color = "#DC2626"; }
+            return;
+          }
+          send.disabled = true;
+          fetch("/api/report", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              googleIdToken: googleIdToken,
+              telegramInitData: telegramInitData,
+              phoneToken: phoneToken,
+              reason: tanlangan.id === "OTHER_FREE" ? "OTHER" : tanlangan.id,
+              /* Qaysi e'lon haqida ekani o'zi ketadi — odam uni
+                 qo'lda ko'chirib yozishi shart emas. */
+              target: d.code,
+              description: (t(tanlangan.kalit) || tanlangan.label) + (matn ? " — " + matn : "")
+            })
+          }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+            .then(function(res){
+              if(!res.ok){
+                send.disabled = false;
+                if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
+                return;
+              }
+              Sheet.close();
+              toast(t("trucks.reportSent") || "Shikoyatingiz yuborildi", "", "success");
+            })
+            .catch(function(){
+              send.disabled = false;
+              if(note){ note.textContent = "Yuborilmadi"; note.style.color = "#DC2626"; }
+            });
+        });
+      }
+    });
   }
 
   /**

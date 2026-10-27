@@ -880,6 +880,19 @@ const getLoadDetail = async (req, res) => {
     }
   }
 
+  /* Yuk beruvchining OCHIQ bahosi. Sir emas: u ommaviy profilda
+     ham ko'rinadi. Shuning uchun bu yerda faqat o'rtacha va
+     nechta bahodan ekani beriladi — izohlar va kim baholadi
+     degani emas. */
+  let ownerRating = null;
+  if (ownerKey) {
+    const op = await readJson(`profile:${ownerKey}`, null);
+    const count = (op && op.ownerRatingCount) || 0;
+    if (count > 0) {
+      ownerRating = { count, avg: Math.round(((op.ownerRatingSum || 0) / count) * 10) / 10 };
+    }
+  }
+
   /* Haydovchining aloqasi — FAQAT yukning egasiga.
      Ilgari bu yerda telefon umuman qaytmasdi va natijada yuk
      beruvchi o'z yukini olgan haydovchiga ilovadan qo'ng'iroq
@@ -888,13 +901,17 @@ const getLoadDetail = async (req, res) => {
      `?action=my-load` da.
      Begona odamga qaytarilmaydi: kodni bilgan har kim haydovchi
      raqamini yig'ib olardi. */
+  /* Qarab turgan odam kimligi bir marta aniqlanadi: quyida ham,
+     baho huquqini hisoblashda ham o'shanisi ishlatiladi. */
+  const viewerIdentity = await resolveEmail({
+    googleIdToken: req.query.googleIdToken,
+    telegramInitData: req.query.telegramInitData,
+    phoneToken: req.query.phoneToken,
+  });
+
   let driverContact = null;
   if (order.driver && order.driver.identity) {
-    const viewer = await resolveEmail({
-      googleIdToken: req.query.googleIdToken,
-      telegramInitData: req.query.telegramInitData,
-      phoneToken: req.query.phoneToken,
-    });
+    const viewer = viewerIdentity;
     if (viewer && ownerKey && viewer === ownerKey) {
       const dp = await readJson(`profile:${order.driver.identity}`, null);
       driverContact = {
@@ -936,6 +953,22 @@ const getLoadDetail = async (req, res) => {
     createdAt: order.createdAt,
     name: order.name,
     ownerUsername,
+    ownerRating,
+    /* Baho berish huquqi SERVERDA hal qilinadi. Sahifa buni
+       o'zi hisoblab olmaydi: aks holda kim bo'lsa ham yulduzcha
+       bosib, begonaning bahosini ko'tarib yoki tushirib
+       yuborishi mumkin edi.
+
+       Shart: baho beruvchi aynan shu yukni OLGAN haydovchi
+       bo'lsin, yuk yetkazilgan bo'lsin va u hali baho bermagan
+       bo'lsin. Aynan shu shart `?action=rate` ichida ham qayta
+       tekshiriladi — bu yerdagisi faqat ko'rsatish uchun. */
+    canRateOwner: Boolean(
+      viewerIdentity
+      && order.driver && order.driver.identity === viewerIdentity
+      && order.status === 'DELIVERED'
+      && !order.ownerRating,
+    ),
     driverContact,
   });
 };
