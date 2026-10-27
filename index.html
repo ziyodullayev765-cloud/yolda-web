@@ -2424,6 +2424,17 @@
   /* O'qish uchun turgan yulduzchalar — bosilmaydi. */
   .ld-stars{display:flex;gap:var(--s2);margin-top:var(--s3);font-size:26px;color:var(--border);}
   .ld-star.on{color:var(--warn);}
+  /* Baho yuborilgach kartochka o'rnida turadigan rahmat. */
+  .ld-rate--done{background:rgba(10,159,91,0.10);}
+  .ld-thanks{display:flex;align-items:center;gap:var(--s3);}
+  .ld-thanks-ic{
+    flex:none;width:44px;height:44px;border-radius:50%;
+    background:var(--route);color:#fff;font-size:20px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ld-thanks b{display:block;font-size:15.5px;color:var(--ink);}
+  .ld-thanks small{display:block;font-size:13px;color:var(--muted);margin-top:2px;}
+
   .ld-report-btn{
     display:block;width:100%;margin-top:var(--s3);padding:14px;
     border:none;border-radius:var(--r-md);background:var(--card);
@@ -7542,7 +7553,8 @@
       "loads.sendOffer": "Taklif yuborish", "loads.sendMessage": "Xabar yozish",
       /* Yuk sahifasidagi baho va shikoyat kartochkalari. */
       "loads.rateOwnerTitle": "Yuk beruvchiga baho bering",
-      "loads.rateOwnerHint": "Yuk yetkazildi \u2014 qanday o'tdi?",
+      "loads.rateOwnerHint": "Nima uchun shunday baho berdingiz?",
+      "loads.rateThanks": "Bahoyingiz uchun rahmat",
       "loads.noRatingYet": "Hali baho yo'q",
       "loads.reportTitle": "E'lon bilan muammo bormi?",
       "loads.reportSub": "Xabar bering, tekshirib ko'ramiz.",
@@ -8124,7 +8136,8 @@
       "loads.backhaulTitle": "Обратные грузы", "loads.backhaulSub": "подходит для вашей поездки",
       "loads.sendOffer": "Отправить предложение", "loads.sendMessage": "Написать сообщение",
       "loads.rateOwnerTitle": "Оцените заказчика",
-      "loads.rateOwnerHint": "Груз доставлен \u2014 как всё прошло?",
+      "loads.rateOwnerHint": "Почему вы поставили такую оценку?",
+      "loads.rateThanks": "Спасибо за вашу оценку",
       "loads.noRatingYet": "Оценок пока нет",
       "loads.reportTitle": "Что-то не так с объявлением?",
       "loads.reportSub": "Сообщите — мы проверим.",
@@ -8702,7 +8715,8 @@
       "loads.backhaulTitle": "Return loads", "loads.backhaulSub": "matches your trip",
       "loads.sendOffer": "Send an offer", "loads.sendMessage": "Send a message",
       "loads.rateOwnerTitle": "Rate the cargo owner",
-      "loads.rateOwnerHint": "The load was delivered \u2014 how did it go?",
+      "loads.rateOwnerHint": "Why did you give this rating?",
+      "loads.rateThanks": "Thank you for your rating",
       "loads.noRatingYet": "No ratings yet",
       "loads.reportTitle": "Something wrong with this listing?",
       "loads.reportSub": "Tell us and we will check it.",
@@ -19389,15 +19403,12 @@
     var reportBtn = document.getElementById("btnLoadReport");
     if(reportBtn) reportBtn.addEventListener("click", function(){ openLoadReportSheet(d); });
 
-    /* Baho berish huquqi bo'lsa — widgetni jonlantiramiz.
-       Yuborish `?action=rate` ga ketadi, u yerda huquq QAYTA
-       tekshiriladi. */
-    if(d.canRateOwner){
+    /* Baho. Kimni baholayotganimiz username orqali aytiladi —
+       buyurtma kodi orqali emas, chunki baho endi buyurtmaga
+       emas, ODAMGA beriladi. */
+    if(d.ownerUsername){
       bindRatingPicker("ldOwner", function(review, rateBtn){
-        submitRating({
-          code: d.code, side: "OWNER",
-          stars: review.stars, tags: review.tags, comment: review.comment
-        }, rateBtn, function(){ openLoadDetail(d.code); });
+        rateUserRequest(d.ownerUsername, review, rateBtn);
       });
     }
 
@@ -19440,41 +19451,106 @@
      bo'sh yulduzcha va halol yozuv — "hali baho yo'q". Yangi
      odamni yomon ko'rsatib qo'ymaslik uchun nol yozilmaydi.
      ============================================================ */
+  /* BAHONI XOHLAGAN ODAM BERADI. Ilgari u faqat yetkazilgan
+     buyurtmaning ikki tomoni o'rtasida bo'lardi va qolganlar
+     uchun yulduzchalar shunchaki ko'rsatkich edi — ya'ni ko'p
+     odam uchun "baho berib bo'lmasdi". Egasi buni ochishni
+     so'radi.
+
+     To'siqlar serverda qoldi: kirgan bo'lish shart, bir odam
+     bir marta (ikkinchisi eskisining o'rniga yoziladi) va
+     o'ziga baho bermaydi. Ularsiz raqam hech narsani
+     anglatmay qolardi. */
   function ownerRateCardHtml(d){
     var kim = d.name || (d.ownerUsername ? "@" + d.ownerUsername : "");
     if(!kim) return "";
 
-    if(d.canRateOwner){
-      return '<div class="ld-card ld-rate" id="ldRateCard">'
-        + '<div class="ld-card-head">'
-        +   '<span class="ld-card-ic ld-card-ic--star">'+icon("iconStar", "filled")+'</span>'
-        +   '<div class="ld-card-txt">'
-        +     '<b data-i18n="loads.rateOwnerTitle">Yuk beruvchiga baho bering</b>'
-        +     '<small>'+escapeHtml(kim)+'</small>'
-        +   '</div>'
-        + '</div>'
-        + ratingPickerHtml("ldOwner", [], "loads.rateOwnerHint", "Yuk yetkazildi — qanday o'tdi?")
-        + '</div>';
-    }
-
     var bor = d.ownerRating && d.ownerRating.count > 0;
-    return '<div class="ld-card ld-rate">'
+    var ost = bor
+      ? escapeHtml(d.ownerRating.avg + " · " + d.ownerRating.count + " ta baho")
+      : '<span data-i18n="loads.noRatingYet">Hali baho yo\'q</span>';
+
+    var bosh = '<div class="ld-card ld-rate" id="ldRateCard">'
       + '<div class="ld-card-head">'
       +   '<span class="ld-card-ic ld-card-ic--star">'+icon("iconStar", "filled")+'</span>'
       +   '<div class="ld-card-txt">'
-      +     '<b>'+escapeHtml(kim)+'</b>'
-      +     '<small>' + (bor
-              ? escapeHtml(d.ownerRating.avg + " · " + d.ownerRating.count + " ta baho")
-              : '<span data-i18n="loads.noRatingYet">Hali baho yo\'q</span>') + '</small>'
+      +     '<b data-i18n="loads.rateOwnerTitle">Yuk beruvchiga baho bering</b>'
+      +     '<small>'+escapeHtml(kim)+' · '+ost+'</small>'
       +   '</div>'
-      + '</div>'
-      + '<div class="ld-stars" aria-hidden="true">'
-      +   [1,2,3,4,5].map(function(n){
-            var toLa = bor && n <= Math.round(d.ownerRating.avg);
-            return '<span class="ld-star'+(toLa ? ' on' : '')+'">'+icon("iconStar", toLa ? "filled" : "")+'</span>';
-          }).join("")
-      + '</div>'
       + '</div>';
+
+    /* Username bo'lmasa baholab bo'lmaydi: serverga kimni
+       baholayotganimizni aytadigan narsa yo'q. Unda faqat
+       hozirgi baho ko'rinadi. */
+    if(!d.ownerUsername){
+      return bosh
+        + '<div class="ld-stars" aria-hidden="true">'
+        +   [1,2,3,4,5].map(function(n){
+              var toLa = bor && n <= Math.round(d.ownerRating.avg);
+              return '<span class="ld-star'+(toLa ? ' on' : '')+'">'+icon("iconStar", toLa ? "filled" : "")+'</span>';
+            }).join("")
+        + '</div></div>';
+    }
+
+    return bosh
+      + ratingPickerHtml("ldOwner", [], "loads.rateOwnerHint", "Nima uchun shunday baho berdingiz?")
+      + '</div>';
+  }
+
+  /**
+   * Odamga baho yuboradi va javobni ekranda ko'rsatadi.
+   *
+   * Yuborilgach kartochka o'rniga TEPADA rahmat turadi: odam
+   * bahosi yetib borganini darhol ko'rsin. Yana baholamoqchi
+   * bo'lsa sahifani qayta ochadi — serverda eskisi yangisiga
+   * almashadi, ustiga qo'shilmaydi.
+   */
+  function rateUserRequest(username, review, btn){
+    var karta = document.getElementById("ldRateCard");
+    if(btn) btn.disabled = true;
+    fetch("/api/profile?action=rate-user", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        googleIdToken: googleIdToken,
+        telegramInitData: telegramInitData,
+        phoneToken: phoneToken,
+        username: username,
+        stars: review.stars, tags: review.tags, comment: review.comment
+      })
+    }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if(!res.ok){
+          if(btn) btn.disabled = false;
+          /* Kirmagan odamga "kiring" deb aytish — xatolik emas,
+             yo'l ko'rsatish. */
+          if(res.body && /kiring/i.test(res.body.error || "")) promptSignIn();
+          else toast(res.body.error || "Yuborilmadi", "", "info");
+          return;
+        }
+        var baho = res.body.rating || {};
+        if(karta){
+          karta.classList.add("ld-rate--done");
+          karta.innerHTML = '<div class="ld-thanks">'
+            + '<span class="ld-thanks-ic">'+icon("iconCheck")+'</span>'
+            + '<div>'
+            +   '<b data-i18n="loads.rateThanks">Bahoyingiz uchun rahmat</b>'
+            +   '<small>' + '★'.repeat(review.stars)
+            +     (baho.count ? ' · ' + escapeHtml(baho.avg + " · " + baho.count + " ta baho") : '')
+            +   '</small>'
+            + '</div></div>';
+          applyLang();
+          /* Sahifaning tepasiga olib chiqamiz — rahmat ko'zdan
+             qochib qolmasin. */
+          try{ karta.scrollIntoView({ behavior: "smooth", block: "center" }); }catch(e){}
+        }
+        toast(t("loads.rateThanks") || "Bahoyingiz uchun rahmat", "", "success");
+        haptic("medium");
+      })
+      .catch(function(){
+        if(btn) btn.disabled = false;
+        toast("Yuborilmadi", "", "info");
+      });
   }
 
   /* ============================================================

@@ -26,13 +26,13 @@
 import { resolveEmail, createTelegramLinkCode, redeemTelegramLinkCode } from '../lib/identity.js';
 import {
   kvConfigured, kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSismember, kvSmembers, kvRange,
-  kvIncr, kvExpire, kvLrem,
+  kvIncr, kvExpire, kvLrem, kvPush,
 } from '../lib/kv.js';
 import { MAX_SEARCHES, searchesKey } from '../lib/savedSearch.js';
 import { ensurePublicId } from '../lib/publicId.js';
 import { NOTIFY_CATEGORIES, readNotifications, markNotificationsSeen,
   deleteNotification, clearNotifications } from '../lib/notify.js';
-import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS } from '../lib/reviews.js';
+import { topTags, reviewsKey, REVIEW_LIMIT, CRITERIA_LABELS, validateReview } from '../lib/reviews.js';
 import { deleteAccount, activeOrdersFor } from '../lib/deleteAccount.js';
 // Yuk turlari ro'yxati bitta joydan olinadi — haydovchi "nima
 // tashiyman" deb tanlagan turlar buyurtmadagi turlar bilan bir xil
@@ -735,6 +735,93 @@ const publicProfileShape = (identity, profile, staff) => ({
   joinedAt: profile.joinedAt || null,
 });
 
+/**
+ * POST ?action=rate-user — odamga baho qoldirish.
+ *
+ * NEGA OCHIQ. Ilgari baho faqat yetkazilgan buyurtmadan keyin,
+ * faqat o'sha buyurtmaning ikki tomoni o'rtasida bo'lardi. Egasi
+ * buni ochishni so'radi: xohlagan odam baho bera olsin.
+ *
+ * SHUNING UCHUN QOLGAN UCH TO'SIQ SAQLANDI — ularsiz baho hech
+ * narsani anglatmay qolardi:
+ *
+ *   - KIRGAN bo'lish shart. Nomsiz baho shunchaki raqam: uni kim
+ *     qo'yganini bilib bo'lmaydi, demak suiiste'molini to'xtatib
+ *     ham bo'lmaydi.
+ *   - BIR ODAM BIR MARTA. Ikkinchi marta bergani eskisining
+ *     O'RNIGA yoziladi, ustiga qo'shilmaydi — aks holda bitta
+ *     odam bir kishining bahosini istagancha ko'tarib yoki
+ *     tushirib yuborardi.
+ *   - O'ZINI BAHOLAY OLMAYDI.
+ */
+const rateUser = async (req, res) => {
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+
+  const rater = await resolveEmail({
+    googleIdToken: body.googleIdToken,
+    telegramInitData: body.telegramInitData,
+    phoneToken: body.phoneToken,
+  });
+  if (!rater) return res.status(401).json({ error: 'Baho berish uchun avval kiring' });
+
+  const username = String(body.username || '').trim().replace(/^@/, '').toLowerCase();
+  if (!username) return res.status(400).json({ error: 'Kimni baholash kerakligi ko‘rsatilmagan' });
+
+  const target = await kvGet(`username:${username}`);
+  if (!target) return res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+  if (target === rater) return res.status(400).json({ error: 'O‘zingizga baho bera olmaysiz' });
+
+  const { error, value } = validateReview(
+    { stars: body.stars, comment: body.comment, tags: body.tags },
+    'OWNER',
+  );
+  if (error) return res.status(400).json({ error });
+
+  /* Shu odam shu odamni ilgari baholaganmi. Kalitda ikkala tomon
+     ham bor, ya'ni har juftlik uchun bitta yozuv. */
+  const ovozKey = `userrate:${target}|${rater}`;
+  let oldin = null;
+  try { oldin = JSON.parse((await kvGet(ovozKey)) || 'null'); } catch { oldin = null; }
+
+  const profileKey = `profile:${target}`;
+  let profile = {};
+  try { profile = JSON.parse((await kvGet(profileKey)) || '{}') || {}; } catch { profile = {}; }
+
+  if (oldin && typeof oldin.stars === 'number') {
+    // Almashtirish: sanoq o'zgarmaydi, yig'indidan eskisi ayiriladi.
+    profile.ownerRatingSum = Math.max(0, (profile.ownerRatingSum || 0) - oldin.stars + value.stars);
+    profile.ownerRatingCount = profile.ownerRatingCount || 1;
+  } else {
+    profile.ownerRatingCount = (profile.ownerRatingCount || 0) + 1;
+    profile.ownerRatingSum = (profile.ownerRatingSum || 0) + value.stars;
+  }
+
+  if (!(await kvSet(profileKey, JSON.stringify(profile)))) {
+    return res.status(500).json({ error: 'Saqlanmadi, qayta urinib ko‘ring' });
+  }
+  await kvSet(ovozKey, JSON.stringify({ stars: value.stars, at: Date.now() }));
+
+  /* Izoh bo'lsa — profildagi sharhlar ro'yxatiga. Izohsiz baho
+     faqat raqamlarda qoladi: bo'sh sharh o'qishga narsa bermaydi. */
+  if (value.comment || (value.tags && value.tags.length)) {
+    try {
+      await kvPush(reviewsKey(target), JSON.stringify({
+        ...value, side: 'OWNER', at: Date.now(),
+      }));
+    } catch { /* raqamlar saqlandi — sharh ikkinchi darajali */ }
+  }
+
+  const count = profile.ownerRatingCount || 0;
+  return res.status(200).json({
+    ok: true,
+    replaced: Boolean(oldin),
+    rating: {
+      count,
+      avg: count ? Math.round(((profile.ownerRatingSum || 0) / count) * 10) / 10 : null,
+    },
+  });
+};
+
 const getPublicProfile = async (req, res) => {
   const username = String(req.query.username || '').trim().toLowerCase();
   if (!username) return res.status(400).json({ error: 'Username kerak' });
@@ -995,6 +1082,7 @@ export default async function handler(req, res) {
   if (action === 'save') return toggleSaved(req, res);
   if (action === 'saved') return listSaved(req, res);
   if (action === 'delete-account') return handleDeleteAccount(req, res);
+  if (action === 'rate-user') return rateUser(req, res);
   if (action === 'push-subscribe') return pushSubscribe(req, res);
   if (action === 'push-unsubscribe') return pushUnsubscribe(req, res);
   if (action === 'pay-options') return payOptions(req, res);
