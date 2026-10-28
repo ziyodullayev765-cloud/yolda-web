@@ -121,6 +121,28 @@ flow('Telefon bergan ovoz turi: qo\'shimcha bo\'laklar bilan');
   check('iPhone yozuvi ham o\'tadi', ios.statusCode === 200, ios.payload);
   check('kengaytmasi .m4a', /\.m4a$/.test(putlar[0] ? putlar[0].url : ''), putlar[0] && putlar[0].url);
 
+  /* Bo'sh joy bilan yozilgan tur (Firefox shunday beradi). */
+  seed();
+  const probel = await send({ googleIdToken: ME, toUsername: 'ali', text: '',
+    media: { dataUrl: 'data:audio/ogg; codecs=opus;base64,'
+      + Buffer.alloc(400, 3).toString('base64'), duration: 3 } });
+  check('BO\'SH JOYLI TUR HAM O\'TADI', probel.statusCode === 200, probel.payload);
+  check('R2ga toza tur yoziladi', putlar[0] && putlar[0].type === 'audio/ogg', putlar[0]);
+
+  /* Qo'shtirnoqli bo'lak. */
+  seed();
+  const tirnoq = await send({ googleIdToken: ME, toUsername: 'ali', text: '',
+    media: { dataUrl: 'data:audio/webm;codecs="opus";base64,'
+      + Buffer.alloc(400, 3).toString('base64'), duration: 3 } });
+  check('QO\'SHTIRNOQLI BO\'LAK HAM O\'TADI', tirnoq.statusCode === 200, tirnoq.payload);
+
+  /* base64 bo'lmagan kodlash qabul qilinmaydi. */
+  seed();
+  const matn = await send({ googleIdToken: ME, toUsername: 'ali', text: '',
+    media: { dataUrl: 'data:audio/webm,salom' } });
+  check('base64 bo\'lmasa rad etiladi', matn.statusCode === 400, matn.payload);
+  check('hech narsa yozilmadi (base64 emas)', putlar.length === 0, putlar);
+
   /* Qo'shimcha bo'lak ruxsatni kengaytirmaydi. */
   seed();
   const yomon = await send({ googleIdToken: ME, toUsername: 'ali', text: '',

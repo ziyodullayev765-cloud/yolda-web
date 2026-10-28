@@ -16931,7 +16931,18 @@
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
       // Ruxsat so'ralayotganda odam tugmani qo'yib yuborgan bo'lishi mumkin.
       if(!chatRec || chatRec.cancelled){ stream.getTracks().forEach(function(t){ t.stop(); }); chatRec = null; return; }
-      var rec = new MediaRecorder(stream);
+      /* Turni o'zimiz tanlaymiz: brauzerga qo'yib berilsa, u
+         qurilmaga qarab ("audio/3gpp", bo'sh tur va hokazo)
+         har xil narsa berib yuboradi. Serverda qabul
+         qilinadigani shu ro'yxat. */
+      var turlar = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", "audio/ogg"];
+      var tanlangan = "";
+      if(window.MediaRecorder && MediaRecorder.isTypeSupported){
+        for(var i = 0; i < turlar.length; i++){
+          if(MediaRecorder.isTypeSupported(turlar[i])){ tanlangan = turlar[i]; break; }
+        }
+      }
+      var rec = tanlangan ? new MediaRecorder(stream, { mimeType: tanlangan }) : new MediaRecorder(stream);
       chatRec.stream = stream;
       chatRec.rec = rec;
       chatRec.pending = false;
@@ -16941,7 +16952,9 @@
         var chunks = chatRec ? chatRec.chunks : [];
         var sek = chatRec ? Math.round((Date.now() - chatRec.start) / 1000) : 0;
         var bekor = !chatRec || chatRec.cancelled;
-        var turi = rec.mimeType || "audio/webm";
+        // Ba'zi qurilmada `mimeType` bo'sh qaytadi — unda fayl
+        // turi ham bo'lmaydi va server uni taniy olmaydi.
+        var turi = rec.mimeType || tanlangan || "audio/webm";
         stopRecStream();
         if(bekor || !chunks.length) return;
         if(sek < 1){ toast("Juda qisqa", "", "info"); return; }
@@ -17274,6 +17287,8 @@
       if(note) note.textContent = "";
       if(!res.ok){
         if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
+        // Ovozli xabarda yozuv qatori bo'sh — sabab ko'rinib tursin.
+        if(fayl) toast(res.body.error || "Yuborilmadi", "", "info");
         return;
       }
       input.value = "";
