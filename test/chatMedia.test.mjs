@@ -98,6 +98,38 @@ flow('Ovozli xabar');
   check('davomiyligi yozilgan', m.media.duration === 7, m.media.duration);
 }
 
+flow('Telefon bergan ovoz turi: qo\'shimcha bo\'laklar bilan');
+{
+  /* Haqiqiy qurilmada MediaRecorder turi yolg'iz kelmaydi:
+     "audio/webm;codecs=opus". Ilgari shu narsa "fayl formati
+     noto'g'ri" degan xatoga olib kelardi. */
+  seed();
+  const res = await send({ googleIdToken: ME, toUsername: 'ali', text: '',
+    media: { dataUrl: 'data:audio/webm;codecs=opus;base64,'
+      + Buffer.alloc(800, 3).toString('base64'), duration: 4 } });
+  check('CODECS BO\'LAGI BILAN HAM O\'TADI', res.statusCode === 200, res.payload);
+  check('R2ga faqat turning o\'zi yoziladi',
+    putlar[0] && putlar[0].type === 'audio/webm', putlar[0]);
+  const m = (await thread(A, ME)).pop();
+  check('ovoz deb belgilandi', m.media && m.media.kind === 'voice', m.media);
+
+  /* iPhone esa mp4 beradi. */
+  seed();
+  const ios = await send({ googleIdToken: ME, toUsername: 'ali', text: '',
+    media: { dataUrl: 'data:audio/mp4;codecs=mp4a.40.2;base64,'
+      + Buffer.alloc(500, 3).toString('base64'), duration: 2 } });
+  check('iPhone yozuvi ham o\'tadi', ios.statusCode === 200, ios.payload);
+  check('kengaytmasi .m4a', /\.m4a$/.test(putlar[0] ? putlar[0].url : ''), putlar[0] && putlar[0].url);
+
+  /* Qo'shimcha bo'lak ruxsatni kengaytirmaydi. */
+  seed();
+  const yomon = await send({ googleIdToken: ME, toUsername: 'ali', text: '',
+    media: { dataUrl: 'data:application/x-msdownload;codecs=opus;base64,'
+      + Buffer.alloc(100, 3).toString('base64') } });
+  check('QO\'SHIMCHA BO\'LAK RUXSAT BERMAYDI', yomon.statusCode === 400, yomon.payload);
+  check('hech narsa yozilmadi', putlar.length === 0, putlar);
+}
+
 flow('Davomiylikka ishonilmaydi');
 {
   seed();
