@@ -4065,6 +4065,61 @@
   .cb-quote small{display:block;font-size:12px;opacity:0.78;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
+  /* ---------- Biriktirilgan fayl: ovoz, rasm, hujjat ---------- */
+  .cb-voice{display:flex;align-items:center;gap:10px;min-width:170px;padding:2px 0;}
+  .cbv-play{
+    width:34px;height:34px;flex:none;border:none;cursor:pointer;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--route);color:#fff;font-size:15px;
+  }
+  .chat-bubble.mine .cbv-play{background:rgba(255,255,255,0.22);color:#fff;}
+  .cbv-line{flex:1;height:3px;border-radius:2px;background:currentColor;opacity:0.28;position:relative;}
+  .cbv-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:2px;background:currentColor;}
+  .cbv-time{font-size:12px;opacity:0.72;font-variant-numeric:tabular-nums;}
+
+  .cb-image{display:block;margin:0 0 2px;border-radius:12px;overflow:hidden;max-width:220px;}
+  .cb-image img{display:block;width:100%;height:auto;}
+
+  .cb-file{
+    display:flex;align-items:center;gap:10px;min-width:160px;
+    padding:6px 2px;color:inherit;text-decoration:none;
+  }
+  .cb-file .ic-svg{font-size:24px;flex:none;}
+  .cbf-text{min-width:0;}
+  .cbf-text b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cbf-text small{display:block;font-size:11.5px;opacity:0.7;}
+  /* Rasm xabarning butun kengligini egallaydi — ichki chekka kerak emas. */
+  .chat-bubble.has-media .cb-body{padding:5px 7px 6px;}
+
+  /* ---------- Yuborishdan oldingi fayl va ovoz yozish qatorlari ---------- */
+  .chat-att-strip{
+    display:flex;align-items:center;gap:9px;flex:none;
+    padding:8px 14px;border-top:1px solid var(--border);background:var(--paper);
+  }
+  .chat-att-strip[hidden]{display:none;}
+  .cas-ic{color:var(--route);font-size:20px;display:flex;}
+  .cas-text{flex:1;min-width:0;}
+  .cas-text b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cas-text small{display:block;font-size:11.5px;opacity:0.7;}
+
+  .chat-rec-bar{
+    display:flex;align-items:center;gap:9px;flex:none;
+    padding:8px 14px;border-top:1px solid var(--border);background:var(--paper);
+  }
+  .chat-rec-bar[hidden]{display:none;}
+  .crb-dot{width:9px;height:9px;border-radius:50%;background:#DC2626;animation:recBlink 1s infinite;}
+  @keyframes recBlink{0%,100%{opacity:1;}50%{opacity:0.25;}}
+  :root[data-reduce-motion="1"] .crb-dot{animation:none;}
+  .crb-time{font-size:14px;font-variant-numeric:tabular-nums;font-weight:600;}
+  .crb-hint{flex:1;min-width:0;font-size:12px;opacity:0.7;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .crb-cancel{background:none;border:none;cursor:pointer;color:#DC2626;font-size:13px;padding:4px;}
+  .chat-clip{
+    background:none;border:none;cursor:pointer;color:var(--muted);
+    padding:8px;font-size:20px;display:flex;align-items:center;flex:none;
+  }
+  .chat-input-row.recording #btnChatMic{background:#DC2626;}
+
   /* ---------- Yozish qatori ustidagi "javob beryapsiz" chizig'i ---------- */
   .chat-reply-strip{
     display:flex;align-items:center;gap:9px;flex:none;
@@ -4132,6 +4187,9 @@
     display:flex;align-items:center;justify-content:center;
   }
   .chat-input-row .btn.chat-send .ic-svg{font-size:20px;}
+  /* Yashirilgani ko'rinmasin: yuqoridagi qoida display beradi,
+     shuning uchun bekor qilish aynan shu yerda turishi kerak. */
+  .chat-input-row .btn.chat-send[hidden]{display:none;}
 
   .field{margin-bottom:var(--s4);}
   .field label{
@@ -6580,6 +6638,10 @@
          qoladi, faqat eni qisqaradi. -->
     <symbol id="iconHeadphones" viewBox="0 0 24 24"><rect x="0" y="0" width="24" height="24" fill="currentColor" stroke="none" mask="url(#iconmask-iconHeadphones)"/></symbol>
     <symbol id="iconPlay" viewBox="0 0 24 24"><path d="M8 5.6 19 12 8 18.4Z"/></symbol>
+    <symbol id="iconPause" viewBox="0 0 24 24"><path d="M9 5V19M15 5V19"/></symbol>
+    <symbol id="iconMic" viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></symbol>
+    <symbol id="iconPaperclip" viewBox="0 0 24 24"><path d="M20 11.5 12.2 19.3a4.6 4.6 0 0 1-6.5-6.5l7.8-7.8a3.1 3.1 0 0 1 4.3 4.3l-7.8 7.8a1.5 1.5 0 0 1-2.2-2.2l7.2-7.2"/></symbol>
+    <symbol id="iconFile" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></symbol>
     <symbol id="iconUsers" viewBox="0 0 24 24"><rect x="0" y="0" width="24" height="24" fill="currentColor" stroke="none" mask="url(#iconmask-iconUsers)"/></symbol>
     <symbol id="iconTrophy" viewBox="0 0 24 24">
       <path d="M7 4h10v5a5 5 0 0 1-10 0Z"/>
@@ -14993,6 +15055,8 @@
   var chatSearchDebounce = null;
   var chatEditingId = null;
   var chatReplyTo = null;      // { id, text, mine } — javob yozilayotgan xabar
+  var chatAttach = null;       // { dataUrl, name, size, kind } — biriktirilgan fayl
+  var chatRec = null;          // ovoz yozish holati
   var chatSelected = [];       // tanlangan xabarlar id'si
   var chatMsgById = {};        // ko'chirmalar uchun: id → xabar
   var chatLastSeenId = null;
@@ -15722,6 +15786,7 @@
     try{ sessionStorage.setItem(CHAT_OPEN_KEY, JSON.stringify({ email: email || "", username: username, name: chatWithName })); }catch(e){}
     chatEditingId = null;
     chatReplyTo = null;
+    chatAttach = null;
     chatSelected = [];
     chatLastSeenId = null;
     chatVer = null;
@@ -15781,9 +15846,26 @@
       +   '<button type="button" class="crs-x" id="btnReplyCancel" aria-label="Bekor qilish">'+icon("iconClose")+'</button>'
       + '</div>'
       + '<p class="note" id="chatEditingNote" hidden>Xabar tahrirlanmoqda — <button type="button" class="link-btn" id="btnChatEditCancel">bekor qilish</button></p>'
+      /* Biriktirilgan fayl — yuborishdan oldin ko'rinib turadi. */
+      + '<div class="chat-att-strip" id="chatAttStrip" hidden>'
+      +   '<span class="cas-ic" id="chatAttIcon"></span>'
+      +   '<span class="cas-text"><b id="chatAttName"></b><small id="chatAttSize"></small></span>'
+      +   '<button type="button" class="crs-x" id="btnAttCancel" aria-label="Bekor qilish">'+icon("iconClose")+'</button>'
+      + '</div>'
+      /* Ovoz yozilayotgandagi qator — yozish qatorining o'rnini
+         egallamaydi, ustiga tushadi: qator joyidan qimirlamaydi. */
+      + '<div class="chat-rec-bar" id="chatRecBar" hidden>'
+      +   '<span class="crb-dot" aria-hidden="true"></span>'
+      +   '<span class="crb-time" id="chatRecTime">0:00</span>'
+      +   '<span class="crb-hint">Yuborish uchun qo‘yib yuboring</span>'
+      +   '<button type="button" class="crb-cancel" id="btnRecCancel">Bekor qilish</button>'
+      + '</div>'
       + '<div class="chat-input-row">'
+      +   '<button type="button" class="chat-clip" id="btnChatClip" aria-label="Fayl biriktirish">'+icon("iconPaperclip")+'</button>'
+      +   '<input type="file" id="fChatFile" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>'
       +   '<input type="text" id="fChatMessage" maxlength="1000" placeholder="Xabar yozing...">'
-      +   '<button class="btn chat-send" id="btnChatSend" aria-label="Yuborish">'+icon("iconArrowRight")+'</button>'
+      +   '<button class="btn chat-send" id="btnChatMic" aria-label="Ovozli xabar">'+icon("iconMic")+'</button>'
+      +   '<button class="btn chat-send" id="btnChatSend" hidden aria-label="Yuborish">'+icon("iconArrowRight")+'</button>'
       + '</div>'
       + '<p class="note" id="chatSendNote"></p>';
 
@@ -15794,11 +15876,13 @@
       renderChatShell();
     });
     initChatSwipeBack(chatCard);
-    document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
+    document.getElementById("btnChatSend").addEventListener("click", sendChatMessageClick);
 
     document.getElementById("btnChatEditCancel").addEventListener("click", cancelChatEdit);
     document.getElementById("btnReplyCancel").addEventListener("click", cancelChatReply);
     bindChatSelectBar();
+    bindChatAttach();
+    bindChatVoice();
 
     var whoBtn = document.getElementById("btnChatWho");
     if(whoBtn) whoBtn.addEventListener("click", function(){ openPublicProfile(username); });
@@ -15806,7 +15890,11 @@
     var input = document.getElementById("fChatMessage");
     // Yozilgan, lekin yuborilmagan xabar joyida turadi.
     input.value = readChatDraft(username);
-    input.addEventListener("input", function(){ saveChatDraft(username, input.value); });
+    input.addEventListener("input", function(){
+      saveChatDraft(username, input.value);
+      syncChatSendBtn();
+    });
+    syncChatSendBtn();
     input.addEventListener("keydown", function(e){
       if(e.key === "Enter") sendChatMessage();
     });
@@ -15826,6 +15914,7 @@
       m.deleted ? "d" : "",
       m.text || "",
       m.replyTo || "",
+      (m.media && m.media.url) || "",
       m.editedAt || "",
       (m.reactions || []).map(function(r){ return r.emoji + r.count + (r.mine ? "1" : "0"); }).join(",")
     ].join("|");
@@ -15844,6 +15933,44 @@
       + '<b>'+escapeHtml(kim || "Xabar")+'</b>'
       + '<small>'+escapeHtml(matn)+'</small>'
       + '</span>';
+  }
+
+  /** Ovozli xabar uzunligi: 0:07. */
+  function formatDuration(sek){
+    var s = Math.max(0, Math.round(sek || 0));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  /**
+   * Biriktirilgan faylning ko'rinishi.
+   *
+   * Havola serverdan keladi va faqat o'z omborimiznikidir —
+   * shunga qaramay u atribut ichiga escapeHtml bilan qo'yiladi.
+   */
+  function chatMediaHtml(m){
+    var md = m.media;
+    if(!md || !md.url) return "";
+    var url = escapeHtml(md.url);
+
+    if(md.kind === "voice"){
+      return '<span class="cb-voice" data-voice="'+url+'">'
+        + '<button type="button" class="cbv-play" aria-label="Eshitish">'+icon("iconPlay")+'</button>'
+        + '<span class="cbv-line"><span class="cbv-fill"></span></span>'
+        + '<span class="cbv-time">'+escapeHtml(formatDuration(md.duration))+'</span>'
+        + '</span>';
+    }
+
+    if(md.kind === "image"){
+      return '<a class="cb-image" href="'+url+'" target="_blank" rel="noopener noreferrer">'
+        + '<img src="'+url+'" alt="Rasm" loading="lazy">'
+        + '</a>';
+    }
+
+    return '<a class="cb-file" href="'+url+'" target="_blank" rel="noopener noreferrer" download>'
+      + icon("iconFile")
+      + '<span class="cbf-text"><b>'+escapeHtml(md.name || "Hujjat")+'</b>'
+      +   '<small>'+escapeHtml(formatBytes(md.size))+'</small></span>'
+      + '</a>';
   }
 
   function chatBubbleHtml(m){
@@ -15865,14 +15992,61 @@
         + '<span class="cb-react-emoji">'+escapeHtml(r.emoji)+'</span>'+r.count+'</button>';
     }).join("");
 
-    return '<div class="chat-bubble '+side+(reactions ? " has-react" : "")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
+    var media = chatMediaHtml(m);
+    return '<div class="chat-bubble '+side+(reactions ? " has-react" : "")+(media ? " has-media" : "")+'" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'"'
       + ' data-text="'+escapeHtml(m.text)+'">'
       + time
-      + '<div class="cb-body">'+chatQuoteHtml(m)+linkifyPhones(m.text)
+      + '<div class="cb-body">'+chatQuoteHtml(m)+media+linkifyPhones(m.text)
       +   (m.editedAt ? ' <span style="opacity:0.6;font-size:11px;">tahrirlangan</span>' : "")
       +   '<span class="cb-reactions">'+reactions+'</span>'
       + '</div>'
       + '</div>';
+  }
+
+  /* ============================================================
+     Ovozli xabarni eshitish
+     ------------------------------------------------------------
+     Bitta pleyer: yangisi bosilganda avvalgisi to'xtaydi — ikki
+     ovoz bir vaqtda yangramaydi.
+     ============================================================ */
+  var voiceAudio = null, voiceBox = null;
+
+  function stopVoice(){
+    if(voiceAudio){ voiceAudio.pause(); voiceAudio = null; }
+    if(voiceBox){
+      voiceBox.classList.remove("playing");
+      var b = voiceBox.querySelector(".cbv-play");
+      if(b) b.innerHTML = icon("iconPlay");
+      var f = voiceBox.querySelector(".cbv-fill");
+      if(f) f.style.width = "0%";
+      voiceBox = null;
+    }
+  }
+
+  function toggleVoicePlay(box){
+    if(!box) return;
+    var url = box.getAttribute("data-voice");
+    if(!url) return;
+    if(voiceBox === box){ stopVoice(); return; }
+    stopVoice();
+
+    voiceBox = box;
+    voiceAudio = new Audio(url);
+    box.classList.add("playing");
+    var btn = box.querySelector(".cbv-play");
+    if(btn) btn.innerHTML = icon("iconPause");
+    var fill = box.querySelector(".cbv-fill");
+
+    voiceAudio.addEventListener("timeupdate", function(){
+      if(!voiceAudio || !voiceAudio.duration || !fill) return;
+      fill.style.width = Math.min(100, (voiceAudio.currentTime / voiceAudio.duration) * 100) + "%";
+    });
+    voiceAudio.addEventListener("ended", stopVoice);
+    voiceAudio.addEventListener("error", function(){
+      stopVoice();
+      toast("Ovozli xabar ochilmadi", "", "info");
+    });
+    voiceAudio.play().catch(function(){ stopVoice(); });
   }
 
   /* ---------- Uzoq bosish: reaksiya va amallar ---------- */
@@ -16006,6 +16180,7 @@
     body.addEventListener("pointerdown", function(ev){
       var pill = ev.target.closest(".cb-react-pill");
       if(pill) return;                       // reaksiyani bosish — alohida
+      if(ev.target.closest(".cbv-play")) return;   // eshitish tugmasi ham
       var row = ev.target.closest(".chat-bubble");
       if(!row) return;
       // Tanlash rejimida bitta bosish tanlaydi — menyu ochilmaydi.
@@ -16045,6 +16220,8 @@
         if(row) toggleChatSelect(row.getAttribute("data-id"));
         return;
       }
+      var play = ev.target.closest(".cbv-play");
+      if(play){ toggleVoicePlay(play.closest(".cb-voice")); return; }
       var pill = ev.target.closest(".cb-react-pill");
       if(pill) toggleChatReaction(pill.getAttribute("data-id"), pill.getAttribute("data-emoji"));
     });
@@ -16590,8 +16767,11 @@
   /** Suhbatdan chiqish: ekran avvalgi holiga qaytadi. */
   function closeChatFullscreen(){
     closeChatMenu();
+    stopVoice();
+    stopRecStream();
     chatSelected = [];
     chatReplyTo = null;
+    chatAttach = null;
     try{ sessionStorage.removeItem(CHAT_OPEN_KEY); }catch(e){}
     var chatCard = document.getElementById("chatCard");
     if(chatCard) chatCard.classList.remove("chat-fullscreen");
@@ -16622,6 +16802,214 @@
     chatReplyTo = null;
     var strip = document.getElementById("chatReplyStrip");
     if(strip) strip.hidden = true;
+  }
+
+  /* ============================================================
+     Fayl biriktirish
+     ------------------------------------------------------------
+     Qabul qilinadigan turlar ataylab qisqa: rasm va PDF. Yuk
+     tashishda kerak bo'ladigani shu — yuk xati, hisob, mashina
+     rasmi. Server ham aynan shu ro'yxatni tekshiradi, ya'ni
+     bu yerdagi cheklov yagona to'siq emas.
+     ============================================================ */
+  var CHAT_FILE_MAX = 2 * 1024 * 1024;   // serverdagi chegara bilan bir xil
+
+  function formatBytes(n){
+    if(!n) return "";
+    if(n < 1024) return n + " B";
+    if(n < 1024 * 1024) return Math.round(n / 1024) + " KB";
+    return (n / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  /** data: havolasining haqiqiy (base64dan oldingi) hajmi. */
+  function dataUrlBytes(dataUrl){
+    var i = String(dataUrl || "").indexOf(",");
+    if(i < 0) return 0;
+    var b64 = dataUrl.slice(i + 1);
+    var pad = (b64.slice(-2).match(/=/g) || []).length;
+    return Math.floor(b64.length * 3 / 4) - pad;
+  }
+
+  function showChatAttach(){
+    var strip = document.getElementById("chatAttStrip");
+    if(!strip) return;
+    if(!chatAttach){ strip.hidden = true; syncChatSendBtn(); return; }
+    strip.hidden = false;
+    var ic = document.getElementById("chatAttIcon");
+    if(ic) ic.innerHTML = icon(chatAttach.kind === "image" ? "iconEye" : "iconFile");
+    var nom = document.getElementById("chatAttName");
+    if(nom) nom.textContent = chatAttach.name || (chatAttach.kind === "image" ? "Rasm" : "Hujjat");
+    var hajm = document.getElementById("chatAttSize");
+    if(hajm) hajm.textContent = formatBytes(chatAttach.size);
+    syncChatSendBtn();
+  }
+
+  function cancelChatAttach(){
+    chatAttach = null;
+    var f = document.getElementById("fChatFile");
+    if(f) f.value = "";
+    showChatAttach();
+  }
+
+  function bindChatAttach(){
+    var clip = document.getElementById("btnChatClip");
+    var file = document.getElementById("fChatFile");
+    var x = document.getElementById("btnAttCancel");
+    if(x) x.addEventListener("click", cancelChatAttach);
+    if(clip && file) clip.addEventListener("click", function(){ file.click(); });
+    if(!file) return;
+
+    file.addEventListener("change", function(){
+      var f = file.files && file.files[0];
+      if(!f) return;
+      var rasmmi = /^image\//.test(f.type);
+
+      if(rasmmi){
+        /* Rasm kichraytiriladi: telefondagi surat 4 MB bo'lishi
+           mumkin, yozishmaga esa shuncha kerak emas. */
+        fileToPhotoDataUrl(f, function(dataUrl){
+          if(!dataUrl){ toast("Rasmni o'qib bo'lmadi", "", "info"); return; }
+          chatAttach = { dataUrl: dataUrl, kind: "image", name: f.name,
+                         size: dataUrlBytes(dataUrl) };
+          showChatAttach();
+        });
+        return;
+      }
+
+      if(f.type !== "application/pdf"){
+        toast("Faqat rasm yoki PDF yuborish mumkin", "", "info");
+        file.value = "";
+        return;
+      }
+      if(f.size > CHAT_FILE_MAX){
+        toast("Fayl hajmi 2 MB dan katta", "", "info");
+        file.value = "";
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(){
+        chatAttach = { dataUrl: String(reader.result), kind: "file", name: f.name, size: f.size };
+        showChatAttach();
+      };
+      reader.onerror = function(){ toast("Faylni o'qib bo'lmadi", "", "info"); };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  /* ============================================================
+     Ovozli xabar
+     ------------------------------------------------------------
+     Mikrofon tugmasi BOSIB TURILADI: qo'yib yuborilganda xabar
+     ketadi. Mikrofonga ruxsat berilmasa — ochiq aytiladi, tugma
+     "ishlayotgandek" ko'rinib turmaydi.
+     ============================================================ */
+  function voiceSupported(){
+    return Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+      && typeof window.MediaRecorder !== "undefined");
+  }
+
+  function showRecBar(on){
+    var bar = document.getElementById("chatRecBar");
+    if(bar) bar.hidden = !on;
+    var row = document.querySelector(".chat-input-row");
+    if(row) row.classList.toggle("recording", Boolean(on));
+  }
+
+  function stopRecStream(){
+    if(chatRec && chatRec.stream){
+      chatRec.stream.getTracks().forEach(function(t){ t.stop(); });
+    }
+    if(chatRec && chatRec.timer) clearInterval(chatRec.timer);
+    chatRec = null;
+    showRecBar(false);
+  }
+
+  function startChatVoice(){
+    if(chatRec) return;
+    if(!voiceSupported()){ toast("Bu qurilmada ovoz yozib bo'lmaydi", "", "info"); return; }
+    chatRec = { pending: true, cancelled: false, chunks: [], start: Date.now() };
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
+      // Ruxsat so'ralayotganda odam tugmani qo'yib yuborgan bo'lishi mumkin.
+      if(!chatRec || chatRec.cancelled){ stream.getTracks().forEach(function(t){ t.stop(); }); chatRec = null; return; }
+      var rec = new MediaRecorder(stream);
+      chatRec.stream = stream;
+      chatRec.rec = rec;
+      chatRec.pending = false;
+      chatRec.start = Date.now();
+      rec.ondataavailable = function(e){ if(e.data && e.data.size) chatRec.chunks.push(e.data); };
+      rec.onstop = function(){
+        var chunks = chatRec ? chatRec.chunks : [];
+        var sek = chatRec ? Math.round((Date.now() - chatRec.start) / 1000) : 0;
+        var bekor = !chatRec || chatRec.cancelled;
+        var turi = rec.mimeType || "audio/webm";
+        stopRecStream();
+        if(bekor || !chunks.length) return;
+        if(sek < 1){ toast("Juda qisqa", "", "info"); return; }
+        var blob = new Blob(chunks, { type: turi });
+        if(blob.size > CHAT_FILE_MAX){ toast("Ovozli xabar juda uzun", "", "info"); return; }
+        var reader = new FileReader();
+        reader.onload = function(){
+          sendChatMessage({ dataUrl: String(reader.result), kind: "voice", duration: sek, name: "" });
+        };
+        reader.onerror = function(){ toast("Ovoz yuborilmadi", "", "info"); };
+        reader.readAsDataURL(blob);
+      };
+      rec.start();
+      haptic("medium");
+      showRecBar(true);
+      var t = document.getElementById("chatRecTime");
+      chatRec.timer = setInterval(function(){
+        if(!chatRec) return;
+        var s = Math.round((Date.now() - chatRec.start) / 1000);
+        if(t) t.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+        // Serverdagi chegaradan oshmasin — o'zi to'xtaydi.
+        if(s >= 600) stopChatVoice(false);
+      }, 250);
+    }).catch(function(){
+      chatRec = null;
+      showRecBar(false);
+      toast("Mikrofonga ruxsat berilmadi", "", "info");
+    });
+  }
+
+  function stopChatVoice(bekor){
+    if(!chatRec) return;
+    chatRec.cancelled = Boolean(bekor);
+    if(chatRec.pending){ stopRecStream(); return; }   // ruxsat hali kelmagan
+    try{ chatRec.rec.stop(); }catch(e){ stopRecStream(); }
+  }
+
+  function bindChatVoice(){
+    var mic = document.getElementById("btnChatMic");
+    var cancel = document.getElementById("btnRecCancel");
+    if(cancel) cancel.addEventListener("click", function(){ stopChatVoice(true); });
+    if(!mic) return;
+    if(!voiceSupported()){
+      // Ishlamaydigan tugma turmasin.
+      mic.hidden = true;
+      var send = document.getElementById("btnChatSend");
+      if(send) send.hidden = false;
+      return;
+    }
+    mic.addEventListener("pointerdown", function(ev){
+      ev.preventDefault();
+      startChatVoice();
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function(e){
+      mic.addEventListener(e, function(){ stopChatVoice(false); });
+    });
+  }
+
+  /** Matn yozilgan bo'lsa — yuborish tugmasi, bo'lmasa — mikrofon. */
+  function syncChatSendBtn(){
+    var input = document.getElementById("fChatMessage");
+    var send = document.getElementById("btnChatSend");
+    var mic = document.getElementById("btnChatMic");
+    if(!input || !send || !mic) return;
+    if(!voiceSupported()){ send.hidden = false; mic.hidden = true; return; }
+    var bor = input.value.trim().length > 0 || Boolean(chatAttach);
+    send.hidden = !bor;
+    mic.hidden = bor;
   }
 
   /* ============================================================
@@ -16847,23 +17235,33 @@
     }).then(function(r){ return r.json(); }).then(function(){ loadChatThread(false); }).catch(function(){});
   }
 
-  function sendChatMessage(){
+  /**
+   * Xabar yuboradi.
+   *
+   * @param media  ixtiyoriy: {dataUrl, kind, duration, name}. Ovozli
+   *               xabar shu yo'l bilan ketadi — biriktirilgan fayl
+   *               esa chatAttach'dan olinadi.
+   */
+  function sendChatMessage(media){
     var input = document.getElementById("fChatMessage");
     var note = document.getElementById("chatSendNote");
     if(!input || !chatWithUsername) return;
     var text = input.value.trim();
-    if(!text) return;
+    var fayl = media || chatAttach;
+    // Matn ham, fayl ham yo'q bo'lsa yuboradigan narsa yo'q.
+    if(!text && !fayl) return;
 
     var btn = document.getElementById("btnChatSend");
     if(btn) btn.disabled = true;
-    if(note) note.textContent = "";
+    if(note) note.textContent = fayl ? "Yuborilmoqda..." : "";
 
     var isEdit = !!chatEditingId;
     var url = isEdit ? "/api/chat?action=edit" : "/api/chat?action=send";
     var payload = isEdit
       ? { googleIdToken: googleIdToken, telegramInitData: telegramInitData, id: chatEditingId, text: text }
       : { googleIdToken: googleIdToken, telegramInitData: telegramInitData, toUsername: chatWithUsername, text: text,
-          replyTo: (chatReplyTo ? chatReplyTo.id : null) };
+          replyTo: (chatReplyTo ? chatReplyTo.id : null),
+          media: (fayl ? { dataUrl: fayl.dataUrl, name: fayl.name || "", duration: fayl.duration || null } : null) };
 
     fetch(url, {
       method: "POST",
@@ -16873,6 +17271,7 @@
       return r.json().then(function(b){ return {ok: r.ok, body: b}; });
     }).then(function(res){
       if(btn) btn.disabled = false;
+      if(note) note.textContent = "";
       if(!res.ok){
         if(note){ note.textContent = res.body.error || "Yuborilmadi"; note.style.color = "#DC2626"; }
         return;
@@ -16881,6 +17280,8 @@
       saveChatDraft(chatWithUsername, "");
       if(isEdit) cancelChatEdit();
       cancelChatReply();
+      if(!media) cancelChatAttach();
+      syncChatSendBtn();
       // Yozdim — javob tez kelishi mumkin, tez rejimga o'tamiz.
       markChatActivity();
       loadChatThread(true);
@@ -16889,6 +17290,11 @@
       if(note){ note.textContent = "Yuborilmadi, qayta urinib ko'ring."; note.style.color = "#DC2626"; }
     });
   }
+
+  /* Enter bosilganda ham, tugma bosilganda ham sendChatMessage
+     hodisa obyekti bilan chaqirilmasin: u birinchi parametrni
+     fayl deb o'qiydi. */
+  function sendChatMessageClick(){ sendChatMessage(); }
 
   /* ============================================================
      Loads — "Yuklar" tab: browse open orders by route/cargo/truck type.

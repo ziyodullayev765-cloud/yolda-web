@@ -9,7 +9,7 @@
  *   GET  /api/chat?action=search&q=<text>&googleIdToken=...|&telegramInitData=...
  *   GET  /api/chat?action=inbox&googleIdToken=...|&telegramInitData=...
  *   GET  /api/chat?action=thread&googleIdToken=...|&telegramInitData=...&withEmail=...   (or &withUsername=...)
- *   POST /api/chat?action=send    { googleIdToken|telegramInitData, toUsername, text, replyTo? }
+ *   POST /api/chat?action=send    { googleIdToken|telegramInitData, toUsername, text, replyTo?, media? }
  *   POST /api/chat?action=edit    { googleIdToken|telegramInitData, id, text }
  *   POST /api/chat?action=delete  { googleIdToken|telegramInitData, ids[], forMe }
  *   POST /api/chat?action=react   { googleIdToken|telegramInitData, id, emoji }
@@ -35,9 +35,20 @@
  */
 import { kvGet, kvSet, kvDel, kvIncr, kvExpire, kvPush, kvLrem, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
 import { notifyUser, esc } from '../lib/notify.js';
+import { uploadMedia, deleteObject, keyFromUrl, storageConfigured } from '../lib/storage.js';
 import { resolveEmail } from '../lib/identity.js';
 
 const MAX_TEXT = 1000;
+
+/* Biriktirilgan fayl base64 ko'rinishida, xabarning o'zi bilan
+   birga keladi. Vercel so'rov tanasini ~4,5 MB bilan cheklaydi,
+   base64 esa hajmni uchdan bir baravar oshiradi — shuning uchun
+   chegara 2 MB. Ovoz uchun bu taxminan ikki daqiqa. */
+const MAX_MEDIA_BYTES = 2 * 1024 * 1024;
+const MAX_FILE_NAME = 80;
+/* Ovozli xabar uzunligi (soniya) — faqat ko'rsatish uchun.
+   Mijoz aytadi, shuning uchun ishonib bo'lmaydi: chegaralanadi. */
+const MAX_VOICE_SECONDS = 600;
 const MAX_SEARCH_RESULTS = 20;
 const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
@@ -87,6 +98,14 @@ const parseMessage = (raw) => {
   } catch {
     return null;
   }
+};
+
+/** Matnsiz xabar ro'yxatda va bildirishnomada shunday ko'rinadi. */
+const mediaLabel = (media) => {
+  if (!media) return '';
+  if (media.kind === 'voice') return '🎤 Ovozli xabar';
+  if (media.kind === 'image') return '🖼 Rasm';
+  return '📎 Hujjat';
 };
 
 /** Crude in-memory throttle against message spam. */
@@ -173,7 +192,7 @@ const getInbox = async (req, res) => {
           name: profile.displayName || profile.name || (gone ? 'O‘chirilgan foydalanuvchi' : ''),
           avatarUrl: profile.avatarUrl || '',
           verified: Boolean(profile.verified),
-          lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : lastMsg.text) : '',
+          lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : (lastMsg.text || mediaLabel(lastMsg.media))) : '',
           lastAt: lastMsg ? lastMsg.at : 0,
           lastFromMe: lastMsg ? lastMsg.from === myEmail : false,
           unread,
@@ -797,6 +816,7 @@ const getThread = async (req, res) => {
       deleted: Boolean(m.deleted),
       fromMe: m.from === myEmail,
       replyTo: m.replyTo || null,
+      media: m.deleted ? null : (m.media || null),
       reactions: REACTIONS
         .map((emoji) => ({ emoji, count: (m.reactions?.[emoji] || []).length, mine: (m.reactions?.[emoji] || []).includes(myEmail) }))
         .filter((r) => r.count > 0),
@@ -864,8 +884,11 @@ const sendMessage = async (req, res) => {
 
   const toUsername = String(body.toUsername || '').trim().toLowerCase();
   const text = String(body.text || '').trim().slice(0, MAX_TEXT);
+  const hasMedia = Boolean(body.media && body.media.dataUrl);
   if (!toUsername) return res.status(400).json({ error: 'Kimga yuborishni tanlang' });
-  if (!text) return res.status(400).json({ error: 'Xabar matnini yozing' });
+  /* Fayl bo'lsa matn shart emas: ovozli xabarda matn umuman
+     bo'lmaydi, rasmda esa izoh ixtiyoriy. */
+  if (!text && !hasMedia) return res.status(400).json({ error: 'Xabar matnini yozing' });
 
   const toEmail = await kvGet(`username:${toUsername}`);
   if (!toEmail) return res.status(404).json({ error: 'Bunday foydalanuvchi topilmadi' });
@@ -886,8 +909,32 @@ const sendMessage = async (req, res) => {
     if (shuSuhbat) replyTo = nishon.id;
   }
 
+  /* Biriktirilgan fayl. Saqlash sozlanmagan bo'lsa — ochiq
+     aytiladi. "Yuborildi" deb ko'rsatib, aslida hech qayerga
+     yozmaslik eng yomon yo'l bo'lardi. */
+  let media = null;
+  if (hasMedia) {
+    if (!storageConfigured()) {
+      return res.status(503).json({ error: 'Fayl yuborish hozircha ishlamayapti' });
+    }
+    const uploaded = await uploadMedia(body.media.dataUrl, 'chat', MAX_MEDIA_BYTES);
+    if (!uploaded || uploaded.error) {
+      return res.status(400).json({ error: (uploaded && uploaded.error) || 'Fayl yuborilmadi' });
+    }
+    const nom = String(body.media.name || '').trim().slice(0, MAX_FILE_NAME).replace(/[\r\n\t]/g, ' ');
+    const sek = Number(body.media.duration);
+    media = {
+      kind: uploaded.kind,
+      url: uploaded.url,
+      type: uploaded.type,
+      size: uploaded.size,
+      name: uploaded.kind === 'file' ? (nom || 'hujjat') : nom,
+      duration: Number.isFinite(sek) && sek > 0 ? Math.min(Math.round(sek), MAX_VOICE_SECONDS) : null,
+    };
+  }
+
   const id = generateId();
-  const message = { id, from: myEmail, to: toEmail, text, at: Date.now(), editedAt: null, deleted: false, reactions: {}, replyTo };
+  const message = { id, from: myEmail, to: toEmail, text, at: Date.now(), editedAt: null, deleted: false, reactions: {}, replyTo, media };
 
   const saved = await kvSet(`msg:${id}`, JSON.stringify(message));
   if (!saved) return res.status(500).json({ error: 'Yuborilmadi, qayta urinib ko‘ring' });
@@ -897,7 +944,9 @@ const sendMessage = async (req, res) => {
   await kvSadd(`inbox:${myEmail}`, toEmail);
   await kvSadd(`inbox:${toEmail}`, myEmail);
 
-  await notifyNewMessage(myEmail, toEmail, text);
+  /* Bildirishnomada matn bo'lmasa, nima kelgani aytiladi —
+     "bo'sh xabar" ko'rinmasin. */
+  await notifyNewMessage(myEmail, toEmail, text || mediaLabel(media));
 
   return res.status(200).json({ ok: true, id });
 };
@@ -996,9 +1045,14 @@ const deleteMessages = async (req, res) => {
     if (forMe) {
       await kvSadd(hiddenKey(myEmail), id);
     } else {
+      const fayl = message.media;
       message.deleted = true;
       message.text = '';
+      message.media = null;
       if (!(await kvSet(`msg:${id}`, JSON.stringify(message)))) continue;
+      /* Xabar o'chdi — biriktirilgan fayl ham omborda qolmasin.
+         Xatosi jim o'tadi: xabarning o'zi allaqachon o'chgan. */
+      if (fayl && fayl.url) await deleteObject(keyFromUrl(fayl.url)).catch(() => {});
     }
     juftlik = [message.from, message.to];
     tegildi += 1;
