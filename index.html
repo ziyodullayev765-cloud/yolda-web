@@ -14539,8 +14539,11 @@
               googleIdToken: googleIdToken,
               telegramInitData: telegramInitData,
               reason: reason ? reason.value : "OTHER",
-              // Gives the admin enough to find the listing without a new field.
-              targetContact: "mashina:" + tk.id,
+              // Qaysi mashina ekani alohida maydonda: admin panel
+              // shundan e'lonni ochadigan havola yasaydi.
+              targetKind: "truck",
+              targetId: tk.id,
+              targetContact: tk.brand + " " + (tk.model || ""),
               description: tk.brand + " — " + description
             })
           }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
@@ -20804,8 +20807,12 @@
               phoneToken: phoneToken,
               reason: tanlangan.id === "OTHER_FREE" ? "OTHER" : tanlangan.id,
               /* Qaysi e'lon haqida ekani o'zi ketadi — odam uni
-                 qo'lda ko'chirib yozishi shart emas. */
-              target: d.code,
+                 qo'lda ko'chirib yozishi shart emas. Server shu
+                 ikki maydonni saqlaydi, admin panel esa ulardan
+                 o'sha yukni ochadigan havola yasaydi. */
+              targetKind: "load",
+              targetId: d.code,
+              targetContact: d.code,
               description: (t(tanlangan.kalit) || tanlangan.label) + (matn ? " — " + matn : "")
             })
           }).then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })

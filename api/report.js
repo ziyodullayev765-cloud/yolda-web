@@ -23,6 +23,9 @@ const isThrottled = (key) => {
   return false;
 };
 
+/** Shikoyat nimaga tegishli bo'lishi mumkin. */
+const TARGET_KINDS = ['load', 'truck', 'user'];
+
 const generateId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default async function handler(req, res) {
@@ -41,6 +44,18 @@ export default async function handler(req, res) {
   if (!REASONS.includes(reason)) return res.status(400).json({ error: 'Sababni tanlang' });
 
   const targetContact = String(body.targetContact || '').trim().slice(0, 80);
+
+  /* QAYSI NARSA HAQIDA.
+     Ilgari bu yerda faqat erkin matn (`targetContact`) bor edi va
+     u odam qo'lda yozadigan maydon edi. E'lon ichidan yuborilgan
+     shikoyatda esa hech kim hech narsa yozmaydi — natijada admin
+     "qaysi yuk haqida?" degan savolga javob topa olmasdi.
+
+     Endi nishon alohida ikkita maydonda keladi: turi va kodi.
+     Shu ikkisidan admin panel to'g'ridan-to'g'ri o'sha e'lonni
+     ochadigan havola yasaydi. */
+  const targetKind = TARGET_KINDS.includes(String(body.targetKind || '')) ? body.targetKind : '';
+  const targetId = String(body.targetId || '').trim().slice(0, 64);
   const description = String(body.description || '').trim().slice(0, 500);
   if (!description) return res.status(400).json({ error: 'Nima bo‘lganini tasvirlab bering' });
 
@@ -50,7 +65,7 @@ export default async function handler(req, res) {
 
   const id = generateId();
   const report = {
-    id, reporterEmail: email, reason, targetContact, description,
+    id, reporterEmail: email, reason, targetContact, targetKind, targetId, description,
     status: 'NEW', createdAt: Date.now(),
   };
 

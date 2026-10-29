@@ -665,6 +665,18 @@
   td.wrap{white-space:normal;min-width:220px;}
   td.num{font-variant-numeric:tabular-nums;}
   .cell-actions{display:flex;gap:6px;}
+  /* Jadval ichidagi havola — bosilsa o'sha yozuv ochiladi. */
+  .link-cell{
+    display:inline-flex;align-items:center;gap:7px;
+    background:none;border:none;padding:0;cursor:pointer;
+    font-family:inherit;font-size:13px;color:var(--accent-ink);
+  }
+  .link-cell b{font-weight:650;border-bottom:1px solid currentColor;}
+  .link-cell:hover b{border-bottom-color:transparent;}
+  .link-cell-kind{
+    font-size:10.5px;font-weight:650;text-transform:uppercase;letter-spacing:0.05em;
+    color:var(--text-dim);
+  }
   /* Ustunni ekran torayganda olib qo'yish. Tartib: avval eng kam
      kerakligi ketadi. */
   @media(max-width:1500px){ .col-hide-xl{display:none;} }
@@ -699,6 +711,16 @@
   }
   .tab:hover{color:var(--strong);}
   .tab.on{color:var(--text);border-bottom-color:var(--accent);}
+
+  /* ---------- E'longa kelgan shikoyatlar ---------- */
+  .rep-list{display:flex;flex-direction:column;gap:12px;}
+  .rep-row{
+    padding:12px 14px;border-radius:var(--r-md);
+    background:var(--bad-soft);border:1px solid rgba(239,68,68,0.22);
+  }
+  .rep-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;font-size:13.5px;}
+  .rep-text{margin:0 0 6px;font-size:13px;line-height:1.5;}
+  .rep-meta{color:var(--text-dim);font-size:11.5px;}
 
   /* ---------- Xodimlar ---------- */
   .staff-row{
@@ -2794,10 +2816,14 @@
           : '<p style="color:var(--text-dim);font-size:13px;margin:0;">Bu buyurtmani hali hech kim olmagan.</p>');
 
         var track = card("Kuzatuv", orderTimeline(order));
+        /* Shu yukka kelgan shikoyatlar — aynan shu yerda.
+           Admin "qaysi yuk haqida?" deb ro'yxatni titkilamaydi:
+           yukni ochganda shikoyat o'zi ko'rinib turadi. */
+        var shikoyat = targetReportsCard("load", order.code);
 
         return removeBar
           + '<div class="detail-grid">' + main
-          + '<div style="display:grid;gap:16px;">' + track + contact + driverCard + '</div></div>';
+          + '<div style="display:grid;gap:16px;">' + track + shikoyat + contact + driverCard + '</div></div>';
       });
   }
   function kvRow(k, v){ return '<dt>' + esc(k) + '</dt><dd>' + v + '</dd>'; }
@@ -3138,7 +3164,10 @@
 
     return head + '<div class="detail-grid">'
       + '<div style="display:grid;gap:16px;">' + gallery + info + '</div>'
-      + '<div style="display:grid;gap:16px;">' + seller + mod + '</div>'
+      + '<div style="display:grid;gap:16px;">' + seller
+      /* Shu e'longa kelgan shikoyatlar — moderatsiya qarorini
+         shu yerda ko'rib chiqadi. */
+      +   targetReportsCard("truck", t.id) + mod + '</div>'
       + '</div>';
   }
 
@@ -3950,6 +3979,82 @@
       });
   }
 
+  /* ==========================================================
+     Shikoyat nimaga tegishli
+     ----------------------------------------------------------
+     E'lon ichidan yuborilgan shikoyatda odam hech narsa
+     yozmaydi — nishon o'zi keladi (`targetKind` + `targetId`).
+     Shu ikkisidan BOSILADIGAN havola yasaladi: admin "qaysi
+     yuk haqida?" deb qidirib o'tirmaydi, bosadi va o'sha
+     e'lon ochiladi.
+
+     Eski yozuvlarda bu maydonlar yo'q — ularda avvalgidek
+     erkin matn (`targetContact`) ko'rsatiladi. */
+  var TARGET_KIND_LABELS = { load:"Yuk", truck:"Mashina", user:"Foydalanuvchi" };
+
+  function reportTargetText(r){
+    if(r.targetId) return (TARGET_KIND_LABELS[r.targetKind] || "") + " " + r.targetId;
+    return r.targetContact || "";
+  }
+
+  function reportTargetHash(r){
+    if(!r.targetId) return "";
+    if(r.targetKind === "load")  return "#/loads/" + encodeURIComponent(r.targetId);
+    if(r.targetKind === "truck") return "#/trucks/" + encodeURIComponent(r.targetId);
+    if(r.targetKind === "user")  return "#/users/" + encodeURIComponent(r.targetId);
+    return "";
+  }
+
+  function reportTargetHtml(r){
+    var hash = reportTargetHash(r);
+    var nom = TARGET_KIND_LABELS[r.targetKind] || "";
+    if(hash){
+      return '<button type="button" class="link-cell" data-act="go" data-hash="' + esc(hash) + '">'
+        + (nom ? '<span class="link-cell-kind">' + esc(nom) + '</span>' : "")
+        + '<b>' + esc(r.targetId) + '</b></button>';
+    }
+    /* Nishon bor, lekin bo'lim yo'q (eski yozuv): hech bo'lmasa
+       nima ekani ko'rinsin. */
+    if(r.targetId) return esc((nom ? nom + " " : "") + r.targetId);
+    return esc(r.targetContact || "—");
+  }
+
+  /**
+   * Nishonga kelgan shikoyatlar kartochkasi.
+   *
+   * Ro'yxat alohida resurs — u bu sahifaning asosiy ma'lumoti
+   * emas, shuning uchun `withData` ga qo'shilmaydi: ruxsati yo'q
+   * xodimda butun sahifa yopilib qolardi. Yuklanmagan bo'lsa —
+   * jimgina so'raladi va kelgach sahifa o'zi qayta chiziladi.
+   */
+  function targetReportsCard(kind, id){
+    if(!id || !can("reports:read")) return "";
+    if(Store.state.reports === "idle"){ Store.load("reports"); return ""; }
+    if(Store.state.reports !== "ready") return "";
+
+    var list = Store.list("reports").filter(function(r){
+      return r.targetKind === kind && String(r.targetId) === String(id);
+    }).sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+    if(!list.length) return "";
+
+    var rows = list.map(function(r){
+      return '<div class="rep-row">'
+        + '<div class="rep-top">'
+        +   '<b>' + esc(REASON_LABELS[r.reason] || r.reason || "Shikoyat") + '</b>'
+        +   reportPill(r.status)
+        + '</div>'
+        + '<p class="rep-text">' + esc(r.description || "") + '</p>'
+        + '<small class="rep-meta">' + esc(dt(r.createdAt))
+        +   (r.reporterEmail ? ' · ' + esc(r.reporterEmail) : "") + '</small>'
+        + '</div>';
+    }).join("");
+
+    var ochish = '<button type="button" class="btn sm" data-act="go" data-hash="#/reports" '
+      + 'style="margin-top:12px;">Barcha shikoyatlar</button>';
+    return card("Shikoyatlar", '<div class="rep-list">' + rows + '</div>' + ochish,
+      list.length + " ta");
+  }
+
   function viewReports(){
     var writable = can("reports:write");
     return pageHead("Shikoyatlar", "Foydalanuvchilardan kelgan shikoyatlar",
@@ -3967,7 +4072,8 @@
           unit: "shikoyat",
           searchPlaceholder: "Sabab, kimga oid, tavsif…",
           search: function(r, q){
-            return matches([REASON_LABELS[r.reason], r.reason, r.targetContact, r.description, r.reporterEmail], q);
+            return matches([REASON_LABELS[r.reason], r.reason, r.targetContact, r.targetId,
+                            r.description, r.reporterEmail], q);
           },
           filters: [{key:"ALL", label:"Barchasi", count:reports.length}].concat(
             REPORT_STATUSES.map(function(s){
@@ -3983,9 +4089,9 @@
             { key:"reason", label:"Sabab", sortable:true,
               value:function(r){ return REASON_LABELS[r.reason] || r.reason || ""; },
               render:function(r){ return '<b>' + esc(REASON_LABELS[r.reason] || r.reason) + '</b>'; } },
-            { key:"target", label:"Kimga oid", sortable:true,
-              value:function(r){ return r.targetContact || ""; },
-              render:function(r){ return esc(r.targetContact || "—"); } },
+            { key:"target", label:"Nimaga oid", sortable:true,
+              value:function(r){ return reportTargetText(r); },
+              render:function(r){ return reportTargetHtml(r); } },
             { key:"description", label:"Tavsif", cls:"dim wrap",
               render:function(r){ return esc(r.description || "—"); } },
             { key:"reporter", label:"Yuborgan", cls:"dim",
