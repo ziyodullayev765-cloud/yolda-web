@@ -135,8 +135,10 @@ flow('Hamma uchun o\'chirish — faqat o\'z xabari');
   const yaxshi = await post('delete', { googleIdToken: ME, ids: [meniki.payload.id], forMe: false });
   check('o\'z xabarim o\'chdi', yaxshi.statusCode === 200, yaxshi.payload);
   const keyin = await thread(A, ME);
-  const o = keyin.find((m) => m.id === meniki.payload.id);
-  check('IKKALA TOMONDA HAM O\'CHDI', o && o.deleted === true && o.text === '', o);
+  /* Xabar BUTUNLAY yo'qoladi: "Xabar o'chirildi" degan iz ham
+     qolmaydi — na yozishmada, na ro'yxatda. */
+  check('IKKALA TOMONDA HAM YO\'QOLDI',
+    !keyin.some((m) => m.id === meniki.payload.id), keyin.map((m) => m.text));
 }
 
 flow('Bir nechta xabarni bittada o\'chirish');
@@ -152,9 +154,37 @@ flow('Bir nechta xabarni bittada o\'chirish');
   const res = await post('delete', { googleIdToken: ME, ids, forMe: false });
   check('uchtasi ham o\'chdi', res.statusCode === 200 && res.payload.count === 3, res.payload);
   const list = await thread(A, ME);
-  check('hammasi o\'chirilgan ko\'rinadi',
-    ids.every((id) => { const m = list.find((x) => x.id === id); return m && m.deleted === true; }),
-    list.map((m) => m.deleted));
+  check('uchalasi ham yozishmadan yo\'qoldi',
+    ids.every((id) => !list.some((x) => x.id === id)), list.map((m) => m.text));
+}
+
+flow('O\'chirilgan xabar ro\'yxatda ham iz qoldirmaydi');
+{
+  seed();
+  db.sets.set(`inbox:${A}`, new Set([ME]));
+  db.sets.set(`inbox:${ME}`, new Set([A]));
+  const bir = await send(ME, 'ali', 'Birinchi');
+  const ikki = await send(ME, 'ali', 'Ikkinchi');
+
+  const list1 = (await get('inbox', { googleIdToken: A })).payload.conversations;
+  check('oxirgi xabar ko\'rinib turibdi',
+    list1.find((c) => c.email === ME).lastText === 'Ikkinchi', list1);
+
+  await post('delete', { googleIdToken: ME, ids: [ikki.payload.id], forMe: false });
+  const list2 = (await get('inbox', { googleIdToken: A })).payload.conversations;
+  const qator = list2.find((c) => c.email === ME);
+  check('"Xabar o\'chirildi" DEYILMAYDI', !/o.chirildi/i.test(qator.lastText), qator.lastText);
+  check('o\'rniga oldingi xabar ko\'rsatiladi', qator.lastText === 'Birinchi', qator.lastText);
+  check('id ham joyida', Boolean(bir.payload.id));
+
+  /* Faqat o'zim uchun yashirilgani ham ro'yxatda turmaydi. */
+  await post('delete', { googleIdToken: A, ids: [bir.payload.id], forMe: true });
+  const list3 = (await get('inbox', { googleIdToken: A })).payload.conversations;
+  check('yashirilgani ham ro\'yxatdan tushdi',
+    list3.find((c) => c.email === ME).lastText === '', list3);
+  const uniki = (await get('inbox', { googleIdToken: ME })).payload.conversations;
+  check('suhbatdoshda esa joyida',
+    uniki.find((c) => c.email === A).lastText === 'Birinchi', uniki);
 }
 
 flow('Kirmagan odam va bo\'sh ro\'yxat');

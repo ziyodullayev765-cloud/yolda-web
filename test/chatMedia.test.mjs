@@ -234,8 +234,10 @@ flow('O\'chirilganda fayl ham ketadi');
   check('R2dan ham O\'CHIRILDI',
     putlar.length === 1 && putlar[0].method === 'DELETE', putlar);
 
-  const m = (await thread(A, ME)).find((x) => x.id === id);
-  check('xabarda fayl qolmadi', m && m.media === null, m);
+  /* Xabarning o'zi ham yozishmadan yo'qoladi — demak fayl
+     ham. "Xabar o'chirildi" degan iz qolmaydi. */
+  const list = await thread(A, ME);
+  check('xabar yozishmadan yo\'qoldi', !list.some((x) => x.id === id), list.map((x) => x.id));
 }
 
 flow('Saqlash sozlanmagan bo\'lsa — ochiq aytiladi');

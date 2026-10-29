@@ -170,13 +170,22 @@ const getInbox = async (req, res) => {
 
   const others = await kvSmembers(`inbox:${myEmail}`);
   const pins = await readPins(myEmail);
+  /* O'chirilgan xabar ro'yxatda ham ko'rinmasligi kerak — na
+     o'zi, na "o'chirildi" degan izi. Shuning uchun oxirgi
+     bitta emas, bir nechta xabar o'qiladi va ulardan birinchi
+     SOG' xabar olinadi. */
+  const yashirin = new Set(await kvSmembers(hiddenKey(myEmail)));
   const conversations = (
     await Promise.all(
       others.map(async (otherEmail) => {
         const profile = parseProfile(await kvGet(`profile:${otherEmail}`));
-        const lastIds = await kvRange(pairKey(myEmail, otherEmail), 0, 0);
+        const lastIds = await kvRange(pairKey(myEmail, otherEmail), 0, 9);
         const unread = Number(await kvGet(unreadKey(myEmail, otherEmail))) || 0;
-        const lastMsg = lastIds[0] ? parseMessage(await kvGet(`msg:${lastIds[0]}`)) : null;
+        const sogIds = lastIds.filter((id) => !yashirin.has(id));
+        const oxirgilar = (await Promise.all(sogIds.map((id) => kvGet(`msg:${id}`))))
+          .map(parseMessage)
+          .filter((m) => m && !m.deleted);
+        const lastMsg = oxirgilar[0] || null;
         // Profil yo'q = odam akkauntini o'chirgan. Zaxira sifatida
         // identity ko'rsatib bo'lmaydi: Google bilan kirganlarda u —
         // haqiqiy pochta manzili, ya'ni ro'yxatda begona odamning
@@ -192,7 +201,7 @@ const getInbox = async (req, res) => {
           name: profile.displayName || profile.name || (gone ? 'O‘chirilgan foydalanuvchi' : ''),
           avatarUrl: profile.avatarUrl || '',
           verified: Boolean(profile.verified),
-          lastText: lastMsg ? (lastMsg.deleted ? 'Xabar o‘chirildi' : (lastMsg.text || mediaLabel(lastMsg.media))) : '',
+          lastText: lastMsg ? (lastMsg.text || mediaLabel(lastMsg.media)) : '',
           lastAt: lastMsg ? lastMsg.at : 0,
           lastFromMe: lastMsg ? lastMsg.from === myEmail : false,
           unread,
@@ -803,8 +812,12 @@ const getThread = async (req, res) => {
      o'chirilmagan — suhbatdoshda joyida turibdi, shunchaki shu
      odamning ro'yxatida ko'rinmaydi. */
   const yashirin = new Set(await kvSmembers(hiddenKey(myEmail)));
+  /* O'chirilgan xabar BUTUNLAY yo'qoladi: o'rnida "Xabar
+     o'chirildi" degan iz ham qolmaydi. Yozuvning o'zi bazada
+     o'chirilgan deb turadi — shunda eski id qayta tirilmaydi —
+     lekin yozishmaga chiqmaydi. */
   const raw = (await Promise.all(ids.filter((id) => !yashirin.has(id)).map((id) => kvGet(`msg:${id}`))))
-    .map(parseMessage).filter(Boolean);
+    .map(parseMessage).filter((m) => m && !m.deleted);
 
   const messages = raw
     .reverse() // ids stored newest-first (LPUSH); a chat reads oldest-first

@@ -16061,12 +16061,11 @@
     var side = m.fromMe ? "mine" : "theirs";
     var time = '<span class="cb-time">'+formatChatTime(m.at)+'</span>';
 
-    if(m.deleted){
-      return '<div class="chat-bubble '+side+' deleted" data-id="'+m.id+'" data-sig="'+escapeHtml(chatBubbleSig(m))+'">'
-        + time
-        + '<div class="cb-body">Xabar o\'chirildi</div>'
-        + '</div>';
-    }
+    /* O'chirilgan xabar chizilmaydi: o'rnida "Xabar o'chirildi"
+       degan iz qolmasligi kerak. Server ham uni yozishmaga
+       qo'shmaydi — bu yerdagisi faqat eski javob keshda qolgan
+       holat uchun. */
+    if(m.deleted) return "";
 
     // Qo'yilgan reaksiyalar xabarning pastki chetiga yopishadi —
     // alohida qator egallamaydi va hech narsani surib yubormaydi.
@@ -16386,6 +16385,9 @@
   }
 
   function renderChatMessages(body, messages){
+    /* O'chirilgan xabar yozishmada umuman turmaydi. Server ham
+       shunday qiladi; bu yerdagisi eski keshdagi javob uchun. */
+    messages = (messages || []).filter(function(m){ return m && !m.deleted; });
     syncChatCallBtn(messages);
     /* Ko'chirmalar uchun qidiruv jadvali. Chizishdan OLDIN
        to'ldiriladi: chatQuoteHtml shundan o'qiydi. */
