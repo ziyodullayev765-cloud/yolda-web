@@ -353,8 +353,15 @@ check('qaror ham yig\'indiga qarab chiqariladi',
    sahifani o'zi surishni boshlab yuborardi. */
 check('birinchi pikseldan ushlanadi',
   (html.match(/if\(pull > 0 && (e|ev)\.cancelable\) \1\.preventDefault\(\);/g) || []).length === 2);
-check('bekor qilish faqat yonlamasiga surishda yoki sahifa surilganda',
-  (html.match(/if\(window\.scrollY > 0 \|\| \(dy > 0 && dx > dy\)\)\{ pulling = false; reset\(\); return; \}/g) || []).length === 2);
+/* Sahifaning o'zi endi surilmaydi: suriladigani `<main>`, shuning
+   uchun "tepadamizmi" degan savolga `pageScrollTop()` javob
+   beradi. `window.scrollY` bu yerda doimo nol bo'lardi — ya'ni
+   tepaga tortib yangilash ro'yxatning o'rtasida ham ishlab
+   ketardi. */
+check('bekor qilish faqat yonlamasiga surishda yoki ro\'yxat surilganda',
+  (html.match(/if\(pageScrollTop\(\) > 0 \|\| \(dy > 0 && dx > dy\)\)\{ pulling = false; reset\(\); return; \}/g) || []).length === 2);
+check('sahifa emas, ro\'yxatning holati so\'raladi',
+  !/if\(window\.scrollY > 0\)/.test(html));
 /* Eski o'lchov qolib ketmasin. */
 check('eski o\'lchov olib tashlandi', !/dy <= 0 \|\| dx > dy/.test(html)
   && !/var dy = (e|ev)\.touches\[0\]\.clientY - startY;/.test(html));

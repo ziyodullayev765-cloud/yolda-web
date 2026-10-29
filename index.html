@@ -345,8 +345,52 @@
   /* Yozuv tayoqchasi ilovaning yashil rangida — sukut bo'yicha u
      matn rangini oladi va ba'zi fon ustida ko'rinmay qolardi. */
   input,textarea,select{caret-color:var(--route);}
-  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  html{-webkit-text-size-adjust:100%;}
   html,body{margin:0;padding:0;}
+
+  /* ============================================================
+     ILOVA RAMKASI — tepadagi lenta va pastki panel qimirlamaydi
+     ------------------------------------------------------------
+     Ilgari sahifaning O'ZI surilardi. Telefon brauzeri esa
+     sahifa surilganda o'z manzil qatorini yashiradi va qaytaradi
+     — shunda ko'rinadigan maydonning balandligi o'zgaradi, va
+     unga yopishtirilgan lenta bilan panel joyidan siljiydi.
+     Bundan tashqari barmoq chetdan oshib ketganda ekran "cho'zilib"
+     (rubber band) qaytadi, panellar esa o'sha cho'zilish bilan
+     birga ketadi.
+
+     Shu sababli endi SAHIFA UMUMAN SURILMAYDI. Ilova — balandligi
+     ekranga teng, surilmaydigan ramka:
+
+         [ lenta        ]  — qotib turadi
+         [ main — faqat shu suriladi ]
+         [ pastki panel ]  — qotib turadi
+
+     Manzil qatori yashirinishi uchun sahifa surilishi kerak;
+     surilish yo'q — demak u ham qimirlamaydi, ya'ni ko'rinadigan
+     maydon doimo bir xil qoladi. Bu — hiyla emas, muammoning
+     sababini olib tashlash: avvalgi urinishda men panellarni
+     JS bilan joyiga "qaytarib" turgandim va u yanada yomon
+     bo'lgandi.
+
+     `dvh` — eski brauzerlar uchun `vh` zaxira bo'lib qoladi. */
+  html, body{
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  body{display:flex;flex-direction:column;}
+  /* Lenta — ramkaning bir qismi, siqilmaydi. */
+  body > .nav{flex:0 0 auto;}
+  main{
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overflow-x:clip;
+    -webkit-overflow-scrolling:touch;
+    /* Ro'yxat oxiriga yetganda sahifani tortib yubormasin. */
+    overscroll-behavior-y:contain;
+    scroll-behavior:smooth;
+  }
   body{
     background:var(--paper);
     color:var(--ink);
@@ -355,7 +399,6 @@
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
     line-height:1.6;
-    min-height:100vh;
   }
   /* ---------- O'RNATILGAN ILOVA ----------
      Bosh ekrandan ochilganda sahifa ilovadek tutadi. Brauzerdagi
@@ -612,7 +655,9 @@
   }
 
   .nav{
-    position:sticky;top:0;z-index:50;
+    /* `sticky` emas: lenta ramkaning bir bo'lagi, u hech qachon
+       surilmaydi — demak "yopishib turish" degan narsa ortiqcha. */
+    position:relative;z-index:50;
     display:flex;align-items:center;justify-content:space-between;
     gap:var(--s4);
     padding:var(--s3) var(--s5);
@@ -1411,10 +1456,11 @@
   .loads-search-card .link-btn{font-size:13px;text-decoration:none;}
   /* Suzib turgan panel uchun ko'proq joy kerak: balandligi + pastdagi
      bo'shliq + telefonning o'z chekkasi. */
-  body{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
+  /* Bo'shliq endi `body` da emas, `main` da: suriladigani o'sha. */
+  main{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
   /* Telegram ichida pastda uning o'z chizig'i ham bor — panel bir
      oz tepaga ko'tariladi, demak ro'yxat ham shuncha pastroq tugaydi. */
-  :root[data-tg="1"] body{padding-bottom:calc(96px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
+  :root[data-tg="1"] main{padding-bottom:calc(96px + var(--tg-bottom) + env(safe-area-inset-bottom, 0px));}
 
   @media(max-width:760px){
     .nav{padding:var(--s3) var(--s4);}
@@ -6297,6 +6343,41 @@
   </div>
 </div>
 <script>
+  /* ============================================================
+     Suriladigan maydon
+     ------------------------------------------------------------
+     Ilova ramkasi qotib turadi, ya'ni SAHIFA surilmaydi: suriladigan
+     yagona narsa — `<main>`. Shu sababli "sahifa qancha surildi"
+     degan savolga endi `window.scrollY` emas, shu yerdagi
+     funksiyalar javob beradi. Ular bitta joyda turibdi, chunki bir
+     necha skript bloki shuni so'raydi va javob bir xil bo'lishi
+     shart — aks holda tepaga tortib yangilash ro'yxat o'rtasida
+     turganda ham ishlab ketardi.
+     ============================================================ */
+  window.pageScroller = function(){ return document.querySelector("main"); };
+  window.pageScrollTop = function(){
+    var el = window.pageScroller();
+    return el ? el.scrollTop : (window.scrollY || 0);
+  };
+  window.pageScrollTo = function(y){
+    var el = window.pageScroller();
+    if(el) el.scrollTop = y; else window.scrollTo(0, y);
+  };
+  window.pageScrollBy = function(dy){
+    if(!dy) return;
+    var el = window.pageScroller();
+    if(el) el.scrollTop += dy; else window.scrollBy(0, dy);
+  };
+
+  /* Oyna ochilganda ortdagi ro'yxat surilmasin. Ilgari buning
+     uchun `body` ga `overflow:hidden` qo'yilardi — endi sahifa
+     baribir surilmaydi, qulflanishi kerak bo'lgani `<main>`. */
+  window.lockPageScroll = function(on){
+    var el = window.pageScroller();
+    if(el) el.style.overflowY = on ? "hidden" : "";
+    document.body.style.overflow = on ? "hidden" : "";
+  };
+
   /* Splash CSS bilan o'zi so'nadi — bu yerdagi skript uni faqat
      DOM'dan olib tashlaydi. Shuning uchun skript ishlamay qolsa ham
      ekran ochilaveradi.
@@ -9691,7 +9772,7 @@
         root.classList.add("open");
         syncTelegramBackButton();
       });
-      document.body.style.overflow = "hidden";
+      lockPageScroll(true);
       document.addEventListener("keydown", onKeydown, true);
       // Faqat yuqoridagi tutqich va sarlavha qatori pastga tortib yopadi.
       // Ilgari butun panelga (shu jumladan ro'yxat skrolliga) osilgan edi —
@@ -9731,7 +9812,7 @@
       root.classList.remove("open");
       syncTelegramBackButton();
       document.removeEventListener("keydown", onKeydown, true);
-      document.body.style.overflow = "";
+      lockPageScroll(false);
       var toRestore = lastFocused;
       if(closeTimer) clearTimeout(closeTimer);
       closeTimer = setTimeout(function(){
@@ -11433,7 +11514,7 @@
     if(!gate) return;
     gate.classList.remove("leaving");
     gate.hidden = false;
-    document.body.style.overflow = "hidden";
+    lockPageScroll(true);
     // Kirish so'ralganda darhol kirish ekrani ochiladi; birinchi
     // kirishda esa tanishtiruvdan boshlanadi.
     auGo(gate.classList.contains("welcome--prompt") ? "login" : "intro");
@@ -11443,7 +11524,7 @@
   function hideWelcomeGate(){
     var gate = document.getElementById("welcomeGate");
     if(!gate || gate.hidden) return;
-    document.body.style.overflow = "";
+    lockPageScroll(false);
     if(reduceMotion){ gate.hidden = true; return; }
     gate.classList.add("leaving");
     setTimeout(function(){
@@ -16458,7 +16539,9 @@
     var nav = document.querySelector(".nav");
     chatListSnap = {
       html: card.innerHTML,
-      top: (nav ? Math.round(nav.getBoundingClientRect().height) : 0) - (window.scrollY || 0)
+      /* Lenta endi qimirlamaydi — ro'yxat aynan uning ostidan
+         boshlanadi. */
+      top: nav ? Math.round(nav.getBoundingClientRect().bottom) : 0
     };
   }
 
@@ -17747,7 +17830,7 @@
       var yangi = list.children[korinadi.length];
       if(yangi){
         var surish = yangi.getBoundingClientRect().top - oldin;
-        if(surish) window.scrollBy(0, surish);
+        if(surish) pageScrollBy(surish);
       }
       haptic("light");
     });
@@ -19544,7 +19627,7 @@
     if(!rcptOverlay) return;
     rcptOverlay.remove();
     rcptOverlay = null;
-    document.body.style.overflow = "";
+    lockPageScroll(false);
   }
 
   /**
@@ -19578,7 +19661,7 @@
        `overflow:hidden` ini bekor qilib qo'yardi. */
     closeReceipt();
     document.body.appendChild(overlay);
-    document.body.style.overflow = "hidden";
+    lockPageScroll(true);
     rcptOverlay = overlay;
 
     var shared = null;   // serverdan kelgan kvitansiya
@@ -22772,7 +22855,7 @@
     // should actually land the visitor on that tab, not leave the sheet
     // floating on top of it.
     Sheet.close();
-    window.scrollTo(0, 0);
+    pageScrollTo(0);
     /* Yangi versiya kutib turgan bo'lsa — bo'lim almashuvi uni
        qo'llash uchun qulay payt: odam hozirgina bir ishni
        tugatdi, yangisini boshlagani yo'q. Ochiq turgan bo'lim
@@ -23537,7 +23620,7 @@
 
     window.addEventListener("touchstart", function(e){
       if(refreshing || pulling || sheetOpen() || e.touches.length !== 1) return;
-      if(window.scrollY > 0) return;
+      if(pageScrollTop() > 0) return;
       // Xabarlar ro'yxatining o'z yangilashi bor — u yerda butun
       // sahifani qayta yuklash ortiqcha, ikkitasi birga ishlasa esa
       // ikki marta yangilangan bo'lardi.
@@ -23563,7 +23646,7 @@
       var dy = y - startY;
       /* Sahifa surilib ketgan bo'lsa yoki harakat yonlamasiga
          aylansa — bu bizning harakatimiz emas. */
-      if(window.scrollY > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
+      if(pageScrollTop() > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
 
       pull = Math.max(0, pull + qadam);
       /* Noldan katta bo'lsa — harakat bizda. Birinchi pikseldan
@@ -23674,7 +23757,7 @@
 
     window.addEventListener("touchstart", function(ev){
       if(busy || pulling || ev.touches.length !== 1) return;
-      if(!chatPtrEnabled() || !chatListPullable() || window.scrollY > 0) return;
+      if(!chatPtrEnabled() || !chatListPullable() || pageScrollTop() > 0) return;
       /* Brauzerning o'z overscroll harakati bir marta — birinchi
          tortishda — o'chiriladi. Initda o'chirib qo'yilsa, bu
          sozlama tortib yangilash umuman qo'shilmaydigan oddiy
@@ -23696,7 +23779,7 @@
       var dy = y - startY;
       // Yonlamasiga surish yoki ro'yxat pastga tushib ketgan
       // bo'lsa — bu bizning harakatimiz emas.
-      if(window.scrollY > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
+      if(pageScrollTop() > 0 || (dy > 0 && dx > dy)){ pulling = false; reset(); return; }
 
       pull = Math.max(0, pull + qadam);
       if(pull > 0 && ev.cancelable) ev.preventDefault();
@@ -23849,8 +23932,12 @@
   var scrollTicking = false;
 
   function onScrollFrame(){
-    var y = window.scrollY;
-    var max = document.documentElement.scrollHeight - window.innerHeight;
+    /* Suriladigani `<main>`, sahifa emas — o'lchov ham o'shandan. */
+    var box = pageScroller();
+    var y = box ? box.scrollTop : (window.scrollY || 0);
+    var max = box
+      ? (box.scrollHeight - box.clientHeight)
+      : (document.documentElement.scrollHeight - window.innerHeight);
 
     if(progress){
       progress.style.transform = "scaleX(" + (max > 0 ? Math.min(1, y / max) : 0) + ")";
@@ -23873,11 +23960,14 @@
     scrollTicking = false;
   }
 
+  /* `scroll` element ichidan yuqoriga ko'tarilmaydi, shuning uchun
+     tutish bosqichida (capture) eshitiladi: shunda `<main>` ning
+     surilishi ham shu yerga yetib keladi. */
   window.addEventListener("scroll", function(){
     if(scrollTicking) return;
     scrollTicking = true;
     requestAnimationFrame(onScrollFrame);
-  }, {passive:true});
+  }, {passive:true, capture:true});
   onScrollFrame();
 
   /* ============================================================
