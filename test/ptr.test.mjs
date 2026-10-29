@@ -362,6 +362,22 @@ check('bekor qilish faqat yonlamasiga surishda yoki ro\'yxat surilganda',
   (html.match(/if\(pageScrollTop\(\) > 0 \|\| \(dy > 0 && dx > dy\)\)\{ pulling = false; reset\(\); return; \}/g) || []).length === 2);
 check('sahifa emas, ro\'yxatning holati so\'raladi',
   !/if\(window\.scrollY > 0\)/.test(html));
+
+/* HECH TORTILMAGAN harakat tepaga ketsa — chetga chiqiladi.
+   Sababi: `<main>` suriladigan element bo'lib qoldi, unga
+   harakat o'rtasida uslub yozilsa surish to'xtab qolardi
+   ("qotib qolish"). Lekin bir marta tortib, qo'lni uzmasdan
+   qaytarib yana tortish ishlashi shart — shuning uchun
+   `tortgan` bayrog'i bor. */
+check('tortilmagan tepaga harakat PTR ni tark etadi',
+  (html.match(/if\(pull <= 0 && !tortgan && dy < 0\)\{ pulling = false; return; \}/g) || []).length === 2);
+check('bir marta tortilgani eslab qolinadi',
+  (html.match(/if\(pull > 0\) tortgan = true;/g) || []).length === 2
+  && (html.match(/pull = 0;\s*\n\s*tortgan = false;/g) || []).length === 2
+  && (html.match(/var tortgan = false;/g) || []).length === 2);
+/* Tortilmagan bo'lsa `main` ga umuman tegilmaydi. */
+check('bo\'sh tortishda main ga uslub yozilmaydi',
+  /if\(!main\.style\.transform && !main\.style\.transition\) return;/.test(html));
 /* Eski o'lchov qolib ketmasin. */
 check('eski o\'lchov olib tashlandi', !/dy <= 0 \|\| dx > dy/.test(html)
   && !/var dy = (e|ev)\.touches\[0\]\.clientY - startY;/.test(html));
