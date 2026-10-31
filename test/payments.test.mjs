@@ -340,6 +340,94 @@ flow('Premium muddati QO\'SHILADI, almashtirilmaydi');
     { until, expected, farq: until - expected });
 }
 
+flow('Ayni paytda kelgan ikki so\'rov premiumni ikkilantirmaydi');
+{
+  /* Holatni O'QIB-YOZISH yetarli emas edi: ikkita `PerformTransaction`
+     bir vaqtda kelsa, ikkalasi ham hali `HOLD` ni ko'rib, ikkalasi
+     ham premium qo'shardi — odam bir marta to'lab ikki oy olardi.
+     Endi navbat Redis'dagi `SADD` bilan egallanadi (atomik). */
+  seed({ premiumPrice1m: 50000 });
+  const started = await newInvoice('premium_1m');
+  const id = started.payload.invoice.id;
+  const tiyin = 50000 * 100;
+  await payme('CreateTransaction', { id: 'TXN-RACE', amount: tiyin, account: { invoice: id } });
+
+  /* Ikkalasi BIR PAYTDA ketadi: `await` alohida qo'yilsa, bu
+     shunchaki ketma-ket ikki so'rov bo'lardi va eski kod ham
+     o'tib ketardi. */
+  const [bir, ikki] = await Promise.all([
+    payme('PerformTransaction', { id: 'TXN-RACE' }),
+    payme('PerformTransaction', { id: 'TXN-RACE' }),
+  ]);
+  check('ikkalasiga ham xato qaytmadi', !bir.payload.error && !ikki.payload.error,
+    { bir: bir.payload, ikki: ikki.payload });
+
+  const until = Number(await db.strings.get(`premium:${ME}`));
+  const kun = Math.round((until - Date.now()) / 86400000);
+  check('MUDDAT BIR MARTA QO‘SHILDI', kun === 30, kun);
+}
+
+flow('Pul qaytarilsa premium ham qaytadi');
+{
+  /* Ilgari `markCancelled` faqat holatni yozardi: to'langandan
+     keyin bekor qilingan hisobda (Payme holati −2) odam pulni
+     ham, premiumni ham olib qolardi. */
+  seed({ premiumPrice1m: 50000 });
+  const started = await newInvoice('premium_1m');
+  const tiyin = 50000 * 100;
+  await payme('CreateTransaction', { id: 'TXN-REF', amount: tiyin, account: { invoice: started.payload.invoice.id } });
+  await payme('PerformTransaction', { id: 'TXN-REF' });
+  check('avval premium berildi', Number(await db.strings.get(`premium:${ME}`)) > Date.now());
+
+  await payme('CancelTransaction', { id: 'TXN-REF', reason: 5 });
+  check('PREMIUM OLIB TASHLANDI', !db.strings.has(`premium:${ME}`),
+    db.strings.get(`premium:${ME}`));
+  check('to‘plamdan ham chiqdi', !(db.sets.get('premium_users') || new Set()).has(ME));
+}
+
+flow('Boshqa, haqiqiy oylar qaytarishda yo\'qolmaydi');
+{
+  /* Odamda ikkita to'langan oy bo'lsa va bittasi qaytarilsa,
+     ikkinchisi joyida qolishi kerak — faqat qaytarilganining
+     kunlari ayiriladi. */
+  seed({ premiumPrice1m: 50000 });
+  const tiyin = 50000 * 100;
+
+  const bir = await newInvoice('premium_1m');
+  await payme('CreateTransaction', { id: 'T-1', amount: tiyin, account: { invoice: bir.payload.invoice.id } });
+  await payme('PerformTransaction', { id: 'T-1' });
+
+  const ikki = await newInvoice('premium_1m');
+  await payme('CreateTransaction', { id: 'T-2', amount: tiyin, account: { invoice: ikki.payload.invoice.id } });
+  await payme('PerformTransaction', { id: 'T-2' });
+  const ikkiKun = Math.round((Number(await db.strings.get(`premium:${ME}`)) - Date.now()) / 86400000);
+  check('ikki oy yig‘ildi', ikkiKun === 60, ikkiKun);
+
+  await payme('CancelTransaction', { id: 'T-2', reason: 5 });
+  const qolganKun = Math.round((Number(await db.strings.get(`premium:${ME}`)) - Date.now()) / 86400000);
+  check('BIR OY QOLDI, premium o‘chmadi', qolganKun === 30, qolganKun);
+}
+
+flow('Admin qo\'lda bergan muddatsiz premiumga tegilmaydi');
+{
+  /* Muddatsiz premium ("0") to'lovdan kelmagan: qaytarilgan
+     to'lovning unga aloqasi yo'q va uni o'chirib yuborish
+     adminning qaroriga qarshi borish bo'lardi. */
+  seed({ premiumPrice1m: 50000 });
+  const started = await newInvoice('premium_1m');
+  const tiyin = 50000 * 100;
+  await payme('CreateTransaction', { id: 'TXN-INF', amount: tiyin, account: { invoice: started.payload.invoice.id } });
+  await payme('PerformTransaction', { id: 'TXN-INF' });
+
+  // Admin oraliqda muddatsiz qilib qo'ydi.
+  await premium.grantPremium(ME);
+  check('muddatsiz bo‘ldi', db.strings.get(`premium:${ME}`) === '0');
+
+  await payme('CancelTransaction', { id: 'TXN-INF', reason: 5 });
+  check('MUDDATSIZ PREMIUM JOYIDA', db.strings.get(`premium:${ME}`) === '0',
+    db.strings.get(`premium:${ME}`));
+}
+
 flow('Kalit kodga yozilmagan');
 {
   const { readFileSync, readdirSync } = await import('fs');

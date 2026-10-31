@@ -16,7 +16,7 @@
  * Vercel Hobby'da 12 ta funksiya cheklovi bor, shuning uchun hamma
  * amal bitta endpoint ichida — har biriga alohida fayl ochilmagan.
  */
-import { kvGet, kvSet } from '../lib/kv.js';
+import { kvGet, kvSet, kvIncr, kvExpire } from '../lib/kv.js';
 import { setVerification } from '../lib/verification.js';
 import { ensurePublicId } from '../lib/publicId.js';
 import {
@@ -77,6 +77,43 @@ const deliveryPayload = (phone, delivery) => ({
 });
 
 const cleanName = (value, max = 40) => String(value ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+
+/* ============================================================
+   BITTA MANZILDAN KELADIGAN URINISHLAR
+   ------------------------------------------------------------
+   `lib/phoneAuth.js` da chegara RAQAM bo'yicha bor (bitta raqamga
+   soatiga 5 ta kod). Lekin IP bo'yicha hech narsa yo'q edi, ya'ni
+   bitta kompyuter minglab RAQAMNI aylanib chiqib:
+
+     - qaysi raqamlar ro'yxatdan o'tganini bilib olardi
+       (`register-start` 409, `login-start` 404 qaytaradi), va
+     - har bir urinishda, agar raqam botga ulangan bo'lsa,
+       uning HAQIQIY egasiga Telegram xabari yuborardi.
+
+   Ikkinchisi og'irroq: bu begona odamlarni bezovta qilish
+   vositasi. Shuning uchun kod so'raydigan uchta amal bitta
+   manzildan soatiga shuncha martadan ko'p chaqirilmaydi.
+
+   `x-forwarded-for` ni so'rovda yozib yuborish mumkin, lekin
+   Vercel chekkasi uni O'ZI qo'yadi va ro'yxatning BIRINCHI
+   qiymati — haqiqiy mijoz manzili. Shuning uchun aynan
+   birinchisi olinadi.
+
+   Hisoblagich bazada, ya'ni hamma lambda nusxasi uchun bitta —
+   xotiradagi `Map` bu ishga yaramaydi.
+   ============================================================ */
+const IP_MAX_PER_HOUR = 30;
+
+const ipAllowed = async (req) => {
+  /* `req.headers` Vercel'da doim bo'ladi, lekin yo'qligi kirishni
+     butunlay to'xtatib qo'ymasligi kerak — shuning uchun `|| {}`. */
+  const ip = String((req.headers || {})['x-forwarded-for'] || '').split(',')[0].trim();
+  if (!ip) return true;                       // manzil bilinmasa to'sib qo'ymaymiz
+  const key = `phoneIp:${ip}:${Math.floor(Date.now() / 3_600_000)}`;
+  const hits = Number(await kvIncr(key).catch(() => 0)) || 0;
+  if (hits === 1) await kvExpire(key, 2 * 60 * 60).catch(() => {});
+  return hits <= IP_MAX_PER_HOUR;
+};
 
 /* ---------- Amallar ---------- */
 
@@ -295,8 +332,18 @@ export default async function handler(req, res) {
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body ?? {});
-  const action = ACTIONS[String(body.action || '')];
+  const name = String(body.action || '');
+  const action = ACTIONS[name];
   if (!action) return res.status(400).json({ error: 'Noma’lum amal' });
+
+  /* Kod yuboradigan amallar — yuqoridagi izohga qarang. `login`
+     va `set-password` bu ro'yxatda yo'q: ular kod yubormaydi va
+     ularning o'z chegarasi bor (`allowLoginAttempt`, setupToken). */
+  if (name === 'register-start' || name === 'login-start' || name === 'resend') {
+    if (!(await ipAllowed(req))) {
+      return res.status(429).json({ error: 'Juda ko‘p urinish. Bir soatdan keyin qayta urinib ko‘ring' });
+    }
+  }
 
   try {
     return await action(body, res);

@@ -480,17 +480,20 @@ console.log('\n== cookie signature tampering ==');
     isAdminAuthed({ headers: { cookie: 'admin_session=' } }) === null);
   check('other cookies do not confuse the parser',
     isAdminAuthed({ headers: { cookie: `a=1; admin_session=${good}; b=2` } }) === 'ADMIN');
-  // Ikkalasi ham hozircha yiqiladi: isAdminAuthed `req.headers.cookie` ni
-  // to'g'ridan-to'g'ri o'qiydi va decodeURIComponent'ni try/catch'siz
-  // chaqiradi. Birinchisi Vercel'da bo'lmaydi (headers doim bor), ikkinchisi
-  // esa bo'lishi mumkin: buzuq cookie 401 o'rniga istisno tashlaydi.
-  gap('no headers object at all does not throw', (() => {
+  /* Ikkalasi ilgari "gap" deb belgilangan edi: `isAdminAuthed`
+     `req.headers.cookie` ni to'g'ridan o'qirdi va
+     `decodeURIComponent` ni try/catch'siz chaqirardi. Birinchisi
+     Vercel'da uchramaydi (headers doim bor), ikkinchisi esa
+     uchraydi: buzuq cookie 401 o'rniga 500 qaytarardi — ya'ni
+     noto'g'ri cookie "server ishlamayapti" bo'lib ko'rinardi.
+     Ikkalasi ham tuzatildi, endi oddiy tekshiruv. */
+  check('no headers object at all does not throw', (() => {
     try { return isAdminAuthed({}) === null; } catch { return false; }
-  })(), 'req.headers undefined bo‘lsa TypeError; Vercel’da uchramaydi');
-  gap('malformed %-encoding in the cookie is rejected instead of throwing', (() => {
+  })());
+  check('malformed %-encoding in the cookie is rejected instead of throwing', (() => {
     try { return isAdminAuthed({ headers: { cookie: 'admin_session=%E0%A4%A' } }) === null; }
     catch { return false; }
-  })(), 'decodeURIComponent URIError tashlaydi → 401 o‘rniga 500');
+  })());
 }
 
 console.log('\n== endpoint-level permissions ==');
@@ -644,11 +647,14 @@ console.log('\n== verification review: full paths ==');
 
   const modDoc = await call(adminData, 'GET',
     { resource: 'verifydoc', email: 'r@example.com', kind: 'IDENTITY' }, null, cookieFor('MODERATOR'));
-  // verifydoc uchun faqat 'users:read' kerak, moderatorda esa u bor —
-  // ya'ni pasport/guvohnoma rasmini ko'ra oladi, garchi ko'rib chiqa olmasa
-  // (verify-review 'users:write' talab qiladi). Egasi qaror qilsin.
-  gap('moderator cannot open identity documents', modDoc.statusCode === 403,
-    'READ_PERMISSIONS.verifydoc = users:read; moderator’da bor');
+  /* Ilgari bu "gap" edi: verifydoc uchun `users:read` yetarli
+     bo'lgani uchun moderator begonaning pasport rasmini ocha
+     olardi — garchi uni tasdiqlab yoki rad etib bo'lmasa ham
+     (`verify-review` → `users:write`, moderatorda yo'q). Ya'ni
+     ko'rishdan foyda yo'q, zarari bor. Endi hujjatning o'z
+     ruxsati bor: `users:verify`, faqat ADMIN va SUPER_ADMIN da. */
+  check('moderator cannot open identity documents', modDoc.statusCode === 403,
+    modDoc.statusCode);
 
   const rej = await call(adminData, 'POST', { action: 'verify-review' },
     { email: 'r@example.com', kind: 'IDENTITY', approve: false, reason: 'noaniq' }, cookieFor('ADMIN'));

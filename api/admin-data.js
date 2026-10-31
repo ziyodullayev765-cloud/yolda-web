@@ -1332,7 +1332,22 @@ const READ_PERMISSIONS = {
   trucks: 'trucks:read',
   truck: 'trucks:read',
   settings: 'settings:read',
-  verifydoc: 'users:read',
+  /* Pasport/guvohnoma rasmi — eng maxfiy narsa. Shuning uchun
+     uning O'Z ruxsati bor va u faqat hujjatni KO'RIB CHIQA
+     oladigan rolda bo'ladi.
+
+     Ilgari bu `users:read` edi, ya'ni moderator ham ko'rardi —
+     garchi uni tasdiqlab yoki rad etib bo'lmasa ham
+     (`verify-review` → `users:write`, moderatorda yo'q). Ya'ni
+     u faqat qarab qo'yish uchun begonaning pasportini ochardi:
+     foydasi yo'q, zarari bor.
+
+     Agar keyinroq moderator hujjatni oldindan ko'rib chiqishi
+     kerak bo'lsa, buni MODERATOR ruxsatlariga `users:verify`
+     qo'shib qaytarish mumkin (lib/adminAuth.js) — lekin unda
+     `verify-review` ni ham berish kerak, aks holda holat yana
+     shunday bo'lib qoladi. */
+  verifydoc: 'users:verify',
   life: 'life:read',
   icons: 'icons:read',
   staff: 'staff:read',

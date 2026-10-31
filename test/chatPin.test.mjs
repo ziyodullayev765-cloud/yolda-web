@@ -14,12 +14,19 @@
  */
 process.env.TELEGRAM_BOT_TOKEN = 'test-bot-token';
 
-import { db, loadApi, makeRes, runner } from './harness.mjs';
+import { db, loadApi, loadLib, makeRes, runner } from './harness.mjs';
 
 const t = runner();
 const { flow, check } = t;
 
 const chat = await loadApi('api/chat.js', 'chatpin_chat');
+
+/* Yozishmalar ro'yxati suhbatdoshning identity sini EMAS, belgisini
+   qaytaradi (lib/chatAlias.js): Google bilan kirgan odam uchun
+   identity — haqiqiy pochta manzili edi va u begonaga ko'rinib
+   turardi. Test shu belgi bilan solishtiradi. */
+const { aliasOf } = await loadLib('chatAlias.js');
+const al = (id) => aliasOf(id);
 
 const post = async (action, body) => {
   const res = makeRes();
@@ -58,12 +65,12 @@ flow('Qadash');
   seed();
   const res = await post('pin', { googleIdToken: ME, withEmail: A, on: true });
   check('qadaldi', res.statusCode === 200, res.payload);
-  check('ro\'yxatda bitta', res.payload.pinned.join(',') === A, res.payload);
+  check('ro\'yxatda bitta', res.payload.pinned.join(',') === al(A), res.payload);
 
   const list = await inbox();
-  const row = list.conversations.find((c) => c.email === A);
+  const row = list.conversations.find((c) => c.email === al(A));
   check('ro\'yxatda belgilangan', row && row.pinned === true, row);
-  check('birinchi o\'rinda', list.conversations[0].email === A, list.conversations.map((c) => c.email));
+  check('birinchi o\'rinda', list.conversations[0].email === al(A), list.conversations.map((c) => c.email));
   check('chegarasi aytilgan', list.maxPins === 4, list.maxPins);
 }
 
@@ -77,8 +84,8 @@ flow('Qadalganlar doim yuqorida');
 
   await post('pin', { googleIdToken: ME, withEmail: A, on: true });
   const list = await inbox();
-  check('qadalgani birinchi', list.conversations[0].email === A, list.conversations.map((c) => c.email));
-  check('qadalmaganlari vaqt bo\'yicha', list.conversations[1].email === B,
+  check('qadalgani birinchi', list.conversations[0].email === al(A), list.conversations.map((c) => c.email));
+  check('qadalmaganlari vaqt bo\'yicha', list.conversations[1].email === al(B),
     list.conversations.map((c) => c.email));
 }
 
@@ -98,7 +105,48 @@ flow('To\'rttadan ko\'p qadalmaydi');
   await post('pin', { googleIdToken: ME, withEmail: A, on: false });
   const ok = await post('pin', { googleIdToken: ME, withEmail: E, on: true });
   check('bo\'shatilgach sig\'di', ok.statusCode === 200, ok.payload);
-  check('A endi qadalmagan', !(await inbox()).pinned.includes(A));
+  check('A endi qadalmagan', !(await inbox()).pinned.includes(al(A)));
+}
+
+flow('Suhbatdoshning pochta manzili mijozga berilmaydi');
+{
+  /* Ilgari ro'yxatda `email: "a@example.com"` turardi. Google
+     bilan kirgan odam uchun bu uning HAQIQIY pochta manzili edi,
+     ya'ni istalgan `@username` ga bitta xabar yozib, manzilini
+     o'qib olish mumkin edi. Endi o'rnida belgi turadi. */
+  seed();
+  const list = await inbox();
+  const hammasi = JSON.stringify(list);
+  check('javobda "@example.com" umuman yo\'q', !hammasi.includes('@example.com'), hammasi.slice(0, 200));
+  check('har bir satrda belgi turadi',
+    list.conversations.every((c) => /^u_[A-Za-z0-9_-]{22}$/.test(c.email)),
+    list.conversations.map((c) => c.email));
+  check('har kimning belgisi o\'zining',
+    new Set(list.conversations.map((c) => c.email)).size === list.conversations.length);
+
+  /* Belgi haqiqatan ishlaydi: mijoz uni qaytarib yuborganda
+     suhbat topiladi. Aks holda yozishma umuman ochilmasdi. */
+  const pinned = await post('pin', { googleIdToken: ME, withEmail: al(A), on: true });
+  check('belgi bilan qadaldi', pinned.statusCode === 200, pinned.payload);
+  check('va to\'g\'ri odam qadaldi',
+    (db.strings.get(`chatPins:${ME}`) || '').includes(A),
+    db.strings.get(`chatPins:${ME}`));
+
+  /* O'ylab topilgan belgi hech narsa ochmaydi. */
+  const soxta = await post('pin', { googleIdToken: ME, withEmail: `u_${'A'.repeat(22)}`, on: true });
+  check('soxta belgi rad etildi', soxta.statusCode === 400 || soxta.statusCode === 404, soxta.statusCode);
+}
+
+flow('Keshdagi eski sahifa ham ishlaydi');
+{
+  /* Eski sahifa hali identity yuborishi mumkin — u ham qabul
+     qilinadi. Teshik javobda identity BERILISHI edi, uni qabul
+     qilish emas; yangi javoblarda u yo'q, ya'ni bu yo'l eski
+     sahifalar yopilishi bilan o'z-o'zidan tugaydi. */
+  seed();
+  const res = await post('pin', { googleIdToken: ME, withEmail: A, on: true });
+  check('identity bilan ham qadaladi', res.statusCode === 200, res.payload);
+  check('natija bir xil', (db.strings.get(`chatPins:${ME}`) || '').includes(A));
 }
 
 flow('Begona suhbatni qadab bo\'lmaydi');
@@ -123,7 +171,7 @@ flow('O\'chirish — faqat O\'Z ro\'yxatimdan');
   check('o\'chirildi', res.statusCode === 200, res.payload);
 
   const mine = await inbox();
-  check('mening ro\'yxatimdan ketdi', !mine.conversations.some((c) => c.email === A),
+  check('mening ro\'yxatimdan ketdi', !mine.conversations.some((c) => c.email === al(A)),
     mine.conversations.map((c) => c.email));
   check('o\'qilmaganlar sanog\'i ham ketdi', !db.strings.has(`chatUnread:${ME}:${A}`));
 
@@ -138,9 +186,9 @@ flow('O\'chirilgan suhbat qadalganlar ro\'yxatidan ham chiqadi');
 {
   seed();
   await post('pin', { googleIdToken: ME, withEmail: A, on: true });
-  check('avval qadalgan', (await inbox()).pinned.includes(A));
+  check('avval qadalgan', (await inbox()).pinned.includes(al(A)));
   await post('hide', { googleIdToken: ME, withEmail: A });
-  check('qadalganlardan ham ketdi', !(await inbox()).pinned.includes(A));
+  check('qadalganlardan ham ketdi', !(await inbox()).pinned.includes(al(A)));
 }
 
 flow('O\'chirishda ham begonaga tegilmaydi');

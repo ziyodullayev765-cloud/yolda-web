@@ -27,7 +27,9 @@
  * lib/adminAuth.js ga qarang.
  */
 import crypto from 'node:crypto';
-import { isAdminAuthed, makeSessionToken, readAdminSession, ROLES } from '../lib/adminAuth.js';
+import {
+  makeSessionToken, resolveAdmin, sessionsConfigured, ROLES,
+} from '../lib/adminAuth.js';
 import { resolveIdentity } from '../lib/identity.js';
 import { staffRole } from '../lib/staff.js';
 
@@ -91,7 +93,13 @@ export default async function handler(req, res) {
   // Lets the panel restore its session on refresh, and tells it which role
   // it's operating as, without exposing the cookie itself to JS.
   if (req.method === 'GET') {
-    const session = readAdminSession(req);
+    /* `resolveAdmin`, `readAdminSession` emas: ilova hisobi bilan
+       kirgan odam xodimlar ro'yxatidan chiqarilgan bo'lsa, panel
+       "kirgansiz" deb ko'rsatmasligi kerak. Ma'lumot baribir
+       berilmaydi (har bir resource o'zi tekshiradi), lekin yarim
+       ochiq panel odamni chalg'itadi: tugmalar ko'rinadi, bosilsa
+       hammasi 401 qaytaradi. */
+    const session = await resolveAdmin(req);
     const role = session && session.role;
     return res.status(200).json({
       authed: Boolean(role),
@@ -139,15 +147,19 @@ export default async function handler(req, res) {
 
     clearThrottle(ip);
     const accExpires = Date.now() + SESSION_MS;
+    const accToken = makeSessionToken(accRole, accExpires, who.identity);
+    if (!accToken) return res.status(500).json({ error: 'Server sozlanmagan (imzo kaliti yo‘q)' });
     res.setHeader(
       'Set-Cookie',
-      `admin_session=${makeSessionToken(accRole, accExpires, who.identity)}; ${COOKIE_FLAGS}; `
-      + `Max-Age=${SESSION_MS / 1000}`,
+      `admin_session=${accToken}; ${COOKIE_FLAGS}; Max-Age=${SESSION_MS / 1000}`,
     );
     return res.status(200).json({ ok: true, role: accRole, identity: who.identity });
   }
 
   /* ---------- 1. Parol bilan ---------- */
+  if (!sessionsConfigured()) {
+    return res.status(500).json({ error: 'Server sozlanmagan (imzo kaliti yo‘q)' });
+  }
   if (!ROLE_PASSWORDS.length) {
     return res.status(500).json({ error: 'Server sozlanmagan (ADMIN_PASSWORD yo‘q)' });
   }
@@ -164,9 +176,11 @@ export default async function handler(req, res) {
   clearThrottle(ip);
 
   const expires = Date.now() + SESSION_MS;
+  const token = makeSessionToken(role, expires);
+  if (!token) return res.status(500).json({ error: 'Server sozlanmagan (imzo kaliti yo‘q)' });
   res.setHeader(
     'Set-Cookie',
-    `admin_session=${makeSessionToken(role, expires)}; ${COOKIE_FLAGS}; Max-Age=${SESSION_MS / 1000}`,
+    `admin_session=${token}; ${COOKIE_FLAGS}; Max-Age=${SESSION_MS / 1000}`,
   );
   return res.status(200).json({ ok: true, role });
 }

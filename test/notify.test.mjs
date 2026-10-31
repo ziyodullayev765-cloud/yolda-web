@@ -14,6 +14,14 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 process.env.TELEGRAM_BOT_TOKEN = 'test-bot-token';
+/* Webhook endi sirsiz umuman ishlamaydi: sir qo'yilmagan bo'lsa
+   har qanday so'rov rad etiladi (api/telegram.js boshidagi
+   izohga qarang — soxta "kontakt" bilan akkaunt o'g'irlash
+   yo'li aynan shu tekshiruv ixtiyoriy bo'lgani uchun ochiq
+   edi). Shuning uchun sinovda ham sir qo'yiladi va so'rovlarga
+   Telegram qo'yadigan sarlavha qo'shiladi. */
+process.env.TELEGRAM_WEBHOOK_SECRET = 'test-webhook-secret';
+const WEBHOOK_HEADERS = { 'x-telegram-bot-api-secret-token': 'test-webhook-secret' };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..');
@@ -758,7 +766,7 @@ console.log('\n== the bot verifies a phone number ==');
 
   const send = async (message) => {
     const res = mkRes();
-    await telegramHandler({ method: 'POST', headers: {}, body: { message } }, res);
+    await telegramHandler({ method: 'POST', headers: WEBHOOK_HEADERS, body: { message } }, res);
     return res;
   };
   const profileOf = (id) => JSON.parse(store.get(`profile:${id}`) || '{}');
@@ -797,6 +805,84 @@ console.log('\n== the bot verifies a phone number ==');
   const ask = sentMessages.find((m) => m.url.endsWith('/sendMessage'));
   check('/tasdiq offers the share-contact button',
     Boolean(ask && ask.body.reply_markup && ask.body.reply_markup.keyboard[0][0].request_contact));
+}
+
+console.log('\n== only Telegram may post to the webhook ==');
+{
+  /* ENG MUHIM TEKSHIRUV. Bu sarlavha bo'lmasa, soxta "kontakt"
+     yuborib birovning raqamini o'ziga bog'lash va tasdiqlash
+     kodini o'ziga keltirib olish mumkin bo'lardi — ya'ni akkaunt
+     o'g'irlash. Shuning uchun sarlavhasiz so'rov HECH NARSA
+     yozmasligi kerak, nafaqat xato qaytarishi. */
+  store.clear(); sets.clear(); lists.clear(); resetFetch();
+  const mod = await load('api/telegram.js', 'telegram_secret_test');
+  const handler = mod.default;
+
+  const forged = {
+    chat: { id: 4242 }, from: { id: 4242, first_name: 'Hujumchi' },
+    contact: { user_id: 4242, phone_number: '998901112233' },
+  };
+
+  const noHeader = mkRes();
+  await handler({ method: 'POST', headers: {}, body: { message: forged } }, noHeader);
+  check('a request with no secret header is refused', noHeader.statusCode === 401);
+  check('and it writes nothing at all', store.size === 0 && sets.size === 0);
+
+  const wrong = mkRes();
+  await handler({
+    method: 'POST',
+    headers: { 'x-telegram-bot-api-secret-token': 'boshqa-sir' },
+    body: { message: forged },
+  }, wrong);
+  check('a wrong secret is refused', wrong.statusCode === 401);
+  check('and still writes nothing', store.size === 0);
+
+  /* Uzunligi boshqa bo'lgan qiymat ham: `timingSafeEqual` turli
+     uzunlikda xato tashlaydi, shuning uchun oldin uzunlik
+     solishtiriladi — bu tekshiruv aynan shuni ushlaydi. */
+  const shorter = mkRes();
+  await handler({
+    method: 'POST',
+    headers: { 'x-telegram-bot-api-secret-token': 'x' },
+    body: { message: forged },
+  }, shorter);
+  check('a shorter secret is refused without throwing', shorter.statusCode === 401);
+
+  const right = mkRes();
+  await handler({ method: 'POST', headers: WEBHOOK_HEADERS, body: { message: forged } }, right);
+  check('the real secret is accepted', right.statusCode === 200);
+  check('and that update is processed', store.has('profile:tg:4242'));
+}
+
+console.log('\n== the chat alias hides the other person\'s identity ==');
+{
+  /* Ilgari yozishmalar ro'yxati suhbatdoshning identity sini
+     qaytarardi — Google bilan kirganlarda bu haqiqiy pochta
+     manzili. Endi o'rniga qaytarib ochib bo'lmaydigan belgi
+     keladi. */
+  store.clear(); sets.clear(); lists.clear();
+  const alias = await load('lib/chatAlias.js', 'chat_alias_test');
+
+  const pochta = 'aziz@example.com';
+  const belgi = alias.aliasOf(pochta);
+  check('an alias is produced', typeof belgi === 'string' && belgi.length > 0);
+  check('it has the expected shape', alias.isAlias(belgi));
+  check('it contains nothing of the address', !belgi.includes('aziz') && !belgi.includes('@'));
+  check('the same identity always gives the same alias', alias.aliasOf(pochta) === belgi);
+  check('a different identity gives a different alias', alias.aliasOf('boshqa@example.com') !== belgi);
+
+  check('nothing resolves before the alias is stored', (await alias.identityOfAlias(belgi)) === null);
+  await alias.ensureAlias(pochta);
+  check('once stored it resolves back', (await alias.identityOfAlias(belgi)) === pochta);
+
+  check('a made-up alias resolves to nothing', (await alias.identityOfAlias('u_' + 'A'.repeat(22))) === null);
+  check('a malformed value is not treated as an alias', !alias.isAlias('u_short'));
+
+  /* Eski mijoz identity yuborishi mumkin — u ham qabul qilinadi,
+     aks holda keshdan ochilgan sahifada yozishma ochilmay qolardi. */
+  check('an alias is resolved', (await alias.resolveChatTarget(belgi)) === pochta);
+  check('a legacy identity is passed through', (await alias.resolveChatTarget(pochta)) === pochta);
+  check('an empty value gives nothing', (await alias.resolveChatTarget('')) === null);
 }
 
 /* ---------------------------------------------------------- */

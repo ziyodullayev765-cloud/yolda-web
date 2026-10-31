@@ -22,7 +22,7 @@ process.env.R2_SECRET_ACCESS_KEY = 'secretExampleKey';
 process.env.R2_BUCKET = 'yolda';
 process.env.R2_PUBLIC_URL = 'https://pub-test.r2.dev';
 
-import { db, loadApi, makeRes, runner } from './harness.mjs';
+import { db, loadApi, loadLib, makeRes, runner } from './harness.mjs';
 
 const t = runner();
 const { flow, check } = t;
@@ -66,6 +66,12 @@ const send = async (body) => {
 };
 
 const okIsh = await loadApi('api/chat.js', 'chatmedia_read');
+
+/* Yozishmalar ro'yxati suhbatdoshning identity sini emas, belgisini
+   qaytaradi — lib/chatAlias.js dagi izohga qarang. */
+const { aliasOf } = await loadLib('chatAlias.js');
+const al = (id) => aliasOf(id);
+
 const get = async (action, query) => {
   const res = makeRes();
   await okIsh({ method: 'GET', query: { action, ...(query || {}) }, body: {}, headers: {} }, res);
@@ -214,7 +220,7 @@ flow('Ro\'yxatda matnsiz xabar');
   await send({ googleIdToken: ME, toUsername: 'ali', text: '',
     media: { dataUrl: dataUrl('audio/webm', 100), duration: 3 } });
   const list = (await get('inbox', { googleIdToken: A })).payload.conversations;
-  const row = list.find((c) => c.email === ME);
+  const row = list.find((c) => c.email === al(ME));
   check('ovozli xabar deb ko\'rsatiladi', /Ovozli xabar/.test(row ? row.lastText : ''), row);
 }
 

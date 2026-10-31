@@ -17,12 +17,17 @@
  */
 process.env.TELEGRAM_BOT_TOKEN = 'test-bot-token';
 
-import { db, loadApi, makeRes, runner } from './harness.mjs';
+import { db, loadApi, loadLib, makeRes, runner } from './harness.mjs';
 
 const t = runner();
 const { flow, check } = t;
 
 const chat = await loadApi('api/chat.js', 'chatreply_chat');
+
+/* Yozishmalar ro'yxati suhbatdoshning identity sini emas, belgisini
+   qaytaradi — lib/chatAlias.js dagi izohga qarang. */
+const { aliasOf } = await loadLib('chatAlias.js');
+const al = (id) => aliasOf(id);
 
 const post = async (action, body) => {
   const res = makeRes();
@@ -168,11 +173,11 @@ flow('O\'chirilgan xabar ro\'yxatda ham iz qoldirmaydi');
 
   const list1 = (await get('inbox', { googleIdToken: A })).payload.conversations;
   check('oxirgi xabar ko\'rinib turibdi',
-    list1.find((c) => c.email === ME).lastText === 'Ikkinchi', list1);
+    list1.find((c) => c.email === al(ME)).lastText === 'Ikkinchi', list1);
 
   await post('delete', { googleIdToken: ME, ids: [ikki.payload.id], forMe: false });
   const list2 = (await get('inbox', { googleIdToken: A })).payload.conversations;
-  const qator = list2.find((c) => c.email === ME);
+  const qator = list2.find((c) => c.email === al(ME));
   check('"Xabar o\'chirildi" DEYILMAYDI', !/o.chirildi/i.test(qator.lastText), qator.lastText);
   check('o\'rniga oldingi xabar ko\'rsatiladi', qator.lastText === 'Birinchi', qator.lastText);
   check('id ham joyida', Boolean(bir.payload.id));
@@ -181,10 +186,10 @@ flow('O\'chirilgan xabar ro\'yxatda ham iz qoldirmaydi');
   await post('delete', { googleIdToken: A, ids: [bir.payload.id], forMe: true });
   const list3 = (await get('inbox', { googleIdToken: A })).payload.conversations;
   check('yashirilgani ham ro\'yxatdan tushdi',
-    list3.find((c) => c.email === ME).lastText === '', list3);
+    list3.find((c) => c.email === al(ME)).lastText === '', list3);
   const uniki = (await get('inbox', { googleIdToken: ME })).payload.conversations;
   check('suhbatdoshda esa joyida',
-    uniki.find((c) => c.email === A).lastText === 'Birinchi', uniki);
+    uniki.find((c) => c.email === al(A)).lastText === 'Birinchi', uniki);
 }
 
 flow('Kirmagan odam va bo\'sh ro\'yxat');

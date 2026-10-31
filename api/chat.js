@@ -32,11 +32,27 @@
  * The credential rides in the query string for GETs, the same tradeoff
  * /api/order already makes for phone numbers — acceptable at this app's
  * scale, and verified server-side on every call regardless.
+ *
+ * ============================================================
+ * SUHBATDOSH IDENTITY SI MIJOZGA BERILMAYDI
+ * ------------------------------------------------------------
+ * Ilgari yozishmalar ro'yxati va suhbatning o'zi suhbatdoshning
+ * `identity` sini qaytarardi. Google bilan kirgan odam uchun u —
+ * haqiqiy pochta manzili, ya'ni istalgan `@username` ga bitta
+ * xabar yozib, uning Gmail manzilini o'qib olish mumkin edi.
+ *
+ * Endi o'rniga qaytarib ochib bo'lmaydigan belgi beriladi
+ * (`lib/chatAlias.js`). Maydon nomlari o'zgarmadi (`email`,
+ * `withEmail`), chunki mijoz ularni shunchaki kalit sifatida
+ * ishlatadi va qaytarib yuboradi — keshdan ochilgan eski sahifa
+ * ham ishlayveradi.
+ * ============================================================
  */
 import { kvGet, kvSet, kvDel, kvIncr, kvExpire, kvPush, kvLrem, kvRange, kvSadd, kvSrem, kvSmembers, kvKeys, kvSismember } from '../lib/kv.js';
 import { notifyUser, esc } from '../lib/notify.js';
 import { uploadMedia, deleteObject, keyFromUrl, storageConfigured } from '../lib/storage.js';
 import { resolveEmail } from '../lib/identity.js';
+import { ensureAlias, resolveChatTarget } from '../lib/chatAlias.js';
 
 const MAX_TEXT = 1000;
 
@@ -191,9 +207,16 @@ const getInbox = async (req, res) => {
         // haqiqiy pochta manzili, ya'ni ro'yxatda begona odamning
         // manzili chiqib qolardi. Yozishma qoladi, nom esa umumiy.
         const gone = !profile.username && !profile.displayName && !profile.name;
+        /* Mijozga identity BERILMAYDI — Google bilan kirganlarda u
+           haqiqiy pochta manzili bo'ladi. Uning o'rniga qaytarib
+           ochib bo'lmaydigan belgi (lib/chatAlias.js). Maydon nomi
+           `email` bo'lib qoladi: keshdan ochilgan eski sahifa
+           aynan shu nomni kutadi va qiymatni shunchaki qaytarib
+           yuboradi, ya'ni u uchun hech narsa o'zgarmaydi. */
+        const alias = (await ensureAlias(otherEmail)) || otherEmail;
         return {
-          email: otherEmail,
-          username: profile.username || (gone ? 'deleted' : otherEmail),
+          email: alias,
+          username: profile.username || (gone ? 'deleted' : alias),
           deleted: gone,
           // Ro'yxatda username emas, odamning ismi ko'rinadi —
           // "@dilshod_driver" dan ko'ra "Dilshod Tursunov" tushunarli.
@@ -215,7 +238,10 @@ const getInbox = async (req, res) => {
     return b.lastAt - a.lastAt;
   });
 
-  return res.status(200).json({ conversations, pinned: pins, maxPins: MAX_PINS });
+  /* Qadalganlar ro'yxati ham belgi bilan: bu yerda ham identity
+     chiqib ketmasligi kerak. */
+  const pinnedAliases = (await Promise.all(pins.map(async (id) => (await ensureAlias(id)) || id)));
+  return res.status(200).json({ conversations, pinned: pinnedAliases, maxPins: MAX_PINS });
 };
 
 /* ----------------------------------------------------------
@@ -248,7 +274,9 @@ const setPin = async (req, res) => {
   });
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
-  const other = String(body.withEmail || '').trim();
+  /* Mijoz belgi yuboradi (lib/chatAlias.js), eski sahifa esa
+     identity yuborishi mumkin — ikkalasi ham qabul qilinadi. */
+  const other = await resolveChatTarget(body.withEmail);
   if (!other || other === myEmail) return res.status(400).json({ error: 'Suhbat ko‘rsatilmagan' });
 
   /* Faqat o'z ro'yxatimdagi suhbatni qadash mumkin: aks holda
@@ -270,7 +298,9 @@ const setPin = async (req, res) => {
   }
 
   await kvSet(pinsKey(myEmail), JSON.stringify(next));
-  return res.status(200).json({ ok: true, pinned: next, max: MAX_PINS });
+  /* Bazada identity, javobda belgi — ro'yxatdagi bilan bir xil. */
+  const nextAliases = await Promise.all(next.map(async (id) => (await ensureAlias(id)) || id));
+  return res.status(200).json({ ok: true, pinned: nextAliases, max: MAX_PINS });
 };
 
 /* ============================================================
@@ -764,7 +794,7 @@ const hideConversation = async (req, res) => {
   });
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
-  const other = String(body.withEmail || '').trim();
+  const other = await resolveChatTarget(body.withEmail);
   if (!other) return res.status(400).json({ error: 'Suhbat ko‘rsatilmagan' });
   if (!(await kvSismember(`inbox:${myEmail}`, other))) {
     return res.status(404).json({ error: 'Suhbat topilmadi' });
@@ -786,12 +816,17 @@ const getThread = async (req, res) => {
   const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
-  let withEmail = String(req.query.withEmail || '').trim();
+  /* Suhbatdosh belgi bilan ataladi (lib/chatAlias.js). Eski
+     sahifa identity yuborishi mumkin — u ham qabul qilinadi. */
+  let withEmail = (await resolveChatTarget(req.query.withEmail)) || '';
   const withUsername = String(req.query.withUsername || '').trim().toLowerCase();
   if (!withEmail && withUsername) {
     withEmail = (await kvGet(`username:${withUsername}`)) || '';
   }
   if (!withEmail) return res.status(400).json({ error: 'Bunday foydalanuvchi topilmadi' });
+  /* Javobda identity emas, belgi qaytadi — mijoz keyingi
+     so'rovda aynan shuni yuboradi. */
+  const withAlias = (await ensureAlias(withEmail)) || withEmail;
 
   /* Hech narsa o'zgarmaganmi? Mijoz o'zidagi versiyani yuboradi.
      Mos kelsa — xabarlarni umuman o'qimaymiz. Poll har 1,5 soniyada
@@ -801,7 +836,7 @@ const getThread = async (req, res) => {
   const ver = String((await kvGet(verKey(myEmail, withEmail))) || '0');
   const clientVer = String(req.query.ver || '');
   if (clientVer && clientVer === ver) {
-    return res.status(200).json({ unchanged: true, ver, withEmail });
+    return res.status(200).json({ unchanged: true, ver, withEmail: withAlias });
   }
 
   // Suhbat ochildi yoki yangilik bor — bu yozishma o'qilgan hisoblanadi.
@@ -839,7 +874,7 @@ const getThread = async (req, res) => {
   return res.status(200).json({
     messages,
     ver,
-    withEmail,
+    withEmail: withAlias,
     withUsername: profile.username || withUsername,
     withName: profile.displayName || profile.name || '',
     withAvatarUrl: profile.avatarUrl || '',

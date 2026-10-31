@@ -100,6 +100,15 @@ export const kvLrem = async (k, v) => {
   if (db.lists.has(k)) db.lists.set(k, db.lists.get(k).filter((x) => x !== String(v)));
   return true;
 };
+/* Haqiqiy LTRIM: oraliqdan tashqarisi o'chadi. Taqlid ham xuddi
+   shunday qirqishi kerak — aks holda "ro'yxat cheksiz o'smaydi"
+   degan tekshiruv hech narsani sinamagan bo'lardi. */
+export const kvLtrim = async (k, start, end) => {
+  if (!db.lists.has(k)) return true;
+  const list = db.lists.get(k);
+  db.lists.set(k, list.slice(start, end === -1 ? list.length : end + 1));
+  return true;
+};
 export const kvRange = async (k, start = 0, end = -1) => {
   const list = db.lists.get(k) || [];
   return end === -1 ? list.slice(start) : list.slice(start, end + 1);

@@ -4,10 +4,32 @@ Sana: 2026-10-31 · Tekshirilgan: `api/*.js`, `lib/*.js`, `index.html`,
 `admin.html`, `vercel.json` va Vercel'dagi muhit o'zgaruvchilari
 ro'yxati (nomlar, qiymatlar emas).
 
-Bu bosqichda **hech qanday fayl o'zgartirilmadi**. Quyida topilganlar;
-tuzatishlar keyingi commit'da.
+Audit bosqichida **hech qanday fayl o'zgartirilmadi**. Tuzatishlar
+keyingi commit'da qilindi — har bir band ostida nima qilingani
+yozilgan.
 
 Maxfiy kalitlarning qiymatlari bu hujjatda yo'q va bo'lmaydi.
+
+## Holat
+
+| № | Nima | Holat |
+|---|------|-------|
+| 1 | Telegram webhook siri ixtiyoriy | ✅ tuzatildi |
+| 2 | Admin cookie kaliti bo'sh bo'lishi mumkin | ✅ tuzatildi |
+| 3 | Kirish tokenlari URL ichida | ⏳ qoldi (alohida ish) |
+| 4 | Suhbatdoshning pochta manzili ko'rinadi | ✅ tuzatildi |
+| 5 | `/api/support` cheklanmagan | ✅ tuzatildi |
+| 6 | `GET /api/admin-login` daftarni o'qimaydi | ✅ tuzatildi |
+| 7 | `markPaid` atomik emas | ✅ tuzatildi |
+| 8 | Pul qaytarilsa premium qoladi | ✅ tuzatildi |
+| 9 | Iframe himoyasi yo'q | ✅ tuzatildi |
+| 10 | Raqamni tekshirib chiqish (IP chegarasi yo'q) | ✅ tuzatildi |
+| 11 | Ochiq GET'larda chegara yo'q | ⏳ qoldi |
+| 12 | `lib/staff.js` dagi izoh yolg'on | ✅ tuzatildi |
+| 13 | Avatar zaxira yo'li bazaga yoziladi | ⏳ qoldi (kichik) |
+| 14 | Vercel izohida parolga o'xshash matn | 👤 faqat siz |
+| + | Moderator pasport rasmini ko'ra olardi | ✅ tuzatildi |
+| + | Buzuq cookie 500 qaytarardi | ✅ tuzatildi |
 
 ---
 

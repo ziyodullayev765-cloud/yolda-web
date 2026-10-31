@@ -35,8 +35,16 @@ export const kvSrem = async () => true;
 export const kvSmembers = async () => [];
 export const kvSismember = async () => false;
 export const kvPush = async () => true;
+export const kvLtrim = async () => true;
 export const kvRange = async () => [];
 export const kvKeys = async () => [];
+/* Haqiqiy hisoblagich: api/auth-phone.js dagi IP chegarasi shuni
+   ishlatadi, va pastda uning haqiqatan to'sishini sinaymiz. */
+export const kvIncr = async (k) => {
+  const n = Number(store.get(k) || 0) + 1;
+  store.set(k, String(n));
+  return n;
+};
 `);
 
 const kvMock = JSON.stringify(join(work, 'kvmock.mjs'));

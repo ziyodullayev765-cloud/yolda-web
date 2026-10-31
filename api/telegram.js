@@ -16,6 +16,7 @@
  * odamniki ekanini isbotlaydi: Telegram «Raqamni ulashish» tugmasida
  * raqamni o'zi yuboradi, qo'lda yozilmaydi.
  */
+import crypto from 'node:crypto';
 import { kvGet, kvSet } from '../lib/kv.js';
 import { setVerification } from '../lib/verification.js';
 import {
@@ -23,7 +24,30 @@ import {
 } from '../lib/phoneAuth.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-// Optional but recommended: set it in Vercel and pass the same value to setWebhook.
+/* ============================================================
+   WEBHOOK SIRI — SHART, IXTIYORIY EMAS.
+   ------------------------------------------------------------
+   Telegram har bir so'rovda `setWebhook` da berilgan sirni
+   qaytaradi. Boshqa hech kim uni bilmaydi, ya'ni shu sarlavha —
+   "bu haqiqatan Telegram" degan yagona isbot.
+
+   ILGARI U IXTIYORIY EDI: sir bo'sh bo'lsa, tekshiruv umuman
+   o'tkazib yuborilardi. Bu jim turadigan, lekin eng og'ir
+   teshik edi. Chunki pastdagi `handleContact` ning "bu o'z
+   raqamimi" tekshiruvi (`contact.user_id === message.from.id`)
+   so'rovning O'Z ichidagi ikki qiymatni solishtiradi — soxta
+   so'rovda ikkalasini ham hujumchi yozadi. Ya'ni u:
+
+     1. birovning raqamini "tasdiqlangan" qilib yozdirardi;
+     2. `phoneChat:<raqam>` ni O'ZINING suhbatiga burardi;
+     3. keyin saytdan o'sha raqam uchun kod so'rab, kodni
+        o'ziga keltirib olardi — ya'ni akkauntni o'g'irlardi.
+
+   Shuning uchun endi sir yo'q bo'lsa, endpoint UMUMAN javob
+   bermaydi. Yarim ishlaydigan tekshiruvdan ko'ra ishlamagan bot
+   yaxshi: botning ishlamagani darhol ko'rinadi, teshik esa
+   ko'rinmaydi.
+   ============================================================ */
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 
 const telegram = async (method, payload) => {
@@ -192,9 +216,21 @@ const handleCommand = async (message) => {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  /* Sir qo'yilmagan — bot ishlamaydi. Yuqoridagi izohga qarang:
+     bu holatda so'rovning Telegramdan kelganini isbotlaydigan
+     hech narsa qolmaydi. Jurnalga yoziladi, chunki buni faqat
+     o'zimiz ko'rishimiz kerak. */
+  if (!WEBHOOK_SECRET) {
+    console.error('TELEGRAM_WEBHOOK_SECRET missing — webhook refuses every update.');
+    return res.status(503).json({ error: 'Webhook sozlanmagan' });
+  }
+
   // Telegram echoes the secret configured at setWebhook time. Anything else is
   // not Telegram and gets dropped.
-  if (WEBHOOK_SECRET && req.headers['x-telegram-bot-api-secret-token'] !== WEBHOOK_SECRET) {
+  const given = String(req.headers['x-telegram-bot-api-secret-token'] || '');
+  const want = Buffer.from(WEBHOOK_SECRET, 'utf8');
+  const got = Buffer.from(given, 'utf8');
+  if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
