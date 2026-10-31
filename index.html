@@ -4313,21 +4313,62 @@
     background:var(--route);border-color:var(--route);
   }
 
-  /* Yozish qatori: dumaloq maydon + aylana yuborish tugmasi. */
+  /* ============================================================
+     YOZISH QATORI
+     ------------------------------------------------------------
+     Uchta narsa bir chiziqda turishi kerak: skrepka, maydon va
+     mikrofon. Ilgari uchalasi ham joyida emas edi — har biri
+     boshqa sababdan.
+
+     1. MAYDON PILL EMAS EDI. Bu yerda `border-radius:999px`
+        yozilgan, lekin pastdagi umumiy qoida
+        (`select,input[type=number],input[type=text],...`)
+        AYNI KUCHDA va KEYINROQ turadi, shuning uchun u yutib,
+        radiusni 10px ga tushirardi. Undan tashqari o'zining
+        `padding` va `box-shadow` ini ham olib kelardi.
+
+        Shuning uchun bu yerdagi tanlagich endi `input[type=text]`
+        — bitta belgi ko'proq, ya'ni aniqroq va u yutadi.
+
+     2. MIKROFON 6px PASTDA TURARDI. U `.btn` sinfini oladi,
+        `.btn` da esa `margin-top:var(--s3)` bor — u odatdagi
+        tugmalar ustunda joylashgani uchun qo'yilgan. Bu yerda
+        tugma QATOR ichida, ya'ni o'sha chekka faqat uni pastga
+        suradi va qatorni balandlatadi.
+
+     3. QATOR KERAGIDAN BALAND EDI. Yuqoridagi 12px aynan
+        qatorga qo'shilardi: 73px o'rniga 64px bo'lishi kerak.
+
+     Endi maydon ham, mikrofon ham 48px — ikkalasining markazi
+     bir xil, chiziq tekis.
+     ============================================================ */
   .chat-input-row{
     display:flex;gap:8px;align-items:center;flex:none;
     padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
     margin:0;border-top:1px solid var(--border);background:var(--paper);
   }
-  .chat-input-row input{
-    flex:1;min-width:0;border-radius:999px;background:var(--card);
-    border:1px solid var(--border);padding:11px 16px;height:auto;
+  .chat-input-row input[type=text]{
+    flex:1;min-width:0;width:auto;
+    height:48px;min-height:48px;
+    border-radius:999px;background:var(--card);
+    border:1px solid var(--border);
+    /* Yon chekka radiusdan kichik bo'lsa, matn yumaloq burchakka
+       tegib turadi. */
+    padding:0 18px;
+    /* Qator ichida soya ortiqcha: u allaqachon o'z fonida va
+       ustidagi chiziq bilan ajratilgan. */
+    box-shadow:none;
   }
   .chat-input-row .btn.chat-send{
-    width:44px;height:44px;min-height:44px;flex:none;
+    width:48px;height:48px;min-height:48px;flex:none;
+    /* `.btn` dagi `margin-top` ni bekor qiladi — 2-sabab. */
+    margin:0 !important;
     padding:0 !important;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
   }
+  /* Skrepka ham o'sha balandlikda: tegish maydoni kichkina
+     bo'lib qolmasin. */
+  .chat-clip{min-height:48px;}
   .chat-input-row .btn.chat-send .ic-svg{font-size:20px;}
   /* Yashirilgani ko'rinmasin: yuqoridagi qoida display beradi,
      shuning uchun bekor qilish aynan shu yerda turishi kerak. */
