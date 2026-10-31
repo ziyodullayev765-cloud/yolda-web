@@ -24,9 +24,9 @@ Maxfiy kalitlarning qiymatlari bu hujjatda yo'q va bo'lmaydi.
 | 8 | Pul qaytarilsa premium qoladi | ✅ tuzatildi |
 | 9 | Iframe himoyasi yo'q | ✅ tuzatildi |
 | 10 | Raqamni tekshirib chiqish (IP chegarasi yo'q) | ✅ tuzatildi |
-| 11 | Ochiq GET'larda chegara yo'q | ⏳ qoldi |
+| 11 | Ochiq GET'larda chegara yo'q | 👤 Vercel Firewall (sozlama) |
 | 12 | `lib/staff.js` dagi izoh yolg'on | ✅ tuzatildi |
-| 13 | Avatar zaxira yo'li bazaga yoziladi | ⏳ qoldi (kichik) |
+| 13 | Avatar zaxira yo'li bazaga yoziladi | ✅ productionda ishlamaydi |
 | 14 | Vercel izohida parolga o'xshash matn | 👤 faqat siz |
 | + | Moderator pasport rasmini ko'ra olardi | ✅ tuzatildi |
 | + | Buzuq cookie 500 qaytarardi | ✅ tuzatildi |
@@ -247,6 +247,26 @@ xabari yuboradi — ya'ni begonani bezovta qilish vositasi ham.
 va chegarasiz, har biri bir nechta KV buyrug'i sarflaydi. Upstash bepul
 tarifida oyiga 500 000 buyruq. Buni tashqaridan tugatib qo'yish mumkin.
 
+**Kodda tuzatilmadi va buning sababi bor.**
+
+Birinchi o'yga keladigan yechim — IP bo'yicha hisoblagich — bu yerda
+ishlamaydi: hisoblagichning o'zi KV buyrug'i sarflaydi, `x-forwarded-for`
+esa so'rovda yoziladi, ya'ni har bir soxta manzil YANGI kalit yasaydi.
+Natijada himoya hujumning o'zidan ko'ra ko'proq sarflaydi.
+
+Ikkinchi fikr — javobni CDN'da keshlash — `?action=detail` uchun
+**xavfli**: uning javobida `driverContact` bor va u faqat yuk egasiga
+beriladi. Kirish ma'lumoti endi sarlavhada ketgani uchun manzil hamma
+uchun bir xil, ya'ni `public` kesh qo'yilsa, CDN haydovchining telefonini
+begonaga ham berib yuborardi. (Shu sababli `credsFrom` ishlatadigan
+javobga `Cache-Control: public` qo'yish taqiqlangan — `test/headerCreds.test.mjs`
+buni qo'riqlaydi.)
+
+**Haqiqiy yechim — platformada:** Vercel → Firewall → Rate Limiting.
+U so'rovni chekkada, lambda ishga tushishidan oldin to'xtatadi, ya'ni
+na KV buyrug'i, na funksiya vaqti sarflanadi. Bu kod bilan emas,
+sozlama bilan qilinadi.
+
 #### 12. `lib/staff.js` dagi izoh endi YOLG'ON
 
 Fayl boshida:
@@ -261,8 +281,19 @@ foydalanuvchi adashmaydi — lekin kodni keyin o'qiydigan odam adashadi.
 
 #### 13. Avatar zaxira yo'li bazaga yoziladi
 
-`api/profile.js:456-465` — R2 ishlamasa, 400 KB gacha `data:` matn
-Redis'ga yoziladi. Bir necha yuz odamda bu bazani to'ldiradi.
+`api/profile.js` — R2 ishlamasa, 400 KB gacha `data:` matn Redis'ga
+yoziladi.
+
+**Tekshirildi: productionda bu yo'l umuman ishlamaydi.** R2 ning to'rtala
+kaliti (`R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`,
+`R2_SECRET_ACCESS_KEY`) Vercel'da qo'yilgan, ya'ni rasm doim omborga
+tushadi. Bu zaxira yo'l faqat mahalliy ishga tushirishda (R2 siz)
+ishlaydi va o'sha yerda u foydali — avatar umuman saqlanmasligidan
+yaxshiroq.
+
+Shuning uchun kod o'zgartirilmadi: ishlayotgan va zarari yo'q yo'lni
+sababsiz buzishning ma'nosi yo'q. Hajm chegarasi (400 KB) allaqachon
+bor.
 
 #### 14. Vercel'da izoh maydonida parolga o'xshash matn
 
