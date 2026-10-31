@@ -743,6 +743,13 @@
   }
   .nav-menu[hidden]{display:none;}
   @keyframes navMenuIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+  /* YOPILISHI HAM SILLIQ. Ilgari menyu ochilganda suzib chiqardi,
+     yopilganda esa bir zumda yo'q bo'lardi — ko'z buni "uzilish"
+     deb o'qiydi. iPhone'da ikkala tomoni ham bir xil. Chiqish
+     kirishdan biroz tezroq: kutilayotgan narsa sekin keladi,
+     kerak bo'lmagani tez ketadi. */
+  .nav-menu.closing{animation:navMenuOut 0.14s var(--ease) both;pointer-events:none;}
+  @keyframes navMenuOut{from{opacity:1;transform:none;}to{opacity:0;transform:translateY(-6px);}}
   :root[data-reduce-motion="1"] .nav-menu{animation:none;}
   .nav-menu-who{
     padding:8px 10px 9px;font-size:12px;color:var(--muted);
@@ -4167,6 +4174,11 @@
     animation:cbMenuIn 0.18s var(--ease) both;
   }
   @keyframes cbMenuIn{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:none;}}
+  /* Yopilishi — yuqoridagi `.nav-menu.closing` bilan bir xil
+     sababdan. */
+  .cb-menu.closing{animation:cbMenuOut 0.14s var(--ease) both;pointer-events:none;}
+  @keyframes cbMenuOut{from{opacity:1;transform:none;}to{opacity:0;transform:scale(0.94);}}
+  .cb-menu-veil.closing{opacity:0;transition:opacity 0.14s var(--ease);}
   :root[data-reduce-motion="1"] .cb-menu{animation:none;}
   .cb-menu-emojis{
     display:flex;gap:2px;padding:6px 8px;border-radius:999px;
@@ -5299,6 +5311,46 @@
 
   /* Sarlavhadagi qo'ng'iroq tugmasi. Raqam ma'lum bo'lgandagina
      ko'rinadi (`hidden` olib tashlanadi). */
+  /* ============================================================
+     TEGISH MAYDONI — KO'RINISHGA TEGMASDAN
+     ------------------------------------------------------------
+     Ikonkali tugmalar ko'rinishda kichik bo'lishi kerak: yurak,
+     "uch nuqta", lentadagi strelka. Aks holda ular kartochkaning
+     o'zidan ko'proq joy egallardi.
+
+     Lekin BARMOQ ikonkadan katta. Apple 44pt, Google 48dp
+     tavsiya qiladi; bu yerdagilari esa 19px dan 34px gacha edi —
+     ya'ni ularni birinchi urinishda bosish qiyin, ayniqsa
+     yurish-turishda.
+
+     Yechim: ko'rinish UMUMAN o'zgarmaydi, faqat ko'rinmas
+     maydon kattalashadi. `::after` layout'ga ta'sir qilmaydi
+     (u `position:absolute`), shuning uchun hech bir element
+     joyidan siljimaydi.
+
+     `min-width/height:100%` kerak: eni tugmaning o'zidan kichik
+     bo'lib qolmasin — masalan 82px li raqam tugmasi faqat 44px
+     bo'lib qolardi.
+     ============================================================ */
+  .nav-chev-btn,
+  .load-card .lc-fav,
+  .htc-fav,
+  .chat-row-more,
+  .pf-id-num{ position:relative; }
+  /* `.tc-fav` va `.hlc-fav` allaqachon `position:absolute` —
+     ularga tegilmaydi, aks holda joyidan uchib ketardi. */
+  .nav-chev-btn::after,
+  .load-card .lc-fav::after,
+  .htc-fav::after,
+  .hlc-fav::after,
+  .tc-fav::after,
+  .chat-row-more::after,
+  .pf-id-num::after{
+    content:"";position:absolute;
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    width:44px;height:44px;min-width:100%;min-height:100%;
+  }
+
   .pf-id-phone{
     font-size:14px;color:var(--ink-soft);margin-top:3px;
     font-variant-numeric:tabular-nums;
@@ -9791,6 +9843,23 @@
     document.documentElement.setAttribute("data-reduce-motion", getNotifPrefs().motion ? "1" : "0");
   }
 
+  /**
+   * Harakat kamaytirilganmi.
+   *
+   * Ikki manba bor va ikkalasi ham hisobga olinadi: ilovaning
+   * o'z sozlamasi (Bildirishnomalar → harakatni kamaytirish) va
+   * telefonning tizim sozlamasi. Odam tizimda "harakat
+   * kamaytirilsin" deb qo'ygan bo'lsa, ilovada alohida
+   * belgilashi shart emas.
+   */
+  function prefersReducedMotion(){
+    if(getNotifPrefs().motion) return true;
+    try{
+      return window.matchMedia
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }catch(e){ return false; }
+  }
+
   function setNotifPref(key, value){
     var prefs = getNotifPrefs();
     prefs[key] = value;
@@ -11804,8 +11873,22 @@
   function closeAccountMenu(){
     var menu = document.getElementById("navAccountMenu");
     var btn = document.getElementById("navAccountBtn");
-    if(menu) menu.hidden = true;
     if(btn) btn.setAttribute("aria-expanded", "false");
+    if(!menu || menu.hidden) return;
+    /* Chiqish animatsiyasi tugagach yashiriladi. `reduce-motion`
+       yoqilgan bo'lsa yoki animatsiya umuman bo'lmasa, darhol —
+       kutib qolgan menyu "osilib turgandek" ko'rinardi. */
+    if(prefersReducedMotion()){ menu.hidden = true; return; }
+    menu.classList.add("closing");
+    var tugadi = function(){
+      menu.classList.remove("closing");
+      menu.hidden = true;
+      menu.removeEventListener("animationend", tugadi);
+    };
+    menu.addEventListener("animationend", tugadi);
+    /* Zaxira: `animationend` kelmasa (tab fonda bo'lsa) menyu
+       ochiq qolib ketmasin. */
+    setTimeout(tugadi, 220);
   }
 
   /**
@@ -16330,9 +16413,26 @@
   var CHAT_OPEN_KEY = "yolda.chatOpen";
 
   function closeChatMenu(){
-    if(chatMenuEl){ chatMenuEl.remove(); chatMenuEl = null; }
-    if(chatMenuVeil){ chatMenuVeil.remove(); chatMenuVeil = null; }
+    var menu = chatMenuEl, veil = chatMenuVeil;
+    chatMenuEl = null; chatMenuVeil = null;
     document.querySelectorAll(".cb-body.held").forEach(function(el){ el.classList.remove("held"); });
+    if(!menu && !veil) return;
+
+    if(prefersReducedMotion()){
+      if(menu) menu.remove();
+      if(veil) veil.remove();
+      return;
+    }
+    /* Ochilishi suzib chiqadi — yopilishi ham shunday bo'lsin.
+       Element darhol `chatMenuEl` dan uziladi, shuning uchun
+       animatsiya davomida ikkinchi menyu ochilsa ham chalkashlik
+       bo'lmaydi. */
+    if(menu) menu.classList.add("closing");
+    if(veil) veil.classList.add("closing");
+    setTimeout(function(){
+      if(menu) menu.remove();
+      if(veil) veil.remove();
+    }, 160);
   }
 
   /**
