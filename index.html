@@ -5329,6 +5329,12 @@
   }
   .call-copy:active{transform:scale(0.95);background:var(--paper-dark);}
   .call-copy .ic-svg{font-size:18px;}
+  /* Raqam qachon yozilgani — bir nechta raqam bo'lsa, qaysi biri
+     yangiroq ekani ko'rinib tursin. */
+  .call-at{
+    flex:none;font-family:system-ui,sans-serif;font-size:12px;
+    font-weight:500;color:var(--muted);
+  }
   .call-src{margin:var(--s4) 0 var(--s2);font-size:12.5px;line-height:1.5;color:var(--muted);}
 
   .pf-id-phone{
@@ -15499,22 +15505,60 @@
   }
 
   /** Yozishmada aytilgan oxirgi raqam — sarlavhadagi tugma uchun. */
-  function lastPhoneInChat(messages){
+  /* ============================================================
+     SARLAVHADAGI TUGMA QAYSI RAQAMNI TERADI
+     ------------------------------------------------------------
+     ILGARI BU YERDA BUG BOR EDI. Funksiya yozishmadagi ENG
+     OXIRGI raqamni olardi — kim yozganiga qaramasdan. Natijada:
+
+       - men suhbatdoshga O'Z raqamimni yozsam, tugma o'sha
+         zahoti MENING raqamimni terardigan bo'lib qolardi,
+         ya'ni men o'zimga qo'ng'iroq qilardim;
+       - suhbatdosh uchinchi odamning raqamini yozsa, tugma
+         jimgina o'shani terardi — garchi men suhbatdoshga
+         qo'ng'iroq qilmoqchi bo'lsam ham.
+
+     ENDI FAQAT SUHBATDOSH YOZGAN RAQAMLAR olinadi (`m.fromMe`
+     tekshiriladi). O'zim yozgan raqam umuman hisobga
+     olinmaydi: o'zimga qo'ng'iroq qilishning ma'nosi yo'q.
+
+     Bitta emas, bir nechta raqam yig'iladi va eng yangisi
+     birinchi turadi. Sababi ikkinchi holat: suhbatdosh ikki xil
+     raqam yozgan bo'lishi mumkin (o'ziniki va hamkasbiniki).
+     Unda qaysi birini terishni ILOVA EMAS, ODAM tanlaydi —
+     jimgina bittasini tanlash aynan yuqoridagi bugning o'zi
+     bo'lardi.
+
+     Bir xil raqam bir necha marta yozilgan bo'lsa — bitta
+     hisoblanadi. Taqqoslash oxirgi 9 ta raqam bo'yicha, ya'ni
+     "+998901234567" va "901234567" bitta raqam.
+     ============================================================ */
+  var MAX_CHAT_PHONES = 3;
+
+  function theirPhonesInChat(messages){
+    var out = [];
+    var korilgan = {};
     for(var i = (messages || []).length - 1; i >= 0; i--){
       var m = messages[i];
-      if(!m || m.deleted || !m.text) continue;
+      if(!m || m.deleted || m.fromMe || !m.text) continue;
       var topildi = String(m.text).match(PHONE_RE);
       if(!topildi) continue;
       for(var j = topildi.length - 1; j >= 0; j--){
         /* Matndagi bilan bir xil qoida — sarlavhada boshqacha
            hisoblansa, bir xil xabardan ikki xil natija chiqardi. */
-        if(looksLikePhone(topildi[j])){
-          var raqamlar = topildi[j].replace(/\D/g, "");
-          return (topildi[j].trim().charAt(0) === "+" ? "+" : "") + raqamlar;
-        }
+        if(!looksLikePhone(topildi[j])) continue;
+        var raqamlar = topildi[j].replace(/\D/g, "");
+        var kalit = raqamlar.slice(-9);
+        if(korilgan[kalit]) continue;
+        korilgan[kalit] = true;
+        out.push({
+          dial: (topildi[j].trim().charAt(0) === "+" ? "+" : "") + raqamlar,
+          at: m.at
+        });
+        if(out.length >= MAX_CHAT_PHONES) return out;
       }
     }
-    return "";
+    return out;
   }
 
   function chatAvatarColor(label){
@@ -16226,7 +16270,7 @@
     /* Qo'ng'iroq tugmasi panelni ochadi, telefonni darhol
        termaydi — index.html dagi `.call-note` izohiga qarang. */
     var callBtn = document.getElementById("btnChatCall");
-    if(callBtn) callBtn.addEventListener("click", function(){ openChatCallSheet(); });
+    if(callBtn) callBtn.addEventListener("click", function(){ chatCallTap(); });
 
     var input = document.getElementById("fChatMessage");
     // Yozilgan, lekin yuborilmagan xabar joyida turadi.
@@ -16631,19 +16675,58 @@
    * yozgan bo'lsa. Ilova odamning ro'yxatdan o'tgan raqamini bu
    * yerda oshkor qilmaydi: u shaxsiy ma'lumot.
    */
-  /* Panelda ko'rsatiladigan raqam. Yozishmada o'qilgan oxirgi
-     raqam shu yerda turadi — panel ochilganda qaytadan
-     qidirilmasin: xabarlar ro'yxati o'sha paytda boshqa
-     bo'lishi mumkin. */
-  var chatCallNumber = null;
+  /* Suhbatdosh yozgan raqamlar — eng yangisi birinchi.
+     Yozishma har chizilganda yangilanadi va shu yerda turadi:
+     tugma bosilganda qaytadan qidirilsa, xabarlar ro'yxati
+     o'sha paytda boshqa bo'lishi mumkin. */
+  var chatCallNumbers = [];
 
   function syncChatCallBtn(messages){
     var btn = document.getElementById("btnChatCall");
-    chatCallNumber = lastPhoneInChat(messages);
+    chatCallNumbers = theirPhonesInChat(messages);
     if(!btn) return;
-    if(!chatCallNumber){ btn.hidden = true; btn.removeAttribute("title"); return; }
+    if(!chatCallNumbers.length){ btn.hidden = true; btn.removeAttribute("title"); return; }
     btn.hidden = false;
-    btn.setAttribute("title", chatCallNumber);
+    btn.setAttribute("title", chatCallNumbers.length === 1
+      ? prettyPhoneUz(chatCallNumbers[0].dial)
+      : chatCallNumbers.length + " ta raqam yozilgan");
+  }
+
+  /* ============================================================
+     Qo'ng'iroq qilish
+     ------------------------------------------------------------
+     Telegram ichida sahifa iframe'da turadi va o'sha yerda
+     `location.href = "tel:..."` ba'zan to'siladi. Havolani
+     yasab bosish esa hamma joyda ishlaydi.
+     ============================================================ */
+  function dialNumber(dial){
+    if(!dial) return;
+    haptic("medium");
+    var a = document.createElement("a");
+    a.href = "tel:" + dial;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  /**
+   * Sarlavhadagi tugma bosilganda.
+   *
+   * Bitta raqam bo'lsa — DARHOL TERADI, ortiqcha oyna yo'q.
+   * Bir nechta bo'lsa — qaysi birini terishni odam tanlaydi.
+   * Jimgina bittasini tanlash aynan tuzatilgan bugning o'zi
+   * bo'lardi (`theirPhonesInChat` izohiga qarang).
+   */
+  function chatCallTap(){
+    if(!chatCallNumbers.length){
+      toast("Raqam hali aytilmagan", "Suhbatdosh raqamini yozsa, shu yerda chiqadi.", "info");
+      return;
+    }
+    if(chatCallNumbers.length === 1){
+      dialNumber(chatCallNumbers[0].dial);
+      return;
+    }
+    openChatCallSheet();
   }
 
   /** Ekranda o'qish uchun: +998 90 123 45 67 */
@@ -16668,47 +16751,63 @@
        - nusxalash — raqamni boshqa joyga ko'chirish uchun.
      ============================================================ */
   function openChatCallSheet(){
-    var raqam = chatCallNumber;
+    var raqamlar = chatCallNumbers;
     /* Raqam yo'q bo'lsa tugmaning o'zi ko'rinmaydi, lekin
        chaqiruv boshqa yerdan kelishi mumkin — jim turmaymiz. */
-    if(!raqam){
+    if(!raqamlar.length){
       toast("Raqam hali aytilmagan", "Suhbatdosh raqamini yozsa, shu yerda chiqadi.", "info");
       return;
     }
     var kim = chatWithName || ("@" + (chatWithUsername || ""));
 
     Sheet.open({
-      title: "Qo'ng'iroq qilish",
+      title: raqamlar.length > 1 ? "Qaysi raqamga?" : "Qo'ng'iroq qilish",
       html:
         '<div class="call-note">'
         +   icon("iconAlert")
-        +   '<p>Bu raqamni <b>YO\'LDA bermadi</b> — uni '
-        +   escapeHtml(kim) + ' shu yozishmada o\'zi yozgan va biz uni '
-        +   'tekshirmadik. Gaplashib kelishgandan keyin ham '
+        +   '<p>' + (raqamlar.length > 1 ? 'Bu raqamlarni ' : 'Bu raqamni ')
+        +   '<b>YO\'LDA bermadi</b> — ' + escapeHtml(kim)
+        +   ' shu yozishmada o\'zi yozgan va biz '
+        +   (raqamlar.length > 1 ? 'ularni' : 'uni') + ' tekshirmadik. '
+        +   'Gaplashib kelishgandan keyin ham '
         +   '<b>oldindan pul o\'tkazmang</b>.</p>'
         + '</div>'
-        + '<div class="call-row">'
-        +   '<a class="call-num" id="callDial" href="tel:' + escapeHtml(raqam) + '">'
-        +     icon("iconPhone")
-        +     '<span>' + escapeHtml(prettyPhoneUz(raqam)) + '</span>'
-        +   '</a>'
-        +   '<button type="button" class="call-copy" id="callCopy" aria-label="Raqamni nusxalash">'
-        +     icon("iconClipboard")
-        +   '</button>'
-        + '</div>'
-        + '<p class="call-src">Raqamga teginsangiz telefon teradi. '
-        + 'Yonidagi tugma uni nusxalab beradi.</p>',
+        /* Har bir raqam o'z qatorida. Qachon yozilgani ham
+           ko'rsatiladi: suhbatdosh bir nechta raqam yozgan
+           bo'lsa, odam qaysi biri yangiroq ekanini bilsin. */
+        + raqamlar.map(function(r, i){
+            return '<div class="call-row"' + (i ? ' style="margin-top:8px;"' : '') + '>'
+              + '<a class="call-num" data-dial="' + escapeHtml(r.dial) + '" '
+              +   'href="tel:' + escapeHtml(r.dial) + '">'
+              +   icon("iconPhone")
+              +   '<span>' + escapeHtml(prettyPhoneUz(r.dial)) + '</span>'
+              +   (raqamlar.length > 1 && r.at
+                    ? '<small class="call-at">' + escapeHtml(formatChatTime(r.at)) + '</small>'
+                    : "")
+              + '</a>'
+              + '<button type="button" class="call-copy" data-copy="' + escapeHtml(r.dial) + '" '
+              +   'aria-label="Raqamni nusxalash">' + icon("iconClipboard") + '</button>'
+              + '</div>';
+          }).join("")
+        + '<p class="call-src">'
+        + (raqamlar.length > 1
+            ? 'Suhbatdosh bir nechta raqam yozgan — qaysi biriga qo\'ng\'iroq '
+              + 'qilishni o\'zingiz tanlang. '
+            : '')
+        + 'Raqamga teginsangiz telefon teradi. Yonidagi tugma uni nusxalab beradi.</p>',
       onOpen: function(container){
-        var copy = container.querySelector("#callCopy");
-        if(copy) copy.addEventListener("click", function(){
-          /* Nusxalanadigan narsa — TERILADIGAN ko'rinish
-             (+998901234567), ekrandagi bo'shliqli ko'rinish emas:
-             odam uni boshqa ilovaga qo'yganda ishlashi kerak. */
-          copyChatText(raqam);
-          haptic("success");
+        container.querySelectorAll("[data-copy]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            /* Nusxalanadigan narsa — TERILADIGAN ko'rinish
+               (+998901234567), ekrandagi bo'shliqli ko'rinish emas:
+               odam uni boshqa ilovaga qo'yganda ishlashi kerak. */
+            copyChatText(btn.getAttribute("data-copy"));
+            haptic("success");
+          });
         });
-        var dial = container.querySelector("#callDial");
-        if(dial) dial.addEventListener("click", function(){ haptic("medium"); });
+        container.querySelectorAll("[data-dial]").forEach(function(a){
+          a.addEventListener("click", function(){ haptic("medium"); });
+        });
       }
     });
   }
