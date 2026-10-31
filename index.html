@@ -4401,6 +4401,10 @@
   select:hover,input[type=number]:hover,input[type=text]:hover,input[type=tel]:hover,textarea:hover{border-color:rgba(10,159,91,0.45);}
   select:focus,input:focus,textarea:focus{border-color:var(--route);box-shadow:0 0 0 4px rgba(10,159,91,0.14);}
   textarea{min-height:96px;resize:vertical;line-height:1.5;}
+  /* Qisqaroq izohlar uchun: 200–300 belgi ikki qatorga sig'adi,
+     96px esa formada ortiqcha bo'shliq qoldirardi. Kerak bo'lsa
+     odam o'zi cho'zadi (`resize:vertical`). */
+  textarea.ta-sm{min-height:62px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
 
   .cargo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);}
@@ -7692,7 +7696,7 @@
       <div class="field"><label for="fReportTarget" data-i18n="contact.reportTargetLabel">Kimga oid (telefon, username yoki buyurtma kodi, ixtiyoriy)</label>
         <input type="text" id="fReportTarget" placeholder="+998 90 123 45 67 yoki @username yoki YL-XXXXX"></div>
       <div class="field"><label for="fReportDesc" data-i18n="contact.reportDescLabel">Nima bo'lganini tasvirlab bering</label>
-        <input type="text" id="fReportDesc" maxlength="500" placeholder="Batafsil yozing"></div>
+        <textarea id="fReportDesc" maxlength="500" rows="4" placeholder="Batafsil yozing"></textarea></div>
       <p class="note" id="reportNote" data-i18n="contact.reportNote">Shikoyat yuborish uchun Google orqali kirgan bo'lishingiz kerak.</p>
       <button class="btn" id="btnSendReport" data-i18n="contact.reportBtn">Shikoyat yuborish</button>
     </div>
@@ -7704,7 +7708,7 @@
       <div class="field"><label for="fSupportContact" data-i18n="contact.supportContactLabel">Telefon yoki Telegram (ixtiyoriy)</label>
         <input type="text" id="fSupportContact" placeholder="90 123 45 67 yoki @username"></div>
       <div class="field"><label for="fSupportMessage" data-i18n="contact.supportMsgLabel">Xabaringiz</label>
-        <input type="text" id="fSupportMessage" maxlength="500" placeholder="Nima bo'lganini yozing"></div>
+        <textarea id="fSupportMessage" maxlength="500" rows="4" placeholder="Nima bo'lganini yozing"></textarea></div>
       <p class="note" id="supportNote"></p>
       <button class="btn" id="btnSendSupport" data-i18n="contact.supportBtn">Yuborish</button>
     </div>
@@ -10328,7 +10332,7 @@
       + '<div class="field"><label for="fFeedbackContact" data-i18n="feedback.contactLabel">Aloqa uchun (ixtiyoriy)</label>'
       +   '<input type="text" id="fFeedbackContact" placeholder="90 123 45 67 yoki @username"></div>'
       + '<div class="field"><label for="fFeedbackMsg" data-i18n="feedback.msgLabel">Fikringiz</label>'
-      +   '<input type="text" id="fFeedbackMsg" maxlength="500"></div>'
+      +   '<textarea id="fFeedbackMsg" maxlength="500" rows="4"></textarea></div>'
       + '<p class="note" id="feedbackNote"></p>'
       + '<button class="btn" id="btnSendFeedback" data-i18n="feedback.btn">Yuborish</button>';
   }
@@ -13822,7 +13826,7 @@
 
       + '<div class="edit-section-heading" data-i18n="profile.editAboutGroup">Qo\'shimcha</div>'
       + '<div class="field" style="margin-bottom:0;"><label for="fBio" data-i18n="profile.bioLabel">Qisqa bio (ixtiyoriy)</label>'
-      +   '<input type="text" id="fBio" maxlength="200" placeholder="masalan: 5 yillik tajribaga ega yuk tashuvchi" value="'+escapeHtml(p.bio || "")+'"></div>'
+      +   '<textarea id="fBio" class="ta-sm" maxlength="200" rows="2" placeholder="masalan: 5 yillik tajribaga ega yuk tashuvchi">'+escapeHtml(p.bio || "")+'</textarea></div>'
 
       + '<p class="note" id="profileEditNote" data-i18n="profile.usernameHint">Username 3-20 belgi, faqat lotin harflari/raqam/pastki chiziq (_) — har biri faqat bitta odamga tegishli bo\'ladi.</p>';
 
@@ -19354,8 +19358,8 @@
           }).join("")
       + '</div>'
       + (tags ? '<div class="crit-chips" id="'+p+'Tags">'+tags+'</div>' : "")
-      + '<input type="text" id="'+p+'Comment" maxlength="300" placeholder="Izoh (ixtiyoriy)" '
-      +   'data-i18n-placeholder="rate.commentPlaceholder">'
+      + '<textarea id="'+p+'Comment" class="ta-sm" maxlength="300" rows="2" placeholder="Izoh (ixtiyoriy)" '
+      +   'data-i18n-placeholder="rate.commentPlaceholder"></textarea>'
       + '<button class="btn ghost" id="'+p+'Submit" disabled style="margin-top:10px;" '
       +   'data-i18n="rate.send">Baho yuborish</button>'
       + '</div>';
@@ -20090,7 +20094,7 @@
                + "Yuk beruvchiga darhol xabar boradi.")
         + '</p>'
         + '<div class="field"><label for="fGiveUpReason" data-i18n="drive.giveUpReason">Sabab (ixtiyoriy)</label>'
-        + '<input type="text" id="fGiveUpReason" maxlength="200"></div>'
+        + '<textarea id="fGiveUpReason" class="ta-sm" maxlength="200" rows="2"></textarea></div>'
         + '<p class="note" id="giveUpNote"></p>',
       footerHtml: '<button class="btn" id="btnGiveUpConfirm" data-i18n="drive.giveUpConfirm">Voz kechaman</button>',
       onOpen: function(container){
@@ -20226,7 +20230,7 @@
         + '<div class="field"><label for="fOfferEta" data-i18n="offer.etaLabel">Yetib borish vaqti</label>'
         +   '<input type="text" id="fOfferEta" maxlength="60" placeholder="Masalan: ertaga ertalab"></div>'
         + '<div class="field"><label for="fOfferNote" data-i18n="offer.noteLabel">Izoh (ixtiyoriy)</label>'
-        +   '<input type="text" id="fOfferNote" maxlength="300"></div>'
+        +   '<textarea id="fOfferNote" class="ta-sm" maxlength="300" rows="2"></textarea></div>'
         + '<p class="note" id="offerNote"></p>',
       footerHtml: '<button class="btn" id="btnSubmitOffer" data-i18n="offer.send">Taklif yuborish</button>',
       onOpen: function(){
@@ -21912,7 +21916,7 @@
             + '<input type="text" id="fCargoCustom" maxlength="60" placeholder="Masalan: haykal, mebel qismlari" value="'+escapeHtml(state.customCargoLabel)+'"></div>'
           : '')
       + '<div class="field"><label for="fNote" data-i18n="order.noteLabel">Izoh (ixtiyoriy)</label>'
-      +   '<input type="text" id="fNote" maxlength="300" placeholder="Masalan: ertaga ertalab olib ketilsin" value="'+escapeHtml(state.note)+'"></div>'
+      +   '<textarea id="fNote" class="ta-sm" maxlength="300" rows="2" placeholder="Masalan: ertaga ertalab olib ketilsin">'+escapeHtml(state.note)+'</textarea></div>'
       + '</div>';
   }
 
@@ -22073,7 +22077,7 @@
       title: titles.title,
       html: '<p class="note" style="margin-top:0;">' + titles.body + '</p>'
         + '<div class="field"><label for="fTrackReason">Sabab (ixtiyoriy)</label>'
-        + '<input type="text" id="fTrackReason" maxlength="200" placeholder="Masalan: haydovchi javob bermayapti"></div>'
+        + '<textarea id="fTrackReason" class="ta-sm" maxlength="200" rows="2" placeholder="Masalan: haydovchi javob bermayapti"></textarea></div>'
         + '<p class="note" id="trackActionNote"></p>',
       footerHtml: '<button class="btn" id="btnTrackConfirm">' + titles.btn + '</button>',
       onOpen: function(container){
