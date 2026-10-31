@@ -155,7 +155,10 @@
     --card:#FFFFFF;
     --ink:#14263D;
     --ink-soft:#48566E;
-    --muted:#93A0B8;
+    /* Ikkilamchi yozuv. Oldingi #93A0B8 oq fonda 2.63:1 edi —
+       ilovadagi eng ko'p takrorlanadigan kamchilik (31 ta joy).
+       Tus o'sha: ko'kimtir kulrang, faqat to'qroq. 4.99:1. */
+    --muted:#657085;
     --route:#09864B;
     --route-dark:#077340;
     --stamp:#0BAA63;
@@ -171,7 +174,7 @@
     --on-accepted:#042314;
     /* Oq/qog'oz fonda turadigan YASHIL YOZUV. Nishon foni uchun
        ishlatiladigan yashil bu yerda juda och: 3.29:1. */
-    --green-ink:#12824D;
+    --green-ink:#0F7A46;
     --stamp-dark:#0A9F5B;
     --accepted:#16A34A;
     --warn:#F59E0B;
@@ -286,7 +289,9 @@
     --card:#1C1C1E;
     --ink:#F2F2F2;
     --ink-soft:#A8A8A8;
-    --muted:#767676;
+    /* Tungi rejimda esa aksincha — ochroq. #767676 kartochka
+       fonida 3.74:1 edi (18 ta joy), endi 5.22:1. */
+    --muted:#8E8E93;
     --route:#2DD480;
     --route-dark:#22B368;
     --stamp:#34D399;
@@ -1910,7 +1915,7 @@
     background:var(--card);border-color:var(--border);
     -webkit-backdrop-filter:none;backdrop-filter:none;
   }
-  .chip.active{border-color:var(--route);color:var(--route);background:rgba(10,159,91,0.08);}
+  .chip.active{border-color:var(--route);color:var(--green-ink);background:rgba(10,159,91,0.08);}
   /* ---------- Yuk kartochkasi ----------
      Ilgari kartochka ustma-ust qatorlardan iborat edi: belgilar,
      yo'nalish, narx, keyin bir uyum kichik yozuv. Ko'z uchta
@@ -3831,7 +3836,7 @@
      yozuv, tanlangani — to'q yashil yuza va oq yozuv. */
   .chat-chip{
     border:none;border-radius:999px;padding:8px 16px;cursor:pointer;
-    background:var(--tint);color:var(--route);
+    background:var(--tint);color:var(--green-ink);
     font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
     transition:background 0.18s var(--ease), color 0.18s var(--ease);
   }
@@ -4359,7 +4364,7 @@
     display:inline-flex;align-items:center;gap:var(--s1);
     font-family:'Inter',sans-serif;font-weight:600;font-size:12px;
     letter-spacing:0.02em;
-    border:1px solid rgba(22,163,74,0.35);color:#15803D;
+    border:1px solid rgba(22,163,74,0.35);color:var(--green-ink);
     background:rgba(22,163,74,0.1);
     border-radius:var(--r-pill);padding:6px 12px;
   }
@@ -4543,7 +4548,7 @@
     --lf-line:rgba(20,38,29,0.10);
     --lf-ink:#0F2318;
     --lf-soft:#4F6459;
-    --lf-dim:#8CA097;
+    --lf-dim:#5F7268;
     --lf-green:#0A9F5B;
     --lf-green-dp:#E1F5EA;  /* yashil belgilar ostidagi och yuza */
     background:var(--lf-bg);
@@ -4564,7 +4569,7 @@
     --lf-line:rgba(255,255,255,0.14);
     --lf-ink:#F1F5F2;
     --lf-soft:#9FB0A6;
-    --lf-dim:#6B7C72;
+    --lf-dim:#8FA096;
     --lf-green:#2DD480;
     --lf-green-dp:#0D2B1D;
   }
@@ -4619,7 +4624,7 @@
   .lf-banner p{margin:0 0 var(--s4);font-size:12.5px;color:var(--lf-soft);}
   .lf-play{
     display:inline-flex;align-items:center;gap:8px;
-    background:var(--lf-green);color:#052E1A;border:none;border-radius:999px;
+    background:var(--lf-green);color:#042314;border:none;border-radius:999px;
     padding:10px 20px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;
     cursor:pointer;transition:transform 0.2s var(--ease), filter 0.2s var(--ease);
   }
@@ -4643,7 +4648,7 @@
     cursor:pointer;white-space:nowrap;
     transition:background 0.22s var(--ease), color 0.22s var(--ease), border-color 0.22s var(--ease);
   }
-  .lf-tab.active{background:var(--lf-green);border-color:var(--lf-green);color:#052E1A;}
+  .lf-tab.active{background:var(--lf-green);border-color:var(--lf-green);color:#042314;}
 
   /* Ommabop kartochkalar — yon tomonga suriladigan qator. */
   .lf-rail{
@@ -5238,7 +5243,7 @@
     font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px;
   }
   .pf-chip .ic-svg{font-size:13px;}
-  .pf-chip--rating{background:rgba(217,119,6,0.13);color:#B45309;}
+  .pf-chip--rating{background:rgba(217,119,6,0.13);color:#9A4A08;}
   .pf-chip--rating .ic-svg{color:#F59E0B;}
   :root[data-theme="dark"] .pf-chip--rating{background:rgba(245,158,11,0.16);color:#FBBF24;}
   .pf-chip--trust{background:var(--paper-dark);color:var(--ink-soft);}
@@ -5537,7 +5542,7 @@
   }
   .tc-mark span{
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:var(--mark-size,19px);
-    letter-spacing:0.07em;color:var(--mark);text-align:center;
+    letter-spacing:0.07em;color:var(--mark-ink, var(--mark));text-align:center;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
   }
   /* Tungi rejimda teskarisi: deyarli qora fon ustida ochiq yuza ham,
@@ -13897,12 +13902,18 @@
     /* Yuzasi uchun o'sha rangning ochiq ko'rinishi kerak. CSS'ning
        `color-mix` i eski webview'larda yo'q, shuning uchun rang shu
        yerda rgba ga aylantiriladi. */
-    var soft = "rgba(" + parseInt(c.slice(1, 3), 16) + "," + parseInt(c.slice(3, 5), 16)
-      + "," + parseInt(c.slice(5, 7), 16) + ",0.13)";
+    var r = parseInt(c.slice(1, 3), 16), g = parseInt(c.slice(3, 5), 16), bl = parseInt(c.slice(5, 7), 16);
+    var soft = "rgba(" + r + "," + g + "," + bl + ",0.13)";
+    /* Yozuv o'sha rangning O'ZIDA yozilsa, o'z yuzasida 3.5:1
+       atrofida qolardi — rang bilan uning och ko'rinishi orasida
+       farq yetarli emas. Shuning uchun harf uchun bir pog'ona
+       to'qrog'i olinadi: shunda tus o'zgarmaydi, lekin barcha
+       o'nta rangda ham 4.5:1 dan oshadi. */
+    var ink = "rgb(" + Math.round(r * 0.8) + "," + Math.round(g * 0.8) + "," + Math.round(bl * 0.8) + ")";
     /* Uzun nom kichikroq yoziladi: kartochka tor, "MERCEDES-BENZ"
        esa kattaroq o'lchamda sig'may, uch nuqta bilan kesilardi. */
     var size = maker.length > 11 ? 14 : maker.length > 8 ? 16 : 19;
-    return '<div class="tc-mark" style="--mark:'+c+';--mark-soft:'+soft+';--mark-size:'+size+'px;">'
+    return '<div class="tc-mark" style="--mark:'+c+';--mark-ink:'+ink+';--mark-soft:'+soft+';--mark-size:'+size+'px;">'
       + '<span>'+escapeHtml(maker.toUpperCase())+'</span></div>';
   }
 

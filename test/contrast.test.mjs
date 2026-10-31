@@ -159,6 +159,63 @@ const yomon = palitra.filter((c) => nisbat(OQ, c) < AA);
 check('HAR BIR AVATAR TUSIDA OQ HARF O\'QILADI', yomon.length === 0,
   yomon.map((c) => c + ' (' + nisbat(OQ, c).toFixed(2) + ':1)').join(', '));
 
+/* 11. IKKILAMCHI YOZUV — ilovadagi eng ko'p takrorlanadigan
+       kamchilik edi: yorug'da 31 ta joy, tungida 18 ta. */
+const kartaY = '#FFFFFF';    // yorug' kartochka foni
+const kartaT = '#1C1C1E';    // tungi kartochka foni
+/* Life bo'limining ranglari `:root` da emas, `.life` blokida —
+   u yerda ikkala mavzu ketma-ket yozilgan. */
+const lifeToken = (nom, tungi) => {
+  const hamma = [...html.matchAll(new RegExp('--' + nom + ':\\s*(#[0-9A-Fa-f]{3,6})', 'g'))]
+    .map((m) => m[1].toUpperCase());
+  return hamma.length >= 2 ? hamma[tungi ? 1 : 0] : (hamma[0] || null);
+};
+
+[['muted', false, kartaY, mavzuToken], ['muted', true, kartaT, mavzuToken],
+ ['lf-dim', false, kartaY, lifeToken], ['lf-dim', true, kartaT, lifeToken]]
+  .forEach(([nom, tungi, fon, oqi]) => {
+    const rang = oqi(nom, tungi);
+    const qayerda = (tungi ? 'tungi' : 'yorug\'') + ' --' + nom;
+    check('ikkilamchi yozuv o\'qiladi (' + qayerda + ')',
+      Boolean(rang) && nisbat(rang, fon) >= AA,
+      rang + ' / ' + fon + (rang ? ' — ' + nisbat(rang, fon).toFixed(2) + ':1' : ''));
+  });
+
+/* 12. Yashil yozuv och yashil yuzalarda ham o'qilsin: chiplar,
+       "tasdiqlandi" nishoni. Fonlar — o'sha yashilning 8–13%
+       darajadagi ko'rinishi. */
+[['#E8F6ED', 'tasdiq nishoni'], ['#EFFAF5', 'suhbat chipi'], ['#EBF7F2', 'yordam chipi']]
+  .forEach(([fon, nom]) => {
+    check('yashil yozuv o\'qiladi (' + nom + ')',
+      Boolean(yashilYozuv) && nisbat(yashilYozuv, fon) >= AA,
+      yashilYozuv + ' / ' + fon + (yashilYozuv ? ' — ' + nisbat(yashilYozuv, fon).toFixed(2) + ':1' : ''));
+  });
+
+/* 13. Mashina markasi: harf o'z rangining OCH ko'rinishida
+       yoziladi. Ikkisi juda yaqin bo'lsa farq yo'qoladi, shuning
+       uchun harf bir pog'ona to'qlashtiriladi (0.8). Shu qoida
+       palitradagi HAR BIR rang uchun yetarlimi — shuni
+       tekshiramiz. */
+const toqroq = (hex, k) => {
+  const n = parseInt(hex.slice(1), 16);
+  const q = (v) => Math.round(v * k).toString(16).padStart(2, '0');
+  return '#' + q((n >> 16) & 255) + q((n >> 8) & 255) + q(n & 255);
+};
+const yuvilgan = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  const q = (v) => Math.round(v * a + 255 * (1 - a)).toString(16).padStart(2, '0');
+  return '#' + q((n >> 16) & 255) + q((n >> 8) & 255) + q(n & 255);
+};
+const markKoef = (() => {
+  const m = /Math\.round\(r \* ([\d.]+)\)/.exec(html);
+  return m ? Number(m[1]) : null;
+})();
+check('marka harfi to\'qlashtiriladi', markKoef !== null && markKoef < 1, markKoef);
+const markYomon = palitra.filter((c) =>
+  nisbat(toqroq(c, markKoef || 1), yuvilgan(c, 0.13)) < AA);
+check('MARKA HARFI HAR BIR RANGDA O\'QILADI', markYomon.length === 0,
+  markYomon.map((c) => c + ' (' + nisbat(toqroq(c, markKoef || 1), yuvilgan(c, 0.13)).toFixed(2) + ':1)').join(', '));
+
 /* 6. Eski ranglar QIYMAT sifatida qaytib kelmasin. Izohlarda
       ular haqida yozilgani — xato emas, tarix. */
 const qiymat = (rang) => new RegExp(':\\s*' + rang + '\\b', 'i').test(html);
