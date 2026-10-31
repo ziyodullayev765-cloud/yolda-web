@@ -3089,11 +3089,21 @@
     --au-bg:#FFFFFF;
     --au-page:#EDEFF0;
     --au-ink:#111827;
-    --au-muted:#8A9199;
+    /* Kontrast uchun to'qlashtirildi. Oldingi #8A9199 oq fonda
+       3.19:1 edi — talab 4.5:1. Endi 4.80:1. */
+    --au-muted:#6B737D;
     --au-line:#E8EAEC;
     --au-field:#F6F7F8;
-    --au-green:#45B45F;
-    --au-green-dark:#3BA053;
+    /* Yashil ham to'qlashtirildi va buning ikki sababi bor:
+
+         - tugmada: oq yozuv #45B45F ustida 2.64:1 edi;
+         - havolada: o'sha rang oq fonda MATN bo'lib ham ishlatiladi,
+           ya'ni o'sha 2.64:1.
+
+       Bitta rang ikki tomonda ham o'tishi uchun u oq bilan
+       kamida 4.5:1 bo'lishi kerak. #12824D — 4.85:1. */
+    --au-green:#12824D;
+    --au-green-dark:#0E6B3F;
     --au-green-soft:#EAF7EE;
 
     /* Leaflet xaritasining o'z ichki qatlamlari (belgi, yorliq, boshqaruv
@@ -3259,7 +3269,7 @@
   .au-check-box .ic-svg{width:13px;height:13px;font-size:13px;color:#fff;opacity:0;transition:opacity 0.18s var(--ease);}
   .au-check input:checked + .au-check-box{background:var(--au-green);border-color:var(--au-green);}
   .au-check input:checked + .au-check-box .ic-svg{opacity:1;}
-  .au-check input:focus-visible + .au-check-box{box-shadow:0 0 0 3px rgba(69,180,95,0.25);}
+  .au-check input:focus-visible + .au-check-box{box-shadow:0 0 0 3px rgba(18,130,77,0.25);}
   .au-check-text{font-size:12.5px;line-height:1.45;color:var(--au-ink);}
 
   .au-link{
@@ -3279,7 +3289,7 @@
   }
   .au-btn + .au-btn{margin-top:10px;}
   .au-btn:active{transform:scale(0.985);}
-  .au-btn--primary{background:var(--au-green);color:#fff;box-shadow:0 6px 16px rgba(69,180,95,0.26);}
+  .au-btn--primary{background:var(--au-green);color:#fff;box-shadow:0 6px 16px rgba(18,130,77,0.26);}
   .au-btn--primary:hover{background:var(--au-green-dark);}
   .au-btn--primary[disabled]{opacity:0.6;cursor:default;box-shadow:none;}
   .au-btn--ghost{background:#fff;color:var(--au-ink);border-color:var(--au-line);}
@@ -3309,7 +3319,7 @@
     font-family:'Inter',sans-serif;font-size:22px;font-weight:600;
     transition:border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
   }
-  .welcome .au-otp-box:focus{outline:none;border-color:var(--au-green);box-shadow:0 0 0 3px rgba(69,180,95,0.18);}
+  .welcome .au-otp-box:focus{outline:none;border-color:var(--au-green);box-shadow:0 0 0 3px rgba(18,130,77,0.18);}
   .welcome .au-otp-box.filled{border-color:var(--au-green);}
 
   .au-resend{
