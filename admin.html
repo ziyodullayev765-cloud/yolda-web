@@ -616,11 +616,22 @@
   .seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);padding:3px;gap:2px;flex-wrap:wrap;}
   .seg button{
     border:none;background:none;color:var(--text-soft);font-family:inherit;
-    font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;
+    font-size:12.5px;font-weight:600;padding:0 12px;border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;
+    /* Balandligi 27px edi — sichqoncha bilan ham tegish noqulay.
+       `padding` o'rniga aniq balandlik: shunda hamma filtr
+       bir xil bo'ladi, matni uzun yoki qisqaligidan qat'i nazar. */
+    min-height:32px;display:inline-flex;align-items:center;
     transition:background .14s ease,color .14s ease;
   }
   .seg button:hover{color:var(--strong);}
   .seg button.on{background:var(--card2);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,0.12);}
+
+  /* Jadval katakchasidagi havola — telefon raqami, manzil.
+     Matn balandligi 15px edi; chekka qo'shilgandan keyin
+     tegish maydoni qator balandligiga yaqinlashadi. Chekka
+     faqat tik yo'nalishda: ustunlar tekis turishi kerak. */
+  table td a,
+  dl.kv dd a{display:inline-block;padding:5px 0;}
 
   .table-wrap{
     border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card2);
@@ -668,8 +679,12 @@
   /* Jadval ichidagi havola — bosilsa o'sha yozuv ochiladi. */
   .link-cell{
     display:inline-flex;align-items:center;gap:7px;
-    background:none;border:none;padding:0;cursor:pointer;
+    background:none;border:none;cursor:pointer;
     font-family:inherit;font-size:13px;color:var(--accent-ink);
+    /* Matn balandligi 16px edi — sichqoncha bilan ham tegish
+       qiyin. Chekka qo'shiladi, lekin chapdan emas: jadval
+       ustuni tekis turishi kerak. */
+    padding:6px 2px 6px 0;
   }
   .link-cell b{font-weight:650;border-bottom:1px solid currentColor;}
   .link-cell:hover b{border-bottom-color:transparent;}
@@ -4173,7 +4188,11 @@
                         + esc(REPORT_LABELS[s]) + '</option>';
                     }).join("") + '</select>';
               } },
-            { key:"remove", label:"",
+            /* Sarlavha bo'sh edi. Ekranda bu ko'rinmaydi, lekin
+               ekran o'qiydigan dastur uchun ustunning nomi yo'q
+               degani — foydalanuvchi qaysi ustunda turganini
+               bilmaydi. */
+            { key:"remove", label:"O'chirish",
               render:function(r){
                 if(!writable) return "";
                 return '<button type="button" class="btn sm bad" data-act="report-delete" '
