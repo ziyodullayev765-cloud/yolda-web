@@ -35,6 +35,7 @@ import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLre
   kvDbSize, kvUsedMemory, kvMonthCommands } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
 import { trustOf } from '../lib/trust.js';
+import { listObjects } from '../lib/storage.js';
 import { listInvoices, activeProviders } from '../lib/payments.js';
 import { grantPremium, revokePremium, premiumState, premiumMembers } from '../lib/premium.js';
 import { notifyUser, esc } from '../lib/notify.js';
@@ -1203,18 +1204,123 @@ const QUOTA_COMMANDS = 500000;             // oyiga
  * TAXMINIY (lambda to'xtaganda bir nechtasi yo'qoladi). Admin
  * panelda ham shunday yozib qo'yilgan.
  */
+/* ============================================================
+   BAZADA NIMA JOY EGALLAYAPTI
+   ------------------------------------------------------------
+   "Qancha to'lgan" degan savolning yarmi — umumiy hajm, ikkinchi
+   yarmi esa NIMA bilan to'lgani. Ilgari faqat birinchisi bor
+   edi: "shuncha bayt, shuncha kalit". Bundan nima qilish
+   kerakligini bilib bo'lmaydi.
+
+   Endi kalitlar turi bo'yicha guruhlanadi. Bitta `KEYS *`
+   chaqiriladi va nomlar serverda ajratiladi — har bir tur uchun
+   alohida so'rov yuborilsa, o'n beshta buyruq sarflanardi.
+
+   NOMLAR SHU YERDA, kalitlar esa butun kod bo'ylab yoziladi.
+   Shuning uchun ro'yxatda yo'q tur "boshqa" ga tushadi va u
+   panelda ko'rinadi — ya'ni yangi tur qo'shilsa, bu yer
+   eskirganini o'zi aytadi.
+   ============================================================ */
+const KEY_GROUPS = [
+  ['profile:', 'Profillar'],
+  ['order:', 'Buyurtmalar'],
+  ['msg:', 'Yozishma xabarlari'],
+  ['convo:', 'Yozishmalar'],
+  ['truck:', 'Mashina e‘lonlari'],
+  ['report:', 'Shikoyatlar'],
+  ['invoice:', 'Hisoblar'],
+  ['verifydoc:', 'Tasdiqlash hujjatlari'],
+  ['aiThread:', 'AI suhbatlari'],
+  ['notif:', 'Bildirishnomalar'],
+  ['username:', 'Username indeksi'],
+  ['telegram:', 'Telegram profillari'],
+  ['tgChat:', 'Telegram suhbatlari'],
+  ['phoneUser:', 'Telefon hisoblari'],
+  ['phoneChat:', 'Telefon → suhbat'],
+  ['phoneOwner:', 'Telefon egalari'],
+  ['chatAlias:', 'Yozishma belgilari'],
+  ['premium:', 'Premium'],
+  ['staff:', 'Xodimlar'],
+  ['life:', 'YO‘LDA LIFE'],
+  ['sub:', 'Push obunalari'],
+  ['otp:', 'Tasdiqlash kodlari'],
+  ['search_cities:', 'Eski qidiruv keshi'],
+];
+
+/* Vaqtinchalik kalitlar: ular o'zi o'chadi, shuning uchun
+   ro'yxatda alohida belgilanadi — admin ularni ko'rib
+   "bu nima" deb o'ylamasin. */
+const TEMPORARY = new Set(['otp:', 'linkCode:', 'otpOut:', 'otpRate:',
+  'loginFail:', 'phoneIp:', 'supportRate:', 'payHit:', 'aiUsed:', 'aiCool:']);
+
+const groupKeys = (names) => {
+  const out = new Map();
+  const boshqa = [];
+  (names || []).forEach((name) => {
+    const topildi = KEY_GROUPS.find(([pref]) => name.startsWith(pref));
+    if (topildi) {
+      const [pref, label] = topildi;
+      if (!out.has(pref)) out.set(pref, { prefix: pref, label, count: 0, temporary: TEMPORARY.has(pref) });
+      out.get(pref).count += 1;
+      return;
+    }
+    /* Vaqtinchalik, lekin ro'yxatda yo'q turlar. */
+    const vaqtli = [...TEMPORARY].find((pref) => name.startsWith(pref));
+    if (vaqtli) {
+      if (!out.has(vaqtli)) out.set(vaqtli, { prefix: vaqtli, label: 'Vaqtinchalik', count: 0, temporary: true });
+      out.get(vaqtli).count += 1;
+      return;
+    }
+    boshqa.push(name);
+  });
+
+  const rows = [...out.values()].sort((a, b) => b.count - a.count);
+  if (boshqa.length) {
+    rows.push({
+      prefix: '', label: 'Boshqa', count: boshqa.length, temporary: false,
+      /* Birinchi beshtasining nomi — admin nima ekanini
+         ko'rsin. Qiymatlar emas, faqat nomlar. */
+      samples: boshqa.slice(0, 5),
+    });
+  }
+  return rows;
+};
+
 const getUsage = async (res) => {
-  const [bytes, keys, commands] = await Promise.all([
+  const [bytes, keys, commands, names, files] = await Promise.all([
     kvUsedMemory().catch(() => null),
     kvDbSize().catch(() => null),
     kvMonthCommands().catch(() => null),
+    kvKeys('*').catch(() => null),
+    listObjects().catch(() => null),
   ]);
   const pct = (used, limit) =>
     (used === null || used === undefined) ? null : Math.round((used / limit) * 1000) / 10;
+
+  /* Fayl ombori — Redis'dan butunlay alohida hisob. Uning
+     chegarasi tarifga bog'liq va biz uni bilmaymiz, shuning
+     uchun foiz KO'RSATILMAYDI: o'ylab topilgan chegaradan
+     ko'ra raqamning o'zi foydaliroq. */
+  const storageFiles = files && files.ok
+    ? {
+      ok: true,
+      count: files.count,
+      bytes: files.bytes,
+      truncated: files.truncated,
+      groups: Object.keys(files.byPrefix)
+        .map((k) => ({ prefix: k, ...files.byPrefix[k] }))
+        .sort((a, b) => b.bytes - a.bytes),
+    }
+    : { ok: false, error: (files && files.error) || 'o‘qilmadi' };
+
   return res.status(200).json({
     storage: { bytes, limit: QUOTA_BYTES, percent: pct(bytes, QUOTA_BYTES) },
     commands: { count: commands, limit: QUOTA_COMMANDS, percent: pct(commands, QUOTA_COMMANDS), approximate: true },
     keys,
+    /* `KEYS *` o'qilmasa — guruhlar bo'lmaydi, lekin yuqoridagi
+       raqamlar baribir ko'rinadi. */
+    groups: names ? groupKeys(names) : null,
+    files: storageFiles,
     month: new Date().toISOString().slice(0, 7),
   });
 };

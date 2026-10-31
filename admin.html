@@ -4559,29 +4559,135 @@
     return (n / 1048576).toFixed(1) + " MB";
   }
 
+  /* ============================================================
+     BAZA YUKLANISHI
+     ------------------------------------------------------------
+     Ilgari bu yerda uchta raqam bor edi: egallangan joy,
+     buyruqlar soni va kalitlar soni. Ular savolning faqat
+     yarmiga javob berardi — "qancha to'lgan". Ikkinchi yarmi
+     ("NIMA bilan to'lgan") yo'q edi, holbuki qaror aynan
+     shunga bog'liq.
+
+     Endi uchta bo'lim bor:
+       1. chegaralar — joy va buyruqlar;
+       2. kalitlar turi bo'yicha — nima joy egallayapti;
+       3. fayl ombori (R2) — rasmlar, ovozli xabarlar, hujjatlar.
+     ============================================================ */
   function viewUsage(){
-    return pageHead("Baza yuklanishi", "Upstash bepul tarifidagi chegaralar", refreshBtn("usage"))
+    return pageHead("Baza yuklanishi", "Qancha joy band va nima bilan band",
+      refreshBtn("usage"))
       + withData(["usage"], function(){
         var u = Store.raw.usage || {};
         var st = u.storage || {};
         var cm = u.commands || {};
-        return '<div class="card usage-card">'
-          + usageBar("Egallangan joy", st.bytes, st.limit || 1,
-              fmtBytes(st.bytes) + " / " + fmtBytes(st.limit))
+        var son = function(n){
+          return (n === null || n === undefined) ? "—" : Number(n).toLocaleString("en-US");
+        };
+
+        /* ---------- 1. Chegaralar ---------- */
+        var chegara = card("Upstash chegaralari",
+          usageBar("Egallangan joy", st.bytes, st.limit || 1,
+            fmtBytes(st.bytes) + " / " + fmtBytes(st.limit))
           + usageBar("Buyruqlar (" + esc(u.month || "") + ")", cm.count, cm.limit || 1,
-              (cm.count === null || cm.count === undefined ? "—" : Number(cm.count).toLocaleString("en-US"))
-                + " / " + Number(cm.limit || 0).toLocaleString("en-US"),
-              "taxminiy")
-          + '<p class="usage-keys">Bazadagi kalitlar: <b>'
-          +   (u.keys === null || u.keys === undefined ? "—" : Number(u.keys).toLocaleString("en-US"))
-          + '</b></p>'
+            son(cm.count) + " / " + son(cm.limit), "taxminiy")
+          + '<p class="usage-keys">Bazadagi kalitlar: <b>' + son(u.keys) + '</b></p>'
           + '<p class="usage-note">Joy va kalitlar soni Redis\'ning o\'zidan olinadi. '
           + 'Buyruqlar sonini Upstash bermaydi — uni server o\'zi sanaydi, shuning uchun '
           + 'u taxminiy: har 25 buyruqda bir marta yoziladi va jarayon to\'xtaganda '
-          + 'bir nechtasi sanalmay qolishi mumkin. Oy boshida noldan boshlanadi.</p>'
-          + '</div>';
+          + 'bir nechtasi sanalmay qolishi mumkin. Oy boshida noldan boshlanadi.</p>');
+
+        /* ---------- 2. Kalitlar turi bo'yicha ---------- */
+        var guruhlar = u.groups;
+        var jadval;
+        if(!guruhlar){
+          jadval = card("Nima joy egallayapti",
+            stateBox("warn", "Ro'yxat o'qilmadi",
+              "Kalitlar ro'yxatini olishda xato bo'ldi. Yuqoridagi raqamlar baribir to'g'ri."));
+        } else if(!guruhlar.length){
+          jadval = card("Nima joy egallayapti",
+            stateBox("empty", "Baza bo'sh", "Hali hech narsa yozilmagan."));
+        } else {
+          var jami = guruhlar.reduce(function(a, g){ return a + g.count; }, 0) || 1;
+          jadval = card("Nima joy egallayapti",
+            '<div class="table-wrap"><div class="table-scroll"><table><thead><tr>'
+            + '<th>Tur</th><th>Kalit nomi</th><th class="num">Soni</th><th class="num">Ulushi</th>'
+            + '</tr></thead><tbody>'
+            + guruhlar.map(function(g){
+                var ulush = Math.round((g.count / jami) * 1000) / 10;
+                return '<tr>'
+                  + '<td><b>' + esc(g.label) + '</b>'
+                  + (g.temporary
+                      ? '<span class="tag tag-blue" title="O‘zi o‘chadi">vaqtinchalik</span>' : "")
+                  + (g.samples
+                      ? '<div class="dim" style="font-size:11.5px;margin-top:3px;">'
+                        + esc(g.samples.join(", ")) + (g.count > g.samples.length ? " …" : "")
+                        + '</div>'
+                      : "")
+                  + '</td>'
+                  + '<td class="dim"><code>' + esc(g.prefix || "—") + '</code></td>'
+                  + '<td class="num">' + son(g.count) + '</td>'
+                  + '<td class="num dim">' + ulush + '%</td>'
+                  + '</tr>';
+              }).join("")
+            + '</tbody></table></div></div>'
+            + '<p class="usage-note">"Vaqtinchalik" deb belgilanganlari o\'z muddati bilan '
+            + 'o\'chadi — tasdiqlash kodlari, urinish hisoblagichlari. "Boshqa" qatorida '
+            + 'ro\'yxatda yo\'q turlar chiqadi: u ko\'rinsa, bu sahifa eskirgan degani.</p>');
+        }
+
+        /* ---------- 3. Fayl ombori ---------- */
+        var f = u.files || {};
+        var fayllar;
+        if(!f.ok){
+          fayllar = card("Fayl ombori (R2)",
+            stateBox("warn", "O'qilmadi",
+              f.error === "sozlanmagan"
+                ? "Cloudflare R2 kalitlari qo'yilmagan, shuning uchun fayllar saqlanmaydi."
+                : "Omborga ulanib bo'lmadi: " + esc(f.error || "")));
+        } else {
+          /* Chegara ko'rsatilmaydi: u tarifga bog'liq va biz uni
+             bilmaymiz. O'ylab topilgan chegaradan ko'ra raqamning
+             o'zi foydaliroq. */
+          fayllar = card("Fayl ombori (R2)",
+            '<div class="stat-grid" style="margin-bottom:14px;">'
+            + stat("Jami hajm", fmtBytes(f.bytes), f.truncated ? "kamida" : "aniq", "box")
+            + stat("Fayllar soni", son(f.count), f.truncated ? "kamida" : "aniq", "file")
+            + '</div>'
+            + (f.groups && f.groups.length
+                ? '<div class="table-wrap"><div class="table-scroll"><table><thead><tr>'
+                  + '<th>Papka</th><th class="num">Fayl</th><th class="num">Hajm</th>'
+                  + '</tr></thead><tbody>'
+                  + f.groups.map(function(g){
+                      return '<tr><td><b>' + esc(FOLDER_NAMES[g.prefix] || g.prefix) + '</b>'
+                        + '<span class="dim" style="font-size:11.5px;"> &nbsp;' + esc(g.prefix) + '/</span></td>'
+                        + '<td class="num">' + son(g.count) + '</td>'
+                        + '<td class="num">' + fmtBytes(g.bytes) + '</td></tr>';
+                    }).join("")
+                  + '</tbody></table></div></div>'
+                : stateBox("empty", "Fayl yo'q", "Hali hech narsa yuklanmagan."))
+            + (f.truncated
+                ? '<p class="usage-note"><b>Diqqat:</b> ombor katta — bir marta eng ko\'pi '
+                  + '5000 ta fayl sanaladi. Haqiqiy son bundan ko\'proq, shuning uchun '
+                  + '"kamida" deb yozilgan.</p>'
+                : '<p class="usage-note">Fayllar Cloudflare R2 da: profil rasmlari, '
+                  + 'yozishmadagi rasm va ovozli xabarlar, mashina suratlari va ikonkalar. '
+                  + 'Bu Redis chegarasiga kirmaydi — alohida hisob.</p>'));
+        }
+
+        return chegara + jadval + fayllar;
       });
   }
+
+  /* Papka nomlari — `lib/storage.js` dagi prefikslar. */
+  var FOLDER_NAMES = {
+    avatar: "Profil rasmlari",
+    chat: "Yozishma fayllari",
+    truck: "Mashina suratlari",
+    icon: "Ikonkalar",
+    logo: "Logotip",
+    welcome: "Kirish ekrani rasmi",
+    boshqa: "Boshqa"
+  };
 
   function viewIcons(){
     var writable = can("icons:write");
