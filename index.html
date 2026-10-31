@@ -2091,7 +2091,7 @@
   }
   .nav-bell-count[hidden]{display:none;}
   .notif-item{
-    display:flex;gap:var(--s3);padding:var(--s3) 0;border-bottom:1px solid var(--line);
+    display:flex;gap:var(--s3);padding:var(--s3) 0;border-bottom:1px solid var(--border);
   }
   .notif-item:last-child{border-bottom:none;}
   .notif-dot{
@@ -2133,7 +2133,7 @@
 
   /* Takliflar — yuk egasi taqqoslab tanlaydigan kartochkalar. */
   .offer-card{
-    border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4);
+    border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s4);
     margin-bottom:var(--s3);background:var(--card);
   }
   .offer-card.mine{border-color:var(--route);}
@@ -2177,7 +2177,7 @@
   /* Profildagi "Mening takliflarim" qatorlari. */
   .trip-row{
     display:flex;align-items:center;justify-content:space-between;gap:var(--s3);width:100%;
-    background:none;border:none;border-top:1px solid var(--line);padding:var(--s3) 0;
+    background:none;border:none;border-top:1px solid var(--border);padding:var(--s3) 0;
     text-align:left;cursor:pointer;color:inherit;font:inherit;
   }
   .trip-row:first-of-type{border-top:none;}
@@ -2189,7 +2189,7 @@
   .saved-searches{display:flex;gap:var(--s2);flex-wrap:wrap;margin:var(--s4) 0 0;}
   .ss-chip{
     display:inline-flex;align-items:center;gap:6px;
-    background:var(--card);border:1px solid var(--line);border-radius:var(--r-pill);
+    background:var(--card);border:1px solid var(--border);border-radius:var(--r-pill);
     padding:7px 8px 7px 13px;font-size:13px;color:var(--ink);cursor:pointer;
     font-family:inherit;
   }
@@ -2206,7 +2206,7 @@
   /* Narx maslahatchisi — haqiqiy buyurtmalardan olingan oraliq. */
   .price-hint{
     display:flex;gap:var(--s3);align-items:flex-start;
-    background:var(--paper-dark);border:1px solid var(--line);border-radius:var(--r-md);
+    background:var(--paper-dark);border:1px solid var(--border);border-radius:var(--r-md);
     padding:var(--s3);margin-top:var(--s4);
   }
   .price-hint .ic-svg{font-size:18px;color:var(--route);flex-shrink:0;margin-top:1px;}
@@ -2927,7 +2927,7 @@
   .trust-list{list-style:none;margin:var(--s3) 0 0;padding:0;}
   .trust-list li{
     display:flex;align-items:flex-start;gap:9px;
-    padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;
+    padding:9px 0;border-top:1px solid var(--border);font-size:13.5px;
   }
   .trust-list li:first-child{border-top:none;}
   .trust-list .ic-svg{flex:none;font-size:15px;margin-top:1px;color:var(--muted);}
@@ -2942,7 +2942,7 @@
     margin:var(--s3) 0 0;font-size:12px;line-height:1.5;color:var(--muted);
   }
 
-  .review-item{padding:var(--s3) 0;border-top:1px solid var(--line);}
+  .review-item{padding:var(--s3) 0;border-top:1px solid var(--border);}
   .review-item:first-of-type{border-top:none;padding-top:var(--s2);}
   .review-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);}
   .review-stars{color:#F59E0B;line-height:1;}
@@ -3829,7 +3829,7 @@
   .saved-list.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);}
   .saved-driver{
     display:flex;align-items:center;gap:var(--s3);padding:var(--s3) 0;
-    border-bottom:1px solid var(--line);cursor:pointer;
+    border-bottom:1px solid var(--border);cursor:pointer;
   }
   .saved-driver:last-child{border-bottom:none;}
   .saved-driver img, .saved-driver .sd-initial{
@@ -5290,7 +5290,7 @@
      ============================================================ */
   .call-note{
     display:flex;gap:10px;align-items:flex-start;
-    padding:12px 14px;border-radius:var(--r3);
+    padding:13px 15px;border-radius:var(--r-lg);
     background:rgba(217,119,6,0.10);
     border:1px solid rgba(217,119,6,0.24);
     margin:0 0 var(--s4);
@@ -5307,8 +5307,8 @@
   .call-row{display:flex;gap:8px;align-items:stretch;}
   .call-num{
     display:flex;align-items:center;gap:12px;flex:1;min-width:0;
-    padding:14px 16px;border-radius:var(--r3);
-    border:1px solid var(--line);background:var(--paper);
+    min-height:56px;padding:14px 20px;border-radius:var(--r-pill);
+    border:1px solid var(--border);background:var(--paper);
     color:var(--ink);text-decoration:none;
     font-family:'Space Grotesk',sans-serif;
     font-size:20px;font-weight:700;letter-spacing:0.01em;
@@ -5322,8 +5322,8 @@
      tegilsa qo'ng'iroq bo'ladi, shunga tegilsa nusxa olinadi.
      Ichiga qo'yilsa, bitta tegish ikki ma'noga ega bo'lardi. */
   .call-copy{
-    flex:none;width:52px;border-radius:var(--r3);
-    border:1px solid var(--line);background:var(--paper);
+    flex:none;width:56px;border-radius:var(--r-pill);
+    border:1px solid var(--border);background:var(--paper);
     color:var(--ink-soft);display:flex;align-items:center;justify-content:center;
     -webkit-tap-highlight-color:transparent;
   }
