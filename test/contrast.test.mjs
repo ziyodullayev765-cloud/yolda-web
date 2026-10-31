@@ -94,6 +94,71 @@ check('XIRA YOZUV O\'QILADI (AA 4.5:1)', mehmon >= AA,
 check('asosiy matn qora fonda emas, oq fonda to\'q', nisbat(siyoh, OQ) >= 7,
   siyoh + ' — ' + nisbat(siyoh, OQ).toFixed(2) + ':1');
 
+/* ============================================================
+   Ichki ekranlar
+   ------------------------------------------------------------
+   Kirish ekranidan keyin topilganlar. Ular axe-core bilan
+   to'qqizta bo'limda, ikkala mavzuda o'lchandi.
+   ============================================================ */
+
+/** `:root` yoki `[data-theme="dark"]` blokidagi token. */
+const mavzuToken = (nom, tungi) => {
+  const blok = tungi
+    ? /:root\[data-theme="dark"\]\{([\s\S]*?)\n  \}/.exec(html)
+    : /\n  :root\{([\s\S]*?)\n  \}/.exec(html);
+  if (!blok) return null;
+  const m = new RegExp('--' + nom + ':\\s*(#[0-9A-Fa-f]{3,6})').exec(blok[1]);
+  return m ? m[1].toUpperCase() : null;
+};
+
+/* 7. To'ldirilgan yashil fonda turadigan yozuv.
+
+   Yorug'da `--route` to'q (#09864B) — u yerda OQ yozuv to'g'ri.
+   Tungida esa u yorqin (#2DD480) va oq yozuv 1.93:1 ga tushadi,
+   demak u yerda to'q siyoh kerak. Javob mavzuga qarab boshqacha
+   bo'lgani uchun u token qilib olingan. */
+const routeY = mavzuToken('route', false);
+const routeT = mavzuToken('route', true);
+const onRouteY = mavzuToken('on-route', false);
+const onRouteT = mavzuToken('on-route', true);
+check('yashil fon uchun yozuv rangi bor',
+  Boolean(routeY && routeT && onRouteY && onRouteT),
+  JSON.stringify({ routeY, routeT, onRouteY, onRouteT }));
+check('YORUG\'DA yashil tugmadagi yozuv o\'qiladi', nisbat(onRouteY, routeY) >= AA,
+  onRouteY + ' / ' + routeY + ' — ' + nisbat(onRouteY, routeY).toFixed(2) + ':1');
+check('TUNGIDA yashil tugmadagi yozuv o\'qiladi', nisbat(onRouteT, routeT) >= AA,
+  onRouteT + ' / ' + routeT + ' — ' + nisbat(onRouteT, routeT).toFixed(2) + ':1');
+
+/* 8. "Yangi" nishoni: `--accepted` va `--stamp-dark` ikkala
+      mavzuda ham och, shuning uchun u yerda doim to'q siyoh. */
+[['accepted', false], ['accepted', true], ['stamp-dark', false], ['stamp-dark', true]]
+  .forEach(([nom, tungi]) => {
+    const fon = mavzuToken(nom, tungi);
+    const siyohi = mavzuToken('on-accepted', tungi);
+    const qayerda = (tungi ? 'tungi' : 'yorug\'') + ' --' + nom;
+    check('nishondagi yozuv o\'qiladi (' + qayerda + ')',
+      Boolean(fon && siyohi) && nisbat(siyohi, fon) >= AA,
+      siyohi + ' / ' + fon + (fon && siyohi ? ' — ' + nisbat(siyohi, fon).toFixed(2) + ':1' : ''));
+  });
+
+/* 9. Oq fonda turadigan yashil yozuv (yuk kartochkasidagi
+      "Yangi" belgisi). Nishon foni uchun olingan yashil bu yerda
+      juda och edi: 3.29:1. */
+const yashilYozuv = mavzuToken('green-ink', false);
+check('oq fonda yashil yozuv o\'qiladi',
+  Boolean(yashilYozuv) && nisbat(yashilYozuv, OQ) >= AA,
+  yashilYozuv + ' — ' + (yashilYozuv ? nisbat(yashilYozuv, OQ).toFixed(2) : '?') + ':1');
+
+/* 10. Suhbat avatarlari: har bir tus ustida OQ harf turadi. */
+const palitra = (() => {
+  const m = /var CHAT_AVATAR_COLORS = \[([\s\S]*?)\];/.exec(html);
+  return m ? (m[1].match(/#[0-9A-Fa-f]{6}/g) || []) : [];
+})();
+check('avatar palitrasi topildi', palitra.length >= 8, palitra.length);
+const yomon = palitra.filter((c) => nisbat(OQ, c) < AA);
+check('HAR BIR AVATAR TUSIDA OQ HARF O\'QILADI', yomon.length === 0,
+  yomon.map((c) => c + ' (' + nisbat(OQ, c).toFixed(2) + ':1)').join(', '));
+
 /* 6. Eski ranglar QIYMAT sifatida qaytib kelmasin. Izohlarda
       ular haqida yozilgani — xato emas, tarix. */
 const qiymat = (rang) => new RegExp(':\\s*' + rang + '\\b', 'i').test(html);
