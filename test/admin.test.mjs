@@ -556,15 +556,32 @@ console.log('\n== moderation: reject path ==');
   await call(adminData, 'POST', { action: 'update-truck' }, { id: 'm1', status: 'ACTIVE' }, cookieFor('MODERATOR'));
   check('reactivating clears the old reason', JSON.parse(store.get('truck:m1')).rejectionReason === undefined);
 
-  // Mahsulot qarori kerak: hozir sababsiz rad etish mumkin, sotuvchiga esa
-  // "rad etildi" degan xabar sababsiz boradi. Tasdiqlash (verify-review)
-  // esa sababni majburiy qiladi — ikki joy bir-biriga o'xshamaydi.
+  /* Ilgari bu "gap" edi: e'lonni SABABSIZ rad etish mumkin edi
+     va sotuvchiga shunchaki "e'loningiz rad etildi" degan xabar
+     borardi. U nimani tuzatishni bilmasdi — suratmi, narxmi,
+     tavsifmi. Natijada yo qayta-qayta yuboraverardi, yo umuman
+     voz kechardi.
+
+     Tasdiqlashni rad etishda (`verify-review`) sabab allaqachon
+     majburiy edi; ikki joyning bir-biriga o'xshamasligi
+     e'tibordan chetda qolgan ekan. Endi ikkalasi ham bir xil. */
   store.set('truck:m2', JSON.stringify({ id: 'm2', brand: 'M2', status: 'PENDING', createdAt: 1 }));
   sets.get('truck_ids').add('m2');
   const bare = await call(adminData, 'POST', { action: 'update-truck' },
     { id: 'm2', status: 'REJECTED' }, cookieFor('MODERATOR'));
-  gap('rejecting a listing without a reason is refused', bare.statusCode === 400,
-    'verify-review sabab talab qiladi, update-truck esa yo‘q');
+  check('SABABSIZ RAD ETIB BO‘LMAYDI', bare.statusCode === 400, bare.statusCode);
+  check('sababi aytiladi', /sabab/i.test(bare.body.error || ''), bare.body.error);
+  /* Eng muhimi: bazaga YOZILMAGAN bo'lsin. Xato qaytib, holat
+     baribir o'zgargan bo'lsa, tekshiruvning ma'nosi qolmasdi. */
+  check('va holat o‘zgarmagan',
+    JSON.parse(store.get('truck:m2')).status === 'PENDING',
+    JSON.parse(store.get('truck:m2')).status);
+
+  const bilan = await call(adminData, 'POST', { action: 'update-truck' },
+    { id: 'm2', status: 'REJECTED', rejectionReason: 'Rasmlar aniq emas' }, cookieFor('MODERATOR'));
+  check('sabab bilan rad etiladi', bilan.statusCode === 200, bilan.statusCode);
+  check('sabab saqlanadi',
+    JSON.parse(store.get('truck:m2')).rejectionReason === 'Rasmlar aniq emas');
 }
 
 console.log('\n== settings: bad input ==');
@@ -713,10 +730,25 @@ console.log('\n== lib/verification.js: edges ==');
   check('different people never share a key',
     docKey('a@x.com', 'IDENTITY') !== docKey('b@x.com', 'IDENTITY'));
 
-  gap('unknown kind is refused by setVerification', (() => {
+  /* Ilgari bu "gap" edi: `setVerification` noma'lum turni
+     indamay yozaverardi. Chaqiruvchilar turni o'zlari
+     tekshiradi, lekin himoya eng pastda ham turishi kerak —
+     yangi chaqiruv qo'shilganda tekshiruv unutilsa, profilga
+     ma'nosiz maydon yozilib qolardi va xato jim o'tib ketardi. */
+  check('NOMA’LUM TUR YOZILMAYDI', (() => {
     try { const r = {}; setVerification(r, 'GOD', { status: 'VERIFIED' }); return !r.verifications?.GOD; }
     catch { return true; }
-  })(), 'chaqiruvchilar turni o‘zlari tekshiradi; lib ichida himoya yo‘q');
+  })());
+  check('lekin profil buzilmaydi — o‘zi qaytariladi', (() => {
+    const r = { username: 'aziz' };
+    const out = setVerification(r, 'GOD', { status: 'VERIFIED' });
+    return out === r && r.username === 'aziz';
+  })());
+  check('ma’lum tur avvalgidek yoziladi', (() => {
+    const r = {};
+    setVerification(r, 'PHONE', { status: 'VERIFIED' });
+    return r.verifications.PHONE.status === 'VERIFIED';
+  })());
 }
 
 /* ==========================================================

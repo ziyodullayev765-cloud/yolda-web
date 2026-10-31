@@ -5982,7 +5982,17 @@
       foot: '<button type="button" class="btn" data-act="modal-close">Bekor qilish</button>'
         + '<button type="button" class="btn bad" data-act="modal-save">Rad etish</button>',
       onSave: function(){
-        var reason = byId("rejReason").value.trim();
+        var el = byId("rejReason");
+        var reason = el.value.trim();
+        /* Sababsiz rad etishdan foyda yo'q: sotuvchiga
+           "rad etildi" degan quruq xabar boradi va u nimani
+           tuzatishni bilmaydi. Server ham buni rad etadi —
+           bu yerdagisi odamga darhol aytish uchun. */
+        if(!reason){
+          el.focus();
+          toast("Rad etish sababini yozing", "bad");
+          return;
+        }
         closeModal();
         updateTruck({ id:id, status:"REJECTED", rejectionReason:reason }, "E'lon rad etildi");
       }
@@ -6331,7 +6341,14 @@
     if(!t) return;
     var act = t.getAttribute("data-act");
     if(act === "report-status"){ setReportStatus(t.getAttribute("data-id"), t.value); return; }
-    if(act === "truck-status"){ updateTruck({ id:t.getAttribute("data-id"), status:t.value }, "Holat yangilandi"); return; }
+    if(act === "truck-status"){
+      /* "Rad etilgan" tanlansa — to'g'ridan yuborilmaydi, avval
+         sabab so'raladi. Ilgari bu yo'l sababsiz ketardi va
+         sotuvchi nimani tuzatishni bilmasdi. */
+      if(t.value === "REJECTED"){ askRejectReason(t.getAttribute("data-id")); return; }
+      updateTruck({ id:t.getAttribute("data-id"), status:t.value }, "Holat yangilandi");
+      return;
+    }
   });
 
   /* Table search: keep focus and caret while re-rendering. */

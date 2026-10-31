@@ -264,6 +264,25 @@ const updateTruck = async (req, res) => {
     else delete truck.rejectionReason;
   }
 
+  /* ============================================================
+     RAD ETISHDA SABAB MAJBURIY
+     ------------------------------------------------------------
+     Ilgari e'lonni sababsiz rad etish mumkin edi va sotuvchiga
+     shunchaki "e'loningiz rad etildi" degan xabar borardi. U
+     nimani tuzatishni bilmasdi: suratmi, narxmi, tavsifmi.
+     Natijada u yo qayta-qayta yuboraverardi, yo umuman voz
+     kechardi — ikkalasi ham yomon.
+
+     Tasdiqlashni rad etishda (`verify-review`) sabab allaqachon
+     majburiy edi. Ikki joyning bir-biriga o'xshamasligi esa
+     shunchaki e'tibordan chetda qolgan.
+
+     Tekshiruv saqlangandan OLDIN turadi: sababsiz rad etish
+     bazaga umuman yozilmasin. */
+  if (truck.status === 'REJECTED' && !truck.rejectionReason) {
+    return res.status(400).json({ error: 'Rad etish sababini yozing' });
+  }
+
   const saved = await kvSet(`truck:${id}`, JSON.stringify(truck));
   if (!saved) return res.status(500).json({ error: 'Saqlanmadi' });
 
