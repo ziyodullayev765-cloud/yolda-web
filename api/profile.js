@@ -40,6 +40,7 @@ import { deleteAccount, activeOrdersFor } from '../lib/deleteAccount.js';
 import { CARGO } from '../lib/orderMessage.js';
 import { uploadImage, keyFromUrl, deleteObject } from '../lib/storage.js';
 import { staffRecord, STAFF_ROLE_LABELS } from '../lib/staff.js';
+import { trustOf } from '../lib/trust.js';
 import {
   deviceId, readSubscriptions, writeSubscriptions, vapidConfigured, MAX_DEVICES,
 } from '../lib/webpush.js';
@@ -849,10 +850,21 @@ const getPublicProfile = async (req, res) => {
 
   const staff = await staffRecord(identity);
 
+  /* Ishonch darajasi (lib/trust.js). U profilning O'ZIDAN
+     hisoblanadi — bazada alohida saqlanmaydi, ya'ni eskirib
+     qolmaydi va "qachon qayta hisoblash kerak" degan savol
+     umuman tug'ilmaydi.
+
+     Cheklangan hisob alohida: bu admin chiqargan qaror va u
+     hamma narsadan ustun turadi. */
+  const banned = await kvSismember('banned', String(identity).toLowerCase());
+  const trust = trustOf(profile, { banned });
+
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
   return res.status(200).json({
     ok: true,
     profile: publicProfileShape(identity, profile, staff),
+    trust,
     reviews,
   });
 };

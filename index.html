@@ -2882,6 +2882,66 @@
     display:inline-flex;align-items:center;gap:5px;
   }
   .crit-tag.ok .ic-svg{font-size:12px;}
+
+  /* ============================================================
+     ISHONCH DARAJASI
+     ------------------------------------------------------------
+     Daraja hech qachon YAKKA ko'rsatilmaydi — doim uning
+     tarkibi bilan birga. Sababi lib/trust.js boshida yozilgan:
+     "72 ball" hech narsa demaydi, "telefoni va pasporti
+     tasdiqlangan, 14 ta yuk yetkazgan" — buni odam o'zi o'qiydi
+     va o'zi qaror qiladi.
+
+     Shuning uchun bu yerda ro'yxat asosiy, chiziq esa ikkinchi
+     darajali: u qancha yo'l bosilganini ko'rsatadi, xolos.
+     ============================================================ */
+  .trust{margin-top:var(--s3);}
+  .trust-top{display:flex;align-items:center;gap:10px;}
+  .trust-badge{
+    display:inline-flex;align-items:center;gap:6px;flex:none;
+    padding:5px 11px;border-radius:var(--r-pill);
+    font-size:12.5px;font-weight:700;letter-spacing:-0.01em;
+    background:var(--paper-dark);color:var(--ink-soft);
+  }
+  .trust-badge .ic-svg{font-size:13px;}
+  /* Rang darajaga qarab. Ko'k belgi bilan adashmasligi uchun
+     "Tasdiqlangan" yashil, "Ishonchli" esa ko'kimtir emas —
+     ikkalasi bir oilada, lekin har xil to'yinganlikda. */
+  .trust-badge.lv-PROVEN{background:rgba(22,163,74,0.14);color:#15803D;}
+  .trust-badge.lv-TRUSTED{background:rgba(22,163,74,0.09);color:#2F7A4E;}
+  .trust-badge.lv-BASIC{background:rgba(217,119,6,0.12);color:#8A5200;}
+  .trust-badge.lv-NEW{background:var(--paper-dark);color:var(--ink-soft);}
+  .trust-badge.lv-BANNED{background:rgba(220,38,38,0.12);color:#B01B1B;}
+  :root[data-theme="dark"] .trust-badge.lv-PROVEN{background:rgba(52,211,153,0.16);color:#6EE7B7;}
+  :root[data-theme="dark"] .trust-badge.lv-TRUSTED{background:rgba(52,211,153,0.10);color:#8FD8B6;}
+  :root[data-theme="dark"] .trust-badge.lv-BASIC{background:rgba(245,158,11,0.14);color:#FBBF24;}
+  :root[data-theme="dark"] .trust-badge.lv-BANNED{background:rgba(248,113,113,0.16);color:#FCA5A5;}
+
+  .trust-bar{
+    flex:1;min-width:0;height:6px;border-radius:999px;
+    background:var(--paper-dark);overflow:hidden;
+  }
+  .trust-bar i{display:block;height:100%;border-radius:999px;background:var(--route);}
+  .trust-note{margin:10px 0 0;font-size:13px;line-height:1.5;color:var(--ink-soft);}
+
+  .trust-list{list-style:none;margin:var(--s3) 0 0;padding:0;}
+  .trust-list li{
+    display:flex;align-items:flex-start;gap:9px;
+    padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;
+  }
+  .trust-list li:first-child{border-top:none;}
+  .trust-list .ic-svg{flex:none;font-size:15px;margin-top:1px;color:var(--muted);}
+  .trust-list li.done .ic-svg{color:var(--route);}
+  .trust-list .tl-txt{flex:1;min-width:0;color:var(--muted);}
+  .trust-list li.done .tl-txt{color:var(--ink);}
+  /* Aniq fakt — ro'yxatdagi eng foydali qism: "14 ta",
+     "9 ta bahodan 4,8". Shuning uchun u o'chirilmaydi, faqat
+     kichikroq. */
+  .trust-list .tl-det{display:block;font-size:12px;color:var(--muted);margin-top:1px;}
+  .trust-why{
+    margin:var(--s3) 0 0;font-size:12px;line-height:1.5;color:var(--muted);
+  }
+
   .review-item{padding:var(--s3) 0;border-top:1px solid var(--line);}
   .review-item:first-of-type{border-top:none;padding-top:var(--s2);}
   .review-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);}
@@ -6699,6 +6759,10 @@
     <symbol id="iconCheck" viewBox="0 0 24 24"><rect x="0" y="0" width="24" height="24" fill="currentColor" stroke="none" mask="url(#iconmask-iconCheck)"/></symbol>
     <symbol id="iconVerifiedBadge" viewBox="0 0 24 24"><image href="/icon/2026-10/778ac6900a0a9b28d5565820c2e9c600.png" x="0" y="0" width="24" height="24" preserveAspectRatio="xMidYMid meet"/></symbol>
     <symbol id="iconInfo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11V16.4M12 7.8H12.01"/></symbol>
+    <!-- Bo'sh doira: ishonch ro'yxatida "hali yo'q" degan qator
+         uchun. Belgisiz bo'sh joy qoldirilsa, qatorlar bir-biriga
+         tekislanmasdi va "yo'q" degani ko'zga tashlanmasdi. -->
+    <symbol id="iconCircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/></symbol>
     <symbol id="iconArrowRight" viewBox="0 0 24 24"><path d="M4 12H20M14 6 20 12 14 18"/></symbol>
     <symbol id="iconArrowLeft" viewBox="0 0 24 24"><path d="M20 12H4M10 6 4 12 10 18"/></symbol>
     <symbol id="iconClock" viewBox="0 0 24 24"><rect x="0" y="0" width="24" height="24" fill="currentColor" stroke="none" mask="url(#iconmask-iconClock)"/></symbol>
@@ -18305,7 +18369,7 @@
               body.innerHTML = '<p class="note">' + escapeHtml(res.body.error || "Topilmadi") + '</p>';
               return;
             }
-            body.innerHTML = publicProfileHtml(res.body.profile, res.body.reviews);
+            body.innerHTML = publicProfileHtml(res.body.profile, res.body.reviews, res.body.trust);
             applyLang();
           })
           .catch(function(){
@@ -18339,7 +18403,7 @@
     toast(now ? (t("saved.added") || "Saqlandi") : (t("saved.removed") || "Olib tashlandi"), "", "success");
   });
 
-  function publicProfileHtml(p, reviews){
+  function publicProfileHtml(p, reviews, trust){
     var rating = p.ratingCount ? (p.ratingSum / p.ratingCount).toFixed(1) : null;
     var ownerRating = p.ownerRatingCount ? (p.ownerRatingSum / p.ownerRatingCount).toFixed(1) : null;
     var stats = [];
@@ -18384,7 +18448,10 @@
             }).join("") + '</div>'
           : "")
       + (p.bio ? '<div class="card"><p class="note" style="margin:0;">'+escapeHtml(p.bio)+'</p></div>' : "")
-      + publicVerifyHtml(p.verifications)
+      /* Ishonch darajasi eski "Tasdiqlangan" ro'yxatining
+         o'rnida turadi — ikkalasi bir narsani aytardi, lekin
+         bu to'liqroq: tasdiqlanmagani ham ko'rinadi. */
+      + trustHtml(trust)
       + publicTagsHtml(p.topTags)
       + publicReviewsHtml(reviews)
       + '<div class="row2" style="margin-top:var(--s4);">'
@@ -18703,18 +18770,59 @@
   /* Qaysi tasdiqlar olingani. Faqat olinganlari ko'rinadi:
      "tasdiqlanmagan" degan qator begonaga hech narsa bermaydi,
      odamning esa hali tugatmagan ishini ko'z-ko'z qiladi. */
-  function publicVerifyHtml(v){
-    if(!v) return "";
-    var got = VERIFY_KINDS.filter(function(k){ return v[k]; });
-    if(!got.length) return "";
-    return '<div class="card" style="margin-top:var(--s3);">'
-      + '<h3 class="card-title" style="font-size:14px;">'+verifyBadgeSvg("")+' '
-      +   '<span data-i18n="verify.publicTitle">Tasdiqlangan</span></h3>'
-      + '<div class="crit-tags">' + got.map(function(k){
-          return '<span class="crit-tag ok">'+icon("iconCheckLine")
-            + ' <span data-i18n="'+VERIFY_META[k].titleKey+'">'
-            + escapeHtml(VERIFY_META[k].title)+'</span></span>';
-        }).join("") + '</div></div>';
+  /* ============================================================
+     ISHONCH DARAJASI
+     ------------------------------------------------------------
+     Serverdan tayyor keladi (lib/trust.js) — bu yerda hech narsa
+     hisoblanmaydi. Ikki sabab bor: hisob bitta joyda tursin, va
+     mijoz uni o'zgartira olmasin.
+
+     Bu bo'lim ilgari "Tasdiqlangan" degan kichik ro'yxat edi va
+     u faqat BOR narsani ko'rsatardi. Yo'q narsa esa ko'rinmasdi:
+     pasporti tasdiqlanmagan odam bilan tasdiqlangan odam deyarli
+     bir xil ko'rinardi. Endi ro'yxat to'liq — tasdiqlanmagani
+     ham o'z qatorida turadi, bo'sh doira bilan.
+     ============================================================ */
+  function trustHtml(tr){
+    if(!tr || !tr.level) return "";
+
+    /* Cheklangan hisob: ro'yxat ham, chiziq ham ko'rsatilmaydi.
+       Bu yerda aytiladigan yagona narsa bor. */
+    if(tr.level === "BANNED"){
+      return '<div class="card trust">'
+        + '<div class="trust-top">'
+        +   '<span class="trust-badge lv-BANNED">' + icon("iconAlert")
+        +     escapeHtml(tr.label) + '</span>'
+        + '</div>'
+        + '<p class="trust-note">' + escapeHtml(tr.note) + '</p>'
+        + '</div>';
+    }
+
+    var ulush = tr.max ? Math.max(0, Math.min(100, Math.round((tr.score / tr.max) * 100))) : 0;
+
+    return '<div class="card trust">'
+      + '<div class="trust-top">'
+      +   '<span class="trust-badge lv-' + escapeHtml(tr.level) + '">'
+      +     icon(tr.level === "PROVEN" || tr.level === "TRUSTED" ? "iconShield" : "iconInfo")
+      +     escapeHtml(tr.label) + '</span>'
+      +   '<span class="trust-bar" role="img" '
+      +     'aria-label="' + ulush + '%"><i style="width:' + ulush + '%;"></i></span>'
+      + '</div>'
+      + '<p class="trust-note">' + escapeHtml(tr.note) + '</p>'
+      + '<ul class="trust-list">' + (tr.items || []).map(function(it){
+          return '<li class="' + (it.done ? "done" : "") + '">'
+            + icon(it.done ? "iconCheckLine" : "iconCircle")
+            + '<span class="tl-txt">' + escapeHtml(it.label)
+            +   (it.detail ? '<span class="tl-det">' + escapeHtml(it.detail) + '</span>' : "")
+            + '</span></li>';
+        }).join("") + '</ul>'
+      /* ENG MUHIM QATOR. Daraja kafolat emasligini aytmasak,
+         odam unga ishonib ehtiyotkorligini yo'qotadi — bu esa
+         darajasiz holatdan ham yomonroq. */
+      + '<p class="trust-why">Bu daraja — tekshirib bo‘ladigan '
+      + 'narsalarning yig‘indisi, kafolat emas. YO‘LDA tomonlar '
+      + 'o‘rtasidagi kelishuvga javob bermaydi.</p>'
+      + '</div>';
   }
 
   /* Eng ko'p takrorlangan maqtovlar. Server allaqachon kamida ikki

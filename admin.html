@@ -1476,6 +1476,56 @@
   function orderPill(s){ var k = s || "NEW"; return pill(ORDER_LABELS[k] || k, ORDER_PILL[k] || "pill-dim"); }
   function truckPill(s){ var k = s || "ACTIVE"; return pill(TRUCK_LABELS[k] || k, TRUCK_PILL[k] || "pill-dim"); }
   function reportPill(s){ var k = s || "NEW"; return pill(REPORT_LABELS[k] || k, REPORT_PILL[k] || "pill-dim"); }
+
+  /* ============================================================
+     ISHONCH DARAJASI
+     ------------------------------------------------------------
+     Daraja SERVERDA hisoblanadi (lib/trust.js) va shu yerga
+     tayyor keladi. Panelda qaytadan hisoblanmaydi — aks holda
+     moderator ko'rgan daraja foydalanuvchi ko'rgan daraja bilan
+     bir kuni albatta ajralib ketardi.
+
+     Ballning o'zi (72/100) pill ichida ko'rsatilmaydi: u hech
+     narsa anglatmaydi. Tarkibi odamning sahifasida ochiq turadi.
+     ============================================================ */
+  var TRUST_PILL = {
+    PROVEN:  "pill-ok",
+    TRUSTED: "pill-ok",
+    BASIC:   "pill-warn",
+    NEW:     "pill-dim",
+    BANNED:  "pill-bad"
+  };
+
+  function trustPill(tr){
+    if(!tr || !tr.level) return '<span class="dim">—</span>';
+    return pill(tr.label || tr.level, TRUST_PILL[tr.level] || "pill-dim");
+  }
+
+  /** To'liq tarkibi — foydalanuvchi sahifasida. */
+  function trustCard(tr){
+    if(!tr || !tr.level) return "";
+    if(tr.level === "BANNED"){
+      return card("Ishonch darajasi",
+        '<p style="margin:0 0 10px;">' + trustPill(tr) + '</p>'
+        + '<p class="dim" style="margin:0;">' + esc(tr.note) + '</p>');
+    }
+    var ulush = tr.max ? Math.round((tr.score / tr.max) * 100) : 0;
+    return card("Ishonch darajasi",
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">'
+      +   trustPill(tr)
+      +   '<span style="flex:1;height:6px;border-radius:999px;background:var(--card2);overflow:hidden;">'
+      +     '<i style="display:block;height:100%;width:' + ulush + '%;background:var(--accent);"></i>'
+      +   '</span>'
+      +   '<span class="dim" style="font-size:12px;font-variant-numeric:tabular-nums;">'
+      +     tr.score + '/' + tr.max + '</span>'
+      + '</div>'
+      + '<p class="dim" style="margin:0 0 12px;font-size:12.5px;">' + esc(tr.note) + '</p>'
+      + '<dl class="kv">' + (tr.items || []).map(function(it){
+          return kvRow(esc(it.label),
+            (it.done ? pill("Bor", "pill-ok") : pill("Yo'q", "pill-dim"))
+            + (it.detail ? ' <span class="dim" style="font-size:12px;">' + esc(it.detail) + '</span>' : ""));
+        }).join("") + '</dl>');
+  }
   function truckStatus(t){ return t.status || "ACTIVE"; }
 
   /* Moderatsiya ishga tushgan payt (api/admin-data.js dagi
@@ -3471,9 +3521,19 @@
             { key:"vehicleType", label:"Mashina", sortable:true, cls:"dim",
               value:function(u){ return VEHICLE_LABELS[u.vehicleType] || ""; },
               render:function(u){ return esc(VEHICLE_LABELS[u.vehicleType] || "—"); } },
-            { key:"verified", label:"Tasdiq", sortable:true,
+            /* "Tasdiq" — faqat ko'k belgi (shaxs hujjati). Yonidagi
+               "Ishonch" ancha to'liqroq, shuning uchun tor ekranda
+               birinchi bo'lib shu ustun yashiriladi. */
+            { key:"verified", label:"Tasdiq", sortable:true, hide:1500,
               value:function(u){ return u.verified ? 1 : 0; },
               render:function(u){ return u.verified ? pill("Ha", "pill-ok") : pill("Yo'q", "pill-dim"); } },
+            /* Ishonch darajasi — ilovadagi bilan AYNAN bir xil
+               hisobdan (lib/trust.js), serverda hisoblanadi.
+               Moderator ko'rgan narsa foydalanuvchi ko'rgan narsa
+               bilan mos tushishi kerak. */
+            { key:"trust", label:"Ishonch", sortable:true,
+              value:function(u){ return (u.trust && u.trust.score) || 0; },
+              render:function(u){ return trustPill(u.trust); } },
             { key:"rating", label:"Baho", sortable:true, cls:"num",
               value:function(u){ return u.ratingCount ? u.ratingSum / u.ratingCount : 0; },
               render:function(u){ return ratingText(u); } },
@@ -3598,9 +3658,14 @@
       }
 
       var docs = card("Hujjatlar va tasdiqlar", userDocs(user));
+      /* Ishonch darajasi hujjatlardan OLDIN turadi: moderator
+         avval "bu odam qanaqa" degan savolga javob oladi, keyin
+         tafsilotga tushadi. Ikkalasi bir-birini takrorlamaydi —
+         bu yerda yetkazishlar va baholar ham bor. */
+      var trust = trustCard(user.trust);
 
       return '<div class="detail-grid">' + profile
-        + '<div style="display:grid;gap:16px;">' + docs + activity + lists + '</div></div>';
+        + '<div style="display:grid;gap:16px;">' + trust + docs + activity + lists + '</div></div>';
     });
   }
 

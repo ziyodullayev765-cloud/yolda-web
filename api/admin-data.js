@@ -34,6 +34,7 @@
 import { kvGet, kvSet, kvDel, kvSadd, kvSrem, kvSmembers, kvKeys, kvRange, kvLrem,
   kvDbSize, kvUsedMemory, kvMonthCommands } from '../lib/kv.js';
 import { requireAdmin } from '../lib/adminAuth.js';
+import { trustOf } from '../lib/trust.js';
 import { listInvoices, activeProviders } from '../lib/payments.js';
 import { grantPremium, revokePremium, premiumState, premiumMembers } from '../lib/premium.js';
 import { notifyUser, esc } from '../lib/notify.js';
@@ -121,11 +122,17 @@ const getUsers = async (res) => {
     emails.map(async (email) => {
       kvSadd('profile_emails', email).catch(() => {});
       const profile = parseProfile(await kvGet(`profile:${email}`));
+      const banned = bannedSet.has(email.toLowerCase());
       return {
         email,
         ...profile,
-        banned: bannedSet.has(email.toLowerCase()),
+        banned,
         premium: premiumSet.has(email),
+        /* Ishonch darajasi — ilovadagi bilan AYNAN bir xil
+           hisobdan (lib/trust.js). Panelda boshqacha chiqsa,
+           moderator ko'rgan narsa foydalanuvchi ko'rgan narsa
+           bilan mos kelmasdi. */
+        trust: trustOf(profile, { banned }),
       };
     }),
   );
