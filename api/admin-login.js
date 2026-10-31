@@ -30,7 +30,7 @@ import crypto from 'node:crypto';
 import {
   makeSessionToken, resolveAdmin, sessionsConfigured, ROLES,
 } from '../lib/adminAuth.js';
-import { resolveIdentity } from '../lib/identity.js';
+import { resolveIdentity, credsFrom } from '../lib/identity.js';
 import { staffRole } from '../lib/staff.js';
 
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -120,8 +120,14 @@ export default async function handler(req, res) {
   const ip = req.headers['x-forwarded-for'] || 'unknown';
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
-  /* ---------- 2. Ilova hisobi bilan ---------- */
-  const hasAccount = body.googleIdToken || body.telegramInitData || body.phoneToken;
+  /* ---------- 2. Ilova hisobi bilan ----------
+     Kirish ma'lumoti sarlavhada ham, tanada ham kelishi mumkin
+     (lib/identity.js dagi `credsFrom` izohiga qarang). Shuning
+     uchun "hisob bilan kiryaptimi" degan savolga ham o'sha
+     funksiya javob beradi: aks holda sarlavha bilan yuborgan
+     mijozda bu yerda parol yo'li tanlanib qolardi. */
+  const creds = credsFrom(req, body);
+  const hasAccount = creds.googleIdToken || creds.telegramInitData || creds.phoneToken;
   if (hasAccount) {
     if (isThrottled(ip)) {
       return res.status(429).json({ error: 'Biroz kuting va qayta urinib ko‘ring' });
@@ -129,11 +135,7 @@ export default async function handler(req, res) {
     /* Ma'lumot SERVERDA tekshiriladi: Google tokeni Google'dan,
        Telegram ma'lumoti imzosidan, telefon tokeni bizning
        imzomizdan. Mijozga ishonilmaydi. */
-    const who = await resolveIdentity({
-      googleIdToken: body.googleIdToken,
-      telegramInitData: body.telegramInitData,
-      phoneToken: body.phoneToken,
-    });
+    const who = await resolveIdentity(creds);
     if (!who || !who.identity) {
       return res.status(401).json({ error: 'Hisob tasdiqlanmadi. Ilovaga qaytadan kiring.' });
     }

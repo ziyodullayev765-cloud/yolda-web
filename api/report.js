@@ -10,7 +10,7 @@
  * to rewrite the whole list. `report_ids` is just the ordering index.
  */
 import { kvSet, kvPush, kvSismember } from '../lib/kv.js';
-import { resolveEmail } from '../lib/identity.js';
+import { resolveEmail, credsFrom } from '../lib/identity.js';
 
 const REASONS = ['SCAM', 'FAKE_LOAD', 'FAKE_DRIVER', 'PAYMENT', 'BEHAVIOR', 'DELIVERY', 'OTHER'];
 
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
-  const email = await resolveEmail({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
+  const email = await resolveEmail(credsFrom(req, body));
   if (!email) return res.status(401).json({ error: 'Shikoyat yuborish uchun Google yoki Telegram orqali kiring' });
 
   if (await kvSismember('banned', email.toLowerCase())) {

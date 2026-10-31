@@ -11638,26 +11638,100 @@
   })();
 
   /* ============================================================
-     Telefon tokenini har bir so'rovga qo'shish
+     KIRISH MA'LUMOTI — BITTA JOYDA
      ------------------------------------------------------------
      Ilovada ~30 joyda `googleIdToken`/`telegramInitData` qo'lda
-     qo'shiladi. Uchinchi usul uchun o'sha joylarni qaytadan yozish
-     o'rniga token shu yerda, bitta joyda qo'shiladi — shunda ikki
-     xil nusxa paydo bo'lmaydi va mavjud kod umuman o'zgarmaydi.
+     qo'shiladi. Shuning uchun bu yerda, bitta joyda, ikki ish
+     qilinadi:
+
+       1. TELEFON TOKENI QO'SHILADI. Uchinchi kirish usuli uchun
+          o'sha o'ttizta joyni qaytadan yozish o'rniga token shu
+          yerda qo'shiladi — ikki xil nusxa paydo bo'lmaydi.
+
+       2. TOKENLAR MANZILDAN SARLAVHAGA KO'CHIRILADI.
+          Ilgari GET so'rovlarda ular manzilning o'zida ketardi:
+
+            /api/chat?action=thread&googleIdToken=...
+
+          Yozishma har 1,5 soniyada shu manzilga so'rov yuboradi,
+          manzil esa server va CDN loglariga hamda brauzer
+          tarixiga tushadi. Telefon tokeni eng xavflisi — u 30
+          kun yashaydi.
+
+          Endi ular sarlavhada ketadi: sarlavha loglarda
+          saqlanmaydi va manzilning bir qismi emas. Server
+          ikkalasini ham o'qiydi (lib/identity.js: `credsFrom`),
+          shuning uchun keshdan ochilgan eski sahifa ham
+          ishlayveradi.
+
+          ASCII. Telegram `initData` sida lotin bo'lmagan
+          belgilar bo'ladi, sarlavha esa faqat ASCII qabul
+          qiladi — shuning uchun qiymat `encodeURIComponent`
+          bilan yuboriladi va serverda ochiladi.
+
+     POST so'rovlarda tana o'zgarmaydi: u manzilda ham,
+     loglarda ham ko'rinmaydi, ya'ni tuzatadigan narsa yo'q.
      ============================================================ */
-  (function attachPhoneToken(){
+  var CRED_HEADERS = {
+    googleIdToken: "x-yolda-google",
+    telegramInitData: "x-yolda-telegram",
+    phoneToken: "x-yolda-phone"
+  };
+
+  (function attachCredentials(){
     var nativeFetch = window.fetch;
     if(!nativeFetch) return;
     window.fetch = function(input, init){
       try{
         var url = typeof input === "string" ? input : (input && input.url) || "";
-        if(phoneToken && url.indexOf("/api/") === 0 && url.indexOf("/api/auth-phone") !== 0){
-          // GET: faqat allaqachon token olib yuradigan manzillarga.
-          if(typeof input === "string" && url.indexOf("googleIdToken=") !== -1 && url.indexOf("phoneToken=") === -1){
-            input = url + "&phoneToken=" + encodeURIComponent(phoneToken);
+        if(url.indexOf("/api/") === 0 && url.indexOf("/api/auth-phone") !== 0){
+
+          /* ---- GET: manzildan sarlavhaga ---- */
+          if(typeof input === "string" && url.indexOf("?") !== -1){
+            var bolaklar = url.split("?");
+            var params = new URLSearchParams(bolaklar[1]);
+            var sarlavhalar = {};
+            var kochdi = false;
+            Object.keys(CRED_HEADERS).forEach(function(key){
+              var qiymat = params.get(key);
+              if(qiymat === null) return;
+              params.delete(key);
+              kochdi = true;
+              /* Bo'sh qiymat ham o'chiriladi, lekin sarlavha
+                 qilib yuborilmaydi: bo'sh sarlavhadan foyda yo'q. */
+              if(qiymat) sarlavhalar[CRED_HEADERS[key]] = encodeURIComponent(qiymat);
+            });
+            /* Telefon tokeni manzilda bo'lmasa ham qo'shiladi —
+               yuqoridagi 1-band. */
+            if(phoneToken && !sarlavhalar[CRED_HEADERS.phoneToken]){
+              sarlavhalar[CRED_HEADERS.phoneToken] = encodeURIComponent(phoneToken);
+              kochdi = true;
+            }
+            if(kochdi){
+              var qoldi = params.toString();
+              input = bolaklar[0] + (qoldi ? "?" + qoldi : "");
+              var yangi = {};
+              if(init){ for(var k2 in init){ if(Object.prototype.hasOwnProperty.call(init, k2)) yangi[k2] = init[k2]; } }
+              var bor = yangi.headers || {};
+              var hammasi = {};
+              /* Headers ob'ekti ham, oddiy ob'ekt ham kelishi
+                 mumkin — ikkalasini ham oddiy ob'ektga keltiramiz. */
+              if(typeof Headers !== "undefined" && bor instanceof Headers){
+                bor.forEach(function(v, n){ hammasi[n] = v; });
+              } else {
+                for(var k3 in bor){ if(Object.prototype.hasOwnProperty.call(bor, k3)) hammasi[k3] = bor[k3]; }
+              }
+              for(var k4 in sarlavhalar){
+                if(Object.prototype.hasOwnProperty.call(sarlavhalar, k4)) hammasi[k4] = sarlavhalar[k4];
+              }
+              yangi.headers = hammasi;
+              init = yangi;
+            }
           }
-          // POST: JSON tanasiga qo'shiladi.
-          if(init && typeof init.body === "string" && init.body.charAt(0) === "{" && init.body.indexOf('"phoneToken"') === -1){
+
+          /* ---- POST: telefon tokeni JSON tanasiga ---- */
+          if(phoneToken && init && typeof init.body === "string"
+             && init.body.charAt(0) === "{" && init.body.indexOf('"phoneToken"') === -1){
             var parsed = JSON.parse(init.body);
             if(parsed && typeof parsed === "object" && !(parsed instanceof Array)){
               parsed.phoneToken = phoneToken;

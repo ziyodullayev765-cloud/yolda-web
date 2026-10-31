@@ -74,6 +74,33 @@ export const resolveIdentity = async (creds) => {
 export const tgIdentity = (id) => 'tg:' + id;
 export const createTelegramLinkCode = async () => ({ error: 'not under test' });
 export const redeemTelegramLinkCode = async () => ({ error: 'not under test' });
+
+/* HAQIQIY \`credsFrom\` ning o'zi kabi: avval sarlavha, keyin
+   tana, keyin manzil. Soddalashtirilgan nusxa emas — aks holda
+   testlar sarlavha yo'lini umuman sinamagan bo'lardi. */
+const CRED_HEADERS = {
+  googleIdToken: 'x-yolda-google',
+  telegramInitData: 'x-yolda-telegram',
+  phoneToken: 'x-yolda-phone',
+};
+export const credsFrom = (req, body) => {
+  const headers = (req && req.headers) || {};
+  const query = (req && req.query) || {};
+  const tana = body || {};
+  const pick = (key) => {
+    const raw = headers[CRED_HEADERS[key]];
+    const head = Array.isArray(raw) ? raw[0] : raw;
+    if (head) { try { return decodeURIComponent(String(head)); } catch { /* buzuq */ } }
+    if (tana[key]) return String(tana[key]);
+    if (query[key]) return String(query[key]);
+    return undefined;
+  };
+  return {
+    googleIdToken: pick('googleIdToken'),
+    telegramInitData: pick('telegramInitData'),
+    phoneToken: pick('phoneToken'),
+  };
+};
 `);
 
 const load = async (relPath, name) => {

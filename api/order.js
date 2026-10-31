@@ -22,7 +22,7 @@ import {
 } from '../lib/kv.js';
 import { premiumMembers } from '../lib/premium.js';
 import { queueDelayed, drainDue } from '../lib/notifyQueue.js';
-import { resolveIdentity, resolveEmail } from '../lib/identity.js';
+import { resolveIdentity, resolveEmail, credsFrom } from '../lib/identity.js';
 import {
   CARGO, STATUS_LABELS, formatNum, nextStatus, NEXT_STATUS_BUTTON, markStage,
 } from '../lib/orderMessage.js';
@@ -250,7 +250,7 @@ const createOrder = async (req, res) => {
      yashaydi, ya'ni Telegram bo'lmasa ham hammasi ishlaydi. */
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
 
-  const identityResult = await resolveIdentity({ googleIdToken: body.googleIdToken, telegramInitData: body.telegramInitData, phoneToken: body.phoneToken });
+  const identityResult = await resolveIdentity(credsFrom(req, body));
   if (!identityResult) {
     return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
   }
@@ -903,11 +903,7 @@ const getLoadDetail = async (req, res) => {
      raqamini yig'ib olardi. */
   /* Qarab turgan odam kimligi bir marta aniqlanadi: quyida ham,
      baho huquqini hisoblashda ham o'shanisi ishlatiladi. */
-  const viewerIdentity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData,
-    phoneToken: req.query.phoneToken,
-  });
+  const viewerIdentity = await resolveEmail(credsFrom(req));
 
   let driverContact = null;
   if (order.driver && order.driver.identity) {
@@ -982,7 +978,7 @@ const getLoadDetail = async (req, res) => {
  * connecting "who claimed this in the group" to a registered account.
  */
 const getBackhaul = async (req, res) => {
-  const myEmail = await resolveEmail({ googleIdToken: req.query.googleIdToken, telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken });
+  const myEmail = await resolveEmail(credsFrom(req));
   if (!myEmail) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const praw = await kvGet(`profile:${myEmail}`);
@@ -1090,10 +1086,7 @@ const rateOrder = async (req, res) => {
 
   if (!code) return res.status(400).json({ error: 'Buyurtma kodi kerak' });
 
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
 
   const order = await readJson(`order:${code}`, null);
   if (!order) return res.status(404).json({ error: 'Topilmadi' });
@@ -1194,10 +1187,7 @@ const driverSnapshot = async (identity) => {
 /** POST ?action=offer — haydovchi taklif yuboradi. */
 const submitOffer = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
   if (await kvSismember('banned', identity.toLowerCase())) {
     return res.status(403).json({ error: 'Sizga xizmatdan foydalanish cheklangan' });
@@ -1288,10 +1278,7 @@ const submitOffer = async (req, res) => {
 
 /** GET ?action=offers&code= — yuk egasi kelgan takliflarni ko'radi. */
 const listOffers = async (req, res) => {
-  const identity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const code = String(req.query.code || '').trim().toUpperCase();
@@ -1334,10 +1321,7 @@ const listOffers = async (req, res) => {
  * yukni u boshqa topa olmasdi — demak holatni ham yangilay olmasdi.
  */
 const listMyOffers = async (req, res) => {
-  const identity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const ids = await kvRange(driverOffersKey(identity), 0, 49);
@@ -1428,10 +1412,7 @@ const findActiveLoad = async (identity) => {
  * qaytarmaydi, ya'ni yukni ko'rgan boshqa odam raqamni ko'rmaydi.
  */
 const getMyLoad = async (req, res) => {
-  const identity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const found = await findActiveLoad(identity);
@@ -1502,10 +1483,7 @@ const getMyLoad = async (req, res) => {
  * tanlangan haydovchiga ko'rinadi.
  */
 const listMyLoads = async (req, res) => {
-  const identity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const codes = await kvRange('order_codes', 0, 299);
@@ -1563,10 +1541,7 @@ const listMyLoads = async (req, res) => {
  * ochilganda yuradi — ilovaning issiq yo'llariga tegmaydi.
  */
 const getEarnings = async (req, res) => {
-  const identity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   /* Qaysi tomon: o'z tashuvlari (haydovchi) yoki o'zi bergan
@@ -1640,10 +1615,7 @@ const getReceipt = async (req, res) => {
   const ownerKey = order.ownerIdentity || order.googleEmail;
   const driverKey = order.driver ? order.driver.identity : null;
 
-  const identity = await resolveEmail({
-    googleIdToken: req.query.googleIdToken,
-    telegramInitData: req.query.telegramInitData, phoneToken: req.query.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req));
 
   let role = null;
   if (identity && ownerKey && identity === ownerKey) role = 'owner';
@@ -1725,10 +1697,7 @@ const getReceipt = async (req, res) => {
  */
 const advanceOrder = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const code = String(body.code || '').trim().toUpperCase();
@@ -1909,10 +1878,7 @@ const decideOfferCore = async (identity, offerId, accept) => {
 /** Taklifni qabul qilish yoki rad etish — faqat yuk egasi (saytdan, POST). */
 const decideOffer = async (req, res, accept) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const { status, body: outBody } = await decideOfferCore(identity, body.id, accept);
@@ -1922,10 +1888,7 @@ const decideOffer = async (req, res, accept) => {
 /** POST ?action=withdraw-offer — haydovchi o'z taklifini qaytarib oladi. */
 const withdrawOffer = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const offer = await readOffer(String(body.id || ''));
@@ -1973,10 +1936,7 @@ const GIVEUPABLE = ['DRIVER_FOUND', 'PICKING_UP', 'LOADED', 'ON_THE_WAY'];
  */
 const loadOwnOrder = async (req, res, allowedStatuses) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
   if (!identity) {
     res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
     return null;
@@ -2112,10 +2072,7 @@ const releaseDriver = async (req, res) => {
  */
 const giveUpOrder = async (req, res) => {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-  const identity = await resolveEmail({
-    googleIdToken: body.googleIdToken,
-    telegramInitData: body.telegramInitData, phoneToken: body.phoneToken,
-  });
+  const identity = await resolveEmail(credsFrom(req, body));
   if (!identity) return res.status(401).json({ error: 'Avval Google yoki Telegram orqali kiring' });
 
   const code = String(body.code || '').trim().toUpperCase();

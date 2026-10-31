@@ -16,7 +16,7 @@ Maxfiy kalitlarning qiymatlari bu hujjatda yo'q va bo'lmaydi.
 |---|------|-------|
 | 1 | Telegram webhook siri ixtiyoriy | ✅ tuzatildi |
 | 2 | Admin cookie kaliti bo'sh bo'lishi mumkin | ✅ tuzatildi |
-| 3 | Kirish tokenlari URL ichida | ⏳ qoldi (alohida ish) |
+| 3 | Kirish tokenlari URL ichida | ✅ tuzatildi |
 | 4 | Suhbatdoshning pochta manzili ko'rinadi | ✅ tuzatildi |
 | 5 | `/api/support` cheklanmagan | ✅ tuzatildi |
 | 6 | `GET /api/admin-login` daftarni o'qimaydi | ✅ tuzatildi |
@@ -138,11 +138,32 @@ strict-origin-when-cross-origin` so'rovning savol qismini kesadi, ya'ni
 Bu token'lar qisqa muddatli (Google ID token ~1 soat, telefon tokeni
 30 kun). Telefon tokeni eng xavflisi.
 
-**Tuzatish:** GET so'rovlarda ham ma'lumotni sarlavha orqali yuborish.
-Bu mijoz va server tomonini birga o'zgartirishni talab qiladi, shuning
-uchun alohida, ehtiyot bilan qilinadi (eski keshdagi sahifa hali
-eski yo'l bilan so'rashi mumkin — ikkalasi bir muddat yonma-yon
-ishlashi kerak).
+**Tuzatildi.** Endi mijoz ularni sarlavhada yuboradi
+(`x-yolda-google`, `x-yolda-telegram`, `x-yolda-phone`). Sarlavha
+loglarda saqlanmaydi va manzilning bir qismi emas.
+
+Mijoz tomonida o'zgarish BITTA joyda: `fetch` o'ramchisi
+(`attachCredentials`). U GET manzilidan uchala parametrni olib
+tashlaydi va sarlavhaga ko'chiradi — ya'ni ~30 ta chaqiruv joyining
+birortasi tegilmadi.
+
+Server tomonida ham bitta joyda: `lib/identity.js` dagi `credsFrom(req, body)`
+— avval sarlavha, keyin tana, keyin manzil. Manzil hamon o'qilaveradi,
+shuning uchun keshdan ochilgan eski sahifa ishlashda davom etadi;
+bu teshikni ochiq qoldirmaydi, chunki muammo tokenning manzilga
+YOZILISHI edi, uni o'qish emas.
+
+Ikkita ehtiyot chorasi:
+
+- Telegram `initData` sida lotin bo'lmagan belgilar bo'ladi,
+  sarlavha esa faqat ASCII qabul qiladi — qiymat
+  `encodeURIComponent` bilan ketadi va serverda ochiladi;
+- **kesh.** Manzilda token bo'lmasa, bir xil manzilga kelgan ikki
+  odamning javobi chalkashib ketmasligi kerak. Qoida:
+  `credsFrom` ishlatadigan javob hech qachon `Cache-Control: public`
+  qo'ymaydi. Hozir keshlanadigan uchta javob (config,
+  `order?action=stats`, `profile?action=public`) kirish ma'lumotini
+  umuman o'qimaydi — buni `test/headerCreds.test.mjs` qo'riqlaydi.
 
 #### 4. Suhbatdoshning haqiqiy pochta manzili ko'rinadi
 
