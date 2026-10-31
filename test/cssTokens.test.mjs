@@ -79,20 +79,18 @@ for (const file of files) {
   check(file + ': kamida bitta token e’lon qilingan', aniqlangan.size > 10, aniqlangan.size);
 }
 
-/* Qo'ng'iroq paneli aynan shu sababdan qirrali bo'lib qolgan
-   edi — endi aniq tekshiriladi. */
+/* Radius tokenlarining o'zi joyida turibdimi. `--r3` xatosi
+   aynan shu nomlardan birini xato yozishdan kelib chiqqan edi.
+
+   (Ilgari bu yerda qo'ng'iroq panelining radiuslari ham
+    tekshirilardi. Panel egasining talabi bilan olib tashlandi —
+    raqam endi o'z xabarida qoladi, tepada hech narsa
+    qadalmaydi. Qarang: test/callSheet.test.mjs) */
 {
   const app = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  const radii = ['--r-sm', '--r-md', '--r-lg', '--r-xl', '--r-pill'];
-  radii.forEach((t) => {
+  ['--r-sm', '--r-md', '--r-lg', '--r-xl', '--r-pill'].forEach((t) => {
     check('radius tokeni bor: ' + t, new RegExp(t + ':\\s*\\d').test(app));
   });
-  check('qo‘ng‘iroq qatori to‘la yumaloq',
-    /\.call-num\{[^}]*border-radius:var\(--r-pill\)/.test(app));
-  check('nusxalash tugmasi doira',
-    /\.call-copy\{[^}]*border-radius:var\(--r-pill\)/.test(app));
-  check('ogohlantirish qutisi kartochka kabi yumaloq',
-    /\.call-note\{[^}]*border-radius:var\(--r-lg\)/.test(app));
 }
 
 if (fails.length) {

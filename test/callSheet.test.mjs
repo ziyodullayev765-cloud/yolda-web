@@ -1,37 +1,35 @@
 /**
- * Qo'ng'iroq paneli.
+ * Yozishmadagi telefon raqami: O'Z JOYIDA qoladi.
  *
  *     node test/callSheet.test.mjs      (yoki npm test)
  *
- * NIMA UCHUN BU TEST BOR.
+ * EGASINING QARORI, so'zma-so'z:
  *
- * Yozishma sarlavhasidagi qo'ng'iroq tugmasi ilgari
- * `<a href="tel:...">` edi: bitta tegish — va telefon
- * allaqachon terayotgan bo'lardi. Ikki kamchiligi bor edi.
+ *   "Telefon o'zini eski holatiga qaytar, kim qaysi nomerda
+ *    bo'lsa o'sha nomer tursin o'sha yerda, o'sha eng qulayi
+ *    edi. Va kimdir chatga nomer tashlasa tepaga saxranit
+ *    bo'lib qolmasin."
  *
- * Birinchisi — tasodif: tugma orqaga qaytish va ism
- * tugmalarining yonida turadi, xato tegish darhol qo'ng'iroq
- * bo'lib ketardi.
+ * Ya'ni: raqam qaysi xabarda yozilgan bo'lsa, o'sha xabarda
+ * bosiladigan bo'lib turadi — va boshqa hech qayerda.
  *
- * Ikkinchisi va muhimrog'i — odam qanday raqamga qo'ng'iroq
- * qilayotganini bilmasdi. RAQAMNI YO'LDA BERMAYDI: uni
- * suhbatdoshning o'zi shu yozishmada yozgan, ya'ni platforma
- * uni tekshirmagan. Buni qo'ng'iroqdan OLDIN aytish kerak,
- * keyin emas.
+ * NEGA SARLAVHADAGI TUGMA OLIB TASHLANDI. U yozishmadagi
+ * raqamni yuqoriga "qadab" qo'yardi: bir marta aytilgan raqam
+ * suhbat davomida sarlavhada osilib turardi. Uning ikkita
+ * kamchiligi bor edi va ikkalasi ham amalda chiqdi:
  *
- * Shuning uchun endi oraliqda panel turadi. Quyida uning
- * uchta sharti tekshiriladi:
+ *   - QAYSI raqam ekani noaniq. Dastlab u kim yozganiga
+ *     qaramasdi: odam o'z raqamini yozsa, tugma unga O'ZIGA
+ *     qo'ng'iroq qildirardi. Buni egasi topdi.
+ *   - Suhbatdosh bir nechta raqam yozsa, qaysi biri tepada
+ *     qolishi tasodifga bog'liq edi.
  *
- *   1. tugma `tel:` ga olib bormaydi — panel ochadi;
- *   2. panelda ogohlantirish bor va u raqam tekshirilmaganini
- *      hamda oldindan pul o'tkazmaslikni aytadi;
- *   3. raqam yozishmada aytilmagan bo'lsa, tugma umuman
- *      ko'rinmaydi — YO'LDA raqamni o'zi oshkor qilmaydi.
+ * Raqam xabarning ichida qolsa, bu savollarning birortasi
+ * tug'ilmaydi: odam kim nima yozganini ko'rib turibdi.
  *
- * Panelning brauzerdagi haqiqiy xatti-harakati alohida
- * tekshirilgan (scratchpad/callsheet.js, 20 ta tekshiruv);
- * bu yerda manbaning o'zi qo'riqlanadi, chunki bu shartlarni
- * bitta e'tiborsiz tahrir buzib qo'yishi mumkin.
+ * Shuning uchun bu test ikki narsani qo'riqlaydi:
+ *   1. xabar ichidagi raqam BOSILADIGAN bo'lib qoladi;
+ *   2. sarlavhada qo'ng'iroq tugmasi QAYTA PAYDO BO'LMAYDI.
  */
 import { readFileSync } from 'node:fs';
 
@@ -44,108 +42,50 @@ const check = (name, ok, extra) => {
   fails.push(name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : ''));
 };
 
-/* ---------- 1. Tugma darhol termaydi ---------- */
-check('qo‘ng‘iroq tugmasi — tugma, havola emas',
-  /<button type="button" class="chat-call" id="btnChatCall"/.test(html));
-check('tugmaga `tel:` yozilmagan',
-  !/id="btnChatCall"[^>]*href/.test(html));
-check('tugma qo‘ng‘iroq funksiyasini chaqiradi',
-  /btnChatCall[\s\S]{0,400}chatCallTap\(\)/.test(html));
-check('panel funksiyasi bor', /function openChatCallSheet\(\)/.test(html));
+/* ---------- 1. Raqam o'z joyida bosiladi ---------- */
+check('xabar matnidagi raqam havolaga aylanadi',
+  /function linkifyPhones\(text\)/.test(html));
+check('va u xabarni chizishda ishlatiladi',
+  /cb-body[\s\S]{0,120}linkifyPhones\(m\.text\)/.test(html));
 
-/* ---------- 2. Ogohlantirish ---------- */
-const panel = (html.split('function openChatCallSheet()')[1] || '').slice(0, 3600);
-check('panel ochilyapti', panel.includes('Sheet.open('), panel.slice(0, 80));
-check('OGOHLANTIRISH BOR', /call-note/.test(panel));
-check('raqamni YO‘LDA bermagani aytilgan',
-  /YO\\'LDA bermadi/.test(panel), panel.slice(0, 200));
-check('tekshirilmagani aytilgan', /tekshirmadik/.test(panel));
-check('OLDINDAN PUL O‘TKAZMASLIK aytilgan',
-  /oldindan pul o\\'tkazmang/i.test(panel));
-check('kimning raqami ekani aytilgan', /chatWithName/.test(panel));
+const lf = (html.split('function linkifyPhones(text)')[1] || '').slice(0, 700);
+check('havola `tel:` ga olib boradi', /href="tel:' \+ dial/.test(lf));
+check('faqat raqam va "+" qoladi', /replace\(\/\\D\/g, ""\)/.test(lf));
 
-/* ---------- 3. Raqam va nusxalash ---------- */
-check('raqam `tel:` ga olib boradi', /href="tel:' \+ escapeHtml\(r\.dial\)/.test(panel));
-check('raqam ekranda o‘qishga qulay ko‘rinishda',
-  /prettyPhoneUz\(r\.dial\)/.test(panel));
-check('o‘qishga qulay ko‘rinish funksiyasi bor',
-  /function prettyPhoneUz\(raqam\)/.test(html));
-/* Bir nechta raqam bo'lsa, qaysi biri yangiroq ekani
-   ko'rinib tursin. */
-check('qachon yozilgani ko‘rsatiladi', /formatChatTime\(r\.at\)/.test(panel));
-check('nusxalash tugmasi bor', /call-copy/.test(panel));
-/* Nusxalanadigan narsa TERILADIGAN ko'rinish bo'lishi kerak
-   (+998901234567), ekrandagi bo'shliqli ko'rinish emas: odam
-   uni boshqa ilovaga qo'yganda ishlashi kerak. */
-check('NUSXALANADIGANI — teriladigan ko‘rinish',
-  /copyChatText\(btn\.getAttribute\("data-copy"\)\)/.test(panel));
-check('nusxalash ekrandagi ko‘rinishni olmaydi',
-  !/copyChatText\(prettyPhoneUz/.test(panel));
-check('har bir raqamning o‘z nusxalash tugmasi bor',
-  /data-copy="/.test(panel));
+/* XAVFSIZLIK. Matn AVVAL qochiriladi, qidiruv shundan keyin
+   boshlanadi — aks holda xabar ichiga yozilgan teg havolaga
+   aylanib qolardi. */
+check('matn AVVAL qochiriladi', /var xavfsiz = escapeHtml/.test(lf));
+check('qidiruv qochirishdan KEYIN', lf.indexOf('escapeHtml') < lf.indexOf('PHONE_RE'));
 
-/* ---------- 4. QAYSI RAQAM TERILADI ----------
-   Eng muhim qism. Ilgari bu yerda bug bor edi: funksiya
-   yozishmadagi eng oxirgi raqamni olardi — KIM YOZGANIGA
-   QARAMASDAN. Natijada o'z raqamini yozgan odam tugmani
-   bosganda O'ZIGA qo'ng'iroq qilardi, suhbatdosh uchinchi
-   odamning raqamini yozsa esa tugma jimgina o'shani terardi. */
-check('raqamlar FAQAT SUHBATDOSHNIKI',
-  /function theirPhonesInChat\(messages\)/.test(html));
-check('O‘ZIM YOZGAN XABAR CHETLAB O‘TILADI',
-  /if\(!m \|\| m\.deleted \|\| m\.fromMe \|\| !m\.text\) continue;/.test(html));
-check('eski, kim yozganiga qaramaydigan funksiya olib tashlandi',
-  !/lastPhoneInChat/.test(html));
+/* Narx raqam deb o'qilmasin: "1 500 000" — pul, raqam emas. */
+check('qaysi son raqam ekani tekshiriladi', /looksLikePhone\(/.test(lf));
+check('narx shakli rad etiladi',
+  /guruhlar\.slice\(1\)\.every/.test(html));
 
-/* Bir nechta raqam bo'lsa — ilova emas, ODAM tanlaydi. */
-check('bir nechta raqam yig‘iladi', /MAX_CHAT_PHONES/.test(html));
-check('bir xil raqam ikki marta sanalmaydi',
-  /korilgan\[kalit\]/.test(html));
-check('taqqoslash oxirgi 9 ta raqam bo‘yicha',
-  /raqamlar\.slice\(-9\)/.test(html));
-check('eng yangisi birinchi turadi',
-  /for\(var i = \(messages \|\| \[\]\)\.length - 1; i >= 0; i--\)/.test(html));
+/* ---------- 2. Tepada hech narsa qolmaydi ---------- */
+/* EGASI AYNAN SHUNI SO'RADI: "tepaga saxranit bo'lib
+   qolmasin". Quyidagilar qaytib kelsa, test darhol yiqiladi. */
+check('SARLAVHADA QO‘NG‘IROQ TUGMASI YO‘Q', !/btnChatCall/.test(html));
+check('uning uslubi ham olib tashlangan', !/\.chat-call\{/.test(html));
+check('raqamni tepaga ko‘taradigan kod yo‘q',
+  !/theirPhonesInChat|lastPhoneInChat|syncChatCallBtn/.test(html));
+check('qo‘ng‘iroq paneli yo‘q',
+  !/openChatCallSheet|chatCallTap|chatCallNumbers/.test(html));
+check('panelning uslublari ham yo‘q',
+  !/\.call-note\{|\.call-num\{|\.call-copy\{/.test(html));
 
-const tap = (html.split('function chatCallTap()')[1] || '').slice(0, 700);
-check('bosilganda tekshiradigan funksiya bor', tap.length > 50);
-check('BITTA RAQAM BO‘LSA — DARHOL TERADI',
-  /chatCallNumbers\.length === 1[\s\S]{0,120}dialNumber\(chatCallNumbers\[0\]\.dial\)/.test(tap));
-check('BIR NECHTA BO‘LSA — ODAM TANLAYDI',
-  /openChatCallSheet\(\)/.test(tap));
-check('tugma shu funksiyani chaqiradi',
-  /btnChatCall[\s\S]{0,400}chatCallTap\(\)/.test(html));
+/* ---------- 3. Qolgan qo'ng'iroqlarga tegilmagan ---------- */
+/* Bular yozishmaga aloqasi yo'q va o'z joyida qolishi kerak:
+   yukdagi haydovchi raqami, "Mening yukim" dagi mijoz raqami,
+   mashina e'lonidagi sotuvchi va Aloqa bo'limidagi yordam
+   raqami. */
+check('yordam raqami joyida', /id="supportPhoneLink"/.test(html));
+check('mashina e’lonidagi sotuvchi raqami joyida',
+  /href="tel:'\+escapeHtml\(tk\.phone\)/.test(html));
+check('ekrandagi raqamni bosish yordamchisi joyida',
+  /function phoneLinkHtml\(phone, cls\)/.test(html));
 
-/* Telegram ichida sahifa iframe'da turadi va `location.href`
-   ba'zan to'siladi — havolani yasab bosish ishonchliroq. */
-check('terish havola orqali', /function dialNumber\(dial\)/.test(html)
-  && /a\.href = "tel:" \+ dial/.test(html));
-
-/* ---------- 5. Raqam yo'q bo'lsa ---------- */
-check('raqam ma‘lum bo‘lmasa tugma yashiriladi',
-  /chatCallNumbers\s*=\s*theirPhonesInChat\(messages\)[\s\S]{0,220}btn\.hidden\s*=\s*true/.test(html));
-check('raqam topilsa ko‘rinadi',
-  /btn\.hidden\s*=\s*false;[\s\S]{0,160}btn\.setAttribute\("title"/.test(html));
-/* Raqam yo'q bo'lsa panel bo'sh ochilmaydi: odamga sababi
-   aytiladi. Bo'sh panel "ishlamayapti" degan taassurot qoldiradi. */
-check('raqamsiz chaqirilsa sababi aytiladi',
-  /Raqam hali aytilmagan/.test(html));
-
-/* ---------- 6. Ko'rinish ---------- */
-check('ogohlantirish uslubi bor', /\.call-note\{/.test(html));
-check('raqam qatori uslubi bor', /\.call-num\{/.test(html));
-check('nusxalash tugmasi uslubi bor', /\.call-copy\{/.test(html));
-/* Nusxalash raqamning YONIDA, ichida emas: butun qatorga
-   tegilsa qo'ng'iroq bo'ladi, shunga tegilsa nusxa olinadi. */
-check('nusxalash raqamning ichida emas',
-  !/<a class="call-num"[\s\S]{0,300}call-copy[\s\S]{0,60}<\/a>/.test(panel));
-check('qorong‘i mavzuda ham ko‘rinadi',
-  /data-theme="dark"\]\s*\.call-note\{/.test(html));
-/* Raqam — tabular, aks holda uning uzunligi har safar
-   boshqacha ko'rinadi va qator sakrab turadi. */
-check('raqam bir xil kenglikdagi raqamlar bilan',
-  /\.call-num\{[^}]*font-variant-numeric:tabular-nums;/.test(html));
-
-/* ---------- Natija ---------- */
 if (fails.length) {
   console.log('\n' + fails.length + ' ta xato:');
   fails.forEach((f) => console.log('  XATO ' + f));
