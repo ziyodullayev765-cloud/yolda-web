@@ -286,19 +286,16 @@ check('"+" ilova rangini oladi',
   /<symbol id="iconPlus"[^>]*><rect[^>]*fill="currentColor"[^>]*mask="url\(#iconmask-iconPlus\)"/.test(html));
 /* ---------- Sudrash paytidagi rang ----------
    Linza surilganda ustidan o'tilayotgan katak yorishib turadi
-   (`bn-armed`). Ilgari u tunda OQ bo'lardi, chunki tanlangan
-   katak ham oq edi — ikkisi bir xil bo'lishi kerak edi.
-
-   Panel endi mavzu bilan o'zgarmaydi, ikkalasi ham doim yashil.
-   Shart o'zgargani bilan MA'NOSI o'sha: sudralayotgandagi rang
-   tanlangandagi rang bilan BIR XIL bo'lsin, aks holda panelda
-   bir vaqtda ikki xil "tanlangan" ko'rinardi. */
-check('sudralgandagi rang tanlangandagi bilan bir xil',
-  html.includes('.bn-item.bn-armed,.bn-ghost.bn-armed{color:var(--route);}')
-  && html.includes('.bn-item.active,.bn-ghost.active{color:var(--route);}'),
-  'ikkalasi ham var(--route)');
-check('tunda boshqa rang beradigan qoida qolmadi',
-  !html.includes(':root[data-theme="dark"] .bn-item.bn-armed'));
+   (`bn-armed`). Uning rangi faqat yashil edi va qorong'u rejimda
+   bu xato berardi: tanlangan katak OQ, ustidan o'tilayotgani esa
+   YASHIL — ya'ni bir vaqtda ikkita boshqa-boshqa rangdagi
+   "tanlangan" ko'rinardi. Brauzerda o'lchangan: rgb(48,208,128). */
+check('sudralganda ham mavzuga bo\'ysunadi',
+  html.includes(':root[data-theme="dark"] .bn-item.bn-armed,')
+  && html.includes(':root[data-theme="dark"] .bn-ghost.bn-armed{color:#FFFFFF;}'),
+  'qorong\'u rejimda oq');
+check('yorug\' rejimda yashil qoladi',
+  html.includes('.bn-item.bn-armed,.bn-ghost.bn-armed{color:var(--route);}'));
 
 /* Sudralayotganda AYNAN BITTA katak yorug' bo'lishi kerak —
    linza ostidagisi. Ilgari eski tanlangan katak ham yorug'
@@ -335,10 +332,8 @@ check('hover shartsiz qolmadi',
 check('hover faqat haqiqiy ko\'rsatgichda',
   html.includes('@media (hover: hover) and (pointer: fine){')
   && /@media \(hover: hover\) and \(pointer: fine\)\{[\s\S]{0,400}\.bn-item:hover:not\(\.active\):not\(\.bn-armed\)/.test(html));
-/* Ilgari bu yerda "qorong'u rejimda hover yashil emas" degan
-   tekshiruv turardi. Panel endi mavzu bilan o'zgarmaydi — tungi
-   qoidasi ham, tungi hover'i ham yo'q. Qarang:
-   test/navTheme.test.mjs */
+check('qorong\'u rejimda hover yashil emas',
+  html.includes(':root[data-theme="dark"] .bottom-nav:not(.dragging) .bn-item:hover:not(.active):not(.bn-armed){'));
 /* Sudrash paytida yorug' katakni linza belgilaydi, hover emas. */
 check('sudralganda hover o\'chadi',
   /\.bottom-nav:not\(\.dragging\) \.bn-item:hover/.test(html));
@@ -351,26 +346,18 @@ check('tanlangan katakka hover tegmaydi',
 check('"+" ga alohida chiziq qalinligi berilmagan',
   !/\.bn-item--primary \.bn-fab \.ic-svg\{[^}]*stroke-width/.test(html));
 
-/* ---------- Tanlangan katak: IKKALA rejimda ham yashil ----------
-
-   Ilgari tunda u OQ edi — qora panelda yashil juda baland
-   tutardi. Egasi pastki panel qorong'u rejimda o'zgarmasligini
-   so'radi: panel endi doim oq shisha, ya'ni oq yozuv unda
-   umuman ko'rinmas edi.
-
-   BU YERDA TURGAN ESKI TEKSHIRUV SINOVNI OSIB QO'YGANDI va
-   buni yozib qo'yish kerak, chunki sababi ko'rinmas edi:
-   u `(A|B)*` ko'rinishidagi naqsh bilan `{color:#FFFFFF;}` ni
-   qidirardi. Qoida olib tashlangach naqsh HECH QACHON mos
-   kelmay qoldi va regex 1.2 MB li faylni cheksiz qayta-qayta
-   kezishga tushdi — ya'ni "xato" emas, OSILISH berdi, hech
-   qanday xabar chiqarmasdan. Shuning uchun o'rniga oddiy,
-   chegaralangan tekshiruv qo'yildi. */
-check('tanlangan katak yashil', /\.bn-item\.active,\.bn-ghost\.active\{color:var\(--route\);\}/.test(html));
-check('tunda oq qilib qo\'yadigan qoida qolmadi',
-  !html.includes(':root[data-theme="dark"] .bn-item.active'));
-check('panelga tegadigan tungi qoida faqat bittasi (shishaning xiraligi)',
-  (html.match(/:root\[data-theme="dark"\][^{\n]*\.(bn-|bottom-nav)/g) || []).length === 1);
+/* ---------- Qorong'u rejimda yashil kamaytirildi ---------- */
+/* Qoida ichida nechta tanlagich borligi vaqt o'tib o'zgaradi
+   (keyinchalik `bn-armed` ham shu yerga qo'shildi), shuning uchun
+   ularning ketma-ketligi emas, OQ beradigan qoidada ikkalasi ham
+   borligi tekshiriladi. */
+check('qorong\'uda tanlangan katak oq', (() => {
+  const m = html.match(/((?::root\[data-theme="dark"\][^{};]*,\s*|\/\*[\s\S]*?\*\/\s*)*:root\[data-theme="dark"\][^{};]*)\{color:#FFFFFF;\}/);
+  if (!m) return false;
+  return m[1].includes('.bn-item.active') && m[1].includes('.bn-ghost.active');
+})(), 'oq beradigan qoidada ikkala tanlagich ham bor');
+/* Yorug' rejimda yashil qoladi — bu brendning rangi. */
+check('yorug\'da yashil joyida', /\.bn-item\.active,\.bn-ghost\.active\{color:var\(--route\);\}/.test(html));
 
 /* ---------- Til almashganda qayta o'lchanadi ---------- */
 const lang = html.match(/function applyLang\(\)\{[\s\S]*?\n {2}\}/);

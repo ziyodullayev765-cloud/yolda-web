@@ -310,20 +310,48 @@
     --chrome-glass:rgba(8,8,8,0.62);
     --chrome-solid:rgba(8,8,8,0.96);
     --chrome-brd:rgba(255,255,255,0.10);
-    --nav-glass:rgba(18,18,20,0.62);
-    /* Tunda yorqinlik BOSILADI (0.70). Aynan shu narsa ostidagi
-       to'q sariq belgini materialning darajasiga tortadi va
-       `saturate` 180% bo'lsa ham dog' hosil bo'lmaydi. */
-    --nav-filter:saturate(180%) brightness(0.70) contrast(1.06) blur(32px);
-    --nav-sheen-top:rgba(255,255,255,0.16);
-    --nav-sheen-mid:rgba(255,255,255,0.04);
+    /* PANEL QORA EMAS — KO'TARILGAN YUZA.
+
+       Ilgari bu rgba(18,18,20,0.62) edi va yorqinlik 0.70 ga
+       bosilardi. Natijada panel o'lchanganda 25 ga tushardi,
+       sahifaning o'zi esa 0 — ya'ni qora fonda qora panel.
+       Chegarasi bilinmasdi va u suzib turganga emas,
+       sahifaning davomiga o'xshardi.
+
+       Yangi qiymat o'ylab topilgani emas, ILOVANING O'Z tungi
+       palitrasidan:
+
+         sahifa        #000000   →  0
+         kartochka     #1C1C1E   →  28   (--card)
+         ko'tarilgan   #2C2C2E   →  44   (--paper-dark)
+         PANEL                   →  61   (o‘lchandi)
+
+       Panel kartochkalardan ham yuqorida suzadi, shuning uchun
+       u eng ochiq pog'ona. Lekin bu HAMON QORONG'U rejim: oq
+       emas, atrofi bilan bitta oilada.
+
+       (Oq ham sinaldi — qora sahifada u yorug' plita bo'lib
+        ajralib ketdi va qorong'u dizaynga yarashmadi.)
+
+       Yorqinlik endi 0.90: 0.70 ostidagi hamma narsani
+       o'ldirardi. Dog' bo'lmasligi `contrast` va yuzaning
+       o'zi deyarli xira bo'lgani bilan ta'minlanadi. */
+    --nav-glass:rgba(48,48,52,0.93);
+    --nav-filter:saturate(180%) brightness(0.90) contrast(1.06) blur(32px);
+    --nav-sheen-top:rgba(255,255,255,0.18);
+    --nav-sheen-mid:rgba(255,255,255,0.05);
     --nav-sheen-bot:rgba(255,255,255,0.02);
-    --nav-edge-top:rgba(255,255,255,0.24);
-    --nav-edge-bot:rgba(255,255,255,0.06);
-    --nav-inner-glow:rgba(255,255,255,0.035);
-    --nav-drop:0 14px 38px rgba(0,0,0,0.5);
-    --nav-solid:rgba(10,10,10,0.94);
-    --nav-brd:rgba(255,255,255,0.16);
+    --nav-edge-top:rgba(255,255,255,0.28);
+    --nav-edge-bot:rgba(255,255,255,0.07);
+    --nav-inner-glow:rgba(255,255,255,0.05);
+    /* Soya quyuqroq: panel ochiqroq bo'lgach, uni fondan
+       ajratadigan narsa faqat rang emas, ostidagi qorong'ulik
+       ham. */
+    --nav-drop:0 14px 38px rgba(0,0,0,0.62);
+    --nav-solid:rgba(48,48,52,0.97);
+    /* Qirrasi aniqroq: qora fonda panelning chegarasi
+       ko'rinib turishi kerak. */
+    --nav-brd:rgba(255,255,255,0.20);
     --nav-lens:rgba(255,255,255,0.14);
     --nav-lens-hot:rgba(255,255,255,0.24);
     --nav-lens-brd:rgba(255,255,255,0.28);
@@ -854,90 +882,6 @@
     .bottom-nav{background:var(--nav-solid);}
   }
 
-  /* ============================================================
-     PANEL MAVZU BILAN O'ZGARMAYDI.
-     ------------------------------------------------------------
-     Qorong'u rejimda u qora shishaga aylanardi va ekranning
-     pastki qismi butunlay qorayib ketardi: qora fon ustida qora
-     panel — chegarasi ko'rinmaydi, "suzib turgan" ko'rinish
-     yo'qoladi va panel sahifaning bir bo'lagidek emas, uning
-     davomidek ko'rinadi.
-
-     Endi panel ikkala rejimda ham BIR XIL: oq shisha. Ostidagi
-     qorong'u sahifa shisha orqali xiralashib ko'rinib turadi,
-     ya'ni u fonga yopishib qolmaydi, aksincha undan ajralib
-     turadi.
-
-     NEGA BU YERDA, mavzu ro'yxatida emas: ranglar panelning
-     O'ZIGA biriktiriladi. CSS o'zgaruvchisi eng yaqin
-     ota-elementdan olinadi — demak `:root[data-theme="dark"]`
-     nima desa ham, panel ichida shu qiymatlar ishlaydi. Shu
-     bilan panelning ichidagi hamma narsa (yozuv, belgi,
-     "orqaga" doirasi, tomchining shishasi) birvarakayiga
-     to'g'ri rangga tushadi — har biriga alohida qoida yozish
-     shart emas.
-
-     O'ZGARTIRISHDAN OLDIN: bu yerdagi qiymatlar yorug' mavzuning
-     AYNAN nusxasi. Yorug'dagi panel rangi o'zgarsa, bu ro'yxat
-     ham o'zgarishi kerak — aks holda ikkisi ajralib ketadi.
-     test/navTheme.test.mjs shuni qo'riqlaydi. */
-  .bottom-nav{
-    /* shishaning o'zi */
-    --nav-glass:rgba(255,255,255,0.58);
-    --nav-filter:saturate(180%) brightness(1.06) contrast(1.04) blur(32px);
-    --nav-sheen-top:rgba(255,255,255,0.55);
-    --nav-sheen-mid:rgba(255,255,255,0.18);
-    --nav-sheen-bot:rgba(255,255,255,0.10);
-    --nav-edge-top:rgba(255,255,255,0.90);
-    --nav-edge-bot:rgba(255,255,255,0.35);
-    --nav-inner-glow:rgba(255,255,255,0.25);
-    --nav-drop:0 14px 38px rgba(15,23,42,0.14);
-    --nav-solid:rgba(255,255,255,0.92);
-    --nav-brd:rgba(255,255,255,0.75);
-    /* linza (lupa) */
-    --nav-lens:rgba(255,255,255,0.55);
-    --nav-lens-hot:rgba(255,255,255,0.82);
-    --nav-lens-brd:rgba(255,255,255,0.85);
-    --nav-lens-brd-hot:rgba(255,255,255,1);
-    /* panel ichidagi yozuv va yuzalar: oq shisha ustida oq
-       yozuv ko'rinmay qolardi */
-    --ink:#14263D;
-    --ink-soft:#48566E;
-    --muted:#657085;
-    --border:#E3E7EF;
-    --card:#FFFFFF;
-    --paper-dark:#F1F2F4;
-    /* tanlangan katakning yashili: tungi yashil (#2DD480) oq
-       shishada xira ko'rinardi */
-    --route:#09864B;
-    --route-dark:#077340;
-  }
-  /* SHISHANING QALINLIGI — yagona joy, u mavzuga qarab o'zgaradi,
-     lekin maqsadi aynan TENG ko'rinish.
-
-     Shisha shaffof: uning rangi ostidagi sahifadan ham keladi.
-     Yorug'da ostida oq sahifa turadi, tunda — qora. Shu sababli
-     yuqoridagi qiymatlarning o'zi yetarli bo'lmadi: panel qora
-     bo'lmay qoldi-yu, lekin KULRANG chiqdi (o'lchandi: yorug'da
-     238, tunda 150). Ya'ni "o'zgarmasin" deyilgan narsa baribir
-     o'zgarardi.
-
-     Yechim — tunda shishani deyarli xira qilish, shunda ostidagi
-     qora sahifa unga ta'sir qilmaydi. Shaffoflik yorug'da
-     saqlanadi: u yerda ostidagi narsa oq, ya'ni shisha orqali
-     ko'rinadigan narsa ham oq — effekt o'z joyida va panel
-     surilayotgan kontentni sezadi.
-
-     Qiymat ko'zdan emas, O'LCHOVDAN. Avval 0.93 qo'yilgandi va
-     ko'zga yetarli tuyulgandi, lekin panelning o'z rasmi
-     olinib o'lchanganda farq qoldi: yorug'da 255, tunda 241.
-     Ya'ni tunda qora sahifa shisha orqali hamon biroz
-     urardi. To'liq xira (1) da ikkalasi 255 — tengligi
-     o'lchov bilan tasdiqlangan. */
-  :root[data-theme="dark"] .bottom-nav{
-    --nav-glass:#FFFFFF;
-  }
-
   /* Soya endi `--nav-drop` da, mavzu bilan birga o'zgaradi. Bu yerda
      alohida qoida qolsa, u panelning qirradagi ichki nurini ham
      o'chirib yuborardi: `box-shadow` butunlay almashadi, qo'shilmaydi. */
@@ -1019,12 +963,18 @@
     transform-origin:center;
     transition:transform 0.5s cubic-bezier(0.26,1.3,0.34,1);
   }
+  :root[data-theme="dark"] .bn-blob-gloss{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),
+               inset 0 -7px 14px rgba(255,255,255,0.07);
+  }
   .bn-blob-gloss::after{
     content:"";position:absolute;border-radius:50%;
     left:16%;top:10%;width:42%;height:30%;
     background:radial-gradient(closest-side, rgba(255,255,255,0.8), rgba(255,255,255,0));
     opacity:0.7;
   }
+  :root[data-theme="dark"] .bn-blob-gloss::after{opacity:0.26;}
+  :root[data-theme="dark"] .bn-blob-fill{box-shadow:0 6px 18px rgba(0,0,0,0.5);}
 
   /* Qirradagi yorug'lik halqasi. Ilgari bu yerda kamalak (conic
      gradient) turardi — rangin bo'lgani uchun olib tashlandi. Endi
@@ -1042,6 +992,13 @@
     mask:radial-gradient(closest-side, transparent 79%, #000 89%, transparent 100%);
     opacity:0.85;
     transition:opacity 0.3s var(--ease), transform 0.5s cubic-bezier(0.26,1.3,0.34,1);
+  }
+  :root[data-theme="dark"] .bn-blob-rim{
+    background:linear-gradient(135deg,
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.18) 34%,
+      rgba(255,255,255,0.05) 62%,
+      rgba(255,255,255,0.28) 100%);
   }
   /* Shisha o'chirilganda halqa ham yo'q — oddiy tomchi qoladi. */
   :root[data-glass="off"] .bn-blob-rim{display:none;}
@@ -1167,11 +1124,24 @@
     font-size:21px;
     transition:transform 0.5s cubic-bezier(0.34,1.42,0.5,1);
   }
-  /* Tanlangan katak ikkala rejimda ham yashil. Ilgari tunda u OQ
-     edi — qora panelda yashil juda baland tutardi. Endi panel
-     o'zi oq, ya'ni oq yozuv unda umuman ko'rinmas edi; yashil
-     esa, aksincha, yorug' shishada aynan o'z joyida. */
   .bn-item.active,.bn-ghost.active{color:var(--route);}
+  /* Qorong'u rejimda tanlangan katak yashil emas, oq bo'ladi.
+     Qora fonda yashil o'zini juda baland tutadi: panel beshta
+     kulrang belgidan va bitta yorqin yashildan iborat bo'lib,
+     ko'z faqat o'shanga qadalardi. Oq ham xuddi shunday aniq
+     ajratadi, lekin qichqirmaydi. Yorug' rejimda yashil qoladi —
+     oq fonda u shu qadar baqirmaydi va bu brendning rangi.
+     Yashil butunlay ketmaydi: u asosiy tugmalarda va belgida
+     qoladi, ya'ni ma'nosi bor joyda. */
+  :root[data-theme="dark"] .bn-item.active,
+  :root[data-theme="dark"] .bn-ghost.active,
+  /* Sudrash paytida ustidan o'tilayotgan katak ham shu qoidaga
+     bo'ysunadi. Ilgari u faqat `.bn-armed` da yashil edi va
+     qorong'u rejimda linza surilganda har bir katak navbat bilan
+     yashil bo'lib chiqardi — tanlangani esa oq. Ya'ni bir vaqtning
+     o'zida ikkita boshqa-boshqa rangdagi "tanlangan" ko'rinardi. */
+  :root[data-theme="dark"] .bn-item.bn-armed,
+  :root[data-theme="dark"] .bn-ghost.bn-armed{color:#FFFFFF;}
   /* Tanlanganda ikonka bir sakrab qo'yadi. */
   .bn-item.active .ic-svg,
   .bn-ghost.active .ic-svg{transform:translateY(-2px) scale(1.12);}
@@ -1202,6 +1172,12 @@
   @media (hover: hover) and (pointer: fine){
     .bottom-nav:not(.dragging) .bn-item:hover:not(.active):not(.bn-armed){
       color:var(--route-dark);
+    }
+    /* Qorong'u rejimda panel oq-qora: yashil chaqnab ketardi.
+       Oq esa "tanlangan" degan ma'noni berardi, shuning uchun
+       oraliq rang — shunchaki ishora. */
+    :root[data-theme="dark"] .bottom-nav:not(.dragging) .bn-item:hover:not(.active):not(.bn-armed){
+      color:var(--ink-soft);
     }
   }
   /* Siqilish endi katakning o'zida (`.bn-down`), shuning uchun bu
@@ -1284,11 +1260,19 @@
     backdrop-filter:blur(8px) saturate(160%);
     box-shadow:0 2px 10px rgba(15,23,42,0.10);
   }
+  :root[data-theme="dark"] .bn-blob-fill{
+    background:rgba(255,255,255,0.10);
+    border-color:rgba(255,255,255,0.14);
+    box-shadow:0 2px 12px rgba(0,0,0,0.45);
+  }
   .bn-blob-gloss{
     border-radius:999px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7);
   }
   .bn-blob-gloss::after{display:none;}
+  :root[data-theme="dark"] .bn-blob-gloss{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.16);
+  }
   /* Tabletka faqat O'ZI turgan katak bosilganda siqiladi.
      Ilgari bu `.pressed` ga, ya'ni butun panelga bog'langan edi:
      "Profil" bosilsa, "Asosiy" ostidagi tabletka siqilardi —
