@@ -2181,17 +2181,6 @@
   .drive-panel .btn{margin-top:var(--s3);width:100%;}
   .drive-hint{font-size:12.5px;color:var(--muted);margin:var(--s3) 0 0;line-height:1.55;}
 
-  /* Profildagi "Mening takliflarim" qatorlari. */
-  .trip-row{
-    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);width:100%;
-    background:none;border:none;border-top:1px solid var(--border);padding:var(--s3) 0;
-    text-align:left;cursor:pointer;color:inherit;font:inherit;
-  }
-  .trip-row:first-of-type{border-top:none;}
-  .trip-main{display:flex;flex-direction:column;gap:2px;min-width:0;}
-  .trip-route{font-weight:600;font-size:14px;}
-  .trip-sub{font-size:12.5px;color:var(--muted);}
-
   /* Saqlangan qidiruvlar — bosilsa filtr qo'llanadi, × o'chiradi. */
   .saved-searches{display:flex;gap:var(--s2);flex-wrap:wrap;margin:var(--s4) 0 0;}
   .ss-chip{
@@ -5232,14 +5221,6 @@
     .bg-truck--hero{width:240px;} .bg-truck--steps{width:200px;} .bg-truck--features{width:210px;} .bg-truck--app{width:300px;}
   }
 
-  /* ---------- SCROLL PROGRESS ---------- */
-  #scrollProgress{
-    position:fixed;top:0;left:0;height:2px;width:100%;
-    transform:scaleX(0);transform-origin:0 50%;
-    background:linear-gradient(90deg, var(--route), var(--stamp));
-    z-index:60;will-change:transform;
-  }
-
   /* ============================================================
      PROFILE PAGE — identity + overview + account management, not a
      giant form. Built from section-based pieces (header, stats, a
@@ -8058,6 +8039,7 @@
       "nav.accountMenu": "Hisob menyusi",
       "pf.trust": "Ishonchlilik darajasi", "pf.vehicles": "Mening transportlarim",
       "pf.driver": "Haydovchi ma'lumotlari", "pf.loads": "Mening yuklarim",
+      "pf.offers": "Mening takliflarim", "pf.offersSub": "Yuborgan takliflaringiz",
       "pf.reviews": "Reyting va sharhlar", "pf.activity": "Faoliyat",
       "pf.verified": "Tasdiqlangan ma'lumotlar", "pf.settings": "Sozlamalar",
       "pf.notSet": "Kiritilmagan", "pf.noData": "Ma'lumot yo'q", "pf.tripsShort": "safar",
@@ -8101,6 +8083,9 @@
       "rcpt.verifyNote": "QR ni skanerlang yoki kodni ilovaning \u201CKuzatish\u201D bo'limiga kiriting.",
       "rcpt.print": "Chop etish", "rcpt.share": "Yuborish / Saqlash", "rcpt.close": "Yopish",
       "loadgrp.empty": "Hozircha yuk joylamagansiz.", "loadgrp.emptyBtn": "Yuk joylash",
+      "offergrp.pending": "Javob kutilmoqda", "offergrp.accepted": "Qabul qilingan",
+      "offergrp.closed": "Yopilgan", "offergrp.empty": "Hozircha taklif yubormagansiz.",
+      "offergrp.emptyBtn": "Yuk topish",
       "rev.ratings": "baho", "rev.asOwner": "Yuk beruvchi sifatida",
       "rev.comments": "Sharhlar", "rev.empty": "Hozircha sharh yo'q.",
       "act.loads": "Yuklar", "act.trips": "Tashuvlar", "act.deals": "Kelishuvlar", "act.rating": "Reyting",
@@ -8642,6 +8627,7 @@
       "nav.accountMenu": "Меню аккаунта",
       "pf.trust": "Уровень доверия", "pf.vehicles": "Мой транспорт",
       "pf.driver": "Данные водителя", "pf.loads": "Мои грузы",
+      "pf.offers": "Мои предложения", "pf.offersSub": "Отправленные предложения",
       "pf.reviews": "Рейтинг и отзывы", "pf.activity": "Активность",
       "pf.verified": "Подтверждённые данные", "pf.settings": "Настройки",
       "pf.notSet": "Не указано", "pf.noData": "Нет данных", "pf.tripsShort": "рейсов",
@@ -8685,6 +8671,9 @@
       "rcpt.verifyNote": "Отсканируйте QR или введите код в разделе \u00ABОтслеживание\u00BB.",
       "rcpt.print": "Печать", "rcpt.share": "Отправить / Сохранить", "rcpt.close": "Закрыть",
       "loadgrp.empty": "Вы пока не размещали грузы.", "loadgrp.emptyBtn": "Разместить груз",
+      "offergrp.pending": "Ожидает ответа", "offergrp.accepted": "Принятые",
+      "offergrp.closed": "Закрытые", "offergrp.empty": "Вы пока не отправляли предложений.",
+      "offergrp.emptyBtn": "Найти груз",
       "rev.ratings": "оценок", "rev.asOwner": "Как заказчик",
       "rev.comments": "Отзывы", "rev.empty": "Отзывов пока нет.",
       "act.loads": "Грузы", "act.trips": "Перевозки", "act.deals": "Сделки", "act.rating": "Рейтинг",
@@ -9222,6 +9211,7 @@
       "nav.accountMenu": "Account menu",
       "pf.trust": "Trust level", "pf.vehicles": "My vehicles",
       "pf.driver": "Driver details", "pf.loads": "My loads",
+      "pf.offers": "My offers", "pf.offersSub": "Offers you have sent",
       "pf.reviews": "Rating and reviews", "pf.activity": "Activity",
       "pf.verified": "Verified details", "pf.settings": "Settings",
       "pf.notSet": "Not set", "pf.noData": "No data", "pf.tripsShort": "trips",
@@ -9265,6 +9255,9 @@
       "rcpt.verifyNote": "Scan the QR code or enter the code in the app's \u201CTracking\u201D section.",
       "rcpt.print": "Print", "rcpt.share": "Send / Save", "rcpt.close": "Close",
       "loadgrp.empty": "You have not posted any loads yet.", "loadgrp.emptyBtn": "Post a load",
+      "offergrp.pending": "Awaiting reply", "offergrp.accepted": "Accepted",
+      "offergrp.closed": "Closed", "offergrp.empty": "You have not sent any offers yet.",
+      "offergrp.emptyBtn": "Find a load",
       "rev.ratings": "ratings", "rev.asOwner": "As a shipper",
       "rev.comments": "Reviews", "rev.empty": "No reviews yet.",
       "act.loads": "Loads", "act.trips": "Deliveries", "act.deals": "Deals", "act.rating": "Rating",
@@ -10892,12 +10885,6 @@
     try{ localStorage.setItem(RECENT_ROUTES_KEY, JSON.stringify(routes.slice(0, 5))); }catch(e){}
   }
 
-  function updateHomeSearchDisplay(from, to){
-    var el = document.getElementById("homeSearchValue");
-    if(!el || (!from && !to)) return; // no route chosen yet — leave the data-i18n placeholder alone
-    el.innerHTML = escapeHtml(from || "…") + '<span class="arrow">→</span>' + escapeHtml(to || "…");
-  }
-
   function goToLoadsWithQuick(quick){
     loadsState.quick = (loadsState.quick === quick) ? "" : quick;
     switchTab("loads");
@@ -10910,7 +10897,6 @@
     loadsState.fromCity = from || "";
     loadsState.toCity = to || "";
     addRecentRoute(loadsState.fromCity, loadsState.toCity);
-    updateHomeSearchDisplay(loadsState.fromCity, loadsState.toCity);
     Sheet.close();
     switchTab("loads");
     var fromSel = document.getElementById("fLoadsFrom");
@@ -10961,6 +10947,12 @@
     });
   }
 
+  /* DIQQAT: bu oynaga hozir KIRISH NUQTASI YO'Q. Ilgari uy
+     ekranidagi qidiruv qatori ochardi; uy ekrani qayta chizilgach
+     (ikki tugmali hero) o'sha qator ketdi va bu oyna ulanmay
+     qoldi. O'chirilmadi, chunki ichida yuklar ekranida yo'q ikki
+     narsa bor: oxirgi qidirilgan yo'nalishlar va mashhur
+     yo'nalishlar. Qayerga ulash kerakligi — egasining qarori. */
   function openRouteSearch(){
     Sheet.open({
       title: t("search.title") || "Yo'nalish qidirish",
@@ -12768,61 +12760,6 @@
       + '</div>';
   }
 
-  /* ---------- Mening takliflarim ----------
-     Haydovchi taklif yuborgach yuk uni yo'qotmasligi kerak: yuklar
-     ro'yxatida faqat yangi yuklar turadi, shuning uchun qabul qilingan
-     taklif ham, kutilayotgani ham shu yerdan ochiladi. Yukning
-     bosqichini haydovchi o'sha sahifadagi tugma bilan suradi. */
-  function loadMyOffers(){
-    var box = document.getElementById("myOffersBox");
-    if(!box || !isSignedIn()) return;
-
-    fetch("/api/order?action=my-offers"
-      + "&googleIdToken=" + encodeURIComponent(googleIdToken || "")
-      + "&telegramInitData=" + encodeURIComponent(telegramInitData || ""))
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        // Hech qachon taklif yubormagan odamga bo'sh kartochka ko'rsatmaymiz.
-        if(!data || !data.ok || !(data.offers || []).length) return;
-        renderMyOffers(data.offers);
-      })
-      .catch(function(){ /* profilning qolgani baribir ko'rinadi */ });
-  }
-
-  function renderMyOffers(offers){
-    var box = document.getElementById("myOffersBox");
-    if(!box) return;
-
-    box.innerHTML = '<div class="card" style="margin-top:var(--s4);">'
-      + '<h3 class="card-title">'+icon("iconBox")+' '
-      +   '<span data-i18n="offer.myList">Mening takliflarim</span>'
-      +   ' <span style="color:var(--muted);font-weight:500;">('+offers.length+')</span></h3>'
-      + offers.map(function(o){
-          var route = (o.fromCity || "?") + " → " + (o.toCity || "?");
-          // Haydovchi bo'lganda buyurtma bosqichi taklif holatidan
-          // muhimroq: "Qabul qilindi" o'rniga "Yo'lda" ko'rinadi.
-          var driving = o.isDriver && o.orderStatus;
-          var label = driving
-            ? (TRACK_STATUS_LABELS[o.orderStatus] || o.orderStatusLabel || o.orderStatus)
-            : (OFFER_STATUS_LABELS[o.status] || o.status);
-          return '<button type="button" class="trip-row" data-trip="'+escapeHtml(o.orderCode)+'">'
-            + '<span class="trip-main">'
-            +   '<span class="trip-route">'+escapeHtml(route)+'</span>'
-            +   '<span class="trip-sub">'+escapeHtml(o.orderCode)+' · '+formatNum(o.price)
-            +     ' <span data-i18n="loads.sum">so\'m</span></span>'
-            + '</span>'
-            + '<span class="offer-status '+(o.isDriver ? "ACCEPTED" : o.status)+'"'
-            +   (driving ? ' data-i18n="stage.'+o.orderStatus+'"' : '')+'>'+escapeHtml(label)+'</span>'
-            + '</button>';
-        }).join("")
-      + '</div>';
-
-    box.querySelectorAll("[data-trip]").forEach(function(b){
-      b.addEventListener("click", function(){ openLoadDetail(b.getAttribute("data-trip")); });
-    });
-    applyLang();
-  }
-
   function renderPersonalInfoCard(p){
     return '<div class="info-card">'
       + '<div class="info-card-head">'
@@ -13028,6 +12965,14 @@
       subKey: "pf.vehiclesSub", sub: "Mashina va e'lonlaringiz", roles: "DRIVER" },
     { id: "driver",   icon: "iconUser",     tint: "#7C3AED", titleKey: "pf.driver",   title: "Haydovchi ma'lumotlari",
       subKey: "pf.driverSub",   sub: "Tajriba va yo'nalishlar", roles: "DRIVER" },
+    /* Haydovchining yuborgan takliflari. Bu bo'lim YO'Q edi va
+       haydovchi taklif yuborgach uni hech qayerda ro'yxat bo'lib
+       ko'rmasdi: yuklar ro'yxatida e'lon boshqa yuklar orasida
+       qolardi, "Mening yukim" esa faqat QABUL QILINGAN yukni
+       ko'rsatadi. Ya'ni "javob berishdimi?" degan savolga javob
+       beradigan joy yo'q edi. */
+    { id: "offers",   icon: "iconHandshake", tint: "#0EA5E9", titleKey: "pf.offers",   title: "Mening takliflarim",
+      subKey: "pf.offersSub",   sub: "Yuborgan takliflaringiz", roles: "DRIVER" },
     { id: "loads",    icon: "iconBox",      tint: "#EA580C", titleKey: "pf.loads",    title: "Mening yuklarim",
       subKey: "pf.loadsSub",    sub: "Faol va jarayondagi yuklar", roles: "OWNER" },
     { id: "reviews",  icon: "iconStar",     tint: "#D97706", titleKey: "pf.reviews",  title: "Reyting va sharhlar",
@@ -13102,6 +13047,7 @@
           trust: renderTrustSection,
           vehicles: renderVehiclesSection,
           driver: renderDriverSection,
+          offers: renderOffersSection,
           loads: renderLoadsSection,
           reviews: renderReviewsSection,
           activity: renderActivitySection,
@@ -13301,6 +13247,82 @@
   }
 
   /* ---------- 4. Mening yuklarim ---------- */
+  /* ---------- Mening takliflarim ----------
+     Guruhlar tartibi tasodifiy emas: haydovchiga eng kerakli
+     narsa — javob kutilayotgani, chunki aynan shunisi uning
+     qo'lida: kutadi, qaytarib oladi yoki boshqa yuk qidiradi.
+     Yopilganlar eng ostida: ular endi hech narsa talab qilmaydi. */
+  var OFFER_GROUPS = [
+    { key: "pending",  labelKey: "offergrp.pending",  label: "Javob kutilmoqda",
+      match: function(o){ return o.status === "PENDING"; } },
+    { key: "accepted", labelKey: "offergrp.accepted", label: "Qabul qilingan",
+      match: function(o){ return o.status === "ACCEPTED"; } },
+    { key: "closed",   labelKey: "offergrp.closed",   label: "Yopilgan",
+      match: function(o){ return o.status !== "PENDING" && o.status !== "ACCEPTED"; } }
+  ];
+
+  /* Bitta taklif qatori — "Mening yuklarim" dagi qator bilan bir
+     xil ko'rinishda (.pf-load), chunki ikkalasi ham bir xil narsa
+     qiladi: bosilsa yuk ochiladi. Ikki xil ko'rinish yasash faqat
+     o'rganishni qiyinlashtiradi. */
+  function offerRowHtml(o){
+    /* Haydovchi bo'lib tanlangan bo'lsa, taklifning holati emas,
+       YUKNING bosqichi muhimroq: "Qabul qilindi" o'rniga "Yo'lda".
+       Odam bilishi kerak bo'lgani — yuk qayerda. */
+    var driving = o.isDriver && o.orderStatus;
+    var label = driving
+      ? (TRACK_STATUS_LABELS[o.orderStatus] || o.orderStatusLabel || o.orderStatus)
+      : (OFFER_STATUS_LABELS[o.status] || o.status);
+    var pillCls = driving ? "ACCEPTED" : o.status;
+    var route = escapeHtml(o.fromCity || "?") + " \u2192 " + escapeHtml(o.toCity || "?");
+    return '<button type="button" class="pf-load" data-open-offer="'+escapeHtml(o.orderCode)+'">'
+      + '<span class="pf-load-main">'
+      +   '<span class="pf-load-route">'+route+'</span>'
+      +   '<span class="pf-load-sub">'+escapeHtml(o.orderCode)+' \u00b7 '+formatNum(o.price)
+      +     ' <span data-i18n="loads.sum">so\'m</span></span>'
+      + '</span>'
+      + '<span class="offer-status '+escapeHtml(pillCls)+'"'
+      +   (driving ? ' data-i18n="stage.'+escapeHtml(o.orderStatus)+'"' : '')+'>'
+      +   escapeHtml(label)+'</span>'
+      + '</button>';
+  }
+
+  function renderOffersSection(body, p){
+    fetch("/api/order?action=my-offers&" + profileApiQuery())
+      .then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); })
+      .then(function(data){
+        var offers = (data && data.offers) ? data.offers : [];
+        if(!offers.length){
+          /* Nol yozilmaydi, bo'sh kartochka ham qolmaydi: bu yerga
+             kelgan odam nima qilishni bilishi kerak. */
+          body.innerHTML = pfEmpty("offergrp.empty", "Hozircha taklif yubormagansiz.",
+            "offergrp.emptyBtn", "Yuk topish", function(){ Sheet.close(); switchTab("loads"); });
+          applyLang();
+          return;
+        }
+        body.innerHTML = OFFER_GROUPS.map(function(g){
+          var items = offers.filter(g.match);
+          if(!items.length) return "";
+          return '<div class="pf-block-title">'
+            + '<span data-i18n="'+g.labelKey+'">'+escapeHtml(g.label)+'</span>'
+            + ' <span class="muted">('+items.length+')</span></div>'
+            + items.map(offerRowHtml).join("");
+        }).join("");
+
+        /* Yukni ochish — taklifni qaytarib olish ham o'sha yerda:
+           yuk sahifasidagi "Taklifni qaytarib olish" tugmasi. Shu
+           sababli bu yerda ikkinchi tugma qo'yilmaydi. */
+        body.querySelectorAll("[data-open-offer]").forEach(function(b){
+          b.addEventListener("click", function(){
+            Sheet.close();
+            openLoadDetail(b.getAttribute("data-open-offer"));
+          });
+        });
+        applyLang();
+      })
+      .catch(function(){ pfError(body, function(){ renderOffersSection(body, p); }); });
+  }
+
   var LOAD_GROUPS = [
     { key: "active",     labelKey: "loadgrp.active",     label: "Faol",             match: function(o){ return o.status === "NEW"; } },
     { key: "inProgress", labelKey: "loadgrp.inProgress", label: "Jarayonda",        match: function(o){ return o.status !== "NEW" && o.status !== "DELIVERED" && o.status !== "CANCELLED"; } },
@@ -20129,13 +20151,28 @@
     if(!box) return;
     var drive = drivePanelHtml(info);
 
-    // Yuk egasi o'ziga taklif ham, xabar ham yubormaydi — tugmalarni
-    // butunlay olib tashlaymiz. Faqat `hidden` qo'yish yetarli emas:
-    // .row2 ichidagi .btn uchun author qoidasi brauzerning
-    // [hidden]{display:none} qoidasini yengadi va tugma ko'rinib qolardi.
+    /* Yuk egasi o'ziga taklif ham, xabar ham yubormaydi — tugmalar
+       butunlay olib tashlanadi. Faqat `hidden` qo'yish yetarli emas:
+       o'z qoidasi bor tugma uchun brauzerning [hidden]{display:none}
+       qoidasi yengiladi va tugma ko'rinib qolardi.
+
+       BU KOD ISHLAMAY QOLGANDI. Ilgari ikki tugma `detailContactRow`
+       degan bitta qator ichida turardi va shu qator olib tashlanardi.
+       Keyin yuk sahifasi qayta chizildi: tugmalar alohida-alohida
+       bo'ldi (`#btnDetailOffer`, `#btnDetailMessage`), lekin bu yer
+       eski nomni so'rab turdi. Yo'q elementni so'rash XATO BERMAYDI
+       — `null` qaytadi, `if(row)` esa jimgina o'tib ketadi.
+
+       Natijasi: YUK BERUVCHI O'Z YUKIDA "Taklif yuborish" va "Xabar
+       yozish" tugmalarini ko'rib turardi. Bosib, narx yozib,
+       yuborgandan keyin esa xato olardi — server bunga to'g'ri yo'l
+       bermaydi ("O'z yukingizga taklif yubora olmaysiz"). Ya'ni
+       ma'lumot xavfsiz qolgan, lekin odam behuda ish qilgan. */
     if(isOwner){
-      var row = document.getElementById("detailContactRow");
-      if(row) row.remove();
+      ["btnDetailOffer", "btnDetailMessage"].forEach(function(id){
+        var el = document.getElementById(id);
+        if(el) el.remove();
+      });
     }
 
     if(!offers.length){
@@ -24248,8 +24285,6 @@
     }
   });
 
-  var homeSearchBar = document.getElementById("homeSearchBar");
-  if(homeSearchBar) homeSearchBar.addEventListener("click", openRouteSearch);
   document.querySelectorAll("#homeQuickFilters .chip").forEach(function(chip){
     chip.addEventListener("click", function(){ goToLoadsWithQuick(chip.getAttribute("data-quick")); });
   });
@@ -24284,11 +24319,15 @@
   initTrucksSwipeBack();
 
   /* ============================================================
-     Scroll: nav state, progress bar, background parallax
-     All reads/writes are batched into one rAF frame to avoid layout thrash.
+     Surilish: orqa fondagi mashinalarning sekin suzishi.
+     Hammasi bitta rAF kadrida — surilish paytida brauzerni
+     qayta hisoblashga majbur qilmaslik uchun.
+
+     (`nav` shu yerda e'lon qilinadi, lekin pastki panelni
+      barmoq bilan surish kodi ham AYNI SHU o'zgaruvchidan
+      foydalanadi — olib tashlasa panel suramay qoladi.)
      ============================================================ */
   var nav = document.querySelector(".nav");
-  var progress = document.getElementById("scrollProgress");
   var trucks = Array.prototype.slice.call(document.querySelectorAll(".bg-truck"));
   // Each truck's CSS-authored transform (e.g. .bg-truck--app's centering
   // translateX(-50%)), captured lazily on its first real (visible) scroll
@@ -24300,17 +24339,6 @@
   var scrollTicking = false;
 
   function onScrollFrame(){
-    /* Suriladigani `<main>`, sahifa emas — o'lchov ham o'shandan. */
-    var box = pageScroller();
-    var y = box ? box.scrollTop : (window.scrollY || 0);
-    var max = box
-      ? (box.scrollHeight - box.clientHeight)
-      : (document.documentElement.scrollHeight - window.innerHeight);
-
-    if(progress){
-      progress.style.transform = "scaleX(" + (max > 0 ? Math.min(1, y / max) : 0) + ")";
-    }
-
     // Background trucks drift slower than the page — depth without distraction.
     if(!reduceMotion){
       trucks.forEach(function(el, i){
